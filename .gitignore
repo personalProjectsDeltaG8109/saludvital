@@ -27,3 +27,5 @@ Thumbs.db
 
 # Exclude generated distribution directories.
 dist/
+
+/Microsoft
