@@ -17,16 +17,16 @@ app.use(express.json());
 app.use(express.static(path.join(currentDirectory, "public")));
 
 app.get("/", (req, res) => {
-  res.status(200).render("layouts/main", {
-    pageTitle: "SaludVital | Your health, connected",
-  });
+    res.status(200).render("layouts/main", {
+        pageTitle: "SaludVital | Your health, connected",
+    });
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    application: "SaludVital",
-  });
+    res.status(200).json({
+        status: "ok",
+        application: "SaludVital",
+    });
 });
 
 export default app;
