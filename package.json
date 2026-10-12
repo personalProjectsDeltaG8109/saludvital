@@ -12,7 +12,11 @@
         "css:build": "tailwindcss -i ./src/styles/input.css -o ./public/css/app.css --minify",
         "css:watch": "tailwindcss -i ./src/styles/input.css -o ./public/css/app.css --watch",
         "lint": "eslint .",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "db:migrate": "sequelize-cli db:migrate",
+        "db:migrate:undo": "sequelize-cli db:migrate:undo",
+        "db:seed": "sequelize-cli db:seed:all",
+        "db:seed:undo": "sequelize-cli db:seed:undo:all"
     },
     "repository": {
         "type": "git",

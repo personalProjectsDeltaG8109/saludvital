@@ -385,28 +385,133 @@ The project will include:
 
 ## Getting Started
 
-> Development setup is pending. Installation instructions will be added and verified when the initial application structure and dependencies are implemented.
-
 ### Prerequisites
 
-The planned development environment includes:
+- Node.js 24.x
+- npm (included with Node.js)
+- Git
+- MariaDB 10.4 or a compatible MySQL server
+- Visual Studio Code or another JavaScript editor
 
-- Node.js and npm.
-- MySQL.
-- Git.
-- A code editor such as Visual Studio Code.
-
-Exact supported versions will be documented after dependency selection and compatibility testing.
+The project uses Sequelize 6 with the `mysql2` driver. The current local development environment uses MariaDB through Sequelize's `mysql` dialect.
 
 ### Installation
 
-Setup instructions will be added after the initial project configuration is implemented and tested.
+Clone the repository and enter the project directory:
+
+```bash
+git clone https://github.com/personalProjectsDeltaG8109/saludvital.git
+cd saludvital
+npm install
+```
 
 ### Environment Configuration
 
-Sensitive credentials must be stored in environment variables and must never be committed to the repository.
+Create a local `.env` file by copying `.env.example`:
 
-A `.env.example` file will document the required variable names without containing real credentials.
+```bash
+cp .env.example .env
+```
+
+Update the database settings in `.env` to match your local database server. Never commit `.env` or put real credentials in `.env.example`.
+
+Required database variables:
+
+- `DB_HOST`: database server hostname.
+- `DB_PORT`: database server port.
+- `DB_NAME`: application database name.
+- `DB_USER`: database username.
+- `DB_PASSWORD`: database password, if configured.
+
+The application also uses `NODE_ENV`, `PORT`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. Set a secure random `JWT_SECRET` before using the application outside local development.
+
+### Development
+
+Start the development server with automatic restarts:
+
+```bash
+npm run dev
+```
+
+The default local address is `http://localhost:3000`.
+
+The health endpoint is available at `/health`.
+
+### CSS Compilation
+
+Compile Tailwind CSS locally:
+
+```bash
+npm run css:build
+```
+
+To watch for stylesheet changes during development:
+
+```bash
+npm run css:watch
+```
+
+The compiled stylesheet is written to `public/css/app.css`. The application does not load Tailwind CSS from a CDN.
+
+### Database Commands
+
+The project uses Sequelize CLI for database migrations and seeders.
+
+```bash
+npm run db:migrate
+npm run db:migrate:undo
+npm run db:seed
+npm run db:seed:undo
+```
+
+These commands operate on the database configured through the environment variables. Review migration and seeder files before executing them. No complete application schema or initial business seed data is included in this foundation feature.
+
+### Testing and Code Quality
+
+Run the automated test suite:
+
+```bash
+npm test
+```
+
+Run tests in watch mode or with coverage:
+
+```bash
+npm run test:watch
+npm run test:coverage
+```
+
+Run ESLint and check formatting:
+
+```bash
+npm run lint
+npx prettier --check .
+```
+
+Verify the database connection using the local diagnostic script:
+
+```bash
+node scripts/check-database.js
+```
+
+The database check requires a reachable database server and valid local credentials.
+
+### Initial Project Structure
+
+```text
+config/                 Application and CLI configuration
+database/migrations/    Database migration files
+database/seeders/       Database seed files
+src/models/             Application data models
+src/styles/             Tailwind CSS source
+views/                  Pug templates
+public/                 Static assets and compiled CSS
+tests/unit/             Unit tests
+tests/integration/      Integration tests
+```
+
+Additional modules, accessibility tests, end-to-end tests, and technical documentation will be added as their corresponding requirements are implemented.
+
 
 ## Documentation
 
