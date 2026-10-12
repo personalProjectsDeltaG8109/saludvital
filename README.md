@@ -115,10 +115,10 @@ Features will be delivered incrementally through planned development sprints.
 
 ## User Roles
 
-| Role | Main responsibilities |
-|---|---|
-| Patient | Manage personal information and medical appointments. |
-| Doctor | Manage assigned appointments and authorized clinical records. |
+| Role          | Main responsibilities                                                |
+| ------------- | -------------------------------------------------------------------- |
+| Patient       | Manage personal information and medical appointments.                |
+| Doctor        | Manage assigned appointments and authorized clinical records.        |
 | Administrator | Manage platform configuration, users, and administrative operations. |
 
 Access to protected resources will be enforced on the server through authentication, authorization, and validation rules.
@@ -127,20 +127,20 @@ Access to protected resources will be enforced on the server through authenticat
 
 The following technologies are the initial architectural proposal. Versions and dependencies will be selected and verified during project setup.
 
-| Technology | Purpose |
-|---|---|
-| JavaScript | Primary programming language. |
-| Node.js | Server-side JavaScript runtime. |
-| Express.js | HTTP server, routing, and middleware. |
-| Pug | Server-rendered HTML templates. |
-| HTML5 | Semantic page structure. |
-| Tailwind CSS | Responsive interface styling and reusable design patterns. |
-| MySQL | Relational database. |
-| Sequelize | Object-relational mapping and database access. |
-| Jest | Unit and integration testing. |
-| Supertest | HTTP endpoint testing. |
-| Playwright | Browser automation and end-to-end testing. |
-| axe-core | Automated accessibility checks. |
+| Technology     | Purpose                                                          |
+| -------------- | ---------------------------------------------------------------- |
+| JavaScript     | Primary programming language.                                    |
+| Node.js        | Server-side JavaScript runtime.                                  |
+| Express.js     | HTTP server, routing, and middleware.                            |
+| Pug            | Server-rendered HTML templates.                                  |
+| HTML5          | Semantic page structure.                                         |
+| Tailwind CSS   | Responsive interface styling and reusable design patterns.       |
+| MySQL          | Relational database.                                             |
+| Sequelize      | Object-relational mapping and database access.                   |
+| Jest           | Unit and integration testing.                                    |
+| Supertest      | HTTP endpoint testing.                                           |
+| Playwright     | Browser automation and end-to-end testing.                       |
+| axe-core       | Automated accessibility checks.                                  |
 | Git and GitHub | Version control, collaboration, reviews, and project management. |
 
 ### Architectural Principles
@@ -266,13 +266,13 @@ SaludVital will be designed for a broad range of users and devices.
 Target testing widths:
 
 | Device category | Reference width |
-|---|---:|
-| Small mobile | 320 px |
-| Standard mobile | 375 px |
-| Large mobile | 430 px |
-| Tablet | 768 px |
-| Laptop | 1024 px |
-| Desktop | 1440 px |
+| --------------- | --------------: |
+| Small mobile    |          320 px |
+| Standard mobile |          375 px |
+| Large mobile    |          430 px |
+| Tablet          |          768 px |
+| Laptop          |         1024 px |
+| Desktop         |         1440 px |
 
 These widths are testing references, not fixed layout restrictions.
 
@@ -314,14 +314,14 @@ Security and privacy requirements will be reviewed against the applicable regula
 
 Testing will be introduced alongside implementation, rather than postponed until the end.
 
-| Test level | Purpose | Proposed tools |
-|---|---|---|
-| Unit tests | Validate individual functions and services. | Jest |
-| Integration tests | Validate module and database interactions. | Jest, Supertest |
-| End-to-end tests | Verify complete user workflows. | Playwright |
-| Responsive tests | Check layouts across viewport sizes. | Playwright |
-| Accessibility tests | Detect accessibility violations. | axe-core and manual checks |
-| Regression tests | Ensure existing functionality continues working. | Automated test suite |
+| Test level          | Purpose                                          | Proposed tools             |
+| ------------------- | ------------------------------------------------ | -------------------------- |
+| Unit tests          | Validate individual functions and services.      | Jest                       |
+| Integration tests   | Validate module and database interactions.       | Jest, Supertest            |
+| End-to-end tests    | Verify complete user workflows.                  | Playwright                 |
+| Responsive tests    | Check layouts across viewport sizes.             | Playwright                 |
+| Accessibility tests | Detect accessibility violations.                 | axe-core and manual checks |
+| Regression tests    | Ensure existing functionality continues working. | Automated test suite       |
 
 A feature will not be considered complete until its acceptance criteria and relevant tests have been reviewed.
 
@@ -345,11 +345,11 @@ flowchart TD
 
 ### Branch Conventions
 
-| Branch | Purpose |
-|---|---|
-| `main` | Production-ready code. |
-| `develop` | Integration branch for completed features. |
-| `release/*` | Release preparation, stabilization, and verification. |
+| Branch      | Purpose                                                  |
+| ----------- | -------------------------------------------------------- |
+| `main`      | Production-ready code.                                   |
+| `develop`   | Integration branch for completed features.               |
+| `release/*` | Release preparation, stabilization, and verification.    |
 | `feature/*` | New functionality, documentation, and development tasks. |
 
 Development work must not be performed directly on `main` or `develop`.
@@ -382,7 +382,6 @@ The project will include:
 - **Milestones:** sprint goals and release objectives.
 - **GitHub Projects:** the development board and progress tracking.
 - **GitHub Wiki:** technical documentation and project decisions.
-
 
 ## Getting Started
 
@@ -435,18 +434,16 @@ Documentation will be written in English. Explanations and learning support prov
 
 ## Roadmap
 
-| Phase | Planned outcome |
-|---|---|
-| Sprint 0 | Product planning, requirements, architecture, and GitHub setup. |
-| Sprint 1 | Project foundation and responsive design system. |
-| Sprint 2 | Database and authentication. |
-| Sprint 3 | Patient portal and appointment booking. |
-| Sprint 4 | Doctor portal and clinical workflows. |
-| Sprint 5 | Administrative portal. |
-| Sprint 6 | Notifications and WhatsApp integration. |
+| Phase    | Planned outcome                                                      |
+| -------- | -------------------------------------------------------------------- |
+| Sprint 0 | Product planning, requirements, architecture, and GitHub setup.      |
+| Sprint 1 | Project foundation and responsive design system.                     |
+| Sprint 2 | Database and authentication.                                         |
+| Sprint 3 | Patient portal and appointment booking.                              |
+| Sprint 4 | Doctor portal and clinical workflows.                                |
+| Sprint 5 | Administrative portal.                                               |
+| Sprint 6 | Notifications and WhatsApp integration.                              |
 | Sprint 7 | Quality assurance, security, accessibility, and release preparation. |
-
-
 
 ## Contributing
 
