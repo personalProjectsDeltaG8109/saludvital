@@ -1,0 +1,29 @@
+
+# Exclude installed dependencies.
+node_modules/
+
+# Exclude environment variables and secrets.
+.env
+.env.*
+!.env.example
+
+# Exclude test coverage and generated test reports.
+coverage/
+playwright-report/
+test-results/
+
+# Exclude logs and temporary files.
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Exclude operating system and editor files.
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Exclude generated distribution directories.
+dist/
