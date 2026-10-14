@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* MAIN APPLICATION COLOR PALETTE
+   These are the primary colors we will use throughout the application. */
+
+@theme {
+    --color-primary: #123B73;
+    --color-secondary: #168DE2;
+    --color-teal: #13B8B0;
+    --color-wellness: #36A96B;
+    --color-background: #FFFFFF;
+}
