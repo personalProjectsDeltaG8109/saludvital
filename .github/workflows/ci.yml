@@ -1,0 +1,63 @@
+# Run automated checks for SaludVital before code integration.
+name: SaludVital CI
+
+on:
+    pull_request:
+        branches:
+            - main
+            - develop
+            - "release/**"
+    push:
+        branches:
+            - main
+            - develop
+            - "release/**"
+
+# Allow the workflow to read the repository without granting write access.
+permissions:
+    contents: read
+
+jobs:
+    test:
+        name: Tests and Code Quality
+        runs-on: ubuntu-latest
+
+        steps:
+            # Download the source code for this workflow run.
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            # Use the Node.js runtime required by the project.
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            # Install the exact dependency versions from package-lock.json.
+            - name: Install dependencies
+              run: npm ci
+
+            # Check JavaScript code quality.
+            - name: Run ESLint
+              run: npm run lint
+
+            # Run existing unit and integration tests.
+            - name: Run Jest tests
+              run: npm test
+
+            # Check formatting without modifying project files.
+            - name: Check Prettier formatting
+              run: npx prettier --check "app.js" "server.js" "package.json" "config/**/*.js" "tests/**/*.js" "views/**/*.pug" "src/styles/**/*.css" ".github/workflows/ci.yml" --plugin @prettier/plugin-pug
+
+            # Verify that Tailwind CSS compiles successfully.
+            - name: Build Tailwind CSS
+              run: npm run css:build
+
+            # Install Chromium and its Linux system dependencies for browser tests.
+            - name: Install Playwright browser
+              run: npx playwright install --with-deps chromium
+
+            # Test the homepage, brand colors, responsive layout, and accessibility.
+            - name: Run Playwright and accessibility tests
+              run: npm run test:e2e

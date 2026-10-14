@@ -4,9 +4,9 @@
    These are the primary colors we will use throughout the application. */
 
 @theme {
-    --color-primary: #123B73;
-    --color-secondary: #168DE2;
-    --color-teal: #13B8B0;
-    --color-wellness: #36A96B;
-    --color-background: #FFFFFF;
+    --color-primary: #123b73;
+    --color-secondary: #168de2;
+    --color-teal: #13b8b0;
+    --color-wellness: #36a96b;
+    --color-background: #ffffff;
 }
