@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 
-// Load environment variables from the local .env file when it exists.
-dotenv.config();
+// Load local environment variables without verbose informational output.
+dotenv.config({ quiet: true });
 
 // Validate and normalize the application environment configuration.
 export function loadEnvironment(env = process.env) {
