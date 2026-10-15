@@ -14,6 +14,8 @@ import Notification from "./Notification.js";
 import AuditLog from "./AuditLog.js";
 import WhatsAppConversation from "./WhatsAppConversation.js";
 import WhatsAppMessage from "./WhatsAppMessage.js";
+import WhatsAppVerification from "./WhatsAppVerification.js";
+import WhatsAppAppointmentRequest from "./WhatsAppAppointmentRequest.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -300,6 +302,93 @@ WhatsAppMessage.belongsTo(WhatsAppConversation, {
     as: "conversation",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
+});
+
+
+/* WhatsApp identity verification associations. */
+Patient.hasMany(WhatsAppVerification, {
+    foreignKey: "patient_id",
+    as: "whatsappVerifications",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppVerification.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+/* WhatsApp appointment request associations. */
+Patient.hasMany(WhatsAppAppointmentRequest, {
+    foreignKey: "patient_id",
+    as: "whatsappAppointmentRequests",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppAppointmentRequest.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppConversation.hasMany(WhatsAppAppointmentRequest, {
+    foreignKey: "conversation_id",
+    as: "appointmentRequests",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppAppointmentRequest.belongsTo(WhatsAppConversation, {
+    foreignKey: "conversation_id",
+    as: "conversation",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Specialities.hasMany(WhatsAppAppointmentRequest, {
+    foreignKey: "requested_specialty_id",
+    as: "whatsappAppointmentRequests",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+WhatsAppAppointmentRequest.belongsTo(Specialities, {
+    foreignKey: "requested_specialty_id",
+    as: "requestedSpecialty",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+Doctor.hasMany(WhatsAppAppointmentRequest, {
+    foreignKey: "requested_doctor_id",
+    as: "whatsappAppointmentRequests",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+WhatsAppAppointmentRequest.belongsTo(Doctor, {
+    foreignKey: "requested_doctor_id",
+    as: "requestedDoctor",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+Appointment.hasMany(WhatsAppAppointmentRequest, {
+    foreignKey: "appointment_id",
+    as: "whatsappRequests",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+WhatsAppAppointmentRequest.belongsTo(Appointment, {
+    foreignKey: "appointment_id",
+    as: "appointment",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
 });
 
 // Export the models after registering their associations.

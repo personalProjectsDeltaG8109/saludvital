@@ -23,6 +23,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.AuditLog).toBeDefined();
         expect(database.models.WhatsAppConversation).toBeDefined();
         expect(database.models.WhatsAppMessage).toBeDefined();
+        expect(database.models.WhatsAppVerification).toBeDefined();
+        expect(database.models.WhatsAppAppointmentRequest).toBeDefined();
     });
 
 
@@ -42,6 +44,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.AuditLog.tableName).toBe("audit_logs");
         expect(database.models.WhatsAppConversation.tableName).toBe("whatsapp_conversations");
         expect(database.models.WhatsAppMessage.tableName).toBe("whatsapp_messages");
+        expect(database.models.WhatsAppVerification.tableName).toBe("whatsapp_verifications");
+        expect(database.models.WhatsAppAppointmentRequest.tableName).toBe("whatsapp_appointment_requests");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -248,5 +252,56 @@ describe("Sequelize model registry", () => {
 
         // Messages use created_at without automatic updated_at handling.
         expect(WhatsAppMessage.options.timestamps).toBe(false);
+
+        expect(WhatsAppMessage.options.timestamps).toBe(false);
+
     });
+
+
+    test("WhatsApp verification and appointment request associations are registered", () => {
+        const {
+            Patient,
+            Doctor,
+            Specialities,
+            Appointment,
+            WhatsAppConversation,
+            WhatsAppVerification,
+            WhatsAppAppointmentRequest,
+        } = database.models;
+
+        // Verify patient identity verification associations.
+        expect(Patient.associations.whatsappVerifications.target)
+            .toBe(WhatsAppVerification);
+        expect(WhatsAppVerification.associations.patient.target)
+            .toBe(Patient);
+
+        // Verify patient and conversation request associations.
+        expect(Patient.associations.whatsappAppointmentRequests.target)
+            .toBe(WhatsAppAppointmentRequest);
+        expect(WhatsAppAppointmentRequest.associations.patient.target)
+            .toBe(Patient);
+        expect(WhatsAppConversation.associations.appointmentRequests.target)
+            .toBe(WhatsAppAppointmentRequest);
+        expect(WhatsAppAppointmentRequest.associations.conversation.target)
+            .toBe(WhatsAppConversation);
+
+        // Verify optional specialty, doctor, and appointment references.
+        expect(WhatsAppAppointmentRequest.associations.requestedSpecialty.target)
+            .toBe(Specialities);
+        expect(WhatsAppAppointmentRequest.associations.requestedDoctor.target)
+            .toBe(Doctor);
+        expect(WhatsAppAppointmentRequest.associations.appointment.target)
+            .toBe(Appointment);
+
+        // Verify required fields and the idempotency constraint.
+        expect(WhatsAppVerification.rawAttributes.patient_id.allowNull)
+            .toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.patient_id.allowNull)
+            .toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.conversation_id.allowNull)
+            .toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.idempotency_key.unique)
+            .toBe(true);
+    });
+
 });
