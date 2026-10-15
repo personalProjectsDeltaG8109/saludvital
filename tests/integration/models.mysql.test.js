@@ -584,4 +584,36 @@ describe("MySQL model integration", () => {
         );
     });
 
+    test("emergency_contacts table contains its expected columns", async () => {
+        const columns = await getTableColumns("emergency_contacts");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "first_name",
+                "last_name",
+                "phone",
+                "email",
+                "relationship",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("password_reset_tokens table contains its expected columns", async () => {
+        const columns = await getTableColumns("password_reset_tokens");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "user_id",
+                "token_hash",
+                "expires_at",
+                "used_at",
+                "created_at",
+            ]),
+        );
+    });
 });
