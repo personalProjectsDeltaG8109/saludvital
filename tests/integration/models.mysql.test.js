@@ -150,6 +150,45 @@ describe("MySQL model integration", () => {
     });
 
 
+    test("notification_preferences table contains its expected columns", async () => {
+        const columns = await getTableColumns("notification_preferences");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "channel",
+                "event_type",
+                "is_enabled",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("notifications table contains its expected columns", async () => {
+        const columns = await getTableColumns("notifications");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "appointment_id",
+                "channel",
+                "recipient_address",
+                "event_type",
+                "status",
+                "scheduled_at",
+                "sent_at",
+                "attempt_count",
+                "provider_message_id",
+                "last_error",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
 
     test("registered associations use the expected foreign keys", () => {
         const {
@@ -158,8 +197,11 @@ describe("MySQL model integration", () => {
             Patient,
             Doctor,
             Specialities,
+            Appointment,
             DoctorAvailability,
             DoctorScheduleException,
+            NotificationPreference,
+            Notification,
         } = database.models;
 
         expect(Rol.associations.usuarios.foreignKey).toBe("role_id");
@@ -188,6 +230,36 @@ describe("MySQL model integration", () => {
         expect(
             DoctorScheduleException.rawAttributes.created_by.allowNull,
         ).toBe(true);
+
+
+        // Verify notification preference associations.
+        expect(Patient.associations.notificationPreferences.target)
+            .toBe(NotificationPreference);
+        expect(NotificationPreference.associations.patient.target)
+            .toBe(Patient);
+        expect(
+            NotificationPreference.associations.patient.foreignKey,
+        ).toBe("patient_id");
+
+        // Verify notification delivery associations.
+        expect(Patient.associations.notifications.target)
+            .toBe(Notification);
+        expect(Notification.associations.patient.target)
+            .toBe(Patient);
+        expect(Notification.associations.patient.foreignKey)
+            .toBe("patient_id");
+
+        expect(Appointment.associations.notifications.target)
+            .toBe(Notification);
+        expect(Notification.associations.appointment.target)
+            .toBe(Appointment);
+        expect(Notification.associations.appointment.foreignKey)
+            .toBe("appointment_id");
+
+        // Verify the optional appointment reference.
+        expect(Notification.rawAttributes.appointment_id.allowNull)
+            .toBe(true);
+
     });
 
 
@@ -217,6 +289,9 @@ describe("MySQL model integration", () => {
                     OR (kcu.TABLE_NAME = 'doctor_availability'AND kcu.COLUMN_NAME = 'doctor_id')
                     OR (kcu.TABLE_NAME = 'doctor_schedule_exceptions' AND kcu.COLUMN_NAME = 'doctor_id')
                     OR (kcu.TABLE_NAME = 'doctor_schedule_exceptions' AND kcu.COLUMN_NAME = 'created_by')
+                    OR (kcu.TABLE_NAME = 'notification_preferences'AND kcu.COLUMN_NAME = 'patient_id')
+                    OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'patient_id')
+                    OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'appointment_id')
                 )
         `);
 
@@ -280,6 +355,33 @@ describe("MySQL model integration", () => {
                     deleteRule: "SET NULL",
                     updateRule: "CASCADE",
                 }),
+
+
+                expect.objectContaining({
+                    tableName: "notification_preferences",
+                    columnName: "patient_id",
+                    referencedTableName: "patients",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "notifications",
+                    columnName: "patient_id",
+                    referencedTableName: "patients",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "notifications",
+                    columnName: "appointment_id",
+                    referencedTableName: "appointments",
+                    referencedColumnName: "id",
+                    deleteRule: "SET NULL",
+                    updateRule: "CASCADE",
+                }),
+
 
             ]),
         );

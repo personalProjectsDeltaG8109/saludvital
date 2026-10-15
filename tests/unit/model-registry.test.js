@@ -18,6 +18,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.AppointmentHistory).toBeDefined();
         expect(database.models.DoctorAvailability).toBeDefined();
         expect(database.models.DoctorScheduleException).toBeDefined();
+        expect(database.models.NotificationPreference).toBeDefined();
+        expect(database.models.Notification).toBeDefined();
     });
 
 
@@ -32,8 +34,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.AppointmentHistory.tableName).toBe("appointment_history");
         expect(database.models.DoctorAvailability.tableName).toBe("doctor_availability");
         expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
-        expect(database.models.DoctorAvailability.tableName).toBe("doctor_availability");
-        expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
+        expect(database.models.NotificationPreference.tableName).toBe("notification_preferences");
+        expect(database.models.Notification.tableName).toBe("notifications");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -149,6 +151,39 @@ describe("Sequelize model registry", () => {
         expect(User.associations.scheduleExceptionsCreated.options.onDelete)
             .toBe("SET NULL");
         expect(DoctorScheduleException.associations.creator.options.onDelete)
+            .toBe("SET NULL");
+    });
+
+
+    test("patient and notification preference associations are registered", () => {
+        const { Patient, NotificationPreference } = database.models;
+
+        expect(Patient.associations.notificationPreferences.target)
+            .toBe(NotificationPreference);
+        expect(NotificationPreference.associations.patient.target)
+            .toBe(Patient);
+    });
+
+    test("patient, appointment, and notification associations are registered", () => {
+        const { Patient, Appointment, Notification } = database.models;
+
+        expect(Patient.associations.notifications.target)
+            .toBe(Notification);
+        expect(Notification.associations.patient.target)
+            .toBe(Patient);
+
+        expect(Appointment.associations.notifications.target)
+            .toBe(Notification);
+        expect(Notification.associations.appointment.target)
+            .toBe(Appointment);
+
+        expect(Notification.rawAttributes.appointment_id.allowNull)
+            .toBe(true);
+
+        // Verify that notification history is preserved after appointment deletion.
+        expect(Appointment.associations.notifications.options.onDelete)
+            .toBe("SET NULL");
+        expect(Notification.associations.appointment.options.onDelete)
             .toBe("SET NULL");
     });
 

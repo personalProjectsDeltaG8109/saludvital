@@ -9,6 +9,8 @@ import Appointment from "./Appointment.js";
 import AppointmentHistory from "./AppointmentHistory.js";
 import DoctorAvailability from "./DoctorAvailability.js";
 import DoctorScheduleException from "./DoctorScheduleException.js";
+import NotificationPreference from "./NotificationPreference.js";
+import Notification from "./Notification.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -207,6 +209,51 @@ DoctorScheduleException.belongsTo(Usuario, {
 });
 
 
+// Associate each patient with their notification preferences.
+Patient.hasMany(NotificationPreference, {
+    foreignKey: "patient_id",
+    as: "notificationPreferences",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+NotificationPreference.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Associate each patient with their notification delivery history.
+Patient.hasMany(Notification, {
+    foreignKey: "patient_id",
+    as: "notifications",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Notification.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Preserve notification history when an appointment is deleted.
+Appointment.hasMany(Notification, {
+    foreignKey: "appointment_id",
+    as: "notifications",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+Notification.belongsTo(Appointment, {
+    foreignKey: "appointment_id",
+    as: "appointment",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
 // Export the models after registering their associations.
 export {
     Rol,
@@ -219,4 +266,6 @@ export {
     AppointmentHistory,
     DoctorAvailability,
     DoctorScheduleException,
+    NotificationPreference,
+    Notification,
 };
