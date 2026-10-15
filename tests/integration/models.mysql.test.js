@@ -189,6 +189,39 @@ describe("MySQL model integration", () => {
         );
     });
 
+    test("appointment_statuses table contains its expected columns", async () => {
+        const columns = await getTableColumns("appointment_statuses");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "name",
+                "description",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("appointments table contains its expected columns", async () => {
+        const columns = await getTableColumns("appointments");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "doctor_id",
+                "specialty_id",
+                "status_id",
+                "start_at",
+                "end_at",
+                "reason",
+                "source",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
 
     test("registered associations use the expected foreign keys", () => {
         const {
@@ -267,7 +300,42 @@ describe("MySQL model integration", () => {
 
     });
 
+    test("whatsapp_verifications table contains its expected columns", async () => {
+        const columns = await getTableColumns("whatsapp_verifications");
 
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "code_hash",
+                "expires_at",
+                "attempt_count",
+                "verified_at",
+                "invalidated_at",
+                "created_at",
+            ]),
+        );
+    });
+
+    test("whatsapp_appointment_requests table contains its expected columns", async () => {
+        const columns = await getTableColumns("whatsapp_appointment_requests");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "conversation_id",
+                "requested_specialty_id",
+                "requested_doctor_id",
+                "requested_start_at",
+                "appointment_id",
+                "status",
+                "created_at",
+                "updated_at",
+                "idempotency_key",
+            ]),
+        );
+    });
 
     test("foreign keys match the expected delete and update rules", async () => {
         // Read foreign key definitions from the active MySQL database.
@@ -464,6 +532,26 @@ describe("MySQL model integration", () => {
         );
     });
 
+
+    test("appointment_history table contains its expected columns", async () => {
+        // Read the columns created by the database migration.
+        const columns = await getTableColumns("appointment_history");
+
+        // Verify that every required column exists.
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "appointment_id",
+                "actor_user_id",
+                "actor_snapshot",
+                "event_type",
+                "previous_values",
+                "new_values",
+                "reason",
+                "occurred_at",
+            ]),
+        );
+    });
 
     test("audit_logs table contains its expected columns", async () => {
         const columns = await getTableColumns("audit_logs");
