@@ -6,6 +6,7 @@ import database from "../../config/database.js";
 await import("../../src/models/associations.js");
 
 describe("Sequelize model registry", () => {
+
     test("all foundational and appointment models are registered", () => {
         expect(database.models.Rol).toBeDefined();
         expect(database.models.User).toBeDefined();
@@ -15,7 +16,10 @@ describe("Sequelize model registry", () => {
         expect(database.models.AppointmentStatus).toBeDefined();
         expect(database.models.Appointment).toBeDefined();
         expect(database.models.AppointmentHistory).toBeDefined();
+        expect(database.models.DoctorAvailability).toBeDefined();
+        expect(database.models.DoctorScheduleException).toBeDefined();
     });
+
 
     test("models map to the existing database tables", () => {
         expect(database.models.Rol.tableName).toBe("roles");
@@ -23,11 +27,13 @@ describe("Sequelize model registry", () => {
         expect(database.models.Patient.tableName).toBe("patients");
         expect(database.models.Doctor.tableName).toBe("doctors");
         expect(database.models.Specialities.tableName).toBe("specialties");
-        expect(database.models.AppointmentStatus.tableName)
-            .toBe("appointment_statuses");
+        expect(database.models.AppointmentStatus.tableName).toBe("appointment_statuses");
         expect(database.models.Appointment.tableName).toBe("appointments");
-        expect(database.models.AppointmentHistory.tableName)
-            .toBe("appointment_history");
+        expect(database.models.AppointmentHistory.tableName).toBe("appointment_history");
+        expect(database.models.DoctorAvailability.tableName).toBe("doctor_availability");
+        expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
+        expect(database.models.DoctorAvailability.tableName).toBe("doctor_availability");
+        expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -49,6 +55,7 @@ describe("Sequelize model registry", () => {
 
         expect(User.associations.doctor.target).toBe(Doctor);
         expect(Doctor.associations.user.target).toBe(User);
+
     });
 
     test("doctor and specialty associations reference the correct models", () => {
@@ -108,4 +115,41 @@ describe("Sequelize model registry", () => {
         expect(AppointmentHistory.rawAttributes.actor_user_id.allowNull)
             .toBe(true);
     });
+
+
+    test("doctor availability and schedule exception associations are registered", () => {
+        const {
+            User,
+            Doctor,
+            DoctorAvailability,
+            DoctorScheduleException,
+        } = database.models;
+
+        // Verify the regular availability associations.
+        expect(Doctor.associations.availability.target)
+            .toBe(DoctorAvailability);
+        expect(DoctorAvailability.associations.doctor.target)
+            .toBe(Doctor);
+
+        // Verify the schedule exception associations.
+        expect(Doctor.associations.scheduleExceptions.target)
+            .toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.doctor.target)
+            .toBe(Doctor);
+
+        // Verify the optional user reference for schedule exceptions.
+        expect(User.associations.scheduleExceptionsCreated.target)
+            .toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.creator.target)
+            .toBe(User);
+        expect(DoctorScheduleException.rawAttributes.created_by.allowNull)
+            .toBe(true);
+
+        // Verify the database deletion policy for the optional creator.
+        expect(User.associations.scheduleExceptionsCreated.options.onDelete)
+            .toBe("SET NULL");
+        expect(DoctorScheduleException.associations.creator.options.onDelete)
+            .toBe("SET NULL");
+    });
+
 });

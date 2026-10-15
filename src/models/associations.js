@@ -7,6 +7,8 @@ import Specialities from "./Specialities.js";
 import AppointmentStatus from "./AppointmentStatus.js";
 import Appointment from "./Appointment.js";
 import AppointmentHistory from "./AppointmentHistory.js";
+import DoctorAvailability from "./DoctorAvailability.js";
+import DoctorScheduleException from "./DoctorScheduleException.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -158,6 +160,53 @@ AppointmentHistory.belongsTo(Usuario, {
     onDelete: "SET NULL",
 });
 
+
+// Associate each doctor with their regular availability blocks.
+Doctor.hasMany(DoctorAvailability, {
+    foreignKey: "doctor_id",
+    as: "availability",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+DoctorAvailability.belongsTo(Doctor, {
+    foreignKey: "doctor_id",
+    as: "doctor",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Associate each doctor with their schedule exceptions.
+Doctor.hasMany(DoctorScheduleException, {
+    foreignKey: "doctor_id",
+    as: "scheduleExceptions",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+DoctorScheduleException.belongsTo(Doctor, {
+    foreignKey: "doctor_id",
+    as: "doctor",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Associate schedule exceptions with the user who created them.
+Usuario.hasMany(DoctorScheduleException, {
+    foreignKey: "created_by",
+    as: "scheduleExceptionsCreated",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+DoctorScheduleException.belongsTo(Usuario, {
+    foreignKey: "created_by",
+    as: "creator",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+
 // Export the models after registering their associations.
 export {
     Rol,
@@ -168,4 +217,6 @@ export {
     AppointmentStatus,
     Appointment,
     AppointmentHistory,
+    DoctorAvailability,
+    DoctorScheduleException,
 };

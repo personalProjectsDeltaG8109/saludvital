@@ -111,9 +111,56 @@ describe("MySQL model integration", () => {
         );
     });
 
+
+    test("doctor_availability table contains its expected columns", async () => {
+        const columns = await getTableColumns("doctor_availability");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "doctor_id",
+                "day_of_week",
+                "start_time",
+                "end_time",
+                "valid_from",
+                "valid_until",
+                "is_active",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("doctor_schedule_exceptions table contains its expected columns", async () => {
+        const columns = await getTableColumns("doctor_schedule_exceptions");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "doctor_id",
+                "start_at",
+                "end_at",
+                "exception_type",
+                "reason",
+                "created_by",
+                "actor_snapshot",
+                "created_at",
+            ]),
+        );
+    });
+
+
+
     test("registered associations use the expected foreign keys", () => {
-        const { Rol, User, Patient, Doctor, Specialities } =
-            database.models;
+        const {
+            Rol,
+            User,
+            Patient,
+            Doctor,
+            Specialities,
+            DoctorAvailability,
+            DoctorScheduleException,
+        } = database.models;
 
         expect(Rol.associations.usuarios.foreignKey).toBe("role_id");
         expect(User.associations.patient.foreignKey).toBe("user_id");
@@ -121,7 +168,28 @@ describe("MySQL model integration", () => {
         expect(Doctor.associations.specialty.foreignKey).toBe("specialty_id");
         expect(Patient.associations.user.target).toBe(User);
         expect(Specialities.associations.doctors.target).toBe(Doctor);
+
+        // Verify the doctor availability associations.
+        expect(Doctor.associations.availability.target)
+            .toBe(DoctorAvailability);
+        expect(DoctorAvailability.associations.doctor.target).toBe(Doctor);
+
+        // Verify the doctor schedule exception associations.
+        expect(Doctor.associations.scheduleExceptions.target)
+            .toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.doctor.target)
+            .toBe(Doctor);
+
+        // Verify the optional user reference for schedule exceptions.
+        expect(User.associations.scheduleExceptionsCreated.target)
+            .toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.creator.target)
+            .toBe(User);
+        expect(
+            DoctorScheduleException.rawAttributes.created_by.allowNull,
+        ).toBe(true);
     });
+
 
 
     test("foreign keys match the expected delete and update rules", async () => {
@@ -146,6 +214,9 @@ describe("MySQL model integration", () => {
                     OR (kcu.TABLE_NAME = 'patients' AND kcu.COLUMN_NAME = 'user_id')
                     OR (kcu.TABLE_NAME = 'doctors' AND kcu.COLUMN_NAME = 'user_id')
                     OR (kcu.TABLE_NAME = 'doctors' AND kcu.COLUMN_NAME = 'specialty_id')
+                    OR (kcu.TABLE_NAME = 'doctor_availability'AND kcu.COLUMN_NAME = 'doctor_id')
+                    OR (kcu.TABLE_NAME = 'doctor_schedule_exceptions' AND kcu.COLUMN_NAME = 'doctor_id')
+                    OR (kcu.TABLE_NAME = 'doctor_schedule_exceptions' AND kcu.COLUMN_NAME = 'created_by')
                 )
         `);
 
@@ -184,6 +255,32 @@ describe("MySQL model integration", () => {
                     deleteRule: "RESTRICT",
                     updateRule: "CASCADE",
                 }),
+
+                expect.objectContaining({
+                    tableName: "doctor_availability",
+                    columnName: "doctor_id",
+                    referencedTableName: "doctors",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "doctor_schedule_exceptions",
+                    columnName: "doctor_id",
+                    referencedTableName: "doctors",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "doctor_schedule_exceptions",
+                    columnName: "created_by",
+                    referencedTableName: "users",
+                    referencedColumnName: "id",
+                    deleteRule: "SET NULL",
+                    updateRule: "CASCADE",
+                }),
+
             ]),
         );
     });
