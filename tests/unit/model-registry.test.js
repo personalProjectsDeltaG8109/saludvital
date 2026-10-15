@@ -25,6 +25,10 @@ describe("Sequelize model registry", () => {
         expect(database.models.WhatsAppMessage).toBeDefined();
         expect(database.models.WhatsAppVerification).toBeDefined();
         expect(database.models.WhatsAppAppointmentRequest).toBeDefined();
+        expect(database.models.Consultation).toBeDefined();
+        expect(database.models.Diagnosis).toBeDefined();
+        expect(database.models.Prescription).toBeDefined();
+        expect(database.models.PrescriptionItem).toBeDefined();
     });
 
 
@@ -46,6 +50,10 @@ describe("Sequelize model registry", () => {
         expect(database.models.WhatsAppMessage.tableName).toBe("whatsapp_messages");
         expect(database.models.WhatsAppVerification.tableName).toBe("whatsapp_verifications");
         expect(database.models.WhatsAppAppointmentRequest.tableName).toBe("whatsapp_appointment_requests");
+        expect(database.models.Consultation.tableName).toBe("consultations");
+        expect(database.models.Diagnosis.tableName).toBe("diagnoses");
+        expect(database.models.Prescription.tableName).toBe("prescriptions");
+        expect(database.models.PrescriptionItem.tableName).toBe("prescription_items");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -302,6 +310,39 @@ describe("Sequelize model registry", () => {
             .toBe(false);
         expect(WhatsAppAppointmentRequest.rawAttributes.idempotency_key.unique)
             .toBe(true);
+    });
+
+
+    test("clinical consultation, diagnosis, and prescription associations are registered", () => {
+        const {
+            Appointment,
+            Doctor,
+            Consultation,
+            Diagnosis,
+            Prescription,
+            PrescriptionItem,
+        } = database.models;
+
+        // Verify the one-to-one appointment and consultation relationship.
+        expect(Appointment.associations.consultation.target).toBe(Consultation);
+        expect(Consultation.associations.appointment.target).toBe(Appointment);
+        expect(Consultation.rawAttributes.appointment_id.unique).toBe(true);
+
+        // Verify the doctor and consultation relationship.
+        expect(Doctor.associations.consultations.target).toBe(Consultation);
+        expect(Consultation.associations.doctor.target).toBe(Doctor);
+
+        // Verify consultation diagnoses.
+        expect(Consultation.associations.diagnoses.target).toBe(Diagnosis);
+        expect(Diagnosis.associations.consultation.target).toBe(Consultation);
+
+        // Verify consultation prescriptions.
+        expect(Consultation.associations.prescriptions.target).toBe(Prescription);
+        expect(Prescription.associations.consultation.target).toBe(Consultation);
+
+        // Verify prescription items.
+        expect(Prescription.associations.items.target).toBe(PrescriptionItem);
+        expect(PrescriptionItem.associations.prescription.target).toBe(Prescription);
     });
 
 });

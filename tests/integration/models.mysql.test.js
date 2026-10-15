@@ -298,6 +298,11 @@ describe("MySQL model integration", () => {
                     OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'patient_id')
                     OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'appointment_id')
                     OR (kcu.TABLE_NAME = 'audit_logs' AND kcu.COLUMN_NAME = 'actor_user_id')
+                    OR (kcu.TABLE_NAME = 'consultations' AND kcu.COLUMN_NAME = 'appointment_id')
+                    OR (kcu.TABLE_NAME = 'consultations' AND kcu.COLUMN_NAME = 'doctor_id')
+                    OR (kcu.TABLE_NAME = 'diagnoses' AND kcu.COLUMN_NAME = 'consultation_id')
+                    OR (kcu.TABLE_NAME = 'prescriptions' AND kcu.COLUMN_NAME = 'consultation_id')
+                    OR (kcu.TABLE_NAME = 'prescription_items' AND kcu.COLUMN_NAME = 'prescription_id')
                 )
         `);
 
@@ -397,6 +402,48 @@ describe("MySQL model integration", () => {
                     updateRule: "CASCADE",
                 }),
 
+                expect.objectContaining({
+                    tableName: "consultations",
+                    columnName: "appointment_id",
+                    referencedTableName: "appointments",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "consultations",
+                    columnName: "doctor_id",
+                    referencedTableName: "doctors",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "diagnoses",
+                    columnName: "consultation_id",
+                    referencedTableName: "consultations",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "prescriptions",
+                    columnName: "consultation_id",
+                    referencedTableName: "consultations",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "prescription_items",
+                    columnName: "prescription_id",
+                    referencedTableName: "prescriptions",
+                    referencedColumnName: "id",
+                    deleteRule: "RESTRICT",
+                    updateRule: "CASCADE",
+                }),
+
+
             ]),
         );
     });
@@ -461,6 +508,78 @@ describe("MySQL model integration", () => {
                 "created_at",
                 "provider_name",
                 "provider_account_id",
+            ]),
+        );
+    });
+
+
+    test("consultations table contains its expected columns", async () => {
+        const columns = await getTableColumns("consultations");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "appointment_id",
+                "doctor_id",
+                "started_at",
+                "ended_at",
+                "duration_seconds",
+                "symptoms",
+                "patient_feeling",
+                "vital_signs",
+                "clinical_notes",
+                "created_at",
+                "updated_at",
+                "status",
+                "interruption_reason",
+            ]),
+        );
+    });
+
+    test("diagnoses table contains its expected columns", async () => {
+        const columns = await getTableColumns("diagnoses");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "consultation_id",
+                "diagnosis",
+                "notes",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("prescriptions table contains its expected columns", async () => {
+        const columns = await getTableColumns("prescriptions");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "consultation_id",
+                "issued_at",
+                "notes",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("prescription_items table contains its expected columns", async () => {
+        const columns = await getTableColumns("prescription_items");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "prescription_id",
+                "medication_name",
+                "dosage",
+                "frequency",
+                "duration",
+                "instructions",
+                "created_at",
+                "updated_at",
             ]),
         );
     });

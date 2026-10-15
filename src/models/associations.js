@@ -16,6 +16,10 @@ import WhatsAppConversation from "./WhatsAppConversation.js";
 import WhatsAppMessage from "./WhatsAppMessage.js";
 import WhatsAppVerification from "./WhatsAppVerification.js";
 import WhatsAppAppointmentRequest from "./WhatsAppAppointmentRequest.js";
+import Consultation from "./Consultation.js";
+import Diagnosis from "./Diagnosis.js";
+import Prescription from "./Prescription.js";
+import PrescriptionItem from "./PrescriptionItem.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -389,6 +393,81 @@ WhatsAppAppointmentRequest.belongsTo(Appointment, {
     as: "appointment",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
+});
+
+
+/* Clinical consultation associations. */
+Appointment.hasOne(Consultation, {
+    foreignKey: "appointment_id",
+    as: "consultation",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Consultation.belongsTo(Appointment, {
+    foreignKey: "appointment_id",
+    as: "appointment",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Doctor.hasMany(Consultation, {
+    foreignKey: "doctor_id",
+    as: "consultations",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Consultation.belongsTo(Doctor, {
+    foreignKey: "doctor_id",
+    as: "doctor",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+/* Diagnosis associations. */
+Consultation.hasMany(Diagnosis, {
+    foreignKey: "consultation_id",
+    as: "diagnoses",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Diagnosis.belongsTo(Consultation, {
+    foreignKey: "consultation_id",
+    as: "consultation",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+/* Prescription associations. */
+Consultation.hasMany(Prescription, {
+    foreignKey: "consultation_id",
+    as: "prescriptions",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+Prescription.belongsTo(Consultation, {
+    foreignKey: "consultation_id",
+    as: "consultation",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+/* Prescription item associations. */
+Prescription.hasMany(PrescriptionItem, {
+    foreignKey: "prescription_id",
+    as: "items",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+PrescriptionItem.belongsTo(Prescription, {
+    foreignKey: "prescription_id",
+    as: "prescription",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
 });
 
 // Export the models after registering their associations.
