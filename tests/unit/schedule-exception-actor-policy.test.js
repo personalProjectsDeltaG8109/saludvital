@@ -1,6 +1,8 @@
-
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { up, down } from "../../database/migrations/20261015020858-fix-schedule-exception-actor-delete-policy.js";
+import {
+    up,
+    down,
+} from "../../database/migrations/20261015020858-fix-schedule-exception-actor-delete-policy.js";
 
 // Verify that the migration changes the actor foreign key safely.
 describe("Schedule exception actor deletion policy migration", () => {
@@ -39,8 +41,9 @@ describe("Schedule exception actor deletion policy migration", () => {
         );
 
         // Ensure the old constraint is removed before the new one is created.
-        expect(queryInterface.removeConstraint.mock.invocationCallOrder[0])
-            .toBeLessThan(queryInterface.addConstraint.mock.invocationCallOrder[0]);
+        expect(queryInterface.removeConstraint.mock.invocationCallOrder[0]).toBeLessThan(
+            queryInterface.addConstraint.mock.invocationCallOrder[0],
+        );
     });
 
     test("down restores the original RESTRICT deletion policy", async () => {

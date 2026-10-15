@@ -1,16 +1,6 @@
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
-import {
-    jest,
-    describe,
-    test,
-    expect,
-    beforeEach,
-} from "@jest/globals";
-
-import {
-    up,
-    down,
-} from "../../database/migrations/20261015025110-create-audit-logs-table.js";
+import { up, down } from "../../database/migrations/20261015025110-create-audit-logs-table.js";
 
 // Verify that the audit migration preserves traceability and account references.
 describe("Audit logs migration", () => {
@@ -112,21 +102,13 @@ describe("Audit logs migration", () => {
 
         // These indexes support common audit history queries.
         expect(queryInterface.addIndex.mock.calls).toEqual([
-            [
-                "audit_logs",
-                ["actor_user_id"],
-                { name: "audit_logs_actor_user_id_index" },
-            ],
+            ["audit_logs", ["actor_user_id"], { name: "audit_logs_actor_user_id_index" }],
             [
                 "audit_logs",
                 ["target_type", "target_id"],
                 { name: "audit_logs_target_type_target_id_index" },
             ],
-            [
-                "audit_logs",
-                ["occurred_at"],
-                { name: "audit_logs_occurred_at_index" },
-            ],
+            ["audit_logs", ["occurred_at"], { name: "audit_logs_occurred_at_index" }],
         ]);
     });
 

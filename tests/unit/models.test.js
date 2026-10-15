@@ -1,10 +1,4 @@
-
-import {
-    jest,
-    describe,
-    test,
-    expect,
-} from "@jest/globals";
+import { jest, describe, test, expect } from "@jest/globals";
 
 // Mock model definitions to prevent real database operations.
 jest.unstable_mockModule("../../config/database.js", () => ({
@@ -50,9 +44,7 @@ const { default: Rol } = await import("../../src/models/Rol.js");
 const { default: User } = await import("../../src/models/User.js");
 const { default: Patient } = await import("../../src/models/Patient.js");
 const { default: Doctor } = await import("../../src/models/Doctor.js");
-const { default: Specialities } = await import(
-    "../../src/models/Specialities.js"
-);
+const { default: Specialities } = await import("../../src/models/Specialities.js");
 
 // Register the model associations.
 await import("../../src/models/associations.js");

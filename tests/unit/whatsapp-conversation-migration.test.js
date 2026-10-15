@@ -1,11 +1,4 @@
-
-import {
-    jest,
-    describe,
-    test,
-    expect,
-    beforeEach,
-} from "@jest/globals";
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
 import {
     up,
@@ -90,11 +83,7 @@ describe("WhatsApp conversation migration", () => {
         expect(queryInterface.addConstraint).toHaveBeenCalledWith(
             "whatsapp_conversations",
             expect.objectContaining({
-                fields: [
-                    "provider_name",
-                    "provider_account_id",
-                    "provider_conversation_id",
-                ],
+                fields: ["provider_name", "provider_account_id", "provider_conversation_id"],
                 type: "unique",
                 name: "whatsapp_conversations_provider_scope_unique",
             }),
@@ -172,11 +161,7 @@ describe("WhatsApp conversation migration", () => {
         expect(queryInterface.addConstraint).toHaveBeenCalledWith(
             "whatsapp_messages",
             expect.objectContaining({
-                fields: [
-                    "provider_name",
-                    "provider_account_id",
-                    "provider_message_id",
-                ],
+                fields: ["provider_name", "provider_account_id", "provider_message_id"],
                 type: "unique",
                 name: "whatsapp_messages_provider_scope_unique",
             }),

@@ -1,11 +1,4 @@
-
-import {
-    jest,
-    describe,
-    test,
-    expect,
-    beforeEach,
-} from "@jest/globals";
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
 import {
     up,
@@ -153,13 +146,7 @@ describe("Auxiliary security and patient migration", () => {
         // Keep request states explicit and prevent duplicate processing keys.
         expect(columns.status.type).toEqual({
             type: "ENUM",
-            values: [
-                "Pending",
-                "Confirmed",
-                "Rejected",
-                "Cancelled",
-                "Expired",
-            ],
+            values: ["Pending", "Confirmed", "Rejected", "Cancelled", "Expired"],
         });
         expect(columns.status.defaultValue).toBe("Pending");
         expect(columns.idempotency_key.allowNull).toBe(false);
@@ -215,11 +202,9 @@ describe("Auxiliary security and patient migration", () => {
     test("emergency contacts create a patient lookup index", async () => {
         await up(queryInterface, Sequelize);
 
-        expect(queryInterface.addIndex).toHaveBeenCalledWith(
-            "emergency_contacts",
-            ["patient_id"],
-            { name: "emergency_contacts_patient_id_idx" },
-        );
+        expect(queryInterface.addIndex).toHaveBeenCalledWith("emergency_contacts", ["patient_id"], {
+            name: "emergency_contacts_patient_id_idx",
+        });
     });
 
     test("password reset tokens reference users and store token lifecycle fields", async () => {
@@ -247,11 +232,9 @@ describe("Auxiliary security and patient migration", () => {
     test("password reset tokens create user and expiration indexes", async () => {
         await up(queryInterface, Sequelize);
 
-        expect(queryInterface.addIndex).toHaveBeenCalledWith(
-            "password_reset_tokens",
-            ["user_id"],
-            { name: "password_reset_tokens_user_id_idx" },
-        );
+        expect(queryInterface.addIndex).toHaveBeenCalledWith("password_reset_tokens", ["user_id"], {
+            name: "password_reset_tokens_user_id_idx",
+        });
 
         expect(queryInterface.addIndex).toHaveBeenCalledWith(
             "password_reset_tokens",

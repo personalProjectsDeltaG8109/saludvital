@@ -44,18 +44,13 @@ describe("Patient and doctor database migration", () => {
     test("creates patients and doctors in dependency order", async () => {
         await up(queryInterface, Sequelize);
 
-        expect(createdTables.map(({ tableName }) => tableName)).toEqual([
-            "patients",
-            "doctors",
-        ]);
+        expect(createdTables.map(({ tableName }) => tableName)).toEqual(["patients", "doctors"]);
     });
 
     test("allows patients without a web account", async () => {
         await up(queryInterface, Sequelize);
 
-        const patients = createdTables.find(
-            ({ tableName }) => tableName === "patients",
-        );
+        const patients = createdTables.find(({ tableName }) => tableName === "patients");
 
         expect(patients.columns.user_id).toMatchObject({
             allowNull: true,
@@ -69,9 +64,7 @@ describe("Patient and doctor database migration", () => {
     test("requires patient identity fields and restricts document types", async () => {
         await up(queryInterface, Sequelize);
 
-        const patients = createdTables.find(
-            ({ tableName }) => tableName === "patients",
-        );
+        const patients = createdTables.find(({ tableName }) => tableName === "patients");
 
         expect(patients.columns.first_name.allowNull).toBe(false);
         expect(patients.columns.last_name.allowNull).toBe(false);
@@ -96,9 +89,7 @@ describe("Patient and doctor database migration", () => {
     test("requires each doctor to reference a unique user and an existing specialty", async () => {
         await up(queryInterface, Sequelize);
 
-        const doctors = createdTables.find(
-            ({ tableName }) => tableName === "doctors",
-        );
+        const doctors = createdTables.find(({ tableName }) => tableName === "doctors");
 
         expect(doctors.columns.user_id).toMatchObject({
             allowNull: false,
@@ -120,4 +111,3 @@ describe("Patient and doctor database migration", () => {
         expect(droppedTables).toEqual(["doctors", "patients"]);
     });
 });
-

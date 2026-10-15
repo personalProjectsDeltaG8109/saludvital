@@ -1,4 +1,3 @@
-
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 import {
     up,
@@ -28,8 +27,7 @@ describe("Doctor availability and schedule exceptions migration", () => {
             BOOLEAN: "BOOLEAN",
             STRING: jest.fn((length) => `VARCHAR(${length})`),
             ENUM: jest.fn((...values) => ({ enumValues: values })),
-            literal: jest.fn((sql) => ({ sql }),
-            ),
+            literal: jest.fn((sql) => ({ sql })),
         };
 
         // Capture migration operations instead of modifying a real database.
@@ -143,9 +141,6 @@ describe("Doctor availability and schedule exceptions migration", () => {
     test("drops exceptions before availability during rollback", async () => {
         await down(queryInterface);
 
-        expect(droppedTables).toEqual([
-            "doctor_schedule_exceptions",
-            "doctor_availability",
-        ]);
+        expect(droppedTables).toEqual(["doctor_schedule_exceptions", "doctor_availability"]);
     });
 });

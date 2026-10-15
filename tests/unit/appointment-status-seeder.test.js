@@ -1,9 +1,5 @@
-
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import {
-    up,
-    down,
-} from "../../database/seeders/20261015022211-initial-appointment-statuses.js";
+import { up, down } from "../../database/seeders/20261015022211-initial-appointment-statuses.js";
 
 // Verify the initial appointment statuses are inserted safely and without duplicates.
 describe("Initial appointment statuses seeder", () => {
@@ -28,8 +24,7 @@ describe("Initial appointment statuses seeder", () => {
         // Confirm that exactly the four expected statuses are inserted.
         expect(queryInterface.bulkInsert).toHaveBeenCalledTimes(1);
 
-        const [tableName, insertedStatuses] =
-            queryInterface.bulkInsert.mock.calls[0];
+        const [tableName, insertedStatuses] = queryInterface.bulkInsert.mock.calls[0];
 
         expect(tableName).toBe("appointment_statuses");
         expect(insertedStatuses.map((status) => status.name)).toEqual([
@@ -55,13 +50,9 @@ describe("Initial appointment statuses seeder", () => {
         await up(queryInterface);
 
         // Only In Progress and Cancelled should be added.
-        const [, insertedStatuses] =
-            queryInterface.bulkInsert.mock.calls[0];
+        const [, insertedStatuses] = queryInterface.bulkInsert.mock.calls[0];
 
-        expect(insertedStatuses.map((status) => status.name)).toEqual([
-            "In Progress",
-            "Cancelled",
-        ]);
+        expect(insertedStatuses.map((status) => status.name)).toEqual(["In Progress", "Cancelled"]);
     });
 
     test("does not insert records when all statuses already exist", async () => {

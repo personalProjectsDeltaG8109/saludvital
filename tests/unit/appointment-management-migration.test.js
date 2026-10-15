@@ -1,6 +1,8 @@
-
 import { jest, describe, test, expect, beforeEach } from "@jest/globals";
-import { up, down } from "../../database/migrations/20261015021350-create-appointment-management-tables.js";
+import {
+    up,
+    down,
+} from "../../database/migrations/20261015021350-create-appointment-management-tables.js";
 
 // Verify the appointment migration creates and removes tables in the correct order.
 describe("Appointment management migration", () => {

@@ -1,11 +1,4 @@
-
-import {
-    jest,
-    describe,
-    test,
-    expect,
-    beforeEach,
-} from "@jest/globals";
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
 
 import {
     up,
@@ -146,16 +139,8 @@ describe("Notification management migration", () => {
 
         // Indexes support common notification history and scheduling queries.
         expect(queryInterface.addIndex.mock.calls).toEqual([
-            [
-                "notifications",
-                ["patient_id"],
-                { name: "notifications_patient_id_index" },
-            ],
-            [
-                "notifications",
-                ["appointment_id"],
-                { name: "notifications_appointment_id_index" },
-            ],
+            ["notifications", ["patient_id"], { name: "notifications_patient_id_index" }],
+            ["notifications", ["appointment_id"], { name: "notifications_appointment_id_index" }],
             [
                 "notifications",
                 ["status", "scheduled_at"],

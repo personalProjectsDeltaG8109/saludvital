@@ -1,4 +1,3 @@
-
 import { describe, test, expect } from "@jest/globals";
 import database from "../../config/database.js";
 
@@ -6,7 +5,6 @@ import database from "../../config/database.js";
 await import("../../src/models/associations.js");
 
 describe("Sequelize model registry", () => {
-
     test("all foundational and appointment models are registered", () => {
         expect(database.models.Rol).toBeDefined();
         expect(database.models.User).toBeDefined();
@@ -33,7 +31,6 @@ describe("Sequelize model registry", () => {
         expect(database.models.PasswordResetToken).toBeDefined();
     });
 
-
     test("models map to the existing database tables", () => {
         expect(database.models.Rol.tableName).toBe("roles");
         expect(database.models.User.tableName).toBe("users");
@@ -44,14 +41,18 @@ describe("Sequelize model registry", () => {
         expect(database.models.Appointment.tableName).toBe("appointments");
         expect(database.models.AppointmentHistory.tableName).toBe("appointment_history");
         expect(database.models.DoctorAvailability.tableName).toBe("doctor_availability");
-        expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
+        expect(database.models.DoctorScheduleException.tableName).toBe(
+            "doctor_schedule_exceptions",
+        );
         expect(database.models.NotificationPreference.tableName).toBe("notification_preferences");
         expect(database.models.Notification.tableName).toBe("notifications");
         expect(database.models.AuditLog.tableName).toBe("audit_logs");
         expect(database.models.WhatsAppConversation.tableName).toBe("whatsapp_conversations");
         expect(database.models.WhatsAppMessage.tableName).toBe("whatsapp_messages");
         expect(database.models.WhatsAppVerification.tableName).toBe("whatsapp_verifications");
-        expect(database.models.WhatsAppAppointmentRequest.tableName).toBe("whatsapp_appointment_requests");
+        expect(database.models.WhatsAppAppointmentRequest.tableName).toBe(
+            "whatsapp_appointment_requests",
+        );
         expect(database.models.Consultation.tableName).toBe("consultations");
         expect(database.models.Diagnosis.tableName).toBe("diagnoses");
         expect(database.models.Prescription.tableName).toBe("prescriptions");
@@ -79,7 +80,6 @@ describe("Sequelize model registry", () => {
 
         expect(User.associations.doctor.target).toBe(Doctor);
         expect(Doctor.associations.user.target).toBe(User);
-
     });
 
     test("doctor and specialty associations reference the correct models", () => {
@@ -92,10 +92,8 @@ describe("Sequelize model registry", () => {
     test("appointment status and appointment associations are registered", () => {
         const { AppointmentStatus, Appointment } = database.models;
 
-        expect(AppointmentStatus.associations.appointments.target)
-            .toBe(Appointment);
-        expect(Appointment.associations.status.target)
-            .toBe(AppointmentStatus);
+        expect(AppointmentStatus.associations.appointments.target).toBe(Appointment);
+        expect(Appointment.associations.status.target).toBe(AppointmentStatus);
     });
 
     test("patient and appointment associations are registered", () => {
@@ -115,100 +113,68 @@ describe("Sequelize model registry", () => {
     test("specialty and appointment associations are registered", () => {
         const { Specialities, Appointment } = database.models;
 
-        expect(Specialities.associations.appointments.target)
-            .toBe(Appointment);
-        expect(Appointment.associations.specialty.target)
-            .toBe(Specialities);
+        expect(Specialities.associations.appointments.target).toBe(Appointment);
+        expect(Appointment.associations.specialty.target).toBe(Specialities);
     });
 
     test("appointment and history associations are registered", () => {
         const { Appointment, AppointmentHistory } = database.models;
 
-        expect(Appointment.associations.history.target)
-            .toBe(AppointmentHistory);
-        expect(AppointmentHistory.associations.appointment.target)
-            .toBe(Appointment);
+        expect(Appointment.associations.history.target).toBe(AppointmentHistory);
+        expect(AppointmentHistory.associations.appointment.target).toBe(Appointment);
     });
 
     test("appointment history actor association uses the optional user reference", () => {
         const { User, AppointmentHistory } = database.models;
 
-        expect(User.associations.appointmentHistoryActions.target)
-            .toBe(AppointmentHistory);
+        expect(User.associations.appointmentHistoryActions.target).toBe(AppointmentHistory);
         expect(AppointmentHistory.associations.actor.target).toBe(User);
-        expect(AppointmentHistory.rawAttributes.actor_user_id.allowNull)
-            .toBe(true);
+        expect(AppointmentHistory.rawAttributes.actor_user_id.allowNull).toBe(true);
     });
-
 
     test("doctor availability and schedule exception associations are registered", () => {
-        const {
-            User,
-            Doctor,
-            DoctorAvailability,
-            DoctorScheduleException,
-        } = database.models;
+        const { User, Doctor, DoctorAvailability, DoctorScheduleException } = database.models;
 
         // Verify the regular availability associations.
-        expect(Doctor.associations.availability.target)
-            .toBe(DoctorAvailability);
-        expect(DoctorAvailability.associations.doctor.target)
-            .toBe(Doctor);
+        expect(Doctor.associations.availability.target).toBe(DoctorAvailability);
+        expect(DoctorAvailability.associations.doctor.target).toBe(Doctor);
 
         // Verify the schedule exception associations.
-        expect(Doctor.associations.scheduleExceptions.target)
-            .toBe(DoctorScheduleException);
-        expect(DoctorScheduleException.associations.doctor.target)
-            .toBe(Doctor);
+        expect(Doctor.associations.scheduleExceptions.target).toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.doctor.target).toBe(Doctor);
 
         // Verify the optional user reference for schedule exceptions.
-        expect(User.associations.scheduleExceptionsCreated.target)
-            .toBe(DoctorScheduleException);
-        expect(DoctorScheduleException.associations.creator.target)
-            .toBe(User);
-        expect(DoctorScheduleException.rawAttributes.created_by.allowNull)
-            .toBe(true);
+        expect(User.associations.scheduleExceptionsCreated.target).toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.creator.target).toBe(User);
+        expect(DoctorScheduleException.rawAttributes.created_by.allowNull).toBe(true);
 
         // Verify the database deletion policy for the optional creator.
-        expect(User.associations.scheduleExceptionsCreated.options.onDelete)
-            .toBe("SET NULL");
-        expect(DoctorScheduleException.associations.creator.options.onDelete)
-            .toBe("SET NULL");
+        expect(User.associations.scheduleExceptionsCreated.options.onDelete).toBe("SET NULL");
+        expect(DoctorScheduleException.associations.creator.options.onDelete).toBe("SET NULL");
     });
-
 
     test("patient and notification preference associations are registered", () => {
         const { Patient, NotificationPreference } = database.models;
 
-        expect(Patient.associations.notificationPreferences.target)
-            .toBe(NotificationPreference);
-        expect(NotificationPreference.associations.patient.target)
-            .toBe(Patient);
+        expect(Patient.associations.notificationPreferences.target).toBe(NotificationPreference);
+        expect(NotificationPreference.associations.patient.target).toBe(Patient);
     });
 
     test("patient, appointment, and notification associations are registered", () => {
         const { Patient, Appointment, Notification } = database.models;
 
-        expect(Patient.associations.notifications.target)
-            .toBe(Notification);
-        expect(Notification.associations.patient.target)
-            .toBe(Patient);
+        expect(Patient.associations.notifications.target).toBe(Notification);
+        expect(Notification.associations.patient.target).toBe(Patient);
 
-        expect(Appointment.associations.notifications.target)
-            .toBe(Notification);
-        expect(Notification.associations.appointment.target)
-            .toBe(Appointment);
+        expect(Appointment.associations.notifications.target).toBe(Notification);
+        expect(Notification.associations.appointment.target).toBe(Appointment);
 
-        expect(Notification.rawAttributes.appointment_id.allowNull)
-            .toBe(true);
+        expect(Notification.rawAttributes.appointment_id.allowNull).toBe(true);
 
         // Verify that notification history is preserved after appointment deletion.
-        expect(Appointment.associations.notifications.options.onDelete)
-            .toBe("SET NULL");
-        expect(Notification.associations.appointment.options.onDelete)
-            .toBe("SET NULL");
+        expect(Appointment.associations.notifications.options.onDelete).toBe("SET NULL");
+        expect(Notification.associations.appointment.options.onDelete).toBe("SET NULL");
     });
-
 
     test("audit log associations preserve records when a user is deleted", () => {
         const { User, AuditLog } = database.models;
@@ -229,46 +195,32 @@ describe("Sequelize model registry", () => {
     });
 
     test("WhatsApp conversation and message associations are registered", () => {
-        const {
-            Patient,
-            WhatsAppConversation,
-            WhatsAppMessage,
-        } = database.models;
+        const { Patient, WhatsAppConversation, WhatsAppMessage } = database.models;
 
         // Verify the optional patient reference.
-        expect(Patient.associations.whatsappConversations.target)
-            .toBe(WhatsAppConversation);
+        expect(Patient.associations.whatsappConversations.target).toBe(WhatsAppConversation);
 
-        expect(WhatsAppConversation.associations.patient.target)
-            .toBe(Patient);
+        expect(WhatsAppConversation.associations.patient.target).toBe(Patient);
 
-        expect(WhatsAppConversation.rawAttributes.patient_id.allowNull)
-            .toBe(true);
+        expect(WhatsAppConversation.rawAttributes.patient_id.allowNull).toBe(true);
 
         // Verify the conversation and message relationship.
-        expect(WhatsAppConversation.associations.messages.target)
-            .toBe(WhatsAppMessage);
+        expect(WhatsAppConversation.associations.messages.target).toBe(WhatsAppMessage);
 
-        expect(WhatsAppMessage.associations.conversation.target)
-            .toBe(WhatsAppConversation);
+        expect(WhatsAppMessage.associations.conversation.target).toBe(WhatsAppConversation);
 
-        expect(WhatsAppMessage.rawAttributes.conversation_id.allowNull)
-            .toBe(false);
+        expect(WhatsAppMessage.rawAttributes.conversation_id.allowNull).toBe(false);
 
         // Preserve conversations and prevent deletion when messages exist.
-        expect(WhatsAppConversation.associations.patient.options.onDelete)
-            .toBe("SET NULL");
+        expect(WhatsAppConversation.associations.patient.options.onDelete).toBe("SET NULL");
 
-        expect(WhatsAppMessage.associations.conversation.options.onDelete)
-            .toBe("RESTRICT");
+        expect(WhatsAppMessage.associations.conversation.options.onDelete).toBe("RESTRICT");
 
         // Messages use created_at without automatic updated_at handling.
         expect(WhatsAppMessage.options.timestamps).toBe(false);
 
         expect(WhatsAppMessage.options.timestamps).toBe(false);
-
     });
-
 
     test("WhatsApp verification and appointment request associations are registered", () => {
         const {
@@ -282,50 +234,38 @@ describe("Sequelize model registry", () => {
         } = database.models;
 
         // Verify patient identity verification associations.
-        expect(Patient.associations.whatsappVerifications.target)
-            .toBe(WhatsAppVerification);
-        expect(WhatsAppVerification.associations.patient.target)
-            .toBe(Patient);
+        expect(Patient.associations.whatsappVerifications.target).toBe(WhatsAppVerification);
+        expect(WhatsAppVerification.associations.patient.target).toBe(Patient);
 
         // Verify patient and conversation request associations.
-        expect(Patient.associations.whatsappAppointmentRequests.target)
-            .toBe(WhatsAppAppointmentRequest);
-        expect(WhatsAppAppointmentRequest.associations.patient.target)
-            .toBe(Patient);
-        expect(WhatsAppConversation.associations.appointmentRequests.target)
-            .toBe(WhatsAppAppointmentRequest);
-        expect(WhatsAppAppointmentRequest.associations.conversation.target)
-            .toBe(WhatsAppConversation);
+        expect(Patient.associations.whatsappAppointmentRequests.target).toBe(
+            WhatsAppAppointmentRequest,
+        );
+        expect(WhatsAppAppointmentRequest.associations.patient.target).toBe(Patient);
+        expect(WhatsAppConversation.associations.appointmentRequests.target).toBe(
+            WhatsAppAppointmentRequest,
+        );
+        expect(WhatsAppAppointmentRequest.associations.conversation.target).toBe(
+            WhatsAppConversation,
+        );
 
         // Verify optional specialty, doctor, and appointment references.
-        expect(WhatsAppAppointmentRequest.associations.requestedSpecialty.target)
-            .toBe(Specialities);
-        expect(WhatsAppAppointmentRequest.associations.requestedDoctor.target)
-            .toBe(Doctor);
-        expect(WhatsAppAppointmentRequest.associations.appointment.target)
-            .toBe(Appointment);
+        expect(WhatsAppAppointmentRequest.associations.requestedSpecialty.target).toBe(
+            Specialities,
+        );
+        expect(WhatsAppAppointmentRequest.associations.requestedDoctor.target).toBe(Doctor);
+        expect(WhatsAppAppointmentRequest.associations.appointment.target).toBe(Appointment);
 
         // Verify required fields and the idempotency constraint.
-        expect(WhatsAppVerification.rawAttributes.patient_id.allowNull)
-            .toBe(false);
-        expect(WhatsAppAppointmentRequest.rawAttributes.patient_id.allowNull)
-            .toBe(false);
-        expect(WhatsAppAppointmentRequest.rawAttributes.conversation_id.allowNull)
-            .toBe(false);
-        expect(WhatsAppAppointmentRequest.rawAttributes.idempotency_key.unique)
-            .toBe(true);
+        expect(WhatsAppVerification.rawAttributes.patient_id.allowNull).toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.patient_id.allowNull).toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.conversation_id.allowNull).toBe(false);
+        expect(WhatsAppAppointmentRequest.rawAttributes.idempotency_key.unique).toBe(true);
     });
 
-
     test("clinical consultation, diagnosis, and prescription associations are registered", () => {
-        const {
-            Appointment,
-            Doctor,
-            Consultation,
-            Diagnosis,
-            Prescription,
-            PrescriptionItem,
-        } = database.models;
+        const { Appointment, Doctor, Consultation, Diagnosis, Prescription, PrescriptionItem } =
+            database.models;
 
         // Verify the one-to-one appointment and consultation relationship.
         expect(Appointment.associations.consultation.target).toBe(Consultation);
@@ -349,33 +289,20 @@ describe("Sequelize model registry", () => {
         expect(PrescriptionItem.associations.prescription.target).toBe(Prescription);
     });
 
-
     test("emergency contacts and password reset token associations are registered", () => {
-        const {
-            Patient,
-            User,
-            EmergencyContact,
-            PasswordResetToken,
-        } = database.models;
+        const { Patient, User, EmergencyContact, PasswordResetToken } = database.models;
 
         // Verify emergency contact associations and required patient reference.
-        expect(Patient.associations.emergencyContacts.target)
-            .toBe(EmergencyContact);
-        expect(EmergencyContact.associations.patient.target)
-            .toBe(Patient);
-        expect(EmergencyContact.rawAttributes.patient_id.allowNull)
-            .toBe(false);
+        expect(Patient.associations.emergencyContacts.target).toBe(EmergencyContact);
+        expect(EmergencyContact.associations.patient.target).toBe(Patient);
+        expect(EmergencyContact.rawAttributes.patient_id.allowNull).toBe(false);
 
         // Verify password reset token associations and required user reference.
-        expect(User.associations.passwordResetTokens.target)
-            .toBe(PasswordResetToken);
-        expect(PasswordResetToken.associations.user.target)
-            .toBe(User);
-        expect(PasswordResetToken.rawAttributes.user_id.allowNull)
-            .toBe(false);
+        expect(User.associations.passwordResetTokens.target).toBe(PasswordResetToken);
+        expect(PasswordResetToken.associations.user.target).toBe(User);
+        expect(PasswordResetToken.rawAttributes.user_id.allowNull).toBe(false);
 
         // Confirm that automatic timestamp handling matches the existing table.
         expect(PasswordResetToken.options.timestamps).toBe(false);
     });
-
 });

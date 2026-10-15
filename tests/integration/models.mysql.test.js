@@ -1,11 +1,4 @@
-
-import {
-    beforeAll,
-    afterAll,
-    describe,
-    test,
-    expect,
-} from "@jest/globals";
+import { beforeAll, afterAll, describe, test, expect } from "@jest/globals";
 
 import database from "../../config/database.js";
 
@@ -25,9 +18,7 @@ describe("MySQL model integration", () => {
 
     // Read the existing table definition without creating or altering tables.
     async function getTableColumns(tableName) {
-        const columns = await database
-            .getQueryInterface()
-            .describeTable(tableName);
+        const columns = await database.getQueryInterface().describeTable(tableName);
 
         return Object.keys(columns);
     }
@@ -36,13 +27,7 @@ describe("MySQL model integration", () => {
         const columns = await getTableColumns("roles");
 
         expect(columns).toEqual(
-            expect.arrayContaining([
-                "id",
-                "name",
-                "description",
-                "created_at",
-                "updated_at",
-            ]),
+            expect.arrayContaining(["id", "name", "description", "created_at", "updated_at"]),
         );
     });
 
@@ -111,7 +96,6 @@ describe("MySQL model integration", () => {
         );
     });
 
-
     test("doctor_availability table contains its expected columns", async () => {
         const columns = await getTableColumns("doctor_availability");
 
@@ -148,7 +132,6 @@ describe("MySQL model integration", () => {
             ]),
         );
     });
-
 
     test("notification_preferences table contains its expected columns", async () => {
         const columns = await getTableColumns("notification_preferences");
@@ -193,13 +176,7 @@ describe("MySQL model integration", () => {
         const columns = await getTableColumns("appointment_statuses");
 
         expect(columns).toEqual(
-            expect.arrayContaining([
-                "id",
-                "name",
-                "description",
-                "created_at",
-                "updated_at",
-            ]),
+            expect.arrayContaining(["id", "name", "description", "created_at", "updated_at"]),
         );
     });
 
@@ -250,54 +227,34 @@ describe("MySQL model integration", () => {
         expect(AuditLog.rawAttributes.actor_user_id.allowNull).toBe(true);
 
         // Verify the doctor availability associations.
-        expect(Doctor.associations.availability.target)
-            .toBe(DoctorAvailability);
+        expect(Doctor.associations.availability.target).toBe(DoctorAvailability);
         expect(DoctorAvailability.associations.doctor.target).toBe(Doctor);
 
         // Verify the doctor schedule exception associations.
-        expect(Doctor.associations.scheduleExceptions.target)
-            .toBe(DoctorScheduleException);
-        expect(DoctorScheduleException.associations.doctor.target)
-            .toBe(Doctor);
+        expect(Doctor.associations.scheduleExceptions.target).toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.doctor.target).toBe(Doctor);
 
         // Verify the optional user reference for schedule exceptions.
-        expect(User.associations.scheduleExceptionsCreated.target)
-            .toBe(DoctorScheduleException);
-        expect(DoctorScheduleException.associations.creator.target)
-            .toBe(User);
-        expect(
-            DoctorScheduleException.rawAttributes.created_by.allowNull,
-        ).toBe(true);
-
+        expect(User.associations.scheduleExceptionsCreated.target).toBe(DoctorScheduleException);
+        expect(DoctorScheduleException.associations.creator.target).toBe(User);
+        expect(DoctorScheduleException.rawAttributes.created_by.allowNull).toBe(true);
 
         // Verify notification preference associations.
-        expect(Patient.associations.notificationPreferences.target)
-            .toBe(NotificationPreference);
-        expect(NotificationPreference.associations.patient.target)
-            .toBe(Patient);
-        expect(
-            NotificationPreference.associations.patient.foreignKey,
-        ).toBe("patient_id");
+        expect(Patient.associations.notificationPreferences.target).toBe(NotificationPreference);
+        expect(NotificationPreference.associations.patient.target).toBe(Patient);
+        expect(NotificationPreference.associations.patient.foreignKey).toBe("patient_id");
 
         // Verify notification delivery associations.
-        expect(Patient.associations.notifications.target)
-            .toBe(Notification);
-        expect(Notification.associations.patient.target)
-            .toBe(Patient);
-        expect(Notification.associations.patient.foreignKey)
-            .toBe("patient_id");
+        expect(Patient.associations.notifications.target).toBe(Notification);
+        expect(Notification.associations.patient.target).toBe(Patient);
+        expect(Notification.associations.patient.foreignKey).toBe("patient_id");
 
-        expect(Appointment.associations.notifications.target)
-            .toBe(Notification);
-        expect(Notification.associations.appointment.target)
-            .toBe(Appointment);
-        expect(Notification.associations.appointment.foreignKey)
-            .toBe("appointment_id");
+        expect(Appointment.associations.notifications.target).toBe(Notification);
+        expect(Notification.associations.appointment.target).toBe(Appointment);
+        expect(Notification.associations.appointment.foreignKey).toBe("appointment_id");
 
         // Verify the optional appointment reference.
-        expect(Notification.rawAttributes.appointment_id.allowNull)
-            .toBe(true);
-
+        expect(Notification.rawAttributes.appointment_id.allowNull).toBe(true);
     });
 
     test("whatsapp_verifications table contains its expected columns", async () => {
@@ -436,7 +393,6 @@ describe("MySQL model integration", () => {
                     updateRule: "CASCADE",
                 }),
 
-
                 expect.objectContaining({
                     tableName: "notification_preferences",
                     columnName: "patient_id",
@@ -532,7 +488,6 @@ describe("MySQL model integration", () => {
         );
     });
 
-
     test("appointment_history table contains its expected columns", async () => {
         // Read the columns created by the database migration.
         const columns = await getTableColumns("appointment_history");
@@ -615,7 +570,6 @@ describe("MySQL model integration", () => {
             ]),
         );
     });
-
 
     test("consultations table contains its expected columns", async () => {
         const columns = await getTableColumns("consultations");
