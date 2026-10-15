@@ -303,7 +303,8 @@ describe("MySQL model integration", () => {
                     OR (kcu.TABLE_NAME = 'diagnoses' AND kcu.COLUMN_NAME = 'consultation_id')
                     OR (kcu.TABLE_NAME = 'prescriptions' AND kcu.COLUMN_NAME = 'consultation_id')
                     OR (kcu.TABLE_NAME = 'prescription_items' AND kcu.COLUMN_NAME = 'prescription_id')
-                )
+                    OR (kcu.TABLE_NAME = 'emergency_contacts' AND kcu.COLUMN_NAME = 'patient_id')
+                    OR (kcu.TABLE_NAME = 'password_reset_tokens' AND kcu.COLUMN_NAME = 'user_id'))
         `);
 
         // Verify the referenced tables and columns.
@@ -443,7 +444,22 @@ describe("MySQL model integration", () => {
                     updateRule: "CASCADE",
                 }),
 
-
+                expect.objectContaining({
+                    tableName: "emergency_contacts",
+                    columnName: "patient_id",
+                    referencedTableName: "patients",
+                    referencedColumnName: "id",
+                    deleteRule: "CASCADE",
+                    updateRule: "CASCADE",
+                }),
+                expect.objectContaining({
+                    tableName: "password_reset_tokens",
+                    columnName: "user_id",
+                    referencedTableName: "users",
+                    referencedColumnName: "id",
+                    deleteRule: "CASCADE",
+                    updateRule: "CASCADE",
+                }),
             ]),
         );
     });
