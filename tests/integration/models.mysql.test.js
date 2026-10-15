@@ -422,4 +422,47 @@ describe("MySQL model integration", () => {
         );
     });
 
+    test("whatsapp_conversations table contains its expected columns", async () => {
+        const columns = await getTableColumns("whatsapp_conversations");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "patient_id",
+                "provider_name",
+                "provider_account_id",
+                "provider_conversation_id",
+                "status",
+                "started_at",
+                "last_activity_at",
+                "ended_at",
+                "created_at",
+                "updated_at",
+            ]),
+        );
+    });
+
+    test("whatsapp_messages table contains its expected columns", async () => {
+        const columns = await getTableColumns("whatsapp_messages");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "conversation_id",
+                "provider_message_id",
+                "direction",
+                "message_type",
+                "content",
+                "processing_status",
+                "delivery_status",
+                "received_at",
+                "processed_at",
+                "content_expires_at",
+                "created_at",
+                "provider_name",
+                "provider_account_id",
+            ]),
+        );
+    });
+
 });

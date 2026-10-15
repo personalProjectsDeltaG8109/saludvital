@@ -21,6 +21,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.NotificationPreference).toBeDefined();
         expect(database.models.Notification).toBeDefined();
         expect(database.models.AuditLog).toBeDefined();
+        expect(database.models.WhatsAppConversation).toBeDefined();
+        expect(database.models.WhatsAppMessage).toBeDefined();
     });
 
 
@@ -38,6 +40,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.NotificationPreference.tableName).toBe("notification_preferences");
         expect(database.models.Notification.tableName).toBe("notifications");
         expect(database.models.AuditLog.tableName).toBe("audit_logs");
+        expect(database.models.WhatsAppConversation.tableName).toBe("whatsapp_conversations");
+        expect(database.models.WhatsAppMessage.tableName).toBe("whatsapp_messages");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -208,4 +212,41 @@ describe("Sequelize model registry", () => {
         expect(AuditLog.options.timestamps).toBe(false);
     });
 
+    test("WhatsApp conversation and message associations are registered", () => {
+        const {
+            Patient,
+            WhatsAppConversation,
+            WhatsAppMessage,
+        } = database.models;
+
+        // Verify the optional patient reference.
+        expect(Patient.associations.whatsappConversations.target)
+            .toBe(WhatsAppConversation);
+
+        expect(WhatsAppConversation.associations.patient.target)
+            .toBe(Patient);
+
+        expect(WhatsAppConversation.rawAttributes.patient_id.allowNull)
+            .toBe(true);
+
+        // Verify the conversation and message relationship.
+        expect(WhatsAppConversation.associations.messages.target)
+            .toBe(WhatsAppMessage);
+
+        expect(WhatsAppMessage.associations.conversation.target)
+            .toBe(WhatsAppConversation);
+
+        expect(WhatsAppMessage.rawAttributes.conversation_id.allowNull)
+            .toBe(false);
+
+        // Preserve conversations and prevent deletion when messages exist.
+        expect(WhatsAppConversation.associations.patient.options.onDelete)
+            .toBe("SET NULL");
+
+        expect(WhatsAppMessage.associations.conversation.options.onDelete)
+            .toBe("RESTRICT");
+
+        // Messages use created_at without automatic updated_at handling.
+        expect(WhatsAppMessage.options.timestamps).toBe(false);
+    });
 });

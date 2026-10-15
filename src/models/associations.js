@@ -12,6 +12,8 @@ import DoctorScheduleException from "./DoctorScheduleException.js";
 import NotificationPreference from "./NotificationPreference.js";
 import Notification from "./Notification.js";
 import AuditLog from "./AuditLog.js";
+import WhatsAppConversation from "./WhatsAppConversation.js";
+import WhatsAppMessage from "./WhatsAppMessage.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -268,6 +270,36 @@ AuditLog.belongsTo(Usuario, {
     as: "actor",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
+});
+
+// Associate conversations with patients while preserving conversations.
+Patient.hasMany(WhatsAppConversation, {
+    foreignKey: "patient_id",
+    as: "whatsappConversations",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+WhatsAppConversation.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+// Associate each conversation with its messages.
+WhatsAppConversation.hasMany(WhatsAppMessage, {
+    foreignKey: "conversation_id",
+    as: "messages",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppMessage.belongsTo(WhatsAppConversation, {
+    foreignKey: "conversation_id",
+    as: "conversation",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
 });
 
 // Export the models after registering their associations.
