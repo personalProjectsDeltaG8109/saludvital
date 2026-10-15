@@ -20,6 +20,7 @@ describe("Sequelize model registry", () => {
         expect(database.models.DoctorScheduleException).toBeDefined();
         expect(database.models.NotificationPreference).toBeDefined();
         expect(database.models.Notification).toBeDefined();
+        expect(database.models.AuditLog).toBeDefined();
     });
 
 
@@ -36,6 +37,7 @@ describe("Sequelize model registry", () => {
         expect(database.models.DoctorScheduleException.tableName).toBe("doctor_schedule_exceptions");
         expect(database.models.NotificationPreference.tableName).toBe("notification_preferences");
         expect(database.models.Notification.tableName).toBe("notifications");
+        expect(database.models.AuditLog.tableName).toBe("audit_logs");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -185,6 +187,25 @@ describe("Sequelize model registry", () => {
             .toBe("SET NULL");
         expect(Notification.associations.appointment.options.onDelete)
             .toBe("SET NULL");
+    });
+
+
+    test("audit log associations preserve records when a user is deleted", () => {
+        const { User, AuditLog } = database.models;
+
+        // Verify both directions of the audit actor association.
+        expect(User.associations.auditLogs.target).toBe(AuditLog);
+        expect(AuditLog.associations.actor.target).toBe(User);
+
+        // Verify the actor reference is optional.
+        expect(AuditLog.rawAttributes.actor_user_id.allowNull).toBe(true);
+
+        // Match the existing foreign key deletion policy.
+        expect(User.associations.auditLogs.options.onDelete).toBe("SET NULL");
+        expect(AuditLog.associations.actor.options.onDelete).toBe("SET NULL");
+
+        // Audit logs do not use automatic Sequelize timestamps.
+        expect(AuditLog.options.timestamps).toBe(false);
     });
 
 });

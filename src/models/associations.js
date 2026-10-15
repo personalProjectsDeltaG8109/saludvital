@@ -11,6 +11,7 @@ import DoctorAvailability from "./DoctorAvailability.js";
 import DoctorScheduleException from "./DoctorScheduleException.js";
 import NotificationPreference from "./NotificationPreference.js";
 import Notification from "./Notification.js";
+import AuditLog from "./AuditLog.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(Usuario, {
@@ -250,6 +251,21 @@ Appointment.hasMany(Notification, {
 Notification.belongsTo(Appointment, {
     foreignKey: "appointment_id",
     as: "appointment",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+// Associate audit records with the user who performed each action.
+Usuario.hasMany(AuditLog, {
+    foreignKey: "actor_user_id",
+    as: "auditLogs",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
+AuditLog.belongsTo(Usuario, {
+    foreignKey: "actor_user_id",
+    as: "actor",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
 });

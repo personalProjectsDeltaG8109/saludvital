@@ -202,6 +202,7 @@ describe("MySQL model integration", () => {
             DoctorScheduleException,
             NotificationPreference,
             Notification,
+            AuditLog,
         } = database.models;
 
         expect(Rol.associations.usuarios.foreignKey).toBe("role_id");
@@ -210,6 +211,10 @@ describe("MySQL model integration", () => {
         expect(Doctor.associations.specialty.foreignKey).toBe("specialty_id");
         expect(Patient.associations.user.target).toBe(User);
         expect(Specialities.associations.doctors.target).toBe(Doctor);
+        expect(User.associations.auditLogs.target).toBe(AuditLog);
+        expect(AuditLog.associations.actor.target).toBe(User);
+        expect(AuditLog.associations.actor.foreignKey).toBe("actor_user_id");
+        expect(AuditLog.rawAttributes.actor_user_id.allowNull).toBe(true);
 
         // Verify the doctor availability associations.
         expect(Doctor.associations.availability.target)
@@ -292,6 +297,7 @@ describe("MySQL model integration", () => {
                     OR (kcu.TABLE_NAME = 'notification_preferences'AND kcu.COLUMN_NAME = 'patient_id')
                     OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'patient_id')
                     OR (kcu.TABLE_NAME = 'notifications' AND kcu.COLUMN_NAME = 'appointment_id')
+                    OR (kcu.TABLE_NAME = 'audit_logs' AND kcu.COLUMN_NAME = 'actor_user_id')
                 )
         `);
 
@@ -382,7 +388,36 @@ describe("MySQL model integration", () => {
                     updateRule: "CASCADE",
                 }),
 
+                expect.objectContaining({
+                    tableName: "audit_logs",
+                    columnName: "actor_user_id",
+                    referencedTableName: "users",
+                    referencedColumnName: "id",
+                    deleteRule: "SET NULL",
+                    updateRule: "CASCADE",
+                }),
 
+            ]),
+        );
+    });
+
+
+    test("audit_logs table contains its expected columns", async () => {
+        const columns = await getTableColumns("audit_logs");
+
+        expect(columns).toEqual(
+            expect.arrayContaining([
+                "id",
+                "actor_user_id",
+                "actor_snapshot",
+                "action",
+                "target_type",
+                "target_id",
+                "target_description",
+                "changes",
+                "reason",
+                "result",
+                "occurred_at",
             ]),
         );
     });
