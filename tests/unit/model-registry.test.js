@@ -29,6 +29,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.Diagnosis).toBeDefined();
         expect(database.models.Prescription).toBeDefined();
         expect(database.models.PrescriptionItem).toBeDefined();
+        expect(database.models.EmergencyContact).toBeDefined();
+        expect(database.models.PasswordResetToken).toBeDefined();
     });
 
 
@@ -54,6 +56,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.Diagnosis.tableName).toBe("diagnoses");
         expect(database.models.Prescription.tableName).toBe("prescriptions");
         expect(database.models.PrescriptionItem.tableName).toBe("prescription_items");
+        expect(database.models.EmergencyContact.tableName).toBe("emergency_contacts");
+        expect(database.models.PasswordResetToken.tableName).toBe("password_reset_tokens");
     });
 
     test("role and user associations reference the correct models", () => {
@@ -343,6 +347,35 @@ describe("Sequelize model registry", () => {
         // Verify prescription items.
         expect(Prescription.associations.items.target).toBe(PrescriptionItem);
         expect(PrescriptionItem.associations.prescription.target).toBe(Prescription);
+    });
+
+
+    test("emergency contacts and password reset token associations are registered", () => {
+        const {
+            Patient,
+            User,
+            EmergencyContact,
+            PasswordResetToken,
+        } = database.models;
+
+        // Verify emergency contact associations and required patient reference.
+        expect(Patient.associations.emergencyContacts.target)
+            .toBe(EmergencyContact);
+        expect(EmergencyContact.associations.patient.target)
+            .toBe(Patient);
+        expect(EmergencyContact.rawAttributes.patient_id.allowNull)
+            .toBe(false);
+
+        // Verify password reset token associations and required user reference.
+        expect(User.associations.passwordResetTokens.target)
+            .toBe(PasswordResetToken);
+        expect(PasswordResetToken.associations.user.target)
+            .toBe(User);
+        expect(PasswordResetToken.rawAttributes.user_id.allowNull)
+            .toBe(false);
+
+        // Confirm that automatic timestamp handling matches the existing table.
+        expect(PasswordResetToken.options.timestamps).toBe(false);
     });
 
 });

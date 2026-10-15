@@ -1,6 +1,6 @@
 
 import Rol from "./Rol.js";
-import Usuario from "./User.js";
+import User from "./User.js";
 import Patient from "./Patient.js";
 import Doctor from "./Doctor.js";
 import Specialities from "./Specialities.js";
@@ -20,16 +20,18 @@ import Consultation from "./Consultation.js";
 import Diagnosis from "./Diagnosis.js";
 import Prescription from "./Prescription.js";
 import PrescriptionItem from "./PrescriptionItem.js";
+import EmergencyContact from "./EmergencyContact.js";
+import PasswordResetToken from "./PasswordResetToken.js";
 
 // Associate each role with its user accounts.
-Rol.hasMany(Usuario, {
+Rol.hasMany(User, {
     foreignKey: "role_id",
     as: "usuarios",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
 
-Usuario.belongsTo(Rol, {
+User.belongsTo(Rol, {
     foreignKey: "role_id",
     as: "rol",
     onUpdate: "CASCADE",
@@ -37,14 +39,14 @@ Usuario.belongsTo(Rol, {
 });
 
 // Associate user accounts with their patient profiles.
-Usuario.hasOne(Patient, {
+User.hasOne(Patient, {
     foreignKey: "user_id",
     as: "patient",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
 
-Patient.belongsTo(Usuario, {
+Patient.belongsTo(User, {
     foreignKey: "user_id",
     as: "user",
     onUpdate: "CASCADE",
@@ -52,14 +54,14 @@ Patient.belongsTo(Usuario, {
 });
 
 // Associate user accounts with their doctor profiles.
-Usuario.hasOne(Doctor, {
+User.hasOne(Doctor, {
     foreignKey: "user_id",
     as: "doctor",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
 
-Doctor.belongsTo(Usuario, {
+Doctor.belongsTo(User, {
     foreignKey: "user_id",
     as: "user",
     onUpdate: "CASCADE",
@@ -157,14 +159,14 @@ AppointmentHistory.belongsTo(Appointment, {
 });
 
 // Preserve history when the actor account is deleted.
-Usuario.hasMany(AppointmentHistory, {
+User.hasMany(AppointmentHistory, {
     foreignKey: "actor_user_id",
     as: "appointmentHistoryActions",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
 });
 
-AppointmentHistory.belongsTo(Usuario, {
+AppointmentHistory.belongsTo(User, {
     foreignKey: "actor_user_id",
     as: "actor",
     onUpdate: "CASCADE",
@@ -203,14 +205,14 @@ DoctorScheduleException.belongsTo(Doctor, {
 });
 
 // Associate schedule exceptions with the user who created them.
-Usuario.hasMany(DoctorScheduleException, {
+User.hasMany(DoctorScheduleException, {
     foreignKey: "created_by",
     as: "scheduleExceptionsCreated",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
 });
 
-DoctorScheduleException.belongsTo(Usuario, {
+DoctorScheduleException.belongsTo(User, {
     foreignKey: "created_by",
     as: "creator",
     onUpdate: "CASCADE",
@@ -264,14 +266,14 @@ Notification.belongsTo(Appointment, {
 });
 
 // Associate audit records with the user who performed each action.
-Usuario.hasMany(AuditLog, {
+User.hasMany(AuditLog, {
     foreignKey: "actor_user_id",
     as: "auditLogs",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
 });
 
-AuditLog.belongsTo(Usuario, {
+AuditLog.belongsTo(User, {
     foreignKey: "actor_user_id",
     as: "actor",
     onUpdate: "CASCADE",
@@ -470,10 +472,41 @@ PrescriptionItem.belongsTo(Prescription, {
     onDelete: "RESTRICT",
 });
 
+
+/* Patient emergency contact associations. */
+Patient.hasMany(EmergencyContact, {
+    foreignKey: "patient_id",
+    as: "emergencyContacts",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+EmergencyContact.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+/* User password reset token associations. */
+User.hasMany(PasswordResetToken, {
+    foreignKey: "user_id",
+    as: "passwordResetTokens",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+PasswordResetToken.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
 // Export the models after registering their associations.
 export {
     Rol,
-    Usuario,
+    User,
     Patient,
     Doctor,
     Specialities,
