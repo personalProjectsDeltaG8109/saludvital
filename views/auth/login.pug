@@ -1,0 +1,57 @@
+
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color" content="#123B73")
+        title= pageTitle
+        link(rel="stylesheet" href="/css/app.css")
+
+    
+    body(class="login-page min-h-screen bg-background text-primary antialiased")
+        //- Full-screen responsive login layout.
+        main(class="min-h-screen w-full")
+            //- Desktop layout with two columns.
+            div(class="min-h-screen w-full overflow-hidden bg-transparent lg:grid lg:grid-cols-2 lg:bg-white")
+                //- Desktop branding panel.
+                include ./partials/login-desktop
+
+                //- Login section.
+                section(
+                    class="flex min-w-0 flex-col justify-center bg-gradient-to-br from-[#EAF4FF] via-white to-[#DDFBF5] p-6 sm:p-10 lg:from-[#F3F8FF] lg:via-white lg:to-[#E6FAF7] xl:p-14"
+                    aria-labelledby="login-title"
+                )
+                    //- Mobile branding.
+                    include ./partials/login-mobile
+
+                    //- Shared login form.
+                    include ./partials/login-form
+
+
+        //- Floating WhatsApp contact widget.
+        div.whatsapp-widget
+            //- Animated message displayed beside the WhatsApp button.
+            div.whatsapp-message(aria-live="polite")
+                p.whatsapp-message-title ¡Gestiona tus citas aquí!
+                p Pide tus citas médicas y consulta tus próximas citas.
+                p.whatsapp-message-help ¿Necesitas ayuda? Escríbenos por WhatsApp.
+
+            //- WhatsApp contact button.
+            a.whatsapp-float(
+                href="https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital."
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Contactar a SaludVital por WhatsApp"
+                title="Escríbenos por WhatsApp"
+            )
+                img(
+                    src="/brand/whatsapp-svgrepo-com.svg"
+                    alt=""
+                    aria-hidden="true"
+                    width="32"
+                    height="32"
+                )
+
+
+        
