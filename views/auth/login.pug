@@ -19,7 +19,7 @@ html(lang="es")
 
                 //- Login section.
                 section(
-                    class="flex min-w-0 flex-col justify-center bg-gradient-to-br from-[#EAF4FF] via-white to-[#DDFBF5] p-6 sm:p-10 lg:from-[#F3F8FF] lg:via-white lg:to-[#E6FAF7] xl:p-14"
+                    class="flex min-w-0 flex-col justify-center  via-white to-[#DDFBF5] p-6 sm:p-10 lg:from-[#F3F8FF] lg:via-white lg:to-[#E6FAF7] xl:p-14"
                     aria-labelledby="login-title"
                 )
                     //- Mobile branding.
@@ -29,8 +29,8 @@ html(lang="es")
                     include ./partials/login-form
 
 
-        //- Floating WhatsApp contact widget.
-        div.whatsapp-widget
+        //- Floating WhatsApp contact widget inside a named landmark.
+        aside.whatsapp-widget(aria-label="Contacto por WhatsApp")
             //- Animated message displayed beside the WhatsApp button.
             div.whatsapp-message(aria-live="polite")
                 p.whatsapp-message-title ¡Gestiona tus citas aquí!
