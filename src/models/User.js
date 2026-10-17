@@ -36,6 +36,28 @@ const User = database.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
+
+        // Record when the account email was successfully verified.
+        email_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+        },
+
+        // Store only the hash of the email verification token.
+        email_verification_token_hash: {
+            type: DataTypes.STRING(64),
+            allowNull: true,
+            defaultValue: null,
+        },
+
+        // Expire verification tokens after the configured validity period.
+        email_verification_expires_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+        },
+
     },
     {
         // Preserve the existing table name and timestamp columns.
