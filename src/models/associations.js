@@ -517,6 +517,7 @@ PasswordResetToken.belongsTo(User, {
 export {
     Rol,
     User,
+    EmailOutbox,
     Patient,
     Doctor,
     Specialities,
