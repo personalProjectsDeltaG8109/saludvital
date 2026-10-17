@@ -1,9 +1,36 @@
 import jwt from "jsonwebtoken";
 import environment from "../../../../config/environment.js";
-import { authenticateUser, AuthenticationError } from "../services/authService.js";
+import {
+    authenticateUser,
+    AuthenticationError,
+    EmailVerificationRequiredError,
+} from "../services/authService.js";
 
 import { randomUUID } from "node:crypto";
 import { startSession, endSession } from "../services/sessionActivity.js";
+
+import { verifyEmail } from "../services/emailVerificationService.js";
+
+// Verify a patient's email address using the supplied token.
+export async function verifyEmailAddress(req, res, next) {
+    try {
+        const token = typeof req.query.token === "string" ? req.query.token : "";
+
+        const result = await verifyEmail(token);
+
+        if (!result.verified) {
+            return res.status(400).render("auth/email-verification-result", {
+                verified: false,
+            });
+        }
+
+        return res.status(200).render("auth/email-verification-result", {
+            verified: true,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
 
 // Convert the configured JWT lifetime into cookie milliseconds.
 function getJwtLifetimeMs() {
@@ -58,7 +85,7 @@ const dashboardRoutes = {
 export function showLogin(req, res) {
     // Avoid displaying the login form when a valid session already exists.
     res.status(200).render("auth/login", {
-        pageTitle: "Sign in | SaludVital",
+        pageTitle: "Inicio de sesión | SaludVital",
         error: null,
     });
 }
@@ -76,7 +103,7 @@ export async function login(req, res, next) {
 
         if (!dashboard) {
             return res.status(403).render("auth/login", {
-                pageTitle: "Sign in | SaludVital",
+                pageTitle: "Inicio de sesión | SaludVital",
                 error: "Your account does not have an authorized dashboard.",
             });
         }
@@ -107,6 +134,14 @@ export async function login(req, res, next) {
         // Redirect the user to the dashboard assigned to their role.
         return res.redirect(303, dashboard);
     } catch (error) {
+        // Show a clear message when the email has not been verified.
+        if (error instanceof EmailVerificationRequiredError) {
+            return res.status(403).render("auth/login", {
+                pageTitle: "Inicio de sesión | SaludVital",
+                error: "Debes confirmar tu correo electrónico antes de iniciar sesión.",
+            });
+        }
+
         // Display a generic message for invalid credentials.
         if (error instanceof AuthenticationError) {
             return res.status(401).render("auth/login", {
