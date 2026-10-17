@@ -94,7 +94,7 @@ describe("Authentication service", () => {
         ).rejects.toMatchObject({
             name: "AuthenticationError",
             statusCode: 401,
-            message: "Invalid email or password.",
+            message: "Invalido el email o contraseña.",
         });
 
         expect(bcrypt.compare).not.toHaveBeenCalled();

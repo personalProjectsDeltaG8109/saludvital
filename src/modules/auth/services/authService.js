@@ -5,7 +5,7 @@ import { Rol, User } from "../../../models/associations.js";
 // Keep authentication errors generic to avoid revealing account existence.
 export class AuthenticationError extends Error {
     constructor() {
-        super("Invalid email or password.");
+        super("Invalido el email o contraseña.");
         this.name = "AuthenticationError";
         this.statusCode = 401;
     }

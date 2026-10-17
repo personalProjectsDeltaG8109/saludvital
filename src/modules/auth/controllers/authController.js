@@ -6,6 +6,12 @@ import {
     AuthenticationError,
 } from "../services/authService.js";
 
+import { randomUUID } from "node:crypto";
+import {
+    startSession,
+    endSession,
+} from "../services/sessionActivity.js";
+
 // Convert the configured JWT lifetime into cookie milliseconds.
 function getJwtLifetimeMs() {
     const lifetime = environment.jwt.expiresIn;
@@ -82,11 +88,15 @@ export async function login(req, res, next) {
             });
         }
 
-        // Sign a token containing only the identity and database-assigned role.
+        // Generate a unique identifier for this authenticated session.
+        const sessionId = randomUUID();
+
+        // Sign a token with the user identity, role, and session identifier.
         const token = jwt.sign(
             {
                 sub: String(user.id),
                 role: user.role,
+                sid: sessionId,
             },
             environment.jwt.secret,
             {
@@ -95,17 +105,21 @@ export async function login(req, res, next) {
             },
         );
 
-        // Store the token in a cookie that client-side JavaScript cannot read.
+        // Start tracking inactivity before issuing the cookie.
+        startSession(sessionId);
+
+        // Store the token in an HTTP-only authentication cookie.
         res.cookie("token", token, getAuthCookieOptions());
 
-        // Redirect the user to the dashboard assigned to their database role.
+        // Redirect the user to the dashboard assigned to their role.
         return res.redirect(303, dashboard);
+
     } catch (error) {
         // Display a generic message for invalid credentials.
         if (error instanceof AuthenticationError) {
             return res.status(401).render("auth/login", {
-                pageTitle: "Sign in | SaludVital",
-                error: "Invalid email or password.",
+                pageTitle: "Inicio de Sesion | SaludVital",
+                error: "Invalido el email o contraseña.",
             });
         }
 
@@ -114,8 +128,20 @@ export async function login(req, res, next) {
     }
 }
 
-// Clear the authentication cookie when the user signs out.
+// End the server-side session and clear the authentication cookie.
 export function logout(req, res) {
-    res.clearCookie("token", getAuthCookieOptions());
+    const sessionId = req.auth?.sessionId;
+
+    if (sessionId) {
+        endSession(sessionId);
+    }
+
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: environment.nodeEnv === "production",
+        sameSite: "lax",
+        path: "/",
+    });
+
     return res.redirect(303, "/login");
 }

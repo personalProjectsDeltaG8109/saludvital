@@ -3,6 +3,11 @@ import jwt from "jsonwebtoken";
 import environment from "../../config/environment.js";
 import { Rol, User } from "../models/associations.js";
 
+import {
+    isSessionExpired,
+    refreshSession,
+} from "../modules/auth/services/sessionActivity.js";
+
 // Clear the authentication cookie using the same security settings.
 function clearAuthenticationCookie(res) {
     res.clearCookie("token", {
@@ -14,6 +19,7 @@ function clearAuthenticationCookie(res) {
 }
 
 // Validate the JWT and verify that the account is still active.
+
 export async function authenticateToken(req, res, next) {
     const token = req.cookies?.token;
 
@@ -34,7 +40,7 @@ export async function authenticateToken(req, res, next) {
         return res.redirect(303, "/login");
     }
 
-    // Reject tokens without the required identity and role claims.
+    // Reject malformed identity claims before checking the session identifier.
     if (
         typeof payload.sub !== "string" ||
         !payload.sub ||
@@ -45,6 +51,18 @@ export async function authenticateToken(req, res, next) {
         return res.status(401).send("Invalid authentication token.");
     }
 
+    // Redirect tokens without a session identifier to the login page.
+    if (typeof payload.sid !== "string" || !payload.sid) {
+        clearAuthenticationCookie(res);
+        return res.redirect(303, "/login");
+    }
+
+    // Reject sessions that have exceeded the inactivity limit.
+    if (isSessionExpired(payload.sid)) {
+        clearAuthenticationCookie(res);
+        return res.redirect(303, "/login");
+    }
+    
     try {
         // Load the current account and role instead of trusting stale token data.
         const user = await User.findByPk(payload.sub, {
@@ -72,10 +90,17 @@ export async function authenticateToken(req, res, next) {
             return res.redirect(303, "/login");
         }
 
-        // Use the verified, current account identity for authorization.
+        // Refresh activity only for an existing, authenticated session.
+        if (!refreshSession(payload.sid)) {
+            clearAuthenticationCookie(res);
+            return res.redirect(303, "/login");
+        }
+
+        // Attach the verified identity and session identifier to the request.
         req.auth = {
             userId: String(user.id),
             role: user.rol.name,
+            sessionId: payload.sid,
         };
 
         return next();
@@ -84,6 +109,7 @@ export async function authenticateToken(req, res, next) {
         return next(error);
     }
 }
+
 
 // Restrict access to users with an explicitly permitted database role.
 export function requireRole(...allowedRoles) {
