@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Create the tables required to manage appointments and preserve their history.

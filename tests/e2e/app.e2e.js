@@ -99,8 +99,6 @@ try {
 
     console.log("PASS: mobile layout has no horizontal overflow.");
 
-
-    
     // Test the login page across mobile, tablet, and desktop viewports.
     const loginPage = await context.newPage();
 
@@ -133,9 +131,7 @@ try {
             !(await passwordInput.isVisible()) ||
             !(await submitButton.isVisible())
         ) {
-            throw new Error(
-                `Login form controls are not visible at ${viewport.name}.`,
-            );
+            throw new Error(`Login form controls are not visible at ${viewport.name}.`);
         }
 
         // Detect horizontal overflow at the current viewport width.
@@ -155,8 +151,9 @@ try {
         }
 
         // Ensure visible images have loaded successfully.
-        const brokenImages = await loginPage.locator("img").evaluateAll(
-            (images) =>
+        const brokenImages = await loginPage
+            .locator("img")
+            .evaluateAll((images) =>
                 images
                     .filter(
                         (image) =>
@@ -164,7 +161,7 @@ try {
                             (!image.complete || image.naturalWidth === 0),
                     )
                     .map((image) => image.getAttribute("src")),
-        );
+            );
 
         if (brokenImages.length > 0) {
             throw new Error(
@@ -194,18 +191,14 @@ try {
         }).analyze();
 
         if (loginAccessibility.violations.length > 0) {
-            console.error(
-                JSON.stringify(loginAccessibility.violations, null, 2),
-            );
+            console.error(JSON.stringify(loginAccessibility.violations, null, 2));
 
             throw new Error(
                 `Login accessibility check found ${loginAccessibility.violations.length} violation(s) at ${viewport.name}.`,
             );
         }
 
-        console.log(
-            `PASS: login accessibility at ${viewport.name}.`,
-        );
+        console.log(`PASS: login accessibility at ${viewport.name}.`);
     }
 
     await loginPage.close();

@@ -512,7 +512,6 @@ tests/integration/      Integration tests
 
 Additional modules, accessibility tests, end-to-end tests, and technical documentation will be added as their corresponding requirements are implemented.
 
-
 ## Documentation
 
 The GitHub Wiki will be the primary source of detailed project documentation.

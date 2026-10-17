@@ -1,4 +1,3 @@
-
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 // Mock the password hashing library before importing the authentication service.
@@ -20,10 +19,8 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
 const bcrypt = (await import("bcrypt")).default;
 const { User } = await import("../../../src/models/associations.js");
 
-const {
-    authenticateUser,
-    AuthenticationError,
-} = await import("../../../src/modules/auth/services/authService.js");
+const { authenticateUser, AuthenticationError } =
+    await import("../../../src/modules/auth/services/authService.js");
 
 // Prepare consistent mock data for each authentication test.
 describe("Authentication service", () => {
@@ -47,10 +44,7 @@ describe("Authentication service", () => {
 
     // Authenticate a valid user and return safe account information.
     test("authenticates a valid user and updates the last login timestamp", async () => {
-        const result = await authenticateUser(
-            " Patient@Example.com ",
-            "CorrectPassword123!",
-        );
+        const result = await authenticateUser(" Patient@Example.com ", "CorrectPassword123!");
 
         expect(User.findOne).toHaveBeenCalledWith({
             where: {
@@ -67,10 +61,7 @@ describe("Authentication service", () => {
             ],
         });
 
-        expect(bcrypt.compare).toHaveBeenCalledWith(
-            "CorrectPassword123!",
-            user.password_hash,
-        );
+        expect(bcrypt.compare).toHaveBeenCalledWith("CorrectPassword123!", user.password_hash);
 
         expect(user.update).toHaveBeenCalledWith({
             last_login_at: expect.any(Date),
@@ -120,9 +111,7 @@ describe("Authentication service", () => {
         ["non-string password", "patient@example.com", 12345],
         ["oversized email", "a".repeat(81), "Password123!"],
     ])("rejects invalid credentials: %s", async (_case, email, password) => {
-        await expect(
-            authenticateUser(email, password),
-        ).rejects.toBeInstanceOf(AuthenticationError);
+        await expect(authenticateUser(email, password)).rejects.toBeInstanceOf(AuthenticationError);
 
         expect(User.findOne).not.toHaveBeenCalled();
         expect(bcrypt.compare).not.toHaveBeenCalled();

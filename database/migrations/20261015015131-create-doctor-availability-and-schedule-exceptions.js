@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Create the regular availability and exceptional schedule tables.
@@ -73,9 +72,7 @@ export async function up(queryInterface, Sequelize) {
     await queryInterface.addConstraint("doctor_availability", {
         fields: ["valid_from", "valid_until"],
         type: "check",
-        where: Sequelize.literal(
-            "valid_until IS NULL OR valid_until >= valid_from",
-        ),
+        where: Sequelize.literal("valid_until IS NULL OR valid_until >= valid_from"),
         name: "doctor_availability_valid_dates_check",
     });
 
@@ -103,10 +100,7 @@ export async function up(queryInterface, Sequelize) {
             allowNull: false,
         },
         exception_type: {
-            type: Sequelize.ENUM(
-                "Unavailable",
-                "AdditionalAvailability",
-            ),
+            type: Sequelize.ENUM("Unavailable", "AdditionalAvailability"),
             allowNull: false,
         },
         reason: {

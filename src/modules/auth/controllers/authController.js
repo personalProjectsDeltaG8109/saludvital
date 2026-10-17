@@ -1,16 +1,9 @@
-
 import jwt from "jsonwebtoken";
 import environment from "../../../../config/environment.js";
-import {
-    authenticateUser,
-    AuthenticationError,
-} from "../services/authService.js";
+import { authenticateUser, AuthenticationError } from "../services/authService.js";
 
 import { randomUUID } from "node:crypto";
-import {
-    startSession,
-    endSession,
-} from "../services/sessionActivity.js";
+import { startSession, endSession } from "../services/sessionActivity.js";
 
 // Convert the configured JWT lifetime into cookie milliseconds.
 function getJwtLifetimeMs() {
@@ -113,7 +106,6 @@ export async function login(req, res, next) {
 
         // Redirect the user to the dashboard assigned to their role.
         return res.redirect(303, dashboard);
-
     } catch (error) {
         // Display a generic message for invalid credentials.
         if (error instanceof AuthenticationError) {

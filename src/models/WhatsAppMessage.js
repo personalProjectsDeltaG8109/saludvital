@@ -33,12 +33,7 @@ const WhatsAppMessage = database.define(
             allowNull: true,
         },
         processing_status: {
-            type: DataTypes.ENUM(
-                "Received",
-                "Processing",
-                "Processed",
-                "Failed",
-            ),
+            type: DataTypes.ENUM("Received", "Processing", "Processed", "Failed"),
             allowNull: false,
         },
         delivery_status: {

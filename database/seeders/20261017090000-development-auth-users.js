@@ -1,4 +1,3 @@
-
 "use strict";
 
 import bcrypt from "bcrypt";
@@ -24,9 +23,7 @@ export async function up(queryInterface) {
         },
     );
 
-    const roleIds = Object.fromEntries(
-        roles.map((role) => [role.name, role.id]),
-    );
+    const roleIds = Object.fromEntries(roles.map((role) => [role.name, role.id]));
 
     for (const roleName of ["Patient", "Doctor", "Administrator"]) {
         if (!roleIds[roleName]) {
@@ -125,9 +122,7 @@ export async function up(queryInterface) {
         const user = users[0];
 
         if (!user || Number(user.role_id) !== Number(roleIds[account.role])) {
-            throw new Error(
-                `Existing account has an unexpected role: ${account.email}`,
-            );
+            throw new Error(`Existing account has an unexpected role: ${account.email}`);
         }
 
         userIds[account.role] = user.id;

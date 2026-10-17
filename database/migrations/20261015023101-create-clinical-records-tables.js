@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Create the clinical tables while preserving medical and prescription records.
@@ -84,9 +83,7 @@ export async function up(queryInterface, Sequelize) {
         fields: ["ended_at", "started_at"],
         type: "check",
         name: "consultations_time_range_check",
-        where: Sequelize.literal(
-            "`ended_at` IS NULL OR `ended_at` > `started_at`",
-        ),
+        where: Sequelize.literal("`ended_at` IS NULL OR `ended_at` > `started_at`"),
     });
 
     // Store the diagnoses recorded during each consultation.
@@ -217,10 +214,7 @@ export async function down(queryInterface) {
     await queryInterface.dropTable("diagnoses");
 
     // Remove the consultation check before dropping its table.
-    await queryInterface.removeConstraint(
-        "consultations",
-        "consultations_time_range_check",
-    );
+    await queryInterface.removeConstraint("consultations", "consultations_time_range_check");
 
     await queryInterface.dropTable("consultations");
 }

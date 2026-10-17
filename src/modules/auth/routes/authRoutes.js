@@ -1,11 +1,6 @@
-
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import {
-    login,
-    logout,
-    showLogin,
-} from "../controllers/authController.js";
+import { login, logout, showLogin } from "../controllers/authController.js";
 
 import { authenticateToken } from "../../../middleware/authenticateToken.js";
 

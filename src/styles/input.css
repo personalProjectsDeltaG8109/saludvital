@@ -25,8 +25,7 @@
 @media (max-width: 1023px) {
     .login-page {
         background-image:
-            linear-gradient(rgba(255, 255, 255, 0.45),
-                rgba(255, 255, 255, 0.45)),
+            linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.45)),
             url("/brand/mobile-login.jpg");
     }
 }
@@ -34,7 +33,7 @@
 /* Restore the regular background on desktop. */
 @media (min-width: 1024px) {
     .login-page {
-        background-color: #FFFFFF;
+        background-color: #ffffff;
         background-image: none;
     }
 }
@@ -49,15 +48,17 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background-color: #25D366;
+    background-color: #25d366;
     box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
-    transition: transform 0.2s ease, background-color 0.2s ease;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease;
 }
 
 /* Add a subtle hover effect on devices that support hovering. */
 .whatsapp-float:hover {
     transform: scale(1.06);
-    background-color: #20BA5A;
+    background-color: #20ba5a;
 }
 
 /* Keep the WhatsApp icon proportional to its button. */
@@ -75,7 +76,6 @@
     }
 }
 
-
 /* Keep the WhatsApp widget anchored to the browser viewport. */
 .whatsapp-widget {
     position: fixed;
@@ -92,9 +92,9 @@
 .whatsapp-message {
     width: min(270px, calc(100vw - 140px));
     padding: 14px 16px;
-    color: #123B73;
-    background: #FFFFFF;
-    border: 1px solid #D7E5F5;
+    color: #123b73;
+    background: #ffffff;
+    border: 1px solid #d7e5f5;
     border-radius: 16px;
     box-shadow: 0 5px 20px rgb(18 59 115 / 16%);
     animation: whatsapp-message-loop 4s ease-in-out infinite;
@@ -126,7 +126,6 @@
 
 /* Animate the message without moving the button. */
 @keyframes whatsapp-message-loop {
-
     0%,
     100% {
         opacity: 1;
@@ -138,7 +137,6 @@
         transform: translateY(-4px);
     }
 }
-
 
 /* Adapt the widget to smaller screens. */
 @media (max-width: 640px) {

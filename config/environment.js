@@ -1,4 +1,3 @@
-
 import dotenv from "dotenv";
 
 // Load local environment variables without verbose informational output.
@@ -45,9 +44,7 @@ export function loadEnvironment(env = process.env) {
 
     // Require a sufficiently long secret outside automated tests.
     if (nodeEnv === "production" && jwt.secret.length < 32) {
-        throw new Error(
-            "JWT_SECRET must contain at least 32 characters in production.",
-        );
+        throw new Error("JWT_SECRET must contain at least 32 characters in production.");
     }
 
     // Require an explicit test secret to avoid using production credentials.

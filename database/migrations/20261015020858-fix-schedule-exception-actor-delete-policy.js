@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Update the deletion policy for the user who created a schedule exception.

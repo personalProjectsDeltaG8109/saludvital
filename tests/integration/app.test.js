@@ -1,4 +1,3 @@
-
 import request from "supertest";
 import app from "../../app.js";
 
@@ -24,9 +23,7 @@ describe("SaludVital application", () => {
     });
 
     test("unknown routes return 404", async () => {
-        const response = await request(app).get(
-            "/route-that-does-not-exist",
-        );
+        const response = await request(app).get("/route-that-does-not-exist");
 
         expect(response.status).toBe(404);
     });

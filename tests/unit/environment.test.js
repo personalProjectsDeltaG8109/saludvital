@@ -1,4 +1,3 @@
-
 import { loadEnvironment } from "../../config/environment.js";
 
 // Verify that application, database, and JWT configuration values are validated.
@@ -88,9 +87,7 @@ describe("Environment configuration", () => {
                 NODE_ENV: "production",
                 JWT_SECRET: "short-secret",
             }),
-        ).toThrow(
-            "JWT_SECRET must contain at least 32 characters in production.",
-        );
+        ).toThrow("JWT_SECRET must contain at least 32 characters in production.");
     });
 
     // Require an explicit JWT secret in the test environment.

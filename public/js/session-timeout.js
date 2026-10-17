@@ -37,18 +37,12 @@ function resetInactivityTimer() {
 
     window.clearTimeout(inactivityTimer);
 
-    inactivityTimer = window.setTimeout(
-        endInactiveSession,
-        INACTIVITY_LIMIT_MS,
-    );
+    inactivityTimer = window.setTimeout(endInactiveSession, INACTIVITY_LIMIT_MS);
 
     // Report activity periodically instead of sending a request per event.
     const now = Date.now();
 
-    if (
-        now - lastActivityReport >= ACTIVITY_REPORT_INTERVAL_MS &&
-        !requestInProgress
-    ) {
+    if (now - lastActivityReport >= ACTIVITY_REPORT_INTERVAL_MS && !requestInProgress) {
         lastActivityReport = now;
         requestInProgress = true;
 
@@ -72,14 +66,7 @@ function resetInactivityTimer() {
 }
 
 // Listen for common mouse, keyboard, scroll, and touch interactions.
-[
-    "mousemove",
-    "mousedown",
-    "keydown",
-    "scroll",
-    "touchstart",
-    "click",
-].forEach((eventName) => {
+["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"].forEach((eventName) => {
     document.addEventListener(eventName, resetInactivityTimer, {
         passive: true,
     });

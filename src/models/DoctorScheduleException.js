@@ -1,4 +1,3 @@
-
 import database from "../../config/database.js";
 import { DataTypes } from "sequelize";
 
@@ -25,10 +24,7 @@ const DoctorScheduleException = database.define(
             allowNull: false,
         },
         exception_type: {
-            type: DataTypes.ENUM(
-                "Unavailable",
-                "AdditionalAvailability",
-            ),
+            type: DataTypes.ENUM("Unavailable", "AdditionalAvailability"),
             allowNull: false,
         },
         reason: {

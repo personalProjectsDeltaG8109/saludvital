@@ -2,7 +2,6 @@
 
 // Create the foundational tables required by SaludVital.
 export async function up(queryInterface, Sequelize) {
-
     // Store the application roles defined by the approved database design.
     await queryInterface.createTable("roles", {
         id: {
@@ -30,7 +29,6 @@ export async function up(queryInterface, Sequelize) {
             allowNull: false,
         },
     });
-
 
     // Store user credentials and associate each account with a role.
     await queryInterface.createTable("users", {

@@ -1,12 +1,8 @@
-
 import jwt from "jsonwebtoken";
 import environment from "../../config/environment.js";
 import { Rol, User } from "../models/associations.js";
 
-import {
-    isSessionExpired,
-    refreshSession,
-} from "../modules/auth/services/sessionActivity.js";
+import { isSessionExpired, refreshSession } from "../modules/auth/services/sessionActivity.js";
 
 // Clear the authentication cookie using the same security settings.
 function clearAuthenticationCookie(res) {
@@ -62,7 +58,7 @@ export async function authenticateToken(req, res, next) {
         clearAuthenticationCookie(res);
         return res.redirect(303, "/login");
     }
-    
+
     try {
         // Load the current account and role instead of trusting stale token data.
         const user = await User.findByPk(payload.sub, {
@@ -109,7 +105,6 @@ export async function authenticateToken(req, res, next) {
         return next(error);
     }
 }
-
 
 // Restrict access to users with an explicitly permitted database role.
 export function requireRole(...allowedRoles) {

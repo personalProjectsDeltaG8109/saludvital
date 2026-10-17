@@ -1,4 +1,3 @@
-
 import bcrypt from "bcrypt";
 import { Rol, User } from "../../../models/associations.js";
 
@@ -14,8 +13,7 @@ export class AuthenticationError extends Error {
 // Authenticate an active user and retrieve the role stored in the database.
 export async function authenticateUser(email, password) {
     // Normalize the email before searching for the account.
-    const normalizedEmail =
-        typeof email === "string" ? email.trim().toLowerCase() : "";
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     // Reject missing or invalid credentials before querying the database.
     if (
@@ -49,10 +47,7 @@ export async function authenticateUser(email, password) {
     }
 
     // Verify the submitted password against the stored bcrypt hash.
-    const passwordMatches = await bcrypt.compare(
-        password,
-        user.password_hash,
-    );
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatches) {
         throw new AuthenticationError();

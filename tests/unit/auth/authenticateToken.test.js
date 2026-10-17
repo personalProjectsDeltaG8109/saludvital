@@ -1,4 +1,3 @@
-
 import { jest } from "@jest/globals";
 
 // Mock JWT verification to test authentication without generating real tokens.
@@ -31,26 +30,18 @@ const jwt = (await import("jsonwebtoken")).default;
 const { User } = await import("../../../src/models/associations.js");
 
 // Mock session tracking to isolate middleware tests.
-jest.unstable_mockModule(
-    "../../../src/modules/auth/services/sessionActivity.js",
-    () => ({
-        isSessionExpired: jest.fn(() => false),
-        refreshSession: jest.fn(() => true),
-        startSession: jest.fn(),
-        endSession: jest.fn(),
-    }),
-);
+jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js", () => ({
+    isSessionExpired: jest.fn(() => false),
+    refreshSession: jest.fn(() => true),
+    startSession: jest.fn(),
+    endSession: jest.fn(),
+}));
 
-const { authenticateToken, requireRole } = await import(
-    "../../../src/middleware/authenticateToken.js"
-);
+const { authenticateToken, requireRole } =
+    await import("../../../src/middleware/authenticateToken.js");
 
-const {
-    isSessionExpired,
-    refreshSession,
-} = await import(
-    "../../../src/modules/auth/services/sessionActivity.js"
-);
+const { isSessionExpired, refreshSession } =
+    await import("../../../src/modules/auth/services/sessionActivity.js");
 
 // Create reusable Express request and response mocks.
 function createMocks(token = undefined) {
@@ -105,11 +96,9 @@ describe("authenticateToken middleware", () => {
 
         await authenticateToken(req, res, next);
 
-        expect(jwt.verify).toHaveBeenCalledWith(
-            "valid-token",
-            "test-secret",
-            { algorithms: ["HS256"] },
-        );
+        expect(jwt.verify).toHaveBeenCalledWith("valid-token", "test-secret", {
+            algorithms: ["HS256"],
+        });
         expect(User.findByPk).toHaveBeenCalledWith(
             "12",
             expect.objectContaining({
@@ -158,9 +147,7 @@ describe("authenticateToken middleware", () => {
         await authenticateToken(req, res, next);
 
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.send).toHaveBeenCalledWith(
-            "Invalid authentication token.",
-        );
+        expect(res.send).toHaveBeenCalledWith("Invalid authentication token.");
         expect(User.findByPk).not.toHaveBeenCalled();
         expect(next).not.toHaveBeenCalled();
     });
@@ -192,10 +179,7 @@ describe("authenticateToken middleware", () => {
 
         await authenticateToken(req, res, next);
 
-        expect(res.clearCookie).toHaveBeenCalledWith(
-            "token",
-            expect.any(Object),
-        );
+        expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
         expect(next).not.toHaveBeenCalled();
     });
@@ -216,10 +200,7 @@ describe("authenticateToken middleware", () => {
 
         await authenticateToken(req, res, next);
 
-        expect(res.clearCookie).toHaveBeenCalledWith(
-            "token",
-            expect.any(Object),
-        );
+        expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
         expect(next).not.toHaveBeenCalled();
     });
@@ -293,13 +274,9 @@ describe("requireRole middleware", () => {
         await authenticateToken(req, res, next);
 
         expect(isSessionExpired).toHaveBeenCalledWith("expired-session");
-        expect(res.clearCookie).toHaveBeenCalledWith(
-            "token",
-            expect.any(Object),
-        );
+        expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
         expect(User.findByPk).not.toHaveBeenCalled();
         expect(next).not.toHaveBeenCalled();
     });
-
 });
