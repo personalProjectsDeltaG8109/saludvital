@@ -2,256 +2,269 @@ doctype html
 html(lang="es")
     head
         meta(charset="UTF-8")
-        meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        meta(name="theme-color", content="#123B73")
-        meta(name="robots", content="noindex, nofollow")
-        title Crear cuenta | SaludVital
-        link(rel="stylesheet", href="/css/app.css")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color" content="#123B73")
+        title= pageTitle
+        link(rel="stylesheet" href="/css/app.css")
 
-    body.min-h-screen.bg-slate-50.text-slate-900
-        main.mx-auto.w-full.max-w-4xl.px-4.py-8(class="sm:px-6 sm:py-12")
-            header.mb-8.text-center
-                a.text-2xl.font-bold.tracking-tight.text-primary(href="/login", class="sm:text-3xl") SaludVital
+    body.login-page.min-h-screen.bg-background.text-primary.antialiased
+        //- Responsive registration layout using the existing brand identity.
+        main.min-h-screen.w-full
+            .min-h-screen.w-full.overflow-hidden.bg-transparent(class="lg:grid lg:grid-cols-2 lg:bg-white")
+                //- Reuse the existing desktop branding panel.
+                include ./partials/login-desktop
 
-                h1.mt-5.text-2xl.font-bold.tracking-tight.text-primary(class="sm:text-3xl")
-                    | Crear cuenta de paciente
-
-                p.mx-auto.mt-3.max-w-2xl.text-sm.leading-6.text-slate-600(class="sm:text-base")
-                    | Registra tus datos para acceder a los servicios de SaludVital.
-
-            section.rounded-2xl.border.border-slate-200.bg-white.p-5.shadow-sm(class="sm:p-8")
-                if error
-                    p#register-error.mb-6.rounded-xl.border.border-red-200.bg-red-50.p-3.text-sm.text-red-800(
-                        role="alert"
-                    )= error
-
-                form.space-y-8(
-                    action="/register",
-                    method="POST",
-                    aria-describedby=error ? "register-error" : undefined
+                //- Registration section.
+                section.flex.min-w-0.flex-col.justify-center.p-5(
+                    class="sm:p-8 lg:from-[#F3F8FF] lg:via-white lg:to-[#E6FAF7] xl:p-10",
+                    aria-labelledby="register-title"
                 )
-                    fieldset.grid.grid-cols-1.gap-5(class="sm:grid-cols-2")
-                        legend.mb-4.text-lg.font-semibold.text-primary
-                            | Datos personales
+                    //- Reuse the existing mobile branding.
+                    include ./partials/login-mobile
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="first_name")
-                                | Nombres
-                            input#first_name.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="first_name",
-                                maxlength="50",
-                                autocomplete="given-name",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                    .mx-auto.w-full.max-w-2xl.py-4
+                        h1#register-title.text-2xl.font-bold.tracking-tight.text-primary(
+                            class="sm:text-3xl"
+                        ) Crear cuenta de paciente
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="last_name")
-                                | Apellidos
-                            input#last_name.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="last_name",
-                                maxlength="50",
-                                autocomplete="family-name",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                        p.mt-2.text-sm.leading-6.text-slate-600
+                            | Regístrate en SaludVital para gestionar tus citas médicas.
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="phone")
-                                | Teléfono
-                            input#phone.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="tel",
-                                name="phone",
-                                maxlength="15",
-                                autocomplete="tel",
-                                inputmode="tel",
-                                pattern="[+]?[0-9 ()-]{7,15}",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                        //- Display server-side validation and registration errors.
+                        if error
+                            p#register-error.mt-4.rounded-xl.border.border-red-200.bg-red-50.p-3.text-sm.text-red-800(
+                                role="alert"
+                            )= error
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(
-                                for="date_of_birth"
-                            )
-                                | Fecha de nacimiento
-                            input#date_of_birth.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="date",
-                                name="date_of_birth",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                        //- Register the patient using a standard POST request.
+                        form.mt-6.space-y-5(action="/register" method="POST")
+                            //- Personal information.
+                            fieldset.space-y-4
+                                legend.mb-3.text-lg.font-semibold.text-primary Datos personales
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(
-                                for="document_type"
-                            )
-                                | Tipo de documento
-                            select#document_type.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.outline-none(
-                                name="document_type",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
-                                option(value="", selected, disabled) Selecciona una opción
-                                option(value="CC") Cédula de ciudadanía
-                                option(value="CE") Cédula de extranjería
+                                .grid.grid-cols-1.gap-4(class="sm:grid-cols-2")
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="first_name") Nombres
+                                        input#first_name.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="first_name",
+                                            autocomplete="given-name",
+                                            maxlength="50",
+                                            required
+                                        )
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(
-                                for="document_number"
-                            )
-                                | Número de documento
-                            input#document_number.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="document_number",
-                                maxlength="15",
-                                autocomplete="off",
-                                required,
-                                pattern="[A-Za-z0-9-]+",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="last_name") Apellidos
+                                        input#last_name.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="last_name",
+                                            autocomplete="family-name",
+                                            maxlength="50",
+                                            required
+                                        )
 
-                    fieldset.grid.grid-cols-1.gap-5(class="sm:grid-cols-2")
-                        legend.mb-4.text-lg.font-semibold.text-primary
-                            | Ubicación
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="document_type") Tipo de documento
+                                        select#document_type.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            name="document_type",
+                                            required
+                                        )
+                                            option(value="") Selecciona una opción
+                                            option(value="CC") Cédula de ciudadanía
+                                            option(value="CE") Cédula de extranjería
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="department")
-                                | Departamento
-                            input#department.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="department",
-                                maxlength="100",
-                                autocomplete="address-level1",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="document_number") Número de documento
+                                        input#document_number.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="document_number",
+                                            autocomplete="off",
+                                            maxlength="15",
+                                            required
+                                        )
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="municipality")
-                                | Municipio
-                            input#municipality.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="municipality",
-                                maxlength="100",
-                                autocomplete="address-level2",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="date_of_birth") Fecha de nacimiento
+                                        input#date_of_birth.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="date",
+                                            name="date_of_birth",
+                                            autocomplete="bday",
+                                            required
+                                        )
 
-                        div(class="sm:col-span-2")
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="address")
-                                | Dirección (opcional)
-                            input#address.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="address",
-                                maxlength="255",
-                                autocomplete="street-address",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="phone") Teléfono
+                                        input#phone.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="tel",
+                                            name="phone",
+                                            autocomplete="tel",
+                                            maxlength="15",
+                                            required
+                                        )
 
-                    fieldset.grid.grid-cols-1.gap-5(class="sm:grid-cols-2")
-                        legend.mb-4.text-lg.font-semibold.text-primary
-                            | Información de salud (opcional)
+                            //- Contact and location information.
+                            fieldset.space-y-4
+                                legend.mb-3.text-lg.font-semibold.text-primary Contacto y ubicación
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="blood_type")
-                                | Tipo de sangre
-                            select#blood_type.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.outline-none(
-                                name="blood_type",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
-                                option(value="") No especificado
-                                option(value="A+") A+
-                                option(value="A-") A-
-                                option(value="B+") B+
-                                option(value="B-") B-
-                                option(value="AB+") AB+
-                                option(value="AB-") AB-
-                                option(value="O+") O+
-                                option(value="O-") O-
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="email") Correo electrónico
+                                    input#email.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        type="email",
+                                        name="email",
+                                        autocomplete="email",
+                                        maxlength="80",
+                                        required
+                                    )
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="allergies")
-                                | Alergias
-                            input#allergies.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="text",
-                                name="allergies",
-                                maxlength="255",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                .grid.grid-cols-1.gap-4(class="sm:grid-cols-2")
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="department") Departamento
+                                        input#department.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="department",
+                                            maxlength="100",
+                                            required
+                                        )
 
-                        div(class="sm:col-span-2")
-                            label.mb-2.block.text-sm.font-semibold.text-primary(
-                                for="existing_conditions"
-                            )
-                                | Condiciones médicas existentes
-                            textarea#existing_conditions.w-full.resize-y.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                name="existing_conditions",
-                                maxlength="255",
-                                rows="3",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                    div
+                                        label.mb-2.block.text-sm.font-semibold(for="municipality") Municipio
+                                        input#municipality.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="municipality",
+                                            maxlength="100",
+                                            required
+                                        )
 
-                    fieldset.grid.grid-cols-1.gap-5(class="sm:grid-cols-2")
-                        legend.mb-4.text-lg.font-semibold.text-primary
-                            | Credenciales de acceso
+                                    div(class="sm:col-span-2")
+                                        label.mb-2.block.text-sm.font-semibold(for="address") Dirección (opcional)
+                                        input#address.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                            class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                            type="text",
+                                            name="address",
+                                            autocomplete="street-address",
+                                            maxlength="255"
+                                        )
 
-                        div(class="sm:col-span-2")
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="email")
-                                | Correo electrónico
-                            input#email.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="email",
-                                name="email",
-                                maxlength="80",
-                                autocomplete="email",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
-                            p.mt-2.text-xs.leading-5.text-slate-500
-                                | Te enviaremos un enlace para confirmar tu correo electrónico.
+                            //- Optional health information.
+                            fieldset.space-y-4
+                                legend.mb-3.text-lg.font-semibold.text-primary Información de salud (opcional)
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(for="password")
-                                | Contraseña
-                            input#password.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="password",
-                                name="password",
-                                minlength="10",
-                                autocomplete="new-password",
-                                required,
-                                aria-describedby="password-help",
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
-                            p#password-help.mt-2.text-xs.leading-5.text-slate-500
-                                | Mínimo 10 caracteres, una mayúscula, tres minúsculas, un número y un carácter especial.
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="blood_type") Grupo sanguíneo
+                                    select#blood_type.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        name="blood_type"
+                                    )
+                                        option(value="") No lo sé / Prefiero no indicarlo
+                                        option(value="A+") A+
+                                        option(value="A-") A-
+                                        option(value="B+") B+
+                                        option(value="B-") B-
+                                        option(value="AB+") AB+
+                                        option(value="AB-") AB-
+                                        option(value="O+") O+
+                                        option(value="O-") O-
 
-                        div
-                            label.mb-2.block.text-sm.font-semibold.text-primary(
-                                for="password_confirmation"
-                            )
-                                | Confirmar contraseña
-                            input#password_confirmation.w-full.rounded-xl.border.border-slate-300.px-4.py-3.text-base.outline-none(
-                                type="password",
-                                name="password_confirmation",
-                                minlength="10",
-                                autocomplete="new-password",
-                                required,
-                                class="focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                            )
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="allergies") Alergias conocidas
+                                    textarea#allergies.block.min-h-20.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        name="allergies",
+                                        maxlength="255",
+                                        rows="2"
+                                    )
 
-                    .space-y-4.pt-2
-                        button.w-full.rounded-full.bg-primary.px-5.py-3.font-semibold.text-white.shadow-sm.transition(
-                            type="submit",
-                            class="hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
-                        ) Crear cuenta
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="medical_conditions") Condiciones médicas
+                                    textarea#medical_conditions.block.min-h-20.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        name="medical_conditions",
+                                        maxlength="255",
+                                        rows="2"
+                                    )
 
-                        p.text-center.text-sm.text-slate-600
+                            //- Account credentials.
+                            fieldset.space-y-4
+                                legend.mb-3.text-lg.font-semibold.text-primary Seguridad de la cuenta
+
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="password") Contraseña
+                                    input#password.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        type="password",
+                                        name="password",
+                                        autocomplete="new-password",
+                                        minlength="10",
+                                        required
+                                    )
+                                    p.mt-1.text-xs.leading-5.text-slate-500
+                                        | Mínimo 10 caracteres, con mayúscula, minúsculas, número y carácter especial.
+
+                                div
+                                    label.mb-2.block.text-sm.font-semibold(for="password_confirmation") Confirmar contraseña
+                                    input#password_confirmation.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
+                                        type="password",
+                                        name="password_confirmation",
+                                        autocomplete="new-password",
+                                        minlength="10",
+                                        required
+                                    )
+
+                            //- Explicit consent for processing sensitive health information.
+                            div
+                                label.flex.items-start.gap-3.text-sm.leading-5.text-slate-600(for="health_data_consent")
+                                    input#health_data_consent.mt-1.h-4.w-4.rounded.border-slate-300(
+                                        type="checkbox",
+                                        name="health_data_consent",
+                                        value="accepted",
+                                        required
+                                    )
+                                    span
+                                        | Autorizo el tratamiento de mis datos personales y, cuando corresponda, de mis datos sensibles de salud para la prestación de los servicios de SaludVital.
+
+                            //- Submit the registration form.
+                            button.flex.w-full.items-center.justify-center.rounded-full.bg-primary.px-5.py-3.font-semibold.text-white.shadow-md.transition(
+                                class="hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2",
+                                type="submit"
+                            ) Crear mi cuenta
+
+                        //- Link back to the existing login page.
+                        p.mt-6.text-center.text-sm.text-slate-600
                             | ¿Ya tienes una cuenta?
-                            |
-                            a.font-semibold.text-primary.underline(
-                                href="/login",
-                                class="hover:text-secondary"
-                            ) Inicia sesión
+
+                        a.mx-auto.mt-3.flex.w-full.max-w-xs.items-center.justify-center.rounded-full.border.border-secondary.bg-white.px-4.py-2.font-semibold.text-primary.transition(
+                            class="hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2",
+                            href="/login"
+                        ) Volver a iniciar sesión
+
+        //- WhatsApp contact widget, matching the login page.
+        aside.whatsapp-widget(aria-label="Contacto por WhatsApp")
+            .whatsapp-message(aria-live="polite")
+                p.whatsapp-message-title ¡Gestiona tus citas aquí!
+                p Pide tus citas médicas y consulta tus próximas citas.
+                p.whatsapp-message-help ¿Necesitas ayuda? Escríbenos por WhatsApp.
+
+            a.whatsapp-float(
+                href="https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                target="_blank",
+                rel="noopener noreferrer",
+                aria-label="Contactar a SaludVital por WhatsApp",
+                title="Escríbenos por WhatsApp"
+            )
+                img(
+                    src="/brand/whatsapp-svgrepo-com.svg",
+                    alt="",
+                    aria-hidden="true",
+                    width="32",
+                    height="32"
+                )
