@@ -1,0 +1,18 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="stylesheet", href="/css/app.css")
+    body.min-h-screen.bg-slate-50.flex.items-center.justify-center.p-6
+        main.w-full.max-w-lg.rounded-2xl.bg-white.p-8.shadow-lg
+            h1.mb-4.text-2xl.font-bold.text-primary Acceso de administrador
+            p.mb-2.text-slate-700 Inicio de sesión correcto.
+            p.mb-6.text-slate-600
+                | Rol verificado:
+                strong= ` ${role}`
+            form(action="/logout", method="POST")
+                button.rounded-lg.bg-primary.px-5.py-3.font-semibold.text-white(type="submit") Cerrar sesión
+
+    script(src="/js/session-timeout.js", defer)

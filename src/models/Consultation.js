@@ -1,4 +1,3 @@
-
 import database from "../../config/database.js";
 import { DataTypes } from "sequelize";
 
@@ -50,11 +49,7 @@ const Consultation = database.define(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM(
-                "InProgress",
-                "Completed",
-                "Interrupted",
-            ),
+            type: DataTypes.ENUM("InProgress", "Completed", "Interrupted"),
             allowNull: false,
             defaultValue: "InProgress",
         },

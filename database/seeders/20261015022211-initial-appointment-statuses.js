@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Seed the appointment status catalog without creating duplicate records.
@@ -27,9 +26,7 @@ export async function up(queryInterface) {
         "SELECT name FROM appointment_statuses",
     );
 
-    const existingNames = new Set(
-        existingStatuses.map((status) => status.name),
-    );
+    const existingNames = new Set(existingStatuses.map((status) => status.name));
 
     // Insert only the statuses that do not exist yet.
     const missingStatuses = statuses
@@ -41,10 +38,7 @@ export async function up(queryInterface) {
         }));
 
     if (missingStatuses.length > 0) {
-        await queryInterface.bulkInsert(
-            "appointment_statuses",
-            missingStatuses,
-        );
+        await queryInterface.bulkInsert("appointment_statuses", missingStatuses);
     }
 }
 

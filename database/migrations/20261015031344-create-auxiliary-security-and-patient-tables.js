@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Create auxiliary patient, WhatsApp verification, and password recovery tables.
@@ -53,13 +52,9 @@ export async function up(queryInterface, Sequelize) {
         name: "whatsapp_verifications_patient_id_idx",
     });
 
-    await queryInterface.addIndex(
-        "whatsapp_verifications",
-        ["expires_at"],
-        {
-            name: "whatsapp_verifications_expires_at_idx",
-        },
-    );
+    await queryInterface.addIndex("whatsapp_verifications", ["expires_at"], {
+        name: "whatsapp_verifications_expires_at_idx",
+    });
 
     // Store appointment requests submitted through WhatsApp conversations.
     await queryInterface.createTable("whatsapp_appointment_requests", {
@@ -124,13 +119,7 @@ export async function up(queryInterface, Sequelize) {
             onDelete: "SET NULL",
         },
         status: {
-            type: Sequelize.ENUM(
-                "Pending",
-                "Confirmed",
-                "Rejected",
-                "Cancelled",
-                "Expired",
-            ),
+            type: Sequelize.ENUM("Pending", "Confirmed", "Rejected", "Cancelled", "Expired"),
             allowNull: false,
             defaultValue: "Pending",
         },
@@ -150,29 +139,17 @@ export async function up(queryInterface, Sequelize) {
     });
 
     // Support patient history, conversation workflows, and appointment lookups.
-    await queryInterface.addIndex(
-        "whatsapp_appointment_requests",
-        ["patient_id"],
-        {
-            name: "whatsapp_appointment_requests_patient_id_idx",
-        },
-    );
+    await queryInterface.addIndex("whatsapp_appointment_requests", ["patient_id"], {
+        name: "whatsapp_appointment_requests_patient_id_idx",
+    });
 
-    await queryInterface.addIndex(
-        "whatsapp_appointment_requests",
-        ["conversation_id", "status"],
-        {
-            name: "whatsapp_appointment_requests_conversation_status_idx",
-        },
-    );
+    await queryInterface.addIndex("whatsapp_appointment_requests", ["conversation_id", "status"], {
+        name: "whatsapp_appointment_requests_conversation_status_idx",
+    });
 
-    await queryInterface.addIndex(
-        "whatsapp_appointment_requests",
-        ["appointment_id"],
-        {
-            name: "whatsapp_appointment_requests_appointment_id_idx",
-        },
-    );
+    await queryInterface.addIndex("whatsapp_appointment_requests", ["appointment_id"], {
+        name: "whatsapp_appointment_requests_appointment_id_idx",
+    });
 
     // Store emergency contacts separately from the patient's clinical records.
     await queryInterface.createTable("emergency_contacts", {

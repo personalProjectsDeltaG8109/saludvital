@@ -18,11 +18,11 @@ Explain why this feature is needed and who will benefit from it.
 
 ### Included
 
-- 
+-
 
 ### Excluded
 
-- 
+-
 
 ## Acceptance Criteria
 

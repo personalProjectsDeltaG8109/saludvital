@@ -1,4 +1,3 @@
-
 import database from "../../config/database.js";
 import { DataTypes } from "sequelize";
 
@@ -37,13 +36,7 @@ const WhatsAppAppointmentRequest = database.define(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM(
-                "Pending",
-                "Confirmed",
-                "Rejected",
-                "Cancelled",
-                "Expired",
-            ),
+            type: DataTypes.ENUM("Pending", "Confirmed", "Rejected", "Cancelled", "Expired"),
             allowNull: false,
             defaultValue: "Pending",
         },

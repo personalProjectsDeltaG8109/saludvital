@@ -30,7 +30,4 @@ module.exports = {
         dialect: "mysql",
         timezone: "-05:00",
     },
-
-
-
 };

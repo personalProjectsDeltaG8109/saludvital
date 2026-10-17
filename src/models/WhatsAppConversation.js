@@ -28,12 +28,7 @@ const WhatsAppConversation = database.define(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM(
-                "Active",
-                "Completed",
-                "Expired",
-                "Blocked",
-            ),
+            type: DataTypes.ENUM("Active", "Completed", "Expired", "Blocked"),
             allowNull: false,
             defaultValue: "Active",
         },

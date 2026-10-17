@@ -36,11 +36,28 @@ export function loadEnvironment(env = process.env) {
         throw new Error("DB_PORT must be an integer between 1 and 65535.");
     }
 
+    // Normalize the JWT configuration used for authentication.
+    const jwt = {
+        secret: env.JWT_SECRET || "",
+        expiresIn: env.JWT_EXPIRES_IN || "15m",
+    };
+
+    // Require a sufficiently long secret outside automated tests.
+    if (nodeEnv === "production" && jwt.secret.length < 32) {
+        throw new Error("JWT_SECRET must contain at least 32 characters in production.");
+    }
+
+    // Require an explicit test secret to avoid using production credentials.
+    if (nodeEnv === "test" && !jwt.secret) {
+        throw new Error("JWT_SECRET must be configured in the test environment.");
+    }
+
     // Return the normalized application and database configuration.
     return {
         nodeEnv,
         port,
         database,
+        jwt,
     };
 }
 

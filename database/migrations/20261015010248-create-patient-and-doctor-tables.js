@@ -1,4 +1,3 @@
-
 "use strict";
 
 // Create patient and doctor profiles using the existing foundation tables.

@@ -1,4 +1,3 @@
-
 import database from "../../config/database.js";
 import { DataTypes } from "sequelize";
 
@@ -33,13 +32,7 @@ const Notification = database.define(
             allowNull: false,
         },
         status: {
-            type: DataTypes.ENUM(
-                "Pending",
-                "Processing",
-                "Sent",
-                "Failed",
-                "Cancelled",
-            ),
+            type: DataTypes.ENUM("Pending", "Processing", "Sent", "Failed", "Cancelled"),
             allowNull: false,
             defaultValue: "Pending",
         },

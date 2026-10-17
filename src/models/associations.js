@@ -1,4 +1,3 @@
-
 import Rol from "./Rol.js";
 import User from "./User.js";
 import Patient from "./Patient.js";
@@ -173,7 +172,6 @@ AppointmentHistory.belongsTo(User, {
     onDelete: "SET NULL",
 });
 
-
 // Associate each doctor with their regular availability blocks.
 Doctor.hasMany(DoctorAvailability, {
     foreignKey: "doctor_id",
@@ -218,7 +216,6 @@ DoctorScheduleException.belongsTo(User, {
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
 });
-
 
 // Associate each patient with their notification preferences.
 Patient.hasMany(NotificationPreference, {
@@ -310,7 +307,6 @@ WhatsAppMessage.belongsTo(WhatsAppConversation, {
     onDelete: "RESTRICT",
 });
 
-
 /* WhatsApp identity verification associations. */
 Patient.hasMany(WhatsAppVerification, {
     foreignKey: "patient_id",
@@ -397,7 +393,6 @@ WhatsAppAppointmentRequest.belongsTo(Appointment, {
     onDelete: "SET NULL",
 });
 
-
 /* Clinical consultation associations. */
 Appointment.hasOne(Consultation, {
     foreignKey: "appointment_id",
@@ -471,7 +466,6 @@ PrescriptionItem.belongsTo(Prescription, {
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
-
 
 /* Patient emergency contact associations. */
 Patient.hasMany(EmergencyContact, {
