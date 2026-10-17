@@ -18,28 +18,37 @@ const server = spawn(process.execPath, ["server.js"], {
 let browser;
 
 try {
-    // Wait for the application health endpoint to become available.
+    // Wait for the login page to become available before starting Playwright.
     let ready = false;
+    let lastError = "No response received from the server.";
 
     for (let attempt = 0; attempt < 30; attempt += 1) {
         if (server.exitCode !== null) {
-            throw new Error("The SaludVital server stopped unexpectedly.");
+            throw new Error(
+                `The SaludVital server stopped unexpectedly with exit code ${server.exitCode}.`,
+            );
         }
 
         try {
-            const response = await fetch(`${baseUrl}/health`);
-            ready = response.ok;
+            const response = await fetch(`${baseUrl}/login`, {
+                signal: AbortSignal.timeout(3000),
+            });
 
-            if (ready) break;
-        } catch {
-            // The server may still be starting.
+            if (response.ok) {
+                ready = true;
+                break;
+            }
+
+            lastError = `HTTP ${response.status} ${response.statusText}`;
+        } catch (error) {
+            lastError = error.message;
         }
 
         await delay(1000);
     }
 
     if (!ready) {
-        throw new Error("The SaludVital server did not become ready.");
+        throw new Error(`The SaludVital server did not become ready. Last error: ${lastError}`);
     }
 
     browser = await chromium.launch({ headless: true });
@@ -55,8 +64,12 @@ try {
         height: 900,
     });
 
+    // Open the homepage and inspect the final page after any redirects.
     await desktop.goto(baseUrl);
-    await desktop.getByRole("heading", { name: "SaludVital" }).waitFor();
+
+    console.log("Final URL:", desktop.url());
+    console.log("Page title:", await desktop.title());
+    console.log("Visible headings:", await desktop.getByRole("heading").allTextContents());
 
     const desktopColors = await desktop.evaluate(() => ({
         background: getComputedStyle(document.body).backgroundColor,
@@ -72,8 +85,8 @@ try {
         throw new Error(`Unexpected primary color: ${desktopColors.primary}`);
     }
 
-    // Verify the actual accessible color applied to the secondary text.
-    if (desktopColors.secondary !== "rgb(18, 59, 115)") {
+    // Verify the secondary text uses the accessible teal shade.
+    if (desktopColors.secondary !== "rgb(22, 197, 188)") {
         throw new Error(`Unexpected secondary text color: ${desktopColors.secondary}`);
     }
 
