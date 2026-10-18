@@ -84,18 +84,28 @@ const dashboardRoutes = {
     Administrator: "/admin/dashboard",
 };
 
-// Render the login page with an optional error message.
+/**
+ * Render the login page with an optional error message.
+ */
 export function showLogin(req, res) {
-    return res.render("auth/login", {
-        error: typeof req.query.error === "string" ? req.query.error : null,
+    // Accept only a single string query parameter for the error message.
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+
+    return res.status(200).render("auth/login", {
+        pageTitle: "Iniciar sesión | SaludVital",
+        error,
     });
 }
 
-// Render the patient registration page.
+/**
+ * Render the patient registration page with an optional error message.
+ */
 export function showRegister(req, res) {
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+
     return res.status(200).render("auth/register", {
         pageTitle: "Registro de paciente | SaludVital",
-        error: null,
+        error,
         success: null,
     });
 }
@@ -159,7 +169,7 @@ export async function login(req, res, next) {
         if (!dashboard) {
             return res.status(403).render("auth/login", {
                 pageTitle: "Inicio de sesión | SaludVital",
-                error: "Your account does not have an authorized dashboard.",
+                error: "Tu cuenta no tiene un panel autorizado.",
             });
         }
 

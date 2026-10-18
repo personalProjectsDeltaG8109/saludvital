@@ -26,29 +26,8 @@ html(lang="es")
                     //- Shared login form.
                     include ./partials/login-form
 
-                    
-        if error
-            //- Display a modal when the server provides an error message.
-            #error-modal.fixed.inset-0.z-50.flex.items-center.justify-center.bg-black.bg-opacity-50.p-4(
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="error-modal-title"
-            )
-                .w-full.max-w-sm.rounded-2xl.bg-white.p-6.text-center.shadow-xl
-                    .mx-auto.mb-4.flex.h-14.w-14.items-center.justify-center.rounded-full.bg-red-100
-                        span.text-3xl.text-red-600(aria-hidden="true") !
+    
 
-                    h2#error-modal-title.text-xl.font-bold.text-gray-900
-                        | Atención
-
-                    p.mt-3.text-sm.leading-6.text-gray-600
-                        = error
-
-                    button.mt-6.w-full.rounded-lg.bg-primary.p-3.font-semibold.text-white(
-                        type="button"
-                        onclick="document.getElementById('error-modal').remove()"
-                    )
-                        | Entendido
 
         //- Floating WhatsApp contact widget inside a named landmark.
         aside.whatsapp-widget(aria-label="Contacto por WhatsApp")

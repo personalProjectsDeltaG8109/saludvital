@@ -31,10 +31,10 @@ const registerLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 
-    // Redirect users to the login page with an error message.
+    // Redirect users to the registration page with an error message.
     handler: (req, res) => {
         return res.redirect(
-            "/login?error=" +
+            "/register?error=" +
                 encodeURIComponent("Demasiados intentos de registro. Inténtalo más tarde."),
         );
     },
