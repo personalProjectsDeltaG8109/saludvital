@@ -10,6 +10,8 @@ const server = spawn(process.execPath, ["server.js"], {
     env: {
         ...process.env,
         NODE_ENV: "test",
+        DB_NAME: "saludvital_test",
+        JWT_SECRET: "local-test-secret-not-for-production",
         PORT: "3100",
     },
     stdio: "inherit",

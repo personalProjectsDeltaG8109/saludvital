@@ -52,6 +52,11 @@ export function loadEnvironment(env = process.env) {
         throw new Error("JWT_SECRET must be configured in the test environment.");
     }
 
+    // Prevent automated tests from targeting the development or production database.
+    if (nodeEnv === "test" && database.name !== "saludvital_test") {
+        throw new Error("DB_NAME must be saludvital_test in the test environment.");
+    }
+
     // Return the normalized application and database configuration.
     return {
         nodeEnv,

@@ -96,4 +96,26 @@ describe("Environment configuration", () => {
             "JWT_SECRET must be configured in the test environment.",
         );
     });
+
+    // Reject the development database when running automated tests.
+    test("rejects the development database in the test environment", () => {
+        expect(() =>
+            loadEnvironment({
+                NODE_ENV: "test",
+                JWT_SECRET: "test-secret",
+                DB_NAME: "saludvital",
+            }),
+        ).toThrow("DB_NAME must be saludvital_test in the test environment.");
+    });
+
+    // Accept the dedicated database when running automated tests.
+    test("accepts the dedicated test database", () => {
+        expect(
+            loadEnvironment({
+                NODE_ENV: "test",
+                JWT_SECRET: "test-secret",
+                DB_NAME: "saludvital_test",
+            }).database.name,
+        ).toBe("saludvital_test");
+    });
 });
