@@ -11,6 +11,9 @@ import { startSession, endSession } from "../services/sessionActivity.js";
 
 import { verifyEmail } from "../services/emailVerificationService.js";
 
+// Handle patient registration and its expected validation errors.
+import { registerPatient, RegistrationError } from "../services/registrationService.js";
+
 // Verify a patient's email address using the supplied token.
 export async function verifyEmailAddress(req, res, next) {
     try {
@@ -81,13 +84,65 @@ const dashboardRoutes = {
     Administrator: "/admin/dashboard",
 };
 
-// Render the login page.
+// Render the login page with an optional error message.
 export function showLogin(req, res) {
-    // Avoid displaying the login form when a valid session already exists.
-    res.status(200).render("auth/login", {
-        pageTitle: "Inicio de sesión | SaludVital",
-        error: null,
+    return res.render("auth/login", {
+        error: typeof req.query.error === "string" ? req.query.error : null,
     });
+}
+
+// Render the patient registration page.
+export function showRegister(req, res) {
+    return res.status(200).render("auth/register", {
+        pageTitle: "Registro de paciente | SaludVital",
+        error: null,
+        success: null,
+    });
+}
+
+// Validate consent and create a patient account.
+export async function register(req, res, next) {
+    try {
+        // Require explicit consent before processing health information.
+        if (req.body?.health_data_consent !== "accepted") {
+            return res.status(400).render("auth/register", {
+                pageTitle: "Registro de paciente | SaludVital",
+                error: "Debes autorizar el tratamiento de datos personales y de salud para registrarte.",
+                success: null,
+            });
+        }
+
+        // Map the form field to the name expected by the registration service.
+        const registrationData = {
+            ...req.body,
+            existing_conditions: req.body.medical_conditions,
+        };
+
+        // The service validates the data and creates the account transactionally.
+        const patient = await registerPatient(registrationData);
+
+        // Confirm registration without automatically signing the patient in.
+        return res.status(201).render("auth/register", {
+            pageTitle: "Registro completado | SaludVital",
+            error: null,
+            success: `Tu cuenta fue creada. Revisa el correo ${patient.email} para verificar tu dirección antes de iniciar sesión.`,
+        });
+    } catch (error) {
+        // Show expected validation errors without exposing internal details.
+        if (error instanceof RegistrationError) {
+            return res.status(error.statusCode).render("auth/register", {
+                pageTitle: "Registro de paciente | SaludVital",
+                error:
+                    error.statusCode >= 500
+                        ? "No fue posible completar el registro. Inténtalo más tarde."
+                        : error.message,
+                success: null,
+            });
+        }
+
+        // Let centralized error handling process unexpected failures.
+        return next(error);
+    }
 }
 
 // Authenticate the submitted credentials and establish the JWT cookie.

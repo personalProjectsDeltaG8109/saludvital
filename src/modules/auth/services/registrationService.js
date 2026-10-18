@@ -36,9 +36,23 @@ function validateRegistration(data) {
         "password_confirmation",
     ];
 
+    const fieldLabels = {
+        first_name: "el nombre",
+        last_name: "los apellidos",
+        phone: "el teléfono",
+        date_of_birth: "la fecha de nacimiento",
+        document_type: "el tipo de documento",
+        document_number: "el número de documento",
+        department: "el departamento",
+        municipality: "el municipio",
+        email: "el correo electrónico",
+        password: "la contraseña",
+        password_confirmation: "la confirmación de la contraseña",
+    };
+
     for (const field of requiredFields) {
         if (typeof data[field] !== "string" || !data[field].trim()) {
-            throw new RegistrationError(`The field ${field} is required.`);
+            throw new RegistrationError(`El campo ${fieldLabels[field]} es obligatorio.`);
         }
     }
 
@@ -55,32 +69,43 @@ function validateRegistration(data) {
         existing_conditions: 255,
     };
 
+    const optionalFields = new Set(["address", "allergies", "existing_conditions"]);
+
     for (const [field, maxLength] of Object.entries(textLimits)) {
         const value = data[field];
 
         if (value !== undefined && value !== null) {
-            if (typeof value !== "string" || value.trim().length > maxLength) {
+            if (typeof value !== "string") {
                 throw new RegistrationError(
-                    `The field ${field} must contain at most ${maxLength} characters.`,
+                    `El campo ${fieldLabels[field] || field} no tiene un formato válido.`,
+                );
+            }
+
+            // Optional fields are normalized before checking their length.
+            const normalizedValue = optionalFields.has(field) ? value.trim() : value;
+
+            if (normalizedValue.length > maxLength) {
+                throw new RegistrationError(
+                    `El campo ${fieldLabels[field] || field} no puede superar los ${maxLength} caracteres.`,
                 );
             }
         }
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-        throw new RegistrationError("Enter a valid email address.");
+        throw new RegistrationError("Ingresa una dirección de correo electrónico válida.");
     }
 
     if (!/^\+?[0-9\s()-]{7,15}$/.test(data.phone.trim())) {
-        throw new RegistrationError("Enter a valid phone number.");
+        throw new RegistrationError("Ingresa un número de teléfono válido.");
     }
 
     if (!["CC", "CE"].includes(data.document_type)) {
-        throw new RegistrationError("Select a valid document type.");
+        throw new RegistrationError("Selecciona un tipo de documento válido.");
     }
 
     if (!/^[A-Za-z0-9-]+$/.test(data.document_number.trim())) {
-        throw new RegistrationError("Enter a valid document number.");
+        throw new RegistrationError("Ingresa un número de documento válido.");
     }
 
     // Validate the date format and reject dates later than today.
@@ -91,7 +116,9 @@ function validateRegistration(data) {
             data.date_of_birth ||
         data.date_of_birth > new Date().toISOString().slice(0, 10)
     ) {
-        throw new RegistrationError("Enter a valid date of birth.");
+        throw new RegistrationError(
+            "Ingresa una fecha de nacimiento válida. No puedes seleccionar una fecha futura.",
+        );
     }
 
     // Require at least 10 characters, one uppercase letter, three lowercase
@@ -106,26 +133,28 @@ function validateRegistration(data) {
         !/[^A-Za-z0-9]/.test(password)
     ) {
         throw new RegistrationError(
-            "The password must contain at least 10 characters, one uppercase letter, three lowercase letters, one number, and one special character.",
+            "La contraseña debe tener al menos 10 caracteres e incluir una letra mayúscula, tres letras minúsculas, un número y un carácter especial.",
         );
     }
 
     if (password !== data.password_confirmation) {
-        throw new RegistrationError("The passwords do not match.");
+        throw new RegistrationError(
+            "Las contraseñas no coinciden. Verifica que ambas sean iguales.",
+        );
     }
 
     const allowedBloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
     const bloodType = optionalText(data.blood_type);
 
     if (bloodType && !allowedBloodTypes.includes(bloodType)) {
-        throw new RegistrationError("Select a valid blood type.");
+        throw new RegistrationError("Selecciona un grupo sanguíneo válido.");
     }
 }
 
 // Create a patient account and profile atomically.
 export async function registerPatient(data) {
     if (!data || typeof data !== "object" || Array.isArray(data)) {
-        throw new RegistrationError("Invalid registration data.");
+        throw new RegistrationError("Los datos de registro no son válidos.");
     }
 
     validateRegistration(data);
@@ -143,7 +172,10 @@ export async function registerPatient(data) {
             });
 
             if (existingUser) {
-                throw new RegistrationError("An account with this email already exists.", 409);
+                throw new RegistrationError(
+                    "Ya existe una cuenta registrada con este correo electrónico.",
+                    409,
+                );
             }
 
             const existingPatient = await Patient.findOne({
@@ -155,7 +187,10 @@ export async function registerPatient(data) {
             });
 
             if (existingPatient) {
-                throw new RegistrationError("A patient with this document already exists.", 409);
+                throw new RegistrationError(
+                    "Ya existe un paciente registrado con este documento de identidad.",
+                    409,
+                );
             }
 
             // Assign the patient role on the server, never from form input.
@@ -166,7 +201,7 @@ export async function registerPatient(data) {
 
             if (!patientRole) {
                 throw new RegistrationError(
-                    "Patient registration is temporarily unavailable.",
+                    "El registro de pacientes no está disponible temporalmente. Inténtalo más tarde.",
                     500,
                 );
             }
@@ -227,7 +262,7 @@ export async function registerPatient(data) {
         // Translate database uniqueness conflicts into safe registration errors.
         if (error.name === "SequelizeUniqueConstraintError") {
             throw new RegistrationError(
-                "An account or patient document with these details already exists.",
+                "Ya existe una cuenta o un paciente registrado con estos datos.",
                 409,
             );
         }

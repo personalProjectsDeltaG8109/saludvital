@@ -36,6 +36,11 @@ html(lang="es")
                                 role="alert"
                             )= error
 
+                        //- Confirm successful registration and email verification instructions.
+                        if success
+                            p#register-success.mt-4.rounded-xl.border.border-green-200.bg-green-50.p-3.text-sm.text-green-800(
+                                role="status"
+                            )= success
                         //- Register the patient using a standard POST request.
                         form.mt-6.space-y-5(action="/register" method="POST")
                             //- Personal information.

@@ -57,7 +57,6 @@ const User = database.define(
             allowNull: true,
             defaultValue: null,
         },
-
     },
     {
         // Preserve the existing table name and timestamp columns.
