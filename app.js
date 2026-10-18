@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import adminRoutes from "./src/modules/admin/routes/adminRoutes.js";
 import doctorRoutes from "./src/modules/doctor/routes/doctorRoutes.js";
 import patientRoutes from "./src/modules/patient/routes/patientRoutes.js";
+import { errorHandler } from "./src/middleware/errorHandler.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFile);
@@ -27,6 +28,9 @@ app.use(authRoutes);
 app.use(adminRoutes);
 app.use(doctorRoutes);
 app.use(patientRoutes);
+
+// Handle unexpected errors after all routes and middleware.
+app.use(errorHandler);
 
 // Redirect the application root to the login page.
 app.get("/", (req, res) => {
