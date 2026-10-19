@@ -1,9 +1,39 @@
 import jwt from "jsonwebtoken";
 import environment from "../../../../config/environment.js";
-import { authenticateUser, AuthenticationError } from "../services/authService.js";
+import {
+    authenticateUser,
+    AuthenticationError,
+    EmailVerificationRequiredError,
+} from "../services/authService.js";
 
 import { randomUUID } from "node:crypto";
 import { startSession, endSession } from "../services/sessionActivity.js";
+
+import { verifyEmail } from "../services/emailVerificationService.js";
+
+// Handle patient registration and its expected validation errors.
+import { registerPatient, RegistrationError } from "../services/registrationService.js";
+
+// Verify a patient's email address using the supplied token.
+export async function verifyEmailAddress(req, res, next) {
+    try {
+        const token = typeof req.query.token === "string" ? req.query.token : "";
+
+        const result = await verifyEmail(token);
+
+        if (!result.verified) {
+            return res.status(400).render("auth/email-verification-result", {
+                verified: false,
+            });
+        }
+
+        return res.status(200).render("auth/email-verification-result", {
+            verified: true,
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
 
 // Convert the configured JWT lifetime into cookie milliseconds.
 function getJwtLifetimeMs() {
@@ -54,13 +84,75 @@ const dashboardRoutes = {
     Administrator: "/admin/dashboard",
 };
 
-// Render the login page.
+/**
+ * Render the login page with an optional error message.
+ */
 export function showLogin(req, res) {
-    // Avoid displaying the login form when a valid session already exists.
-    res.status(200).render("auth/login", {
-        pageTitle: "Sign in | SaludVital",
-        error: null,
+    // Accept only a single string query parameter for the error message.
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+
+    return res.status(200).render("auth/login", {
+        pageTitle: "Iniciar sesión | SaludVital",
+        error,
     });
+}
+
+/**
+ * Render the patient registration page with an optional error message.
+ */
+export function showRegister(req, res) {
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+
+    return res.status(200).render("auth/register", {
+        pageTitle: "Registro de paciente | SaludVital",
+        error,
+        success: null,
+    });
+}
+
+// Validate consent and create a patient account.
+export async function register(req, res, next) {
+    try {
+        // Require explicit consent before processing health information.
+        if (req.body?.health_data_consent !== "accepted") {
+            return res.status(400).render("auth/register", {
+                pageTitle: "Registro de paciente | SaludVital",
+                error: "Debes autorizar el tratamiento de datos personales y de salud para registrarte.",
+                success: null,
+            });
+        }
+
+        // Map the form field to the name expected by the registration service.
+        const registrationData = {
+            ...req.body,
+            existing_conditions: req.body.medical_conditions,
+        };
+
+        // The service validates the data and creates the account transactionally.
+        const patient = await registerPatient(registrationData);
+
+        // Confirm registration without automatically signing the patient in.
+        return res.status(201).render("auth/register", {
+            pageTitle: "Registro completado | SaludVital",
+            error: null,
+            success: `Tu cuenta fue creada. Revisa el correo ${patient.email} para verificar tu dirección antes de iniciar sesión.`,
+        });
+    } catch (error) {
+        // Show expected validation errors without exposing internal details.
+        if (error instanceof RegistrationError) {
+            return res.status(error.statusCode).render("auth/register", {
+                pageTitle: "Registro de paciente | SaludVital",
+                error:
+                    error.statusCode >= 500
+                        ? "No fue posible completar el registro. Inténtalo más tarde."
+                        : error.message,
+                success: null,
+            });
+        }
+
+        // Let centralized error handling process unexpected failures.
+        return next(error);
+    }
 }
 
 // Authenticate the submitted credentials and establish the JWT cookie.
@@ -76,8 +168,8 @@ export async function login(req, res, next) {
 
         if (!dashboard) {
             return res.status(403).render("auth/login", {
-                pageTitle: "Sign in | SaludVital",
-                error: "Your account does not have an authorized dashboard.",
+                pageTitle: "Inicio de sesión | SaludVital",
+                error: "Tu cuenta no tiene un panel autorizado.",
             });
         }
 
@@ -107,6 +199,14 @@ export async function login(req, res, next) {
         // Redirect the user to the dashboard assigned to their role.
         return res.redirect(303, dashboard);
     } catch (error) {
+        // Show a clear message when the email has not been verified.
+        if (error instanceof EmailVerificationRequiredError) {
+            return res.status(403).render("auth/login", {
+                pageTitle: "Inicio de sesión | SaludVital",
+                error: "Debes confirmar tu correo electrónico antes de iniciar sesión.",
+            });
+        }
+
         // Display a generic message for invalid credentials.
         if (error instanceof AuthenticationError) {
             return res.status(401).render("auth/login", {

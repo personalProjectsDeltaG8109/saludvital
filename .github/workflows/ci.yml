@@ -67,11 +67,11 @@ jobs:
             - name: Run ESLint
               run: npm run lint
 
-            # Apply the repository migrations to the temporary MySQL database.
-            - name: Run database migrations
-              run: npm run db:migrate
+            # Prepare the dedicated test database, including migrations and initial roles.
+            - name: Prepare test database
+              run: npm run db:test:prepare
 
-            # Execute unit and integration tests against the migrated database.
+            # Execute unit and integration tests against the prepared database.
             - name: Run Jest tests
               run: npm test
 

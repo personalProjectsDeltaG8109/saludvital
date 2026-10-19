@@ -21,6 +21,7 @@ import Prescription from "./Prescription.js";
 import PrescriptionItem from "./PrescriptionItem.js";
 import EmergencyContact from "./EmergencyContact.js";
 import PasswordResetToken from "./PasswordResetToken.js";
+import EmailOutbox from "./EmailOutbox.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(User, {
@@ -41,6 +42,21 @@ User.belongsTo(Rol, {
 User.hasOne(Patient, {
     foreignKey: "user_id",
     as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Associate users with their pending and completed email delivery jobs.
+User.hasMany(EmailOutbox, {
+    foreignKey: "user_id",
+    as: "emailOutboxJobs",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+EmailOutbox.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
@@ -501,6 +517,7 @@ PasswordResetToken.belongsTo(User, {
 export {
     Rol,
     User,
+    EmailOutbox,
     Patient,
     Doctor,
     Specialities,

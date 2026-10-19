@@ -27,4 +27,24 @@ describe("SaludVital application", () => {
 
         expect(response.status).toBe(404);
     });
+
+    test("GET /register renders the patient registration form", async () => {
+        const response = await request(app).get("/register");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain("Crear cuenta de paciente");
+        expect(response.text).toContain('action="/register"');
+        expect(response.text).toContain('name="health_data_consent"');
+    });
+
+    test("POST /register without health data consent rejects registration", async () => {
+        const response = await request(app).post("/register").type("form").send({
+            first_name: "Test",
+            last_name: "Patient",
+            email: "integration-test@example.com",
+        });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain("autorizar el tratamiento");
+    });
 });

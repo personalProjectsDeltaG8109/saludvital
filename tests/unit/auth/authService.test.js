@@ -19,7 +19,7 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
 const bcrypt = (await import("bcrypt")).default;
 const { User } = await import("../../../src/models/associations.js");
 
-const { authenticateUser, AuthenticationError } =
+const { authenticateUser, AuthenticationError, EmailVerificationRequiredError } =
     await import("../../../src/modules/auth/services/authService.js");
 
 // Prepare consistent mock data for each authentication test.
@@ -28,6 +28,7 @@ describe("Authentication service", () => {
         id: 7,
         email: "patient@example.com",
         password_hash: "$2b$12$mocked-password-hash",
+        email_verified_at: new Date(),
         rol: {
             id: 1,
             name: "Patient",
@@ -98,6 +99,20 @@ describe("Authentication service", () => {
         await expect(
             authenticateUser("patient@example.com", "WrongPassword123!"),
         ).rejects.toBeInstanceOf(AuthenticationError);
+
+        expect(user.update).not.toHaveBeenCalled();
+    });
+
+    // Reject an account whose email has not been verified.
+    test("rejects a user with an unverified email", async () => {
+        User.findOne.mockResolvedValue({
+            ...user,
+            email_verified_at: null,
+        });
+
+        await expect(
+            authenticateUser("patient@example.com", "CorrectPassword123!"),
+        ).rejects.toBeInstanceOf(EmailVerificationRequiredError);
 
         expect(user.update).not.toHaveBeenCalled();
     });

@@ -1,6 +1,17 @@
 import bcrypt from "bcrypt";
 import { Rol, User } from "../../../models/associations.js";
 
+// Identify accounts that must verify their email before signing in.
+// Represent an authentication attempt blocked by an unverified email.
+// Represent an authentication attempt blocked by an unverified email.
+export class EmailVerificationRequiredError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "EmailVerificationRequiredError";
+        this.statusCode = 403;
+    }
+}
+
 // Keep authentication errors generic to avoid revealing account existence.
 export class AuthenticationError extends Error {
     constructor() {
@@ -51,6 +62,13 @@ export async function authenticateUser(email, password) {
 
     if (!passwordMatches) {
         throw new AuthenticationError();
+    }
+
+    // Require email verification before allowing authentication.
+    if (!user.email_verified_at) {
+        throw new EmailVerificationRequiredError(
+            "Please verify your email address before signing in.",
+        );
     }
 
     // Update the last successful login timestamp.

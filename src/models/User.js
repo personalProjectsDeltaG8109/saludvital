@@ -16,7 +16,7 @@ const User = database.define(
             allowNull: false,
         },
         email: {
-            type: DataTypes.STRING(80),
+            type: DataTypes.STRING(100),
             allowNull: false,
             unique: true,
             validate: {
@@ -35,6 +35,27 @@ const User = database.define(
         last_login_at: {
             type: DataTypes.DATE,
             allowNull: true,
+        },
+
+        // Record when the account email was successfully verified.
+        email_verified_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+        },
+
+        // Store only the hash of the email verification token.
+        email_verification_token_hash: {
+            type: DataTypes.STRING(64),
+            allowNull: true,
+            defaultValue: null,
+        },
+
+        // Expire verification tokens after the configured validity period.
+        email_verification_expires_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
         },
     },
     {
