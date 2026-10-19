@@ -61,7 +61,7 @@ const Patient = database.define(
             allowNull: true,
         },
         address: {
-            type: DataTypes.STRING(255),
+            type: DataTypes.STRING(150),
             allowNull: true,
         },
     },

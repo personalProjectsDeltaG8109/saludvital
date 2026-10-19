@@ -63,8 +63,8 @@ function validateRegistration(data) {
         document_number: 15,
         department: 100,
         municipality: 100,
-        address: 255,
-        email: 80,
+        address: 150,
+        email: 100,
         allergies: 255,
         existing_conditions: 255,
     };
@@ -81,9 +81,8 @@ function validateRegistration(data) {
                 );
             }
 
-            // Optional fields are normalized before checking their length.
+            // Normalize optional fields before validating their maximum length.
             const normalizedValue = optionalFields.has(field) ? value.trim() : value;
-
             if (normalizedValue.length > maxLength) {
                 throw new RegistrationError(
                     `El campo ${fieldLabels[field] || field} no puede superar los ${maxLength} caracteres.`,

@@ -162,7 +162,19 @@ describe("Patient registration service", () => {
         },
     );
 
-    // Reject values exceeding the database field limits.
+    // Accept address and email values at their documented maximum lengths.
+    test.each([
+        ["address", { address: "A".repeat(150) }],
+        ["email", { email: `${"a".repeat(88)}@example.com` }],
+    ])("accepts a valid field at its maximum length: %s", async (_description, changes) => {
+        await expect(
+            registerPatient({ ...validData, ...changes }),
+        ).resolves.toBeDefined();
+
+        expect(database.transaction).toHaveBeenCalledTimes(1);
+        expect(User.create).toHaveBeenCalledTimes(1);
+    });
+
     test.each([
         ["first name", { first_name: "A".repeat(51) }],
         ["last name", { last_name: "B".repeat(51) }],
@@ -170,8 +182,8 @@ describe("Patient registration service", () => {
         ["document number", { document_number: "1".repeat(16) }],
         ["department", { department: "D".repeat(101) }],
         ["municipality", { municipality: "M".repeat(101) }],
-        ["address", { address: "A".repeat(256) }],
-        ["email", { email: `${"a".repeat(70)}@example.com` }],
+        ["address", { address: "A".repeat(151) }],
+        ["email", { email: `${"a".repeat(101)}@example.com` }],
         ["allergies", { allergies: "A".repeat(256) }],
         ["existing conditions", { existing_conditions: "C".repeat(256) }],
     ])("rejects an oversized field: %s", async (_description, changes) => {

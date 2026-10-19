@@ -58,13 +58,33 @@ describe("Email verification HTTP endpoint", () => {
     });
 
     test("forwards unexpected service errors to Express error handling", async () => {
+        // Simulate an unexpected failure from the email verification service.
         verifyEmail.mockRejectedValue(new Error("Controlled verification failure"));
 
-        const response = await request(app)
-            .get("/verify-email")
-            .query({ token: "c".repeat(64) });
+        // Capture the expected error log to keep the test output clean.
+        const errorLogSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-        expect(response.status).toBe(500);
-        expect(response.text).not.toContain("Controlled verification failure");
+        try {
+            const response = await request(app)
+                .get("/verify-email")
+                .query({ token: "c".repeat(64) });
+
+            // Verify that the application handles the failure safely.
+            expect(response.status).toBe(500);
+            expect(response.text).not.toContain("Controlled verification failure");
+
+            // Verify that the middleware logs the unexpected error.
+            expect(errorLogSpy).toHaveBeenCalledWith(
+                "Unhandled application error.",
+                expect.objectContaining({
+                    method: "GET",
+                    path: "/verify-email",
+                    error: "Controlled verification failure",
+                }),
+            );
+        } finally {
+            // Restore console.error even if an assertion fails.
+            errorLogSpy.mockRestore();
+        }
     });
 });
