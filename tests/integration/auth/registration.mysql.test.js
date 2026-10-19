@@ -226,4 +226,38 @@ describe("Patient registration with real MySQL", () => {
         expect(patientCount).toBe(0);
         expect(emailJobCount).toBe(0);
     });
+
+    test("rolls back the user when patient profile creation fails", async () => {
+        const data = createRegistrationData();
+        registrations.push(data);
+
+        // Simulate a patient profile failure after the user has been created.
+        jest.spyOn(Patient, "create").mockRejectedValueOnce(
+            new Error("Controlled patient profile creation failure"),
+        );
+
+        await expect(registerPatient(data)).rejects.toThrow(
+            "Controlled patient profile creation failure",
+        );
+
+        // Verify that the database transaction removed the partially created account.
+        const userCount = await User.count({
+            where: { email: data.email.toLowerCase() },
+        });
+
+        const patientCount = await Patient.count({
+            where: {
+                document_type: data.document_type,
+                document_number: data.document_number,
+            },
+        });
+
+        const emailJobCount = await EmailOutbox.count({
+            where: { event_type: "email_verification" },
+        });
+
+        expect(userCount).toBe(0);
+        expect(patientCount).toBe(0);
+        expect(emailJobCount).toBeGreaterThanOrEqual(0);
+    });
 });

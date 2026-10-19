@@ -129,6 +129,60 @@ describe("Patient registration service", () => {
         expect(database.transaction).not.toHaveBeenCalled();
     });
 
+    // Reject invalid patient identification and contact information.
+    test.each([
+        ["invalid phone", { phone: "abc123" }],
+        ["invalid document type", { document_type: "PASSPORT" }],
+        ["invalid document number", { document_number: "123 456" }],
+        ["invalid blood type", { blood_type: "XYZ" }],
+    ])("rejects invalid patient data: %s", async (_description, changes) => {
+        await expect(registerPatient({ ...validData, ...changes })).rejects.toBeInstanceOf(
+            RegistrationError,
+        );
+
+        // Invalid data must be rejected before opening a transaction.
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(User.create).not.toHaveBeenCalled();
+    });
+
+    // Reject impossible and future dates of birth.
+    test.each(["1990-02-30", "2025-13-01", "invalid-date", "2999-01-01"])(
+        "rejects an invalid date of birth: %s",
+        async (dateOfBirth) => {
+            await expect(
+                registerPatient({
+                    ...validData,
+                    date_of_birth: dateOfBirth,
+                }),
+            ).rejects.toThrow(
+                "Ingresa una fecha de nacimiento válida. No puedes seleccionar una fecha futura.",
+            );
+
+            expect(database.transaction).not.toHaveBeenCalled();
+        },
+    );
+
+    // Reject values exceeding the database field limits.
+    test.each([
+        ["first name", { first_name: "A".repeat(51) }],
+        ["last name", { last_name: "B".repeat(51) }],
+        ["phone", { phone: "1".repeat(16) }],
+        ["document number", { document_number: "1".repeat(16) }],
+        ["department", { department: "D".repeat(101) }],
+        ["municipality", { municipality: "M".repeat(101) }],
+        ["address", { address: "A".repeat(256) }],
+        ["email", { email: `${"a".repeat(70)}@example.com` }],
+        ["allergies", { allergies: "A".repeat(256) }],
+        ["existing conditions", { existing_conditions: "C".repeat(256) }],
+    ])("rejects an oversized field: %s", async (_description, changes) => {
+        await expect(registerPatient({ ...validData, ...changes })).rejects.toBeInstanceOf(
+            RegistrationError,
+        );
+
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(User.create).not.toHaveBeenCalled();
+    });
+
     // Reject passwords that do not meet the configured password policy.
     test.each([
         ["too short", "Abc1!"],
