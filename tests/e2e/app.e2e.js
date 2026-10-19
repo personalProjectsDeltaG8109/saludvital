@@ -218,6 +218,138 @@ try {
 
     await loginPage.close();
 
+    // Verify patient registration across responsive viewports.
+    const registerPage = await context.newPage();
+
+    const registrationViewports = [
+        { name: "small mobile", width: 320, height: 720 },
+        { name: "mobile", width: 375, height: 812 },
+        { name: "tablet", width: 768, height: 1024 },
+        { name: "small desktop", width: 1024, height: 768 },
+        { name: "desktop", width: 1440, height: 900 },
+    ];
+
+    for (const viewport of registrationViewports) {
+        await registerPage.setViewportSize({
+            width: viewport.width,
+            height: viewport.height,
+        });
+
+        await registerPage.goto(`${baseUrl}/register`);
+
+        // Wait for the registration form and location catalog.
+        await registerPage.locator('form[action="/register"]').waitFor();
+        const departmentSelect = registerPage.locator("#department");
+        const municipalitySelect = registerPage.locator("#municipality");
+
+        // Wait until the department option exists in the DOM.
+        await departmentSelect.locator('option[value="66"]').waitFor({
+            state: "attached",
+        });
+
+        if (!(await departmentSelect.isVisible())) {
+            throw new Error(`Department selector is not visible at ${viewport.name}.`);
+        }
+
+        if (!(await municipalitySelect.isVisible())) {
+            throw new Error(`Municipality selector is not visible at ${viewport.name}.`);
+        }
+
+        // Confirm the form has no horizontal overflow at this viewport.
+        const layout = await registerPage.evaluate(() => ({
+            documentWidth: document.documentElement.scrollWidth,
+            bodyWidth: document.body.scrollWidth,
+            viewportWidth: window.innerWidth,
+        }));
+
+        if (
+            layout.documentWidth > layout.viewportWidth ||
+            layout.bodyWidth > layout.viewportWidth
+        ) {
+            throw new Error(
+                `Registration page has horizontal overflow at ${viewport.name}: ${JSON.stringify(layout)}`,
+            );
+        }
+
+        console.log(
+            `PASS: registration responsive layout at ${viewport.name} (${viewport.width}x${viewport.height}).`,
+        );
+    }
+
+    // Verify that municipality options depend on the selected department.
+    await registerPage.goto(`${baseUrl}/register`);
+
+    const departmentSelect = registerPage.locator("#department");
+    const municipalitySelect = registerPage.locator("#municipality");
+
+    // Wait until the department option is present in the DOM.
+    await departmentSelect.locator('option[value="66"]').waitFor({
+        state: "attached",
+    });
+
+    console.log("PASS: municipalities load for the selected department.");
+
+    // Change departments and verify that the previous municipality is cleared.
+    await departmentSelect.selectOption("66");
+
+    // Wait until the municipality option exists in the DOM.
+    await municipalitySelect.locator('option[value="66001"]').waitFor({
+        state: "attached",
+    });
+
+    if (await municipalitySelect.isDisabled()) {
+        throw new Error("Municipality selector remained disabled after loading.");
+    }
+
+    console.log("PASS: changing departments clears the previous municipality.");
+
+    // Change departments and verify that the previous municipality is cleared.
+    await departmentSelect.selectOption("05");
+
+    // Wait until the municipality option for the new department exists.
+    await municipalitySelect.locator('option[value="05001"]').waitFor({
+        state: "attached",
+    });
+
+    if ((await municipalitySelect.inputValue()) !== "") {
+        throw new Error("Changing the department did not clear the previous municipality.");
+    }
+
+    // Verify registration form accessibility on mobile and desktop.
+    for (const viewport of [
+        { name: "mobile", width: 375, height: 812 },
+        { name: "desktop", width: 1440, height: 900 },
+    ]) {
+        await registerPage.setViewportSize({
+            width: viewport.width,
+            height: viewport.height,
+        });
+
+        await registerPage.goto(`${baseUrl}/register`);
+
+        // Wait until the department option is present in the DOM.
+        await registerPage
+            .locator("#department")
+            .locator('option[value="66"]')
+            .waitFor({ state: "attached" });
+
+        const registrationAccessibility = await new AxeBuilder({
+            page: registerPage,
+        }).analyze();
+
+        if (registrationAccessibility.violations.length > 0) {
+            console.error(JSON.stringify(registrationAccessibility.violations, null, 2));
+
+            throw new Error(
+                `Registration accessibility check found ${registrationAccessibility.violations.length} violation(s) at ${viewport.name}.`,
+            );
+        }
+
+        console.log(`PASS: registration accessibility at ${viewport.name}.`);
+    }
+
+    await registerPage.close();
+
     // Run automated accessibility checks with axe-core.
     const accessibility = await new AxeBuilder({ page: desktop }).analyze();
 

@@ -134,6 +134,39 @@ describe("Patient registration HTTP integration with MySQL", () => {
         expect(emailJob.status).toBe("pending");
     });
 
+    test("rejects a municipality that does not belong to the selected department", async () => {
+        const data = createRegistrationData();
+        registrations.push(data);
+
+        // Submit Pereira with Antioquia to simulate a manipulated request.
+        data.department = "05";
+        data.municipality = "66001";
+
+        const response = await submitRegistration(data);
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain(
+            "Selecciona un municipio válido para el departamento seleccionado.",
+        );
+
+        // Confirm that the rejected request created no user.
+        const userCount = await User.count({
+            where: { email: data.email.toLowerCase() },
+        });
+
+        expect(userCount).toBe(0);
+
+        // Confirm that no patient was created for the submitted document.
+        const patientCount = await Patient.count({
+            where: {
+                document_type: data.document_type,
+                document_number: data.document_number,
+            },
+        });
+
+        expect(patientCount).toBe(0);
+    });
+
     test("rejects a form without health data consent and creates no account", async () => {
         const data = createRegistrationData();
         registrations.push(data);
