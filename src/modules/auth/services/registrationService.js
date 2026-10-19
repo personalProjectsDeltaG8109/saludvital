@@ -109,16 +109,28 @@ function validateRegistration(data) {
         throw new RegistrationError("Ingresa un número de documento válido.");
     }
 
-    // Validate the date format and reject dates later than today.
+    // Validate the date format, reject future dates, and enforce a maximum age of 120.
+    const birthDate = new Date(`${data.date_of_birth}T00:00:00.000Z`);
+    const today = new Date();
+    const todayUtc = new Date(
+        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+    );
+    const oldestAllowedDate = new Date(todayUtc);
+    oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
+
+    const validDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(data.date_of_birth);
+    const validCalendarDate =
+        Number.isFinite(birthDate.getTime()) &&
+        birthDate.toISOString().slice(0, 10) === data.date_of_birth;
+
     if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(data.date_of_birth) ||
-        !Number.isFinite(Date.parse(`${data.date_of_birth}T00:00:00Z`)) ||
-        new Date(`${data.date_of_birth}T00:00:00Z`).toISOString().slice(0, 10) !==
-            data.date_of_birth ||
-        data.date_of_birth > new Date().toISOString().slice(0, 10)
+        !validDateFormat ||
+        !validCalendarDate ||
+        birthDate > todayUtc ||
+        birthDate < oldestAllowedDate
     ) {
         throw new RegistrationError(
-            "Ingresa una fecha de nacimiento válida. No puedes seleccionar una fecha futura.",
+            "Ingresa una fecha de nacimiento válida. Debe ser una fecha entre hoy y hace 120 años.",
         );
     }
 

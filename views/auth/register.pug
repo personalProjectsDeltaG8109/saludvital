@@ -218,6 +218,15 @@ html(lang="es")
                                     p.mt-1.text-xs.leading-5.text-slate-500
                                         | Mínimo 10 caracteres, con mayúscula, minúsculas, número y carácter especial.
 
+                                //- Display a live password strength indicator.
+                                div.mt-3(aria-live="polite")
+                                    div.h-2.w-full.overflow-hidden.rounded-full.bg-slate-200
+                                        div#password-strength-bar.h-full.rounded-full.transition-all.duration-300(
+                                        style="width: 0%; background-color: #CBD5E1;"
+                                        )
+                                    p#password-strength-text.mt-2.text-xs.text-slate-600
+                                        | Escribe una contraseña
+
                                 div
                                     label.mb-2.block.text-sm.font-semibold(for="password_confirmation") Confirmar contraseña
                                     input#password_confirmation.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
@@ -228,7 +237,11 @@ html(lang="es")
                                         minlength="10",
                                         required
                                     )
-
+                                //- Display password confirmation feedback accessibly.
+                                p#password-match-message.mt-2.text-sm(
+                                    role="status"
+                                    aria-live="polite"
+                                )
                             //- Explicit consent for processing sensitive health information.
                             div
                                 label.flex.items-start.gap-3.text-sm.leading-5.text-slate-600(for="health_data_consent")
@@ -279,3 +292,4 @@ html(lang="es")
                 )
     
     script(src="/js/registration-locations.js" defer)
+    script(src="/js/registration-form.js" defer)

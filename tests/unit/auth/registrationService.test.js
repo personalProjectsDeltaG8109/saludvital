@@ -186,7 +186,7 @@ describe("Patient registration service", () => {
                     date_of_birth: dateOfBirth,
                 }),
             ).rejects.toThrow(
-                "Ingresa una fecha de nacimiento válida. No puedes seleccionar una fecha futura.",
+                "Ingresa una fecha de nacimiento válida. Debe ser una fecha entre hoy y hace 120 años.",
             );
 
             expect(database.transaction).not.toHaveBeenCalled();
@@ -203,6 +203,50 @@ describe("Patient registration service", () => {
         ["document number with 15 digits", { document_number: "1".repeat(15) }],
     ])("accepts a valid field at its maximum length: %s", async (_description, changes) => {
         await expect(registerPatient({ ...validData, ...changes })).resolves.toBeDefined();
+
+        expect(database.transaction).toHaveBeenCalledTimes(1);
+        expect(User.create).toHaveBeenCalledTimes(1);
+    });
+
+    // Verify the maximum permitted age using UTC calendar dates.
+    test("rejects a date of birth older than 120 years", async () => {
+        const todayUtc = new Date();
+        const oldestAllowedDate = new Date(
+            Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), todayUtc.getUTCDate()),
+        );
+
+        oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
+        oldestAllowedDate.setUTCDate(oldestAllowedDate.getUTCDate() - 1);
+
+        const dateOfBirth = oldestAllowedDate.toISOString().slice(0, 10);
+
+        await expect(
+            registerPatient({
+                ...validData,
+                date_of_birth: dateOfBirth,
+            }),
+        ).rejects.toBeInstanceOf(RegistrationError);
+
+        expect(database.transaction).not.toHaveBeenCalled();
+    });
+
+    // Accept a date of birth exactly 120 years before today.
+    test("accepts a date of birth at the 120-year limit", async () => {
+        const todayUtc = new Date();
+        const oldestAllowedDate = new Date(
+            Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), todayUtc.getUTCDate()),
+        );
+
+        oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
+
+        const dateOfBirth = oldestAllowedDate.toISOString().slice(0, 10);
+
+        await expect(
+            registerPatient({
+                ...validData,
+                date_of_birth: dateOfBirth,
+            }),
+        ).resolves.toBeDefined();
 
         expect(database.transaction).toHaveBeenCalledTimes(1);
         expect(User.create).toHaveBeenCalledTimes(1);
