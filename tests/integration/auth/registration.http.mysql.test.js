@@ -23,8 +23,8 @@ function createRegistrationData() {
         date_of_birth: "1990-05-15",
         document_type: "CC",
         document_number: `H${uniqueId.slice(0, 14)}`,
-        department: "Risaralda",
-        municipality: "Pereira",
+        department: "66",
+        municipality: "66001",
         email: `http-registration-${uniqueId}@example.test`,
         password: "SecureTest123!",
         password_confirmation: "SecureTest123!",
@@ -118,6 +118,10 @@ describe("Patient registration HTTP integration with MySQL", () => {
 
         expect(patient).not.toBeNull();
         expect(patient.document_number).toBe(data.document_number);
+
+        // Verify that canonical location names are stored instead of submitted codes.
+        expect(patient.department).toBe("RISARALDA");
+        expect(patient.municipality).toBe("PEREIRA");
 
         const emailJob = await EmailOutbox.findOne({
             where: {

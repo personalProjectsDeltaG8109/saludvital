@@ -129,25 +129,25 @@ html(lang="es")
                                     )
 
                                 .grid.grid-cols-1.gap-4(class="sm:grid-cols-2")
+
                                     div
                                         label.mb-2.block.text-sm.font-semibold(for="department") Departamento
-                                        input#department.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        select#department.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
-                                            type="text",
                                             name="department",
-                                            maxlength="100",
                                             required
                                         )
+                                            option(value="" selected disabled) Selecciona un departamento
 
                                     div
                                         label.mb-2.block.text-sm.font-semibold(for="municipality") Municipio
-                                        input#municipality.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
+                                        select#municipality.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
-                                            type="text",
                                             name="municipality",
-                                            maxlength="100",
-                                            required
+                                            required,
+                                            disabled
                                         )
+                                            option(value="" selected disabled) Primero selecciona un departamento
 
                                     div(class="sm:col-span-2")
                                         label.mb-2.block.text-sm.font-semibold(for="address") Dirección (opcional)
@@ -273,3 +273,5 @@ html(lang="es")
                     width="32",
                     height="32"
                 )
+    
+    script(src="/js/registration-locations.js" defer)

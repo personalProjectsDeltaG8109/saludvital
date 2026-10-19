@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
+import { resolveLocation } from "./locationService.js";
 
 // Represent expected registration failures with safe, user-facing messages.
 export class RegistrationError extends Error {
@@ -148,6 +149,18 @@ function validateRegistration(data) {
     if (bloodType && !allowedBloodTypes.includes(bloodType)) {
         throw new RegistrationError("Selecciona un grupo sanguíneo válido.");
     }
+
+    // Verify that the submitted municipality belongs to the selected department.
+    const location = resolveLocation(data.department, data.municipality);
+
+    if (!location) {
+        throw new RegistrationError(
+            "Selecciona un municipio válido para el departamento seleccionado.",
+        );
+    }
+
+    // Return canonical names from the trusted catalog instead of user input.
+    return location;
 }
 
 // Create a patient account and profile atomically.
@@ -156,8 +169,8 @@ export async function registerPatient(data) {
         throw new RegistrationError("Los datos de registro no son válidos.");
     }
 
-    validateRegistration(data);
-
+    // Validate all registration fields and resolve the official location names.
+    const location = validateRegistration(data);
     const email = data.email.trim().toLowerCase();
     const documentType = data.document_type;
     const documentNumber = data.document_number.trim();
@@ -228,8 +241,8 @@ export async function registerPatient(data) {
                     date_of_birth: data.date_of_birth,
                     document_type: documentType,
                     document_number: documentNumber,
-                    department: data.department.trim(),
-                    municipality: data.municipality.trim(),
+                    department: location.department,
+                    municipality: location.municipality,
                     blood_type: optionalText(data.blood_type),
                     allergies: optionalText(data.allergies),
                     existing_conditions: optionalText(data.existing_conditions),

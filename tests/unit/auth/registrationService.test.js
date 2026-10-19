@@ -49,8 +49,8 @@ describe("Patient registration service", () => {
         date_of_birth: "1990-05-15",
         document_type: "CC",
         document_number: "123456789",
-        department: "Risaralda",
-        municipality: "Pereira",
+        department: "66",
+        municipality: "66001",
         address: "Main Street 123",
         email: "Patient@Example.com",
         password: "SecurePass123!",
@@ -127,6 +127,31 @@ describe("Patient registration service", () => {
         );
 
         expect(database.transaction).not.toHaveBeenCalled();
+    });
+
+    // Reject municipalities that do not belong to the selected department.
+    test.each([
+        ["Antioquia with Pereira", "05", "66001"],
+        ["Risaralda with Medellín", "66", "05001"],
+        ["an unknown department", "XX", "66001"],
+        ["an unknown municipality", "66", "99999"],
+    ])("rejects an invalid location: %s", async (_description, department, municipality) => {
+        await expect(
+            registerPatient({
+                ...validData,
+                department,
+                municipality,
+            }),
+        ).rejects.toMatchObject({
+            name: "RegistrationError",
+            statusCode: 400,
+        });
+
+        // Invalid locations must be rejected before database access.
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(bcrypt.hash).not.toHaveBeenCalled();
+        expect(User.create).not.toHaveBeenCalled();
+        expect(Patient.create).not.toHaveBeenCalled();
     });
 
     // Reject invalid patient identification and contact information.
