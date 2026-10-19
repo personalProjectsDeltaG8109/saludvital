@@ -167,9 +167,7 @@ describe("Patient registration service", () => {
         ["address", { address: "A".repeat(150) }],
         ["email", { email: `${"a".repeat(88)}@example.com` }],
     ])("accepts a valid field at its maximum length: %s", async (_description, changes) => {
-        await expect(
-            registerPatient({ ...validData, ...changes }),
-        ).resolves.toBeDefined();
+        await expect(registerPatient({ ...validData, ...changes })).resolves.toBeDefined();
 
         expect(database.transaction).toHaveBeenCalledTimes(1);
         expect(User.create).toHaveBeenCalledTimes(1);
