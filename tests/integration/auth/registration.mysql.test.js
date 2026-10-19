@@ -227,6 +227,74 @@ describe("Patient registration with real MySQL", () => {
         expect(emailJobCount).toBe(0);
     });
 
+    // Ensure concurrent registrations cannot create accounts with duplicate emails.
+    test("allows only one concurrent registration for the same email", async () => {
+        const firstData = createRegistrationData();
+        const secondData = {
+            ...createRegistrationData(),
+            email: firstData.email,
+        };
+
+        registrations.push(firstData, secondData);
+
+        const results = await Promise.allSettled([
+            registerPatient(firstData),
+            registerPatient(secondData),
+        ]);
+
+        const successfulResults = results.filter((result) => result.status === "fulfilled");
+        const rejectedResults = results.filter((result) => result.status === "rejected");
+
+        expect(successfulResults).toHaveLength(1);
+        expect(rejectedResults).toHaveLength(1);
+        expect(rejectedResults[0].reason).toMatchObject({
+            name: "RegistrationError",
+            statusCode: 409,
+        });
+
+        const matchingUsers = await User.count({
+            where: { email: firstData.email.toLowerCase() },
+        });
+
+        expect(matchingUsers).toBe(1);
+    });
+
+    // Ensure concurrent registrations cannot reuse the same identity document.
+    test("allows only one concurrent registration for the same identity document", async () => {
+        const firstData = createRegistrationData();
+        const secondData = {
+            ...createRegistrationData(),
+            document_type: firstData.document_type,
+            document_number: firstData.document_number,
+        };
+
+        registrations.push(firstData, secondData);
+
+        const results = await Promise.allSettled([
+            registerPatient(firstData),
+            registerPatient(secondData),
+        ]);
+
+        const successfulResults = results.filter((result) => result.status === "fulfilled");
+        const rejectedResults = results.filter((result) => result.status === "rejected");
+
+        expect(successfulResults).toHaveLength(1);
+        expect(rejectedResults).toHaveLength(1);
+        expect(rejectedResults[0].reason).toMatchObject({
+            name: "RegistrationError",
+            statusCode: 409,
+        });
+
+        const matchingPatients = await Patient.count({
+            where: {
+                document_type: firstData.document_type,
+                document_number: firstData.document_number,
+            },
+        });
+
+        expect(matchingPatients).toBe(1);
+    });
+
     test("rolls back the user when patient profile creation fails", async () => {
         const data = createRegistrationData();
         registrations.push(data);
