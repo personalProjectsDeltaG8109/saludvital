@@ -160,6 +160,12 @@ describe("Patient registration service", () => {
         ["invalid document type", { document_type: "PASSPORT" }],
         ["invalid document number", { document_number: "123 456" }],
         ["invalid blood type", { blood_type: "XYZ" }],
+        ["phone with letters", { phone: "300ABC4567" }],
+        ["phone with spaces", { phone: "300 1234567" }],
+        ["phone with hyphens", { phone: "300-123-4567" }],
+        ["document number with letters", { document_number: "123ABC456" }],
+        ["document number with spaces", { document_number: "123 456" }],
+        ["document number with hyphens", { document_number: "123-456" }],
     ])("rejects invalid patient data: %s", async (_description, changes) => {
         await expect(registerPatient({ ...validData, ...changes })).rejects.toBeInstanceOf(
             RegistrationError,
@@ -191,6 +197,10 @@ describe("Patient registration service", () => {
     test.each([
         ["address", { address: "A".repeat(150) }],
         ["email", { email: `${"a".repeat(88)}@example.com` }],
+        ["phone with 7 digits", { phone: "1".repeat(7) }],
+        ["phone with 15 digits", { phone: "1".repeat(15) }],
+        ["document number with 1 digit", { document_number: "1" }],
+        ["document number with 15 digits", { document_number: "1".repeat(15) }],
     ])("accepts a valid field at its maximum length: %s", async (_description, changes) => {
         await expect(registerPatient({ ...validData, ...changes })).resolves.toBeDefined();
 
@@ -209,7 +219,8 @@ describe("Patient registration service", () => {
         ["email", { email: `${"a".repeat(101)}@example.com` }],
         ["allergies", { allergies: "A".repeat(256) }],
         ["existing conditions", { existing_conditions: "C".repeat(256) }],
-    ])("rejects an oversized field: %s", async (_description, changes) => {
+        ["phone with 6 digits", { phone: "1".repeat(6) }],
+    ])("rejects a field outside its length limits: %s", async (_description, changes) => {
         await expect(registerPatient({ ...validData, ...changes })).rejects.toBeInstanceOf(
             RegistrationError,
         );

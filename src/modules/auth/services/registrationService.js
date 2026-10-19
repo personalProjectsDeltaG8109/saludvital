@@ -96,15 +96,16 @@ function validateRegistration(data) {
         throw new RegistrationError("Ingresa una dirección de correo electrónico válida.");
     }
 
-    if (!/^\+?[0-9\s()-]{7,15}$/.test(data.phone.trim())) {
+    // Accept only phone numbers containing 7 to 15 digits.
+    if (!/^[0-9]{7,15}$/.test(data.phone.trim())) {
         throw new RegistrationError("Ingresa un número de teléfono válido.");
     }
 
     if (!["CC", "CE"].includes(data.document_type)) {
         throw new RegistrationError("Selecciona un tipo de documento válido.");
     }
-
-    if (!/^[A-Za-z0-9-]+$/.test(data.document_number.trim())) {
+    // Accept only document numbers containing 1 to 15 digits.
+    if (!/^[0-9]{1,15}$/.test(data.document_number.trim())) {
         throw new RegistrationError("Ingresa un número de documento válido.");
     }
 

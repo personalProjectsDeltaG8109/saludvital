@@ -22,7 +22,11 @@ function createRegistrationData() {
         phone: "3001234567",
         date_of_birth: "1990-05-15",
         document_type: "CC",
-        document_number: `T${uniqueId.slice(0, 14)}`,
+        document_number: uniqueId
+            .split("")
+            .map((character) => (parseInt(character, 16) % 10).toString())
+            .join("")
+            .slice(0, 15),
         department: "66",
         municipality: "66001",
         email: `registration-${uniqueId}@example.test`,
