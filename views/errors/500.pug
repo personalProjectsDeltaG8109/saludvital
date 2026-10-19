@@ -1,4 +1,3 @@
-
 doctype html
 html(lang="es")
     head
@@ -7,8 +6,11 @@ html(lang="es")
         meta(name="robots", content="noindex, nofollow")
         title= pageTitle
         link(rel="stylesheet", href="/css/app.css")
-    body(class="flex min-h-screen items-center justify-center bg-slate-50 px-4 text-slate-800")
-        main(class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-lg")
-            h1(class="mb-3 text-2xl font-bold text-[#123B73]") No pudimos completar tu solicitud
-            p(class="mb-6 text-sm leading-6 text-slate-600") Ocurrió un error inesperado. Inténtalo más tarde.
-            a(class="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#123B73] px-5 py-3 text-sm font-semibold text-white", href="/login") Volver al inicio de sesión
+    body.flex.min-h-screen.items-center.justify-center.bg-slate-50.px-4.text-slate-800
+        main.w-full.max-w-lg.rounded-2xl.border.border-slate-200.bg-white.p-8.text-center.shadow-lg
+            h1.mb-3.text-2xl.font-bold(class="text-[#123B73]") No pudimos completar tu solicitud
+            p.mb-6.text-sm.leading-6.text-slate-600 Ocurrió un error inesperado. Inténtalo más tarde.
+            a.inline-flex.min-h-11.items-center.justify-center.rounded-xl.px-5.py-3.text-sm.font-semibold.text-white(
+                class="bg-[#123B73]",
+                href="/login"
+            ) Volver al inicio de sesión
