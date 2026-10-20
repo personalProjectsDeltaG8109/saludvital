@@ -63,3 +63,47 @@ export async function sendVerificationEmail(email, verificationUrl) {
         `,
     });
 }
+
+/**
+ * Send a password recovery link to the account email address.
+ */
+export async function sendPasswordResetEmail(email, resetUrl) {
+    const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+
+    if (!from) {
+        throw new Error("EMAIL_FROM or EMAIL_USER must be configured.");
+    }
+
+    const transporter = createTransport();
+
+    await transporter.sendMail({
+        from,
+        to: email,
+        subject: "Recupera tu contraseña de SaludVital",
+        text: [
+            "Hola:",
+            "",
+            "Recibimos una solicitud para restablecer tu contraseña de SaludVital.",
+            "Para crear una nueva contraseña, abre este enlace:",
+            resetUrl,
+            "",
+            "Si no solicitaste este cambio, puedes ignorar este mensaje.",
+            "Por seguridad, el enlace tiene un tiempo de validez limitado.",
+        ].join("\n"),
+        html: `
+            <main style="font-family: Arial, sans-serif; color: #123B73; line-height: 1.6;">
+                <h1>Recupera tu contraseña</h1>
+                <p>Recibimos una solicitud para restablecer tu contraseña de SaludVital.</p>
+                <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+                <p>
+                    <a href="${resetUrl}"
+                       style="display:inline-block;padding:12px 20px;background:#123B73;color:#ffffff;text-decoration:none;border-radius:24px;">
+                        Restablecer contraseña
+                    </a>
+                </p>
+                <p>Este enlace tiene un tiempo de validez limitado.</p>
+                <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
+            </main>
+        `,
+    });
+}

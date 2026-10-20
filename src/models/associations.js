@@ -518,6 +518,7 @@ export {
     Rol,
     User,
     EmailOutbox,
+    PasswordResetToken,
     Patient,
     Doctor,
     Specialities,

@@ -1,10 +1,20 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { login, logout, showLogin, showRegister, register } from "../controllers/authController.js";
+
+import {
+    login,
+    logout,
+    showLogin,
+    showRegister,
+    register,
+    showForgotPassword,
+    forgotPassword,
+    showResetPassword,
+    resetPasswordController,
+    verifyEmailAddress,
+} from "../controllers/authController.js";
 
 import { authenticateToken } from "../../../middleware/authenticateToken.js";
-
-import { verifyEmailAddress } from "../controllers/authController.js";
 
 // Limit repeated login attempts to reduce password-guessing attacks.
 const loginLimiter = rateLimit({
@@ -40,9 +50,49 @@ const registerLimiter = rateLimit({
     },
 });
 
+/**
+ * Limit password recovery requests to reduce abuse.
+ */
+const passwordRecoveryLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+        // Render the page that matches the recovery endpoint being limited.
+        const isResetRequest = req.path === "/reset-password";
+
+        if (isResetRequest) {
+            // Protect reset tokens in rate-limit responses.
+            res.set({
+                "Referrer-Policy": "no-referrer",
+                "Cache-Control": "no-store",
+            });
+
+            return res.status(429).render("auth/reset-password", {
+                pageTitle: "Restablecer contraseña | SaludVital",
+                token: typeof req.body?.token === "string" ? req.body.token : "",
+                error: "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+                success: null,
+            });
+        }
+
+        return res.status(429).render("auth/forgot-password", {
+            pageTitle: "Recuperar contraseña | SaludVital",
+            error: "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+            success: null,
+        });
+    },
+});
+
 // Register the authentication endpoints.
 const authRoutes = Router();
 
+/* Password recovery pages and actions. */
+authRoutes.get("/forgot-password", showForgotPassword);
+authRoutes.post("/forgot-password", passwordRecoveryLimiter, forgotPassword);
+authRoutes.get("/reset-password", showResetPassword);
+authRoutes.post("/reset-password", passwordRecoveryLimiter, resetPasswordController);
 authRoutes.get("/login", showLogin);
 // Display the patient registration form.
 authRoutes.get("/register", showRegister);

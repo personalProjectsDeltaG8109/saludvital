@@ -1,31 +1,36 @@
-// Track the last activity of authenticated sessions.
+// Track the last activity and owner of each authenticated session.
 const INACTIVITY_LIMIT_MS = 180 * 1000;
 const activeSessions = new Map();
 
-// Register a new authenticated session.
-export function startSession(sessionId) {
-    activeSessions.set(sessionId, Date.now());
+// Register a session and associate it with its user.
+export function startSession(sessionId, userId) {
+    activeSessions.set(sessionId, {
+        userId: String(userId),
+        lastActivity: Date.now(),
+    });
 }
 
-// Update the last activity timestamp.
+// Update the last activity timestamp for an existing session.
 export function refreshSession(sessionId) {
-    if (!activeSessions.has(sessionId)) {
+    const session = activeSessions.get(sessionId);
+
+    if (!session) {
         return false;
     }
 
-    activeSessions.set(sessionId, Date.now());
+    session.lastActivity = Date.now();
     return true;
 }
 
 // Check whether a session has exceeded the inactivity limit.
 export function isSessionExpired(sessionId) {
-    const lastActivity = activeSessions.get(sessionId);
+    const session = activeSessions.get(sessionId);
 
-    if (lastActivity === undefined) {
+    if (!session) {
         return true;
     }
 
-    if (Date.now() - lastActivity >= INACTIVITY_LIMIT_MS) {
+    if (Date.now() - session.lastActivity >= INACTIVITY_LIMIT_MS) {
         activeSessions.delete(sessionId);
         return true;
     }
@@ -36,4 +41,15 @@ export function isSessionExpired(sessionId) {
 // Remove a session when the user signs out.
 export function endSession(sessionId) {
     activeSessions.delete(sessionId);
+}
+
+// Revoke every active session belonging to a user.
+export function endUserSessions(userId) {
+    const normalizedUserId = String(userId);
+
+    for (const [sessionId, session] of activeSessions.entries()) {
+        if (session.userId === normalizedUserId) {
+            activeSessions.delete(sessionId);
+        }
+    }
 }

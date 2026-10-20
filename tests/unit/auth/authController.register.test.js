@@ -43,6 +43,12 @@ jest.unstable_mockModule("../../../src/modules/auth/services/registrationService
     },
 }));
 
+// Prevent password recovery dependencies from initializing Sequelize in registration tests.
+jest.unstable_mockModule("../../../src/modules/auth/services/passwordResetService.js", () => ({
+    requestPasswordReset: jest.fn(),
+    resetPassword: jest.fn(),
+}));
+
 // Import the mocked registration service and controller after registering mocks.
 const { registerPatient, RegistrationError } =
     await import("../../../src/modules/auth/services/registrationService.js");
