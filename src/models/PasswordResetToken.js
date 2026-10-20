@@ -27,6 +27,10 @@ const PasswordResetToken = database.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        created_at: {
+            type: DataTypes.DATE,
+            allowNull: false,
+        },
     },
     {
         // Use the existing table without automatic timestamp management.

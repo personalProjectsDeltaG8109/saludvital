@@ -14,6 +14,8 @@ import { verifyEmail } from "../services/emailVerificationService.js";
 // Handle patient registration and its expected validation errors.
 import { registerPatient, RegistrationError } from "../services/registrationService.js";
 
+import { requestPasswordReset, resetPassword } from "../services/passwordResetService.js";
+
 // Verify a patient's email address using the supplied token.
 export async function verifyEmailAddress(req, res, next) {
     try {
@@ -110,6 +112,98 @@ export function showRegister(req, res) {
     });
 }
 
+/**
+ * Render the password recovery request page.
+ */
+export function showForgotPassword(req, res) {
+    return res.status(200).render("auth/forgot-password", {
+        pageTitle: "Recuperar contraseña | SaludVital",
+        error: null,
+        success: null,
+    });
+}
+
+/**
+ * Queue a password recovery email without revealing account existence.
+ */
+export async function forgotPassword(req, res, next) {
+    try {
+        await requestPasswordReset(req.body?.email);
+
+        // Always show the same message to prevent account enumeration.
+        return res.status(200).render("auth/forgot-password", {
+            pageTitle: "Recuperar contraseña | SaludVital",
+            error: null,
+            success:
+                "Si existe una cuenta asociada a ese correo, recibirás instrucciones para recuperar tu contraseña.",
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+/**
+ * Render the password reset form with the supplied token.
+ */
+export function showResetPassword(req, res) {
+    const token = typeof req.query.token === "string" ? req.query.token : "";
+
+    // Prevent recovery tokens from leaking through referrer headers or cached pages.
+    res.set({
+        "Referrer-Policy": "no-referrer",
+        "Cache-Control": "no-store",
+    });
+
+    return res.status(200).render("auth/reset-password", {
+        pageTitle: "Restablecer contraseña | SaludVital",
+        token,
+        error: null,
+        success: null,
+    });
+}
+
+/**
+ * Validate the reset token and save the new password.
+ */
+export async function resetPasswordController(req, res, next) {
+    try {
+        // Prevent recovery tokens from leaking through referrer headers or cached pages.
+        res.set({
+            "Referrer-Policy": "no-referrer",
+            "Cache-Control": "no-store",
+        });
+
+        const { token, password, password_confirmation: confirmation } = req.body ?? {};
+
+        const result = await resetPassword(token, password, confirmation);
+
+        if (!result.reset) {
+            const messages = {
+                invalid: "El enlace de recuperación no es válido o ha vencido.",
+                invalid_or_expired: "El enlace de recuperación no es válido o ha vencido.",
+                invalid_password:
+                    "La contraseña debe tener al menos 10 caracteres e incluir una mayúscula, tres minúsculas, un número y un carácter especial. Ambas contraseñas deben coincidir.",
+            };
+
+            return res.status(400).render("auth/reset-password", {
+                pageTitle: "Restablecer contraseña | SaludVital",
+                token: typeof token === "string" ? token : "",
+                error: messages[result.reason] || messages.invalid_or_expired,
+                success: null,
+            });
+        }
+
+        return res.status(200).render("auth/reset-password", {
+            pageTitle: "Contraseña actualizada | SaludVital",
+            token: "",
+            error: null,
+            success: "Tu contraseña fue actualizada correctamente. Ya puedes iniciar sesión.",
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
 // Validate consent and create a patient account.
 export async function register(req, res, next) {
     try {
@@ -190,8 +284,8 @@ export async function login(req, res, next) {
             },
         );
 
-        // Start tracking inactivity before issuing the cookie.
-        startSession(sessionId);
+        // Associate the authenticated session with its account for future revocation.
+        startSession(sessionId, user.id);
 
         // Store the token in an HTTP-only authentication cookie.
         res.cookie("token", token, getAuthCookieOptions());

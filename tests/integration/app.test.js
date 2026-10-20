@@ -47,4 +47,26 @@ describe("SaludVital application", () => {
         expect(response.status).toBe(400);
         expect(response.text).toContain("autorizar el tratamiento");
     });
+
+    // Verify that the password recovery form is available without authentication.
+    test("GET /forgot-password renders the password recovery form", async () => {
+        const response = await request(app).get("/forgot-password");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain('action="/forgot-password"');
+        expect(response.text).toContain("Recuperar contraseña");
+    });
+
+    // Verify that the password reset form is available with a token parameter.
+    test("GET /reset-password renders the password reset form", async () => {
+        const response = await request(app)
+            .get("/reset-password")
+            .query({ token: "a".repeat(64) });
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain('action="/reset-password"');
+        expect(response.text).toContain("Restablecer contraseña");
+        expect(response.headers["referrer-policy"]).toBe("no-referrer");
+        expect(response.headers["cache-control"]).toContain("no-store");
+    });
 });

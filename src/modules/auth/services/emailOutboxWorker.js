@@ -1,14 +1,16 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
-import { EmailOutbox, User } from "../../../models/associations.js";
-import { sendVerificationEmail } from "./emailService.js";
+import { EmailOutbox, PasswordResetToken, User } from "../../../models/associations.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService.js";
 
 // Configure retry delays and recovery limits.
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS_MINUTES = [1, 5, 15, 30, 60];
 const LOCK_TIMEOUT_MINUTES = 5;
 const VERIFICATION_TOKEN_MINUTES = 30;
+// Keep password reset tokens valid for 30 minutes.
+const PASSWORD_RESET_TOKEN_MINUTES = 30;
 
 // Build a verification URL using the configured public application URL.
 function buildVerificationUrl(token) {
@@ -36,6 +38,48 @@ function buildVerificationUrl(token) {
     }
 
     parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/verify-email`;
+    parsedUrl.search = new URLSearchParams({ token }).toString();
+
+    return parsedUrl.toString();
+}
+
+/**
+ * Validate the public application URL before creating a reset token.
+ */
+function validatePasswordResetBaseUrl() {
+    const baseUrl = process.env.APP_BASE_URL;
+
+    if (!baseUrl) {
+        throw new Error("APP_BASE_URL must be configured.");
+    }
+
+    const parsedUrl = new URL(baseUrl);
+
+    if (
+        !["http:", "https:"].includes(parsedUrl.protocol) ||
+        parsedUrl.username ||
+        parsedUrl.password ||
+        parsedUrl.search ||
+        parsedUrl.hash
+    ) {
+        throw new Error("APP_BASE_URL is invalid.");
+    }
+
+    // Require HTTPS outside local development.
+    if (process.env.NODE_ENV === "production" && parsedUrl.protocol !== "https:") {
+        throw new Error("APP_BASE_URL must use HTTPS in production.");
+    }
+
+    return parsedUrl;
+}
+
+/**
+ * Build a password reset URL using the validated application URL.
+ */
+function buildPasswordResetUrl(token) {
+    const parsedUrl = validatePasswordResetBaseUrl();
+
+    parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/reset-password`;
     parsedUrl.search = new URLSearchParams({ token }).toString();
 
     return parsedUrl.toString();
@@ -130,6 +174,54 @@ async function prepareVerificationToken(userId) {
     return { email: user.email, token };
 }
 
+/**
+ * Create a password reset token and persist only its SHA-256 hash.
+ */
+async function preparePasswordResetToken(userId) {
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + PASSWORD_RESET_TOKEN_MINUTES * 60 * 1000);
+    return database.transaction(async (transaction) => {
+        const user = await User.findByPk(userId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        // Only active accounts with verified email addresses can reset passwords.
+        if (!user || !user.is_active || !user.email_verified_at) {
+            throw new Error("The account is unavailable for password recovery.");
+        }
+
+        // Invalidate previously issued, unused reset tokens.
+        await PasswordResetToken.update(
+            { used_at: now },
+            {
+                where: {
+                    user_id: userId,
+                    used_at: null,
+                    expires_at: { [Op.gt]: now },
+                },
+                transaction,
+            },
+        );
+
+        // Store the token hash, never the original token.
+        await PasswordResetToken.create(
+            {
+                user_id: userId,
+                token_hash: tokenHash,
+                expires_at: expiresAt,
+                used_at: null,
+                created_at: now,
+            },
+            { transaction },
+        );
+
+        return { email: user.email, token };
+    });
+}
+
 // Schedule a retry with progressive delays or mark the job as failed.
 async function recordEmailFailure(job) {
     const now = new Date();
@@ -191,14 +283,23 @@ export async function processNextEmailOutboxJob() {
     }
 
     try {
-        if (job.eventType !== "email_verification") {
+        if (job.eventType === "email_verification") {
+            const { email, token } = await prepareVerificationToken(job.userId);
+            const verificationUrl = buildVerificationUrl(token);
+
+            await sendVerificationEmail(email, verificationUrl);
+        } else if (job.eventType === "password_reset") {
+            // Validate configuration before creating or invalidating reset tokens.
+            validatePasswordResetBaseUrl();
+
+            const { email, token } = await preparePasswordResetToken(job.userId);
+            const resetUrl = buildPasswordResetUrl(token);
+
+            await sendPasswordResetEmail(email, resetUrl);
+        } else {
             throw new Error("Unsupported email outbox event type.");
         }
 
-        const { email, token } = await prepareVerificationToken(job.userId);
-        const verificationUrl = buildVerificationUrl(token);
-
-        await sendVerificationEmail(email, verificationUrl);
         await recordEmailSuccess(job.id);
 
         return { processed: true, status: "sent" };
@@ -208,7 +309,7 @@ export async function processNextEmailOutboxJob() {
             jobId: job.id,
             eventType: job.eventType,
             attempt: job.attempts,
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: error.message,
         });
 
         await recordEmailFailure(job);
