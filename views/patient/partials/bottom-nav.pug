@@ -41,7 +41,11 @@ nav.sv-bottom-nav(aria-label="Navegación móvil")
         svg(viewBox="0 0 24 24", aria-hidden="true")
             path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
         span Notificaciones
-    a(href="/patient/profile")
+    a(
+        class=activeNav === "profile" ? "is-active" : null,
+        href="/patient/profile",
+        aria-current=activeNav === "profile" ? "page" : null
+    )
         svg(viewBox="0 0 24 24", aria-hidden="true")
             path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
         span Perfil
