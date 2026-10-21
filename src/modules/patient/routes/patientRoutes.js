@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
+import { Appointment, Patient, Doctor, Specialities, AppointmentStatus } from "../../../models/associations.js";
 import {
     listAvailableSpecialties,
     listAvailableDoctors,
@@ -47,6 +48,44 @@ patientRoutes.get("/patient/dashboard", authenticateToken, requireRole("Patient"
         pageTitle: "Panel del paciente | SaludVital",
         activeNav: "home",
     });
+});
+
+// Render the authenticated patient's appointment history and upcoming visits.
+patientRoutes.get("/patient/appointments", authenticateToken, requireRole("Patient"), async (req, res, next) => {
+    try {
+        const patient = await Patient.findOne({ where: { user_id: req.auth.userId }, attributes: ["id", "first_name", "last_name"] });
+        const storedAppointments = patient ? await Appointment.findAll({
+            where: { patient_id: patient.id },
+            include: [
+                { model: Doctor, as: "doctor" },
+                { model: Specialities, as: "specialty", attributes: ["name"] },
+                { model: AppointmentStatus, as: "status", attributes: ["name"] },
+            ],
+            order: [["start_at", "DESC"]],
+        }) : [];
+        const previewMode = process.env.NODE_ENV !== "production" && req.query.preview === "1";
+        const previewAppointments = [
+            { id: "demo-1", start_at: "2026-11-15T15:00:00.000Z", status: { name: "Pending" }, specialty: { name: "Medicina General" }, doctor_label: "Dr. Carlos Ramírez", site_label: "Sede Dosquebradas" },
+            { id: "demo-2", start_at: "2026-11-20T13:00:00.000Z", status: { name: "In Progress" }, specialty: { name: "Dermatología" }, doctor_label: "Dra. Ana Torres", site_label: "Sede Dosquebradas" },
+            { id: "demo-3", start_at: "2026-09-03T13:00:00.000Z", status: { name: "Completed" }, specialty: { name: "Oftalmología" }, doctor_label: "Dr. Luis Gómez", site_label: "Sede Pereira" },
+            { id: "demo-4", start_at: "2026-08-12T15:00:00.000Z", status: { name: "Cancelled" }, specialty: { name: "Cardiología" }, doctor_label: "Dr. Andrés Silva", site_label: "Sede Pereira" },
+            { id: "demo-5", start_at: "2026-12-05T16:00:00.000Z", status: { name: "Pending" }, specialty: { name: "Pediatría" }, doctor_label: "Dra. Laura Vélez", site_label: "Sede Dosquebradas" },
+        ];
+        const appointments = (previewMode ? previewAppointments : storedAppointments).map((item) =>
+            typeof item.get === "function" ? item.get({ plain: true }) : item,
+        );
+        return res.render("patient/appointments", {
+            pageTitle: "Mis citas | SaludVital",
+            activeNav: "appointments",
+            appointments,
+            specialties: [...new Set(appointments.map((item) => item.specialty?.name).filter(Boolean))],
+            patientName: patient?.first_name ? `${patient.first_name} ${patient.last_name}` : "Paciente",
+            previewMode,
+            previewAvailable: process.env.NODE_ENV !== "production",
+        });
+    } catch (error) {
+        return next(error);
+    }
 });
 
 // Render the patient appointment booking interface.
