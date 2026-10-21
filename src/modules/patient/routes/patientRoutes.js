@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import {
     Appointment,
-    Patient,
+    Patient as PatientModel,
     Doctor,
     Specialities,
     AppointmentStatus,
@@ -69,7 +69,7 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
-            const patient = await Patient.findOne({
+            const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
                 attributes: ["id", "first_name", "last_name"],
             });
