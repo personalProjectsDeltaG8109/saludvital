@@ -8,6 +8,10 @@ import {
     AppointmentStatus,
 } from "../../../models/associations.js";
 import {
+    listPatientNotifications,
+    savePatientNotificationPreferences,
+} from "../controllers/notificationController.js";
+import {
     listAvailableSpecialties,
     listAvailableDoctors,
     listAvailableTimeSlots,
@@ -15,8 +19,11 @@ import {
     listReschedulableAppointments,
     updatePatientAppointmentTime,
 } from "../controllers/appointmentController.js";
-import { Patient } from "../../../models/associations.js";
 import { getReschedulableAppointments } from "../services/appointmentService.js";
+import {
+    getPatientNotificationSettings,
+    notificationEvents,
+} from "../services/notificationService.js";
 
 // Define the routes available to patients.
 const patientRoutes = Router();
@@ -28,12 +35,26 @@ const appointmentStats = [
 ];
 
 async function getPatientName(userId) {
-    const patient = await Patient.findOne({
+    const patient = await PatientModel.findOne({
         where: { user_id: userId },
         attributes: ["first_name", "last_name"],
     });
     return patient ? `${patient.first_name} ${patient.last_name}` : "Paciente";
 }
+
+patientRoutes.get(
+    "/api/patient/notifications",
+    authenticateToken,
+    requireRole("Patient"),
+    listPatientNotifications,
+);
+
+patientRoutes.patch(
+    "/api/patient/notifications/preferences",
+    authenticateToken,
+    requireRole("Patient"),
+    savePatientNotificationPreferences,
+);
 
 // Return active specialties available for appointment booking.
 patientRoutes.get(
@@ -217,6 +238,29 @@ patientRoutes.get(
                 appointments: (await getReschedulableAppointments(req.auth.userId)).map((item) =>
                     item.get({ plain: true }),
                 ),
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+patientRoutes.get(
+    "/patient/notifications",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            const notificationSettings = await getPatientNotificationSettings(req.auth.userId);
+            return res.render("patient/notifications", {
+                pageTitle: "Notificaciones | SaludVital",
+                activeNav: "notifications",
+                welcomeMessage: "Configura tus notificaciones y mantente siempre informado.",
+                patientName: notificationSettings.patient
+                    ? `${notificationSettings.patient.first_name} ${notificationSettings.patient.last_name}`
+                    : await getPatientName(req.auth.userId),
+                notificationEvents,
+                ...notificationSettings,
             });
         } catch (error) {
             return next(error);

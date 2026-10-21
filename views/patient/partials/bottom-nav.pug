@@ -33,7 +33,11 @@ nav.sv-bottom-nav(aria-label="Navegación móvil")
                 d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
             )
         span Reprogramar cita
-    a(href="/patient/notifications")
+    a(
+        class=activeNav === "notifications" ? "is-active" : null,
+        href="/patient/notifications",
+        aria-current=activeNav === "notifications" ? "page" : null
+    )
         svg(viewBox="0 0 24 24", aria-hidden="true")
             path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
         span Notificaciones

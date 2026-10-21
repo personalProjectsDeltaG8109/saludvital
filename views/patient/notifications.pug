@@ -1,0 +1,189 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#f2faff")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/patient-notifications.css")
+        script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/patient-notifications.js", defer)
+    body.sv-dashboard.notifications-page
+        .sv-layout
+            include partials/sidebar
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include partials/topbar
+                main.notifications-content
+                    section.notifications-hero(aria-labelledby="notifications-title")
+                        .notifications-hero-copy
+                            h2#notifications-title Notificaciones
+                            p Recibe recordatorios, confirmaciones y novedades sobre tus citas médicas en el canal que prefieras.
+                        .notifications-hero-art(aria-hidden="true")
+                            span.notifications-art-bubble.notifications-art-whatsapp
+                                img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                            span.notifications-art-bubble.notifications-art-email ✉
+                            span.notifications-art-bubble.notifications-art-sms SMS
+                            span.notifications-art-bell
+                                svg(viewBox="0 0 24 24")
+                                    path(
+                                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                    )
+                    .notifications-settings(
+                        data-notification-settings,
+                        data-preferences=JSON.stringify(preferences)
+                    )
+                        section.notifications-card.notifications-channels(
+                            aria-labelledby="channel-heading"
+                        )
+                            .notifications-section-heading
+                                h2#channel-heading Canales de notificación
+                                p Activa los canales por los que deseas recibir tus notificaciones.
+                            .notifications-channel-list
+                                - const channelItems = [{ key: "WhatsApp", label: "WhatsApp", description: "Recibe confirmaciones y recordatorios en tu WhatsApp.", icon: "whatsapp" }, { key: "SMS", label: "SMS", description: "Recibe recordatorios en mensajes de texto.", icon: "sms" }, { key: "Email", label: "Correo electrónico", description: "Recibe confirmaciones, recordatorios y novedades en tu correo.", icon: "email" }]
+                                each channel in channelItems
+                                    - const channelPreferences = preferences.filter((preference) => preference.channel === channel.key);
+                                    - const channelEnabled = channelPreferences.some((preference) => preference.isEnabled);
+                                    .notifications-channel(data-notification-channel=channel.key)
+                                        span(
+                                            class=`notifications-channel-icon is-${channel.icon}`,
+                                            aria-hidden="true"
+                                        )
+                                            if channel.icon === "whatsapp"
+                                                img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                                            else if channel.icon === "sms"
+                                                svg(viewBox="0 0 24 24")
+                                                    path(d="M4 5h16v12H9l-5 4V5Zm4 5h8m-8 4h5")
+                                            else
+                                                svg(viewBox="0 0 24 24")
+                                                    path(d="M3 5h18v14H3zM3 6l9 7 9-7")
+                                        .notifications-channel-copy
+                                            strong= channel.label
+                                            p= channel.description
+                                            if channel.key === "WhatsApp" || channel.key === "SMS"
+                                                .notifications-contact
+                                                    span(aria-hidden="true") ☎
+                                                    span= patient ? (patient.phone.startsWith("+") ? patient.phone : `+57 ${patient.phone}`) : "Número no disponible"
+                                                    if channel.key === "WhatsApp"
+                                                        small= whatsappVerified ? "Verificado" : "Sin verificar"
+                                            else
+                                                .notifications-contact
+                                                    span(aria-hidden="true") ✉
+                                                    span= patient && patient.user && patient.user.email ? patient.user.email : "Correo no disponible"
+                                        label.notifications-switch
+                                            input(
+                                                type="checkbox",
+                                                role="switch",
+                                                aria-label=`Activar notificaciones por ${channel.label}`,
+                                                checked=channelEnabled,
+                                                data-notification-channel-toggle=channel.key
+                                            )
+                                            span.notifications-switch-track
+                        section.notifications-card.notifications-types(
+                            aria-labelledby="types-heading"
+                        )
+                            .notifications-section-heading
+                                h2#types-heading Tipos de notificaciones
+                                p Selecciona qué notificaciones deseas recibir.
+                            .notifications-event-list
+                                each event in notificationEvents
+                                    - const eventPreferences = preferences.filter((preference) => preference.eventType === event.key);
+                                    - const eventEnabled = eventPreferences.some((preference) => preference.isEnabled);
+                                    .notifications-event(data-notification-event-row=event.key)
+                                        span(
+                                            class=`notifications-event-icon is-${event.key}`,
+                                            aria-hidden="true"
+                                        )
+                                            if event.key === "appointment_confirmation"
+                                                svg(viewBox="0 0 24 24")
+                                                    path(
+                                                        d="M8 3v4m8-4v4M4 9h16M5 5h14v16H5zM8 13h3m2 0h3m-8 4h3"
+                                                    )
+                                            else if event.key === "appointment_reminder"
+                                                svg(viewBox="0 0 24 24")
+                                                    path(
+                                                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                                    )
+                                            else if event.key === "appointment_reschedule"
+                                                svg(viewBox="0 0 24 24")
+                                                    path(
+                                                        d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3"
+                                                    )
+                                            else if event.key === "appointment_cancellation"
+                                                svg(viewBox="0 0 24 24")
+                                                    circle(cx="12", cy="12", r="9")
+                                                    path(d="m9 9 6 6m0-6-6 6")
+                                            else
+                                                svg(viewBox="0 0 24 24")
+                                                    path(d="m3 11 18-5-5 18-4-8-9-5Zm9 5 7-8")
+                                        .notifications-event-copy
+                                            strong= event.label
+                                            p= event.description
+                                        label.notifications-switch
+                                            input(
+                                                type="checkbox",
+                                                role="switch",
+                                                aria-label=`Activar ${event.label.toLowerCase()}`,
+                                                checked=eventEnabled,
+                                                data-notification-event-toggle=event.key
+                                            )
+                                            span.notifications-switch-track
+                        p.notifications-save-status(
+                            role="status",
+                            aria-live="polite",
+                            data-notification-save-status
+                        )
+                    section.notifications-card.notifications-history(
+                        aria-labelledby="history-heading"
+                    )
+                        .notifications-history-heading
+                            .notifications-section-heading
+                                h2#history-heading Historial de notificaciones
+                                p Aquí puedes ver las últimas notificaciones que has recibido.
+                            button(type="button", data-history-toggle, aria-expanded="false") Ver todas
+                        if history.length
+                            .notifications-history-table-wrap
+                                table.notifications-history-table
+                                    thead
+                                        tr
+                                            th Fecha y hora
+                                            th Tipo
+                                            th Canal
+                                            th Mensaje
+                                            th Estado
+                                    tbody
+                                        each notification, index in history
+                                            tr(class=index > 1 ? "is-history-extra" : null)
+                                                td(data-label="Fecha y hora")
+                                                    time(datetime=notification.date.toISOString())= notification.date.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
+                                                td(data-label="Tipo")
+                                                    span.notifications-history-kind= notification.eventLabel
+                                                td(data-label="Canal")
+                                                    span(
+                                                        class=`notifications-history-channel is-${notification.channelKey.toLowerCase()}`
+                                                    )
+                                                        if notification.channelKey === "WhatsApp"
+                                                            img(
+                                                                src="/brand/whatsapp-svgrepo-com.svg",
+                                                                alt=""
+                                                            )
+                                                        else if notification.channelKey === "SMS"
+                                                            | ▣
+                                                        else
+                                                            | ✉
+                                                        | #{ notification.channel }
+                                                td(data-label="Mensaje")= notification.details
+                                                td(data-label="Estado")
+                                                    span(
+                                                        class=`notifications-delivery-status is-${notification.status.toLowerCase()}`
+                                                    )= notification.status === "Sent" ? "Enviado" : notification.status === "Failed" ? "Fallido" : notification.status === "Cancelled" ? "Cancelado" : notification.status === "Processing" ? "En proceso" : "Pendiente"
+                        else
+                            .notifications-history-empty
+                                span.notifications-empty-icon(aria-hidden="true") ♧
+                                strong Aún no tienes notificaciones
+                                p Aquí aparecerán las confirmaciones y recordatorios de tus citas.
+                include partials/bottom-nav
+        script(src="/js/session-timeout.js", defer)

@@ -16,32 +16,7 @@ html(lang="es")
             include partials/sidebar
             button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
             .sv-main
-                header.sv-topbar
-                    a.sv-mobile-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
-                        img(src="/brand/patient/logo-primary-background.png", alt="SaludVital")
-                    button.sv-mobile-menu-toggle(
-                        type="button",
-                        aria-label="Abrir menú",
-                        aria-expanded="false",
-                        aria-controls="patient-sidebar",
-                        data-toggle-sidebar
-                    )
-                        span
-                        span
-                        span
-                    .sv-topbar-copy
-                        h1 ¡Hola, #{ patientName }!
-                        p Aquí puedes consultar todas tus citas médicas y gestionar tus cambios.
-                    .sv-topbar-actions
-                        a.sv-bell(href="/patient/notifications", aria-label="Notificaciones")
-                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
-                            span 2
-                        .sv-user-chip
-                            span.sv-avatar(aria-hidden="true")= patientName.slice(0, 1)
-                            span
-                                strong= patientName
-                                small Paciente
+                include partials/topbar
                 main.appointments-content
                     section.appointments-hero
                         .appointments-hero-copy
