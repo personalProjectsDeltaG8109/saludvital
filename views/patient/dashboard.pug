@@ -3,16 +3,281 @@ html(lang="es")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        title= pageTitle
+        meta(name="theme-color", content="#f2faff")
+        title= pageTitle || "Panel del paciente | SaludVital"
         link(rel="stylesheet", href="/css/app.css")
-    body.min-h-screen.bg-slate-50.flex.items-center.justify-center.p-6
-        main.w-full.max-w-lg.rounded-2xl.bg-white.p-8.shadow-lg
-            h1.mb-4.text-2xl.font-bold.text-primary Acceso de paciente
-            p.mb-2.text-slate-700 Inicio de sesión correcto.
-            p.mb-6.text-slate-600
-                | Rol verificado:
-                strong= ` ${role}`
-            form(action="/logout", method="POST")
-                button.rounded-lg.bg-primary.px-5.py-3.font-semibold.text-white(type="submit") Cerrar sesión
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+    body.sv-dashboard
+        .sv-layout
+            aside.sv-sidebar
+                a.sv-sidebar-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
+                    picture
+                        source(
+                            media="(max-width: 760px)",
+                            srcset="/brand/patient/logo-primary-background.png"
+                        )
+                        img(src="/brand/logo-primary.png", alt="SaludVital")
 
-    script(src="/js/session-timeout.js", defer)
+                nav.sv-side-nav(aria-label="Navegación principal")
+                    a.sv-nav-link.is-active(href="/patient/dashboard", aria-current="page")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z")
+                        span Inicio
+                    a.sv-nav-link(href="/patient/appointments/new")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(
+                                    d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                                )
+                        span Pedir cita
+                    a.sv-nav-link(href="/patient/appointments")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(
+                                    d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                                )
+                        span Mis citas
+                    a.sv-nav-link(href="/patient/appointments")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(
+                                    d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
+                                )
+                        span Reprogramar cita
+                    a.sv-nav-link(href="/patient/notifications")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                        span Notificaciones
+                    a.sv-nav-link(href="/patient/profile")
+                        span.sv-nav-icon(aria-hidden="true")
+                            svg(viewBox="0 0 24 24")
+                                path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
+                        span Mi perfil
+                .sv-help-card
+                    form.sv-logout(action="/logout", method="POST")
+                        button(type="submit")
+                            span(aria-hidden="true", stylesheet) ↪ Cerrar sesión
+
+            .sv-main
+                header.sv-topbar
+                    a.sv-mobile-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
+                        picture
+                            source(
+                                media="(max-width: 760px)",
+                                srcset="/brand/patient/logo-primary-background.png"
+                            )
+                            img(src="/brand/logo-primary.png", alt="SaludVital")
+                    .sv-topbar-copy
+                        h1 ¡Hola, Juan Esteban!
+                        p Aquí puedes gestionar tus citas médicas y mantener tu información actualizada.
+                    .sv-topbar-actions
+                        a.sv-bell(
+                            href="/patient/notifications",
+                            aria-label="Notificaciones, 2 nuevas"
+                        )
+                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                            span 2
+                        .sv-user-chip
+                            span.sv-avatar(aria-hidden="true") JM
+                            span
+                                strong Juan Esteban
+                                small Paciente
+                            span.sv-chevron(aria-hidden="true") ⌄
+                main.sv-content
+                    section.sv-hero(aria-labelledby="hero-title")
+                        .sv-hero-copy
+                            h2#hero-title Tu salud,<br><span>en buenas manos</span>
+                            p Agenda, consulta y gestiona tus citas médicas de forma fácil, rápida y segura.
+                    section.sv-actions(aria-label="Accesos rápidos")
+                        a.sv-action-card(href="/patient/appointments/new")
+                            span.sv-action-icon.action-green
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                                    )
+                            span.sv-action-arrow(aria-hidden="true") →
+                            strong Pedir cita
+                            small Agenda una nueva cita médica.
+                        a.sv-action-card(href="/patient/appointments")
+                            span.sv-action-icon.action-blue
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                                    )
+                            span.sv-action-arrow(aria-hidden="true") →
+                            strong Mis citas
+                            small Consulta todas tus citas.
+                        a.sv-action-card(href="/patient/appointments")
+                            span.sv-action-icon.action-purple
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
+                                    )
+                            span.sv-action-arrow(aria-hidden="true") →
+                            strong Reprogramar cita
+                            small Cambia la fecha de tu cita.
+                        a.sv-action-card(href="/patient/notifications")
+                            span.sv-action-icon.action-teal
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                    )
+                            span.sv-action-arrow(aria-hidden="true") →
+                            strong Notificaciones
+                            small Activa o configura tus avisos.
+                    .sv-panels
+                        .sv-panel-column
+                            section.sv-panel.sv-appointment(
+                                aria-labelledby="next-appointment-title"
+                            )
+                                .sv-panel-heading
+                                    h2#next-appointment-title Próxima cita
+                                    a(href="/patient/appointments") Ver todas
+                                .sv-appointment-content
+                                    .sv-date-tile
+                                        strong 15
+                                        span Oct 2026
+                                    .sv-appointment-info
+                                        p
+                                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                path(
+                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2a7 7 0 0 1 14 0v2Z"
+                                                )
+                                            strong Medicina General
+                                        p
+                                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                path(
+                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
+                                                )
+                                            span Dr. Carlos Ramírez
+                                        p
+                                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                path(
+                                                    d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                )
+                                            span 10:00 a. m.
+                                        p
+                                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                path(
+                                                    d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                                )
+                                            span Centro Médico SaludVital<br>Sede Dosquebradas
+                                    span.sv-status Confirmada
+                                .sv-appointment-buttons
+                                    a.sv-button-outline(href="/patient/appointments") Ver detalles
+                                    a.sv-button-primary(href="/patient/appointments")
+                                        span.sv-button-wide Reprogramar cita
+                                        span.sv-button-short Reprogramar
+                            section.sv-panel.sv-history(aria-labelledby="history-title")
+                                .sv-panel-heading
+                                    h2#history-title Mis últimas citas
+                                    a(href="/patient/appointments") Ver todas
+                                .sv-table-wrap
+                                    table
+                                        thead
+                                            tr
+                                                th Fecha
+                                                th Especialidad
+                                                th Médico
+                                                th Estado
+                                        tbody
+                                            tr
+                                                td 15 Oct 2026
+                                                td Medicina General
+                                                td Dr. Carlos Ramírez
+                                                td
+                                                    span.sv-status Confirmada
+                                            tr
+                                                td 03 Sep 2026
+                                                td Dermatología
+                                                td Dra. Ana Torres
+                                                td
+                                                    span.sv-status.status-blue Asistida
+                                            tr
+                                                td 12 Ago 2026
+                                                td Oftalmología
+                                                td Dr. Luis Gómez
+                                                td
+                                                    span.sv-status.status-red Cancelada
+                        .sv-panel-column
+                            section.sv-panel.sv-notifications(
+                                aria-labelledby="notifications-title"
+                            )
+                                .sv-panel-heading
+                                    h2#notifications-title Notificaciones
+                                    a(href="/patient/notifications")
+                                        | ⚙
+                                        span Configurar
+                                .sv-preference
+                                    span.sv-preference-icon.pref-green(aria-hidden="true") WhatsApp
+                                    span
+                                        strong Notificaciones por WhatsApp
+                                        small Recibe confirmaciones, recordatorios y novedades.
+                                    span.sv-toggle(aria-label="Activadas")
+                                .sv-preference
+                                    span.sv-preference-icon.pref-blue(aria-hidden="true") SMS
+                                    span
+                                        strong Notificaciones por SMS
+                                        small Recibe recordatorios de tus citas.
+                                    span.sv-toggle(aria-label="Activadas")
+                                .sv-preference
+                                    span.sv-preference-icon.pref-purple(aria-hidden="true") Correo
+                                    span
+                                        strong Notificaciones por correo electrónico
+                                        small Recibe confirmaciones y actualizaciones.
+                                    span.sv-toggle(aria-label="Activadas")
+                            section.sv-panel.sv-profile(aria-labelledby="profile-title")
+                                .sv-panel-heading
+                                    h2#profile-title Mi perfil
+                                    a(href="/patient/profile") Editar
+                                .sv-profile-content
+                                    .sv-profile-details
+                                        p
+                                            | ♙
+                                            span Juan Esteban Montoya Marín
+                                        p
+                                            | ▣
+                                            span CC 1.234.567.890
+                                        p
+                                            | ✉
+                                            span juan.montoya@gmail.com
+                                        p
+                                            | ▯
+                                            span +57 310 123 4567
+                                        p
+                                            | ⌖
+                                            span Dosquebradas, Risaralda
+                                    .sv-profile-person
+                                        span(aria-hidden="true") JM
+                                        small Paciente
+                    form.sv-mobile-logout(action="/logout", method="POST")
+                        button(type="submit") Cerrar sesión
+                nav.sv-bottom-nav(aria-label="Navegación móvil")
+                    a.is-active(href="/patient/dashboard", aria-current="page")
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z")
+                        span Inicio
+                    a(href="/patient/appointments/new")
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(
+                                d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                            )
+                        span Pedir cita
+                    a(href="/patient/appointments")
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(
+                                d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2"
+                            )
+                        span Mis citas
+                    a(href="/patient/notifications")
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                        span Notificaciones
+                    a(href="/patient/profile")
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
+                        span Perfil
+        script(src="/js/session-timeout.js", defer)
