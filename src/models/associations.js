@@ -529,4 +529,5 @@ export {
     DoctorScheduleException,
     NotificationPreference,
     Notification,
+    WhatsAppVerification,
 };

@@ -394,56 +394,6 @@
         overflow: visible;
     }
 
-    .appointments-page .sv-topbar {
-        min-height: 0;
-        padding: 8px 12px 7px;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 40px;
-        gap: 5px 8px;
-    }
-
-    .appointments-page .sv-mobile-brand {
-        width: 158px;
-        height: 39px;
-        display: block;
-    }
-
-    .appointments-page .sv-mobile-brand img {
-        width: 158px;
-        height: 39px;
-        object-fit: contain;
-        object-position: left;
-    }
-
-    .appointments-page .sv-mobile-menu-toggle {
-        width: 40px;
-        height: 38px;
-        position: static;
-        right: auto;
-        justify-self: end;
-        display: grid;
-        align-content: center;
-        justify-items: center;
-        gap: 4px;
-        border: 1px solid #e4eef7;
-        border-radius: 9px;
-        background: #fff;
-    }
-
-    .appointments-page .sv-mobile-menu-toggle span {
-        width: 18px;
-        height: 2px;
-        background: #123b73;
-    }
-
-    .appointments-page .sv-topbar-copy {
-        display: none;
-    }
-
-    .appointments-page .sv-topbar-actions {
-        display: none;
-    }
-
     .appointments-content {
         padding: 7px 10px 14px;
     }
@@ -704,7 +654,7 @@
         min-height: 0;
         padding: 5px 5px max(6px, env(safe-area-inset-bottom));
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         border-top: 1px solid #e4eff8;
         background: #ffffffed;
         box-shadow: 0 -5px 16px #123b730c;
@@ -712,13 +662,16 @@
     }
 
     .appointments-page .sv-bottom-nav a {
+        min-width: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 3px;
         color: #526b8a;
-        font-size: 9px;
+        font-size: clamp(0.5rem, 2.3vw, 0.625rem);
+        line-height: 1.05;
+        text-align: center;
     }
 
     .appointments-page .sv-bottom-nav a.is-active {
