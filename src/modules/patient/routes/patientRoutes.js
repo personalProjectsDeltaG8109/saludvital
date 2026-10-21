@@ -12,6 +12,11 @@ import {
     savePatientNotificationPreferences,
 } from "../controllers/notificationController.js";
 import {
+    deletePatientAccount,
+    savePatientProfile,
+    savePatientProfilePhoto,
+} from "../controllers/profileController.js";
+import {
     listAvailableSpecialties,
     listAvailableDoctors,
     listAvailableTimeSlots,
@@ -24,6 +29,8 @@ import {
     getPatientNotificationSettings,
     notificationEvents,
 } from "../services/notificationService.js";
+import { getPatientProfile } from "../services/profileService.js";
+import { getDepartments, getMunicipalities } from "../../auth/services/locationService.js";
 
 // Define the routes available to patients.
 const patientRoutes = Router();
@@ -54,6 +61,27 @@ patientRoutes.patch(
     authenticateToken,
     requireRole("Patient"),
     savePatientNotificationPreferences,
+);
+
+patientRoutes.put(
+    "/api/patient/profile",
+    authenticateToken,
+    requireRole("Patient"),
+    savePatientProfile,
+);
+
+patientRoutes.post(
+    "/api/patient/profile/photo",
+    authenticateToken,
+    requireRole("Patient"),
+    savePatientProfilePhoto,
+);
+
+patientRoutes.delete(
+    "/api/patient/profile",
+    authenticateToken,
+    requireRole("Patient"),
+    deletePatientAccount,
 );
 
 // Return active specialties available for appointment booking.
@@ -261,6 +289,34 @@ patientRoutes.get(
                     : await getPatientName(req.auth.userId),
                 notificationEvents,
                 ...notificationSettings,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+patientRoutes.get(
+    "/patient/profile",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            const profile = await getPatientProfile(req.auth.userId);
+            const departments = getDepartments();
+            const currentDepartment = departments.find(
+                (department) => department.name === profile.patient.department,
+            );
+            return res.render("patient/profile", {
+                pageTitle: "Mi perfil | SaludVital",
+                activeNav: "profile",
+                welcomeMessage:
+                    "Aquí puedes gestionar tu perfil y mantener tu información actualizada.",
+                patientName: `${profile.patient.first_name} ${profile.patient.last_name}`,
+                ...profile,
+                departments,
+                currentDepartmentCode: currentDepartment?.code || "",
+                municipalities: currentDepartment ? getMunicipalities(currentDepartment.code) : [],
             });
         } catch (error) {
             return next(error);
