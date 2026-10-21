@@ -292,11 +292,18 @@ async function hasBlockingScheduleException(doctorId, startAt, endAt, transactio
 /**
  * Check for overlapping appointments that have not been cancelled.
  */
-async function hasConflictingAppointment(doctorId, startAt, endAt, transaction) {
+async function hasConflictingAppointment(
+    doctorId,
+    startAt,
+    endAt,
+    transaction,
+    excludeAppointmentId,
+) {
     // Use a locking read to check the latest committed appointment rows.
     const conflict = await Appointment.findOne({
         where: {
             doctor_id: doctorId,
+            ...(excludeAppointmentId ? { id: { [Op.ne]: excludeAppointmentId } } : {}),
             start_at: { [Op.lt]: endAt },
             end_at: { [Op.gt]: startAt },
         },
@@ -479,6 +486,33 @@ export async function getAvailableTimeSlots(doctorId, date) {
 }
 
 /**
+ * List a patient's pending appointments that still meet the 24-hour reschedule window.
+ */
+export async function getReschedulableAppointments(userId) {
+    userId = validatePositiveIntegerId(userId, "User ID");
+    const patient = await getPatientByUserId(userId);
+    const cutoff = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    return Appointment.findAll({
+        where: {
+            patient_id: patient.id,
+            start_at: { [Op.gt]: cutoff },
+        },
+        include: [
+            {
+                model: AppointmentStatus,
+                as: "status",
+                required: true,
+                where: { name: PENDING_STATUS },
+            },
+            { model: Doctor, as: "doctor", required: true },
+            { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
+        ],
+        order: [["start_at", "ASC"]],
+    });
+}
+
+/**
  * Create a patient appointment and its audit history atomically.
  */
 export async function bookAppointment({ userId, specialtyId, doctorId, date, time, reason }) {
@@ -574,6 +608,95 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
                     end_at: endAt.toISOString(),
                 },
                 reason: normalizedReason,
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        return appointment;
+    });
+}
+
+/**
+ * Move one of the authenticated patient's appointments to a new available slot.
+ */
+export async function reschedulePatientAppointment({ userId, appointmentId, date, time }) {
+    userId = validatePositiveIntegerId(userId, "User ID");
+    appointmentId = validatePositiveIntegerId(appointmentId, "Appointment ID");
+    const startAt = buildDateTime(date, time);
+    const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
+    validateAppointmentDate(startAt, endAt);
+
+    const rescheduleCutoff = Date.now() + 24 * 60 * 60 * 1000;
+    if (startAt.getTime() < rescheduleCutoff) {
+        throw new AppointmentError("Reschedule appointments at least 24 hours in advance.", 400);
+    }
+
+    return database.transaction(async (transaction) => {
+        const patient = await getPatientByUserId(userId, transaction);
+        const appointment = await Appointment.findOne({
+            where: { id: appointmentId, patient_id: patient.id },
+            include: [{ model: AppointmentStatus, as: "status", required: true }],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!appointment) {
+            throw new AppointmentError("The appointment could not be found.", 404);
+        }
+        if (appointment.status.name !== PENDING_STATUS) {
+            throw new AppointmentError("Only pending appointments can be rescheduled.", 409);
+        }
+        if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
+            throw new AppointmentError(
+                "This appointment is inside the 24-hour reschedule window.",
+                409,
+            );
+        }
+
+        const lockedDoctor = await Doctor.findByPk(appointment.doctor_id, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!lockedDoctor) {
+            throw new AppointmentError("The assigned doctor is no longer available.", 409);
+        }
+
+        await getActiveDoctor(appointment.doctor_id, appointment.specialty_id, transaction);
+        if (!(await hasRegularAvailability(appointment.doctor_id, startAt, endAt, transaction))) {
+            throw new AppointmentError("The doctor is not available during this time.", 409);
+        }
+        if (
+            await hasBlockingScheduleException(appointment.doctor_id, startAt, endAt, transaction)
+        ) {
+            throw new AppointmentError("The selected time is blocked by the doctor.", 409);
+        }
+        if (
+            await hasConflictingAppointment(
+                appointment.doctor_id,
+                startAt,
+                endAt,
+                transaction,
+                appointment.id,
+            )
+        ) {
+            throw new AppointmentError("This appointment slot has already been booked.", 409);
+        }
+
+        const previousValues = {
+            start_at: new Date(appointment.start_at).toISOString(),
+            end_at: new Date(appointment.end_at).toISOString(),
+        };
+        await appointment.update({ start_at: startAt, end_at: endAt }, { transaction });
+        await AppointmentHistory.create(
+            {
+                appointment_id: appointment.id,
+                actor_user_id: userId,
+                actor_snapshot: `Patient ${patient.id}`,
+                event_type: "Rescheduled",
+                previous_values: previousValues,
+                new_values: { start_at: startAt.toISOString(), end_at: endAt.toISOString() },
+                reason: "Patient rescheduled through the web portal.",
                 occurred_at: new Date(),
             },
             { transaction },

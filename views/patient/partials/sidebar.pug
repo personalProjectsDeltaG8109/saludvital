@@ -30,7 +30,11 @@ aside#patient-sidebar.sv-sidebar
                         d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
                     )
             span Mis citas
-        a.sv-nav-link(href="/patient/appointments")
+        a.sv-nav-link(
+            class=activeNav === "reschedule" ? "is-active" : null,
+            href="/patient/appointments/reschedule",
+            aria-current=activeNav === "reschedule" ? "page" : null
+        )
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
                     path(
@@ -48,7 +52,7 @@ aside#patient-sidebar.sv-sidebar
                     path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
             span Mi perfil
 
-    .sv-help-card
+    .sv-sidebar-footer
         form.sv-logout(action="/logout", method="POST")
             button(type="submit")
                 span(aria-hidden="true") ↪ Cerrar sesión

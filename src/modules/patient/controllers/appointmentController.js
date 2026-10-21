@@ -3,6 +3,8 @@ import {
     getAvailableDoctors,
     getAvailableTimeSlots,
     bookAppointment,
+    getReschedulableAppointments,
+    reschedulePatientAppointment,
 } from "../services/appointmentService.js";
 import { AppointmentError } from "../errors/appointmentError.js";
 
@@ -88,6 +90,35 @@ export async function createPatientAppointment(req, res, next) {
         return res.status(201).json({
             success: true,
             message: "Appointment booked successfully.",
+            data: appointment,
+        });
+    } catch (error) {
+        return handleAppointmentError(error, res, next);
+    }
+}
+
+/** Return upcoming appointments the authenticated patient can reschedule. */
+export async function listReschedulableAppointments(req, res, next) {
+    try {
+        const appointments = await getReschedulableAppointments(req.auth.userId);
+        return res.status(200).json({ success: true, data: appointments });
+    } catch (error) {
+        return handleAppointmentError(error, res, next);
+    }
+}
+
+/** Reschedule an appointment owned by the authenticated patient. */
+export async function updatePatientAppointmentTime(req, res, next) {
+    try {
+        const appointment = await reschedulePatientAppointment({
+            userId: req.auth.userId,
+            appointmentId: req.params.appointmentId,
+            date: req.body.date,
+            time: req.body.time,
+        });
+        return res.status(200).json({
+            success: true,
+            message: "Appointment rescheduled successfully.",
             data: appointment,
         });
     } catch (error) {
