@@ -3,6 +3,7 @@ import { authenticateToken, requireRole } from "../../../middleware/authenticate
 import {
     listAvailableSpecialties,
     listAvailableDoctors,
+    listAvailableTimeSlots,
     createPatientAppointment,
 } from "../controllers/appointmentController.js";
 
@@ -25,6 +26,14 @@ patientRoutes.get(
     listAvailableDoctors,
 );
 
+// Return bookable times for a selected doctor and local date.
+patientRoutes.get(
+    "/api/patient/doctors/:doctorId/availability",
+    authenticateToken,
+    requireRole("Patient"),
+    listAvailableTimeSlots,
+);
+
 // Create an appointment for the authenticated patient.
 patientRoutes.post(
     "/api/patient/appointments",
@@ -32,12 +41,25 @@ patientRoutes.post(
     requireRole("Patient"),
     createPatientAppointment,
 );
-// Protect the verification page with authentication and role authorization.
+// Render the patient dashboard with authentication and role authorization.
 patientRoutes.get("/patient/dashboard", authenticateToken, requireRole("Patient"), (req, res) => {
     return res.render("patient/dashboard", {
-        pageTitle: "Patient verification | SaludVital",
-        role: req.auth.role,
+        pageTitle: "Panel del paciente | SaludVital",
+        activeNav: "home",
     });
 });
+
+// Render the patient appointment booking interface.
+patientRoutes.get(
+    "/patient/appointments/new",
+    authenticateToken,
+    requireRole("Patient"),
+    (req, res) => {
+        return res.render("patient/request-appointment", {
+            pageTitle: "Pedir una nueva cita | SaludVital",
+            activeNav: "book",
+        });
+    },
+);
 
 export default patientRoutes;
