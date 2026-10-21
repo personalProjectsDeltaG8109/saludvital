@@ -1,27 +1,41 @@
-aside.sv-sidebar#patient-sidebar
+aside#patient-sidebar.sv-sidebar
     a.sv-sidebar-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
         img(src="/brand/logo-primary.png", alt="SaludVital")
 
     nav.sv-side-nav(aria-label="Navegación principal")
-        a.sv-nav-link(class=activeNav === "home" ? "is-active" : null, href="/patient/dashboard", aria-current=activeNav === "home" ? "page" : null)
+        a.sv-nav-link(
+            class=activeNav === "home" ? "is-active" : null,
+            href="/patient/dashboard",
+            aria-current=activeNav === "home" ? "page" : null
+        )
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
                     path(d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z")
             span Inicio
-        a.sv-nav-link(class=activeNav === "book" ? "is-active" : null, href="/patient/appointments/new", aria-current=activeNav === "book" ? "page" : null)
+        a.sv-nav-link(
+            class=activeNav === "book" ? "is-active" : null,
+            href="/patient/appointments/new",
+            aria-current=activeNav === "book" ? "page" : null
+        )
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
-                    path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6")
+                    path(
+                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                    )
             span Pedir cita
         a.sv-nav-link(href="/patient/appointments")
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
-                    path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2")
+                    path(
+                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                    )
             span Mis citas
         a.sv-nav-link(href="/patient/appointments")
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
-                    path(d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1")
+                    path(
+                        d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
+                    )
             span Reprogramar cita
         a.sv-nav-link(href="/patient/notifications")
             span.sv-nav-icon(aria-hidden="true")
