@@ -64,6 +64,10 @@ const Patient = database.define(
             type: DataTypes.STRING(150),
             allowNull: true,
         },
+        profile_photo_url: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
     },
     {
         tableName: "patients",
