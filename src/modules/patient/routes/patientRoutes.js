@@ -16,6 +16,12 @@ import {
 
 // Define the routes available to patients.
 const patientRoutes = Router();
+const appointmentStats = [
+    { key: "all", label: "Total de citas", status: null },
+    { key: "confirmed", label: "Confirmadas", status: "active" },
+    { key: "attended", label: "Asistida", status: "Completed" },
+    { key: "cancelled", label: "Cancelada", status: "Cancelled" },
+];
 
 // Return active specialties available for appointment booking.
 patientRoutes.get(
@@ -128,6 +134,7 @@ patientRoutes.get(
                 pageTitle: "Mis citas | SaludVital",
                 activeNav: "appointments",
                 appointments,
+                appointmentStats,
                 specialties: [
                     ...new Set(appointments.map((item) => item.specialty?.name).filter(Boolean)),
                 ],

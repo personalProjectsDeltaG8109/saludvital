@@ -50,12 +50,7 @@ html(lang="es")
                     if previewMode
                         p.appointments-preview-note Vista previa: estas citas son ficticias y solo se muestran para revisar el diseño.
                     section.appointment-stats(aria-label="Resumen de citas")
-                        each stat in [
-    { key: "all", label: "Total de citas", status: null },
-    { key: "confirmed", label: "Confirmadas", status: "active" },
-    { key: "attended", label: "Asistida", status: "Completed" },
-    { key: "cancelled", label: "Cancelada", status: "Cancelled" },
-]
+                        each stat in appointmentStats
                             - const count = stat.status === "active" ? appointments.filter((a) => ["Pending", "In Progress"].includes(a.status && a.status.name)).length : stat.status ? appointments.filter((a) => (a.status && a.status.name) === stat.status).length : appointments.length;
                             article.appointment-stat(class="stat-" + stat.key)
                                 span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" ? "✓" : stat.key === "attended" ? "◷" : "×"
