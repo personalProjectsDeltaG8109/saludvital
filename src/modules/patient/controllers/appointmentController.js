@@ -1,6 +1,7 @@
 import {
     getAvailableSpecialties,
     getAvailableDoctors,
+    getAvailableTimeSlots,
     bookAppointment,
 } from "../services/appointmentService.js";
 import { AppointmentError } from "../errors/appointmentError.js";
@@ -47,6 +48,22 @@ export async function listAvailableDoctors(req, res, next) {
         return res.status(200).json({
             success: true,
             data: doctors,
+        });
+    } catch (error) {
+        return handleAppointmentError(error, res, next);
+    }
+}
+
+/**
+ * Return currently available appointment times for a doctor and local date.
+ */
+export async function listAvailableTimeSlots(req, res, next) {
+    try {
+        const times = await getAvailableTimeSlots(req.params.doctorId, req.query.date);
+
+        return res.status(200).json({
+            success: true,
+            data: times,
         });
     } catch (error) {
         return handleAppointmentError(error, res, next);

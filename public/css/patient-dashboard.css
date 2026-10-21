@@ -37,6 +37,7 @@
     background-repeat: no-repeat;
     background-size: cover;
     box-shadow: 0px 0px 15px #000000;
+    transition: transform .36s cubic-bezier(.22, .75, .25, 1), visibility .36s ease;
 }
 
 .sv-sidebar:after {
@@ -128,30 +129,6 @@
 
 .sv-help-card {
     margin-top: auto;
-}
-
-.sv-help-card h2 {
-    margin: 0 0 6px;
-    font-size: 15px;
-}
-
-.sv-help-card p {
-    margin: 0 0 12px;
-    color: #e0fff5;
-    font-size: 13px;
-    line-height: 1.45;
-}
-
-.sv-help-card a {
-    padding: 10px 12px;
-    display: flex;
-    justify-content: space-between;
-    border-radius: 10px;
-    background: #fff;
-    color: var(--sv-navy);
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
 }
 
 .sv-logout {
@@ -778,7 +755,9 @@
 }
 
 .sv-bottom-nav,
-.sv-mobile-logout {
+.sv-mobile-logout,
+.sv-mobile-menu-toggle,
+.sv-sidebar-backdrop {
     display: none;
 }
 
@@ -880,7 +859,69 @@
     }
 
     .sv-sidebar {
-        display: none;
+        position: fixed;
+        z-index: 22;
+        width: min(280px, 84vw);
+        padding-top: 17px;
+        display: flex;
+        transform: translateX(-105%);
+        visibility: hidden;
+        box-shadow: 12px 0 35px #042e5540;
+    }
+
+    .sv-sidebar.is-open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .sv-sidebar-backdrop,
+    .booking-page .booking-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 21;
+        display: block;
+        border: 0;
+        background: #062b4d73;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .36s ease, visibility .36s ease;
+    }
+
+    .sv-sidebar-backdrop.is-visible,
+    .booking-page .booking-sidebar-backdrop.is-visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .sv-mobile-menu-toggle {
+        width: 40px;
+        height: 40px;
+        position: absolute;
+        top: 10px;
+        right: 68px;
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 4px;
+        border: 1px solid #e4eef7;
+        border-radius: 12px;
+        background: #f9fcff;
+        box-shadow: 0 3px 10px #123b730d;
+        cursor: pointer;
+        transition: background .2s ease, transform .2s ease;
+    }
+
+    .sv-mobile-menu-toggle:active {
+        transform: scale(.95);
+    }
+
+    .sv-mobile-menu-toggle span {
+        width: 18px;
+        height: 2px;
+        border-radius: 2px;
+        background: #0a4c8e;
     }
 
     .sv-main {
@@ -917,8 +958,8 @@
     }
 
     .sv-topbar-copy {
-        width: 100%;
-        flex: 1 0 100%;
+        width: calc(100% - 48px);
+        flex: 1 0 calc(100% - 48px);
     }
 
     .sv-topbar-copy h1 {
@@ -1153,6 +1194,15 @@
 
     .sv-mobile-logout {
         display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sv-sidebar,
+    .sv-sidebar-backdrop,
+    .booking-sidebar-backdrop,
+    .sv-mobile-menu-toggle {
+        transition-duration: .01ms;
     }
 }
 

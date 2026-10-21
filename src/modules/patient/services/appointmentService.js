@@ -355,6 +355,130 @@ export async function getAvailableDoctors(specialtyId) {
 }
 
 /**
+ * Return appointment start times that fit a doctor's schedule for a local date.
+ */
+export async function getAvailableTimeSlots(doctorId, date) {
+    doctorId = validatePositiveIntegerId(doctorId, "Doctor ID");
+
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        throw new AppointmentError("A valid appointment date is required.", 400);
+    }
+
+    const [year, month, day] = date.split("-").map(Number);
+    const localDay = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+        localDay.getUTCFullYear() !== year ||
+        localDay.getUTCMonth() !== month - 1 ||
+        localDay.getUTCDate() !== day
+    ) {
+        throw new AppointmentError("A valid appointment date is required.", 400);
+    }
+
+    const doctor = await Doctor.findOne({
+        where: { id: doctorId },
+        include: [
+            {
+                model: User,
+                as: "user",
+                required: true,
+                where: { is_active: true },
+                attributes: ["id"],
+            },
+        ],
+        attributes: ["id"],
+    });
+
+    if (!doctor) {
+        throw new AppointmentError("The selected doctor is not available.", 404);
+    }
+
+    const dateStart = buildDateTime(date, "00:00");
+    const nextLocalDay = new Date(Date.UTC(year, month - 1, day + 1));
+    const nextDate = [
+        nextLocalDay.getUTCFullYear(),
+        String(nextLocalDay.getUTCMonth() + 1).padStart(2, "0"),
+        String(nextLocalDay.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+    const dateEnd = buildDateTime(nextDate, "00:00");
+    const weekday = localDay.getUTCDay() === 0 ? 7 : localDay.getUTCDay();
+
+    const [schedules, exceptions, appointments] = await Promise.all([
+        DoctorAvailability.findAll({
+            where: {
+                doctor_id: doctorId,
+                day_of_week: weekday,
+                is_active: true,
+                valid_from: { [Op.lte]: date },
+                [Op.or]: [{ valid_until: null }, { valid_until: { [Op.gte]: date } }],
+            },
+        }),
+        DoctorScheduleException.findAll({
+            where: {
+                doctor_id: doctorId,
+                exception_type: "Unavailable",
+                start_at: { [Op.lt]: dateEnd },
+                end_at: { [Op.gt]: dateStart },
+            },
+            attributes: ["start_at", "end_at"],
+        }),
+        Appointment.findAll({
+            where: {
+                doctor_id: doctorId,
+                start_at: { [Op.lt]: dateEnd },
+                end_at: { [Op.gt]: dateStart },
+            },
+            include: [
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    required: true,
+                    where: { name: { [Op.ne]: CANCELLED_STATUS } },
+                    attributes: [],
+                },
+            ],
+            attributes: ["start_at", "end_at"],
+        }),
+    ]);
+
+    const minimumStart = new Date(Date.now() + MINIMUM_ADVANCE_HOURS * 60 * 60 * 1000);
+    const availableTimes = [];
+
+    for (
+        let minutes = 0;
+        minutes < 24 * 60 - APPOINTMENT_SLOT_MINUTES;
+        minutes += APPOINTMENT_SLOT_MINUTES
+    ) {
+        const endMinutes = minutes + APPOINTMENT_SLOT_MINUTES;
+        const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+        const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+        const startAt = buildDateTime(date, time);
+        const endAt = buildDateTime(date, endTime);
+
+        if (startAt < minimumStart) continue;
+
+        const fitsSchedule = schedules.some((schedule) => {
+            const scheduleStart = String(schedule.start_time).slice(0, 5);
+            const scheduleEnd = String(schedule.end_time).slice(0, 5);
+            return time >= scheduleStart && endTime <= scheduleEnd;
+        });
+
+        if (!fitsSchedule) continue;
+
+        const isBlocked = exceptions.some(
+            (exception) => exception.start_at < endAt && exception.end_at > startAt,
+        );
+        const isBooked = appointments.some(
+            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
+        );
+
+        if (!isBlocked && !isBooked) availableTimes.push(time);
+    }
+
+    return availableTimes;
+}
+
+/**
  * Create a patient appointment and its audit history atomically.
  */
 export async function bookAppointment({ userId, specialtyId, doctorId, date, time, reason }) {
