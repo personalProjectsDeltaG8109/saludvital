@@ -1,0 +1,163 @@
+﻿doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#f2faff")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/patient-appointments.css")
+        script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/patient-appointments.js", defer)
+    body.sv-dashboard.appointments-page
+        .sv-layout
+            include partials/sidebar
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                header.sv-topbar
+                    a.sv-mobile-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
+                        img(src="/brand/patient/logo-primary-background.png", alt="SaludVital")
+                    button.sv-mobile-menu-toggle(
+                        type="button",
+                        aria-label="Abrir menú",
+                        aria-expanded="false",
+                        aria-controls="patient-sidebar",
+                        data-toggle-sidebar
+                    )
+                        span
+                        span
+                        span
+                    .sv-topbar-copy
+                        h1 ¡Hola, #{ patientName }!
+                        p Aquí puedes consultar todas tus citas médicas y gestionar tus cambios.
+                    .sv-topbar-actions
+                        a.sv-bell(href="/patient/notifications", aria-label="Notificaciones")
+                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                            span 2
+                        .sv-user-chip
+                            span.sv-avatar(aria-hidden="true")= patientName.slice(0, 1)
+                            span
+                                strong= patientName
+                                small Paciente
+                main.appointments-content
+                    section.appointments-hero
+                        .appointments-hero-copy
+                            h2 Mis citas
+                            p Consulta el estado de tus citas médicas, reprograma o cancela cuando lo necesites.
+                    if previewMode
+                        p.appointments-preview-note Vista previa: estas citas son ficticias y solo se muestran para revisar el diseño.
+                    section.appointment-stats(aria-label="Resumen de citas")
+                        each stat in appointmentStats
+                            - const count = stat.status === "active" ? appointments.filter((a) => ["Pending", "In Progress"].includes(a.status && a.status.name)).length : stat.status ? appointments.filter((a) => (a.status && a.status.name) === stat.status).length : appointments.length;
+                            article.appointment-stat(class="stat-" + stat.key)
+                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" ? "✓" : stat.key === "attended" ? "◷" : "×"
+                                span.stat-copy
+                                    strong= count
+                                    small= stat.label
+                    section.appointment-list-panel(aria-label="Listado de citas")
+                        .appointment-tabs(role="tablist", aria-label="Filtrar citas")
+                            button.is-active(
+                                type="button",
+                                data-filter="all",
+                                role="tab",
+                                aria-selected="true"
+                            ) Todas
+                            button(
+                                type="button",
+                                data-filter="upcoming",
+                                role="tab",
+                                aria-selected="false"
+                            ) Próximas
+                            button(
+                                type="button",
+                                data-filter="attended",
+                                role="tab",
+                                aria-selected="false"
+                            ) Asistidas
+                            button(
+                                type="button",
+                                data-filter="cancelled",
+                                role="tab",
+                                aria-selected="false"
+                            ) Canceladas
+                        .appointment-tools
+                            label.appointment-search
+                                span(aria-hidden="true") ⌕
+                                input(
+                                    type="search",
+                                    placeholder="Buscar por especialidad, médico…",
+                                    aria-label="Buscar citas",
+                                    data-search
+                                )
+                            label.appointment-select
+                                span.sr-only Filtrar por especialidad
+                                span.appointment-filter-icon(aria-hidden="true")
+                                    svg(viewBox="0 0 24 24")
+                                        path(d="M4 5h16l-6.5 7.5v5l-3 1.5v-6.5L4 5Z")
+                                select(data-specialty, aria-label="Filtrar por especialidad")
+                                    option(value="") Todas las especialidades
+                                    each name in specialties
+                                        option(value=name)= name
+                            label.appointment-select.desktop-filter
+                                span.sr-only Estado
+                                select(data-status)
+                                    option(value="") Todos los estados
+                                    option(value="Confirmed") Confirmadas
+                                    option(value="Completed") Asistidas
+                                    option(value="Cancelled") Canceladas
+                                    option(value="Pending") Pendientes
+                        if appointments.length
+                            .appointment-table-wrap
+                                table.appointment-table
+                                    thead
+                                        tr
+                                            th Fecha y hora
+                                            th Especialidad
+                                            th Médico
+                                            th Sede
+                                            th Estado
+                                            th Acciones
+                                    tbody
+                                        each appointment in appointments
+                                            - const date = new Date(appointment.start_at);
+                                            - const status = (appointment.status && appointment.status.name) || "Pending";
+                                            - const doctorName = appointment.doctor_label || "Médico asignado";
+                                            tr(
+                                                id="appointment-" + appointment.id,
+                                                data-appointment,
+                                                data-status=status,
+                                                data-date=date.toISOString(),
+                                                data-specialty=(appointment.specialty && appointment.specialty.name) || "",
+                                                data-search-text=((appointment.specialty && appointment.specialty.name) || "") + " " + doctorName
+                                            )
+                                                td(data-label="Fecha y hora")
+                                                    .appointment-date
+                                                        strong= date.toLocaleDateString("es-CO", { day: "2-digit", timeZone: "America/Bogota" })
+                                                        span= date.toLocaleDateString("es-CO", { month: "short", year: "numeric", timeZone: "America/Bogota" })
+                                                    span.appointment-time= date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" })
+                                                td(data-label="Especialidad")
+                                                    strong= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                td(data-label="Médico")= doctorName
+                                                td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
+                                                td(data-label="Estado")
+                                                    span.appointment-status(
+                                                        class="status-" + (status === "Completed" ? "attended" : status.toLowerCase())
+                                                    )= status === "Completed" ? "Asistida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En atención" : status === "Confirmed" ? "Confirmada" : "Pendiente"
+                                                td(data-label="Acciones")
+                                                    a.appointment-detail(
+                                                        href="#appointment-" + appointment.id,
+                                                        aria-label="Ver detalles de esta cita"
+                                                    ) Ver detalles
+                            p.appointment-empty(hidden, data-empty) No encontramos citas con ese criterio.
+                            .appointment-summary
+                                span(data-summary)= `Mostrando ${appointments.length} de ${appointments.length} citas`
+                        else
+                            .appointment-no-results
+                                strong Aún no tienes citas
+                                p Aquí aparecerá el historial de tus citas médicas.
+                                if previewAvailable
+                                    a(href="/patient/appointments?preview=1") Ver ejemplo con citas ficticias
+        include partials/bottom-nav

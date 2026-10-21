@@ -23,7 +23,11 @@ aside#patient-sidebar.sv-sidebar
                         d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
                     )
             span Pedir cita
-        a.sv-nav-link(href="/patient/appointments")
+        a.sv-nav-link(
+            class=activeNav === "appointments" ? "is-active" : null,
+            href="/patient/appointments",
+            aria-current=activeNav === "appointments" ? "page" : null
+        )
             span.sv-nav-icon(aria-hidden="true")
                 svg(viewBox="0 0 24 24")
                     path(
