@@ -64,25 +64,37 @@ if (form) {
 
     function iconForSpecialty(name, index) {
         const normalized = String(name).toLocaleLowerCase("es");
-        const iconIndex = normalized.includes("general") ? 0
-            : normalized.includes("dermat") ? 1
-              : normalized.includes("pediatr") ? 2
-                : normalized.includes("ginec") ? 3
-                  : normalized.includes("cardio") ? 5
-                    : normalized.includes("oftal") ? 6
-                      : normalized.includes("ortop") ? 7
-                        : normalized.includes("otorr") ? 8
-                          : (index % specialtyIcons.length);
+        const iconIndex = normalized.includes("general")
+            ? 0
+            : normalized.includes("dermat")
+              ? 1
+              : normalized.includes("pediatr")
+                ? 2
+                : normalized.includes("ginec")
+                  ? 3
+                  : normalized.includes("cardio")
+                    ? 5
+                    : normalized.includes("oftal")
+                      ? 6
+                      : normalized.includes("ortop")
+                        ? 7
+                        : normalized.includes("otorr")
+                          ? 8
+                          : index % specialtyIcons.length;
         return specialtyIcons[iconIndex];
     }
 
     function renderSpecialties(filter = "") {
         const normalizedFilter = filter.trim().toLocaleLowerCase("es");
         const visibleSpecialties = state.specialties.filter((specialty) =>
-            `${specialty.name} ${specialty.description || ""}`.toLocaleLowerCase("es").includes(normalizedFilter),
+            `${specialty.name} ${specialty.description || ""}`
+                .toLocaleLowerCase("es")
+                .includes(normalizedFilter),
         );
 
-        specialtyList.innerHTML = visibleSpecialties.map((specialty, index) => `
+        specialtyList.innerHTML = visibleSpecialties
+            .map(
+                (specialty, index) => `
             <button class="booking-specialty-card${state.specialty?.id === specialty.id ? " is-selected" : ""}"
                 type="button" data-specialty-id="${escapeHtml(specialty.id)}">
                 <span class="booking-specialty-icon" aria-hidden="true">
@@ -94,7 +106,9 @@ if (form) {
                 </span>
                 <span class="booking-card-indicator" aria-hidden="true">${state.specialty?.id === specialty.id ? "✓" : "›"}</span>
             </button>
-        `).join("");
+        `,
+            )
+            .join("");
 
         setMessage(
             "#specialty-message",
@@ -103,7 +117,9 @@ if (form) {
     }
 
     function renderDoctors() {
-        doctorList.innerHTML = state.doctors.map((doctor, index) => `
+        doctorList.innerHTML = state.doctors
+            .map(
+                (doctor, index) => `
             <button class="booking-doctor-card${state.doctor?.id === doctor.id ? " is-selected" : ""}"
                 type="button" data-doctor-id="${escapeHtml(doctor.id)}">
                 <span class="booking-doctor-avatar" aria-hidden="true">${index % 2 ? "DR" : "SV"}</span>
@@ -114,11 +130,15 @@ if (form) {
                 </span>
                 <span class="booking-card-indicator" aria-hidden="true">${state.doctor?.id === doctor.id ? "✓" : "›"}</span>
             </button>
-        `).join("");
+        `,
+            )
+            .join("");
 
         setMessage(
             "#doctor-message",
-            state.doctors.length ? "" : "No hay médicos activos disponibles para esta especialidad.",
+            state.doctors.length
+                ? ""
+                : "No hay médicos activos disponibles para esta especialidad.",
         );
     }
 
@@ -153,7 +173,9 @@ if (form) {
             const classes = ["booking-day"];
             if (dateKey === state.date) classes.push("is-selected");
             if (isPast) classes.push("is-disabled");
-            cells.push(`<button type="button" class="${classes.join(" ")}" data-date="${dateKey}" ${isPast ? "disabled" : ""}>${day}</button>`);
+            cells.push(
+                `<button type="button" class="${classes.join(" ")}" data-date="${dateKey}" ${isPast ? "disabled" : ""}>${day}</button>`,
+            );
         }
 
         calendarDays.innerHTML = cells.join("");
@@ -188,11 +210,17 @@ if (form) {
             );
             setMessage(
                 "#time-message",
-                times.length ? "" : "No hay horarios disponibles para este día. Prueba con otra fecha.",
+                times.length
+                    ? ""
+                    : "No hay horarios disponibles para este día. Prueba con otra fecha.",
             );
-            timeList.innerHTML = times.map((time) => `
+            timeList.innerHTML = times
+                .map(
+                    (time) => `
                 <button class="booking-time-option" type="button" data-time="${escapeHtml(time)}">${escapeHtml(formatTime(time))}</button>
-            `).join("");
+            `,
+                )
+                .join("");
         } catch (error) {
             setMessage("#time-message", error.message, true);
         }
@@ -231,7 +259,10 @@ if (form) {
         try {
             state.specialties = await getJson("/api/patient/specialties");
             renderSpecialties();
-            setMessage("#specialty-message", state.specialties.length ? "" : "Por ahora no hay especialidades disponibles.");
+            setMessage(
+                "#specialty-message",
+                state.specialties.length ? "" : "Por ahora no hay especialidades disponibles.",
+            );
         } catch (error) {
             setMessage("#specialty-message", error.message, true);
         }
@@ -255,7 +286,9 @@ if (form) {
     specialtyList.addEventListener("click", async (event) => {
         const card = event.target.closest("[data-specialty-id]");
         if (!card) return;
-        state.specialty = state.specialties.find((item) => String(item.id) === card.dataset.specialtyId);
+        state.specialty = state.specialties.find(
+            (item) => String(item.id) === card.dataset.specialtyId,
+        );
         state.date = "";
         state.time = "";
         if (!window.matchMedia("(max-width: 760px)").matches) state.step = 2;
@@ -316,15 +349,22 @@ if (form) {
     });
 
     document.querySelector("[data-booking-next]").addEventListener("click", () => {
-        const valid = state.step === 1 ? Boolean(state.specialty)
-            : state.step === 2 ? Boolean(state.doctor)
-              : state.step === 3 ? Boolean(state.date && state.time)
-                : false;
+        const valid =
+            state.step === 1
+                ? Boolean(state.specialty)
+                : state.step === 2
+                  ? Boolean(state.doctor)
+                  : state.step === 3
+                    ? Boolean(state.date && state.time)
+                    : false;
 
         if (!valid) {
-            result.textContent = state.step === 1 ? "Selecciona una especialidad para continuar."
-                : state.step === 2 ? "Selecciona un médico para continuar."
-                  : "Selecciona una fecha y un horario disponible para continuar.";
+            result.textContent =
+                state.step === 1
+                    ? "Selecciona una especialidad para continuar."
+                    : state.step === 2
+                      ? "Selecciona un médico para continuar."
+                      : "Selecciona una fecha y un horario disponible para continuar.";
             result.classList.add("is-error");
             return;
         }
@@ -367,7 +407,10 @@ if (form) {
                     reason: document.querySelector("#appointment-reason").value,
                 }),
             });
-            setMessage("#booking-result", "¡Tu cita quedó solicitada! Puedes consultar su estado en Mis citas.");
+            setMessage(
+                "#booking-result",
+                "¡Tu cita quedó solicitada! Puedes consultar su estado en Mis citas.",
+            );
             submitButton.textContent = "Solicitud enviada";
         } catch (error) {
             setMessage("#booking-result", error.message, true);
