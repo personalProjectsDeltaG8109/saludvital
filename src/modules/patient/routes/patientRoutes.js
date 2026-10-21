@@ -5,10 +5,22 @@ import {
     listAvailableDoctors,
     listAvailableTimeSlots,
     createPatientAppointment,
+    listReschedulableAppointments,
+    updatePatientAppointmentTime,
 } from "../controllers/appointmentController.js";
+import { Patient } from "../../../models/associations.js";
+import { getReschedulableAppointments } from "../services/appointmentService.js";
 
 // Define the routes available to patients.
 const patientRoutes = Router();
+
+async function getPatientName(userId) {
+    const patient = await Patient.findOne({
+        where: { user_id: userId },
+        attributes: ["first_name", "last_name"],
+    });
+    return patient ? `${patient.first_name} ${patient.last_name}` : "Paciente";
+}
 
 // Return active specialties available for appointment booking.
 patientRoutes.get(
@@ -41,24 +53,73 @@ patientRoutes.post(
     requireRole("Patient"),
     createPatientAppointment,
 );
+
+patientRoutes.get(
+    "/api/patient/appointments/reschedulable",
+    authenticateToken,
+    requireRole("Patient"),
+    listReschedulableAppointments,
+);
+
+patientRoutes.post(
+    "/api/patient/appointments/:appointmentId/reschedule",
+    authenticateToken,
+    requireRole("Patient"),
+    updatePatientAppointmentTime,
+);
 // Render the patient dashboard with authentication and role authorization.
-patientRoutes.get("/patient/dashboard", authenticateToken, requireRole("Patient"), (req, res) => {
-    return res.render("patient/dashboard", {
-        pageTitle: "Panel del paciente | SaludVital",
-        activeNav: "home",
-    });
-});
+patientRoutes.get(
+    "/patient/dashboard",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            return res.render("patient/dashboard", {
+                pageTitle: "Panel del paciente | SaludVital",
+                activeNav: "home",
+                patientName: await getPatientName(req.auth.userId),
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
 
 // Render the patient appointment booking interface.
 patientRoutes.get(
     "/patient/appointments/new",
     authenticateToken,
     requireRole("Patient"),
-    (req, res) => {
-        return res.render("patient/request-appointment", {
-            pageTitle: "Pedir una nueva cita | SaludVital",
-            activeNav: "book",
-        });
+    async (req, res, next) => {
+        try {
+            return res.render("patient/request-appointment", {
+                pageTitle: "Pedir una nueva cita | SaludVital",
+                activeNav: "book",
+                patientName: await getPatientName(req.auth.userId),
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+patientRoutes.get(
+    "/patient/appointments/reschedule",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            return res.render("patient/reschedule-appointment", {
+                pageTitle: "Reprogramar cita | SaludVital",
+                activeNav: "reschedule",
+                patientName: await getPatientName(req.auth.userId),
+                appointments: (await getReschedulableAppointments(req.auth.userId)).map((item) =>
+                    item.get({ plain: true }),
+                ),
+            });
+        } catch (error) {
+            return next(error);
+        }
     },
 );
 

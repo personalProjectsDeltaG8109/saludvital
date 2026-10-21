@@ -18,41 +18,7 @@ html(lang="es")
                 data-close-sidebar
             )
             .sv-main.booking-main
-                header.booking-header
-                    a.booking-mobile-logo(
-                        href="/patient/dashboard",
-                        aria-label="SaludVital, inicio"
-                    )
-                        picture
-                            source(
-                                media="(max-width: 760px)",
-                                srcset="/brand/patient/logo-primary-background.png"
-                            )
-                            img(src="/brand/logo-primary.png", alt="SaludVital")
-                    button.booking-menu-toggle(
-                        type="button",
-                        aria-label="Abrir menú",
-                        aria-expanded="false",
-                        aria-controls="patient-sidebar",
-                        data-toggle-sidebar
-                    )
-                        span
-                        span
-                        span
-                    .booking-heading
-                        h1 Pedir una nueva cita
-                        p Sigue los pasos para agendar tu cita médica de forma rápida y segura.
-                    .booking-account
-                        a.sv-bell(href="/patient/notifications", aria-label="Notificaciones")
-                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
-                            span 2
-                        span.booking-avatar(aria-hidden="true") JM
-                        span.booking-account-name
-                            strong Juan Esteban
-                            small Paciente
-                        span.booking-account-chevron(aria-hidden="true") ⌄
-
+                include partials/topbar
                 main.booking-content
                     ol.booking-stepper(aria-label="Pasos para pedir una cita")
                         li.is-current(data-step-indicator="1")
