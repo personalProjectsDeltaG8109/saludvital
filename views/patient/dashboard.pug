@@ -12,9 +12,11 @@ html(lang="es")
             aside.sv-sidebar
                 a.sv-sidebar-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
                     picture
-                        source(media="(max-width: 760px)", srcset="/brand/patient/logo-primary-background.png")
+                        source(
+                            media="(max-width: 760px)",
+                            srcset="/brand/patient/logo-primary-background.png"
+                        )
                         img(src="/brand/logo-primary.png", alt="SaludVital")
-
 
                 nav.sv-side-nav(aria-label="Navegación principal")
                     a.sv-nav-link.is-active(href="/patient/dashboard", aria-current="page")
@@ -25,17 +27,23 @@ html(lang="es")
                     a.sv-nav-link(href="/patient/appointments/new")
                         span.sv-nav-icon(aria-hidden="true")
                             svg(viewBox="0 0 24 24")
-                                path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6")
+                                path(
+                                    d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                                )
                         span Pedir cita
                     a.sv-nav-link(href="/patient/appointments")
                         span.sv-nav-icon(aria-hidden="true")
                             svg(viewBox="0 0 24 24")
-                                path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2")
+                                path(
+                                    d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                                )
                         span Mis citas
                     a.sv-nav-link(href="/patient/appointments")
                         span.sv-nav-icon(aria-hidden="true")
                             svg(viewBox="0 0 24 24")
-                                path(d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1")
+                                path(
+                                    d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
+                                )
                         span Reprogramar cita
                     a.sv-nav-link(href="/patient/notifications")
                         span.sv-nav-icon(aria-hidden="true")
@@ -50,20 +58,25 @@ html(lang="es")
                 .sv-help-card
                     form.sv-logout(action="/logout", method="POST")
                         button(type="submit")
-                            span(aria-hidden="true" stylesheet) ↪  Cerrar sesión
-                        
+                            span(aria-hidden="true", stylesheet) ↪ Cerrar sesión
 
             .sv-main
                 header.sv-topbar
                     a.sv-mobile-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
                         picture
-                            source(media="(max-width: 760px)", srcset="/brand/patient/logo-primary-background.png")
+                            source(
+                                media="(max-width: 760px)",
+                                srcset="/brand/patient/logo-primary-background.png"
+                            )
                             img(src="/brand/logo-primary.png", alt="SaludVital")
                     .sv-topbar-copy
                         h1 ¡Hola, Juan Esteban!
                         p Aquí puedes gestionar tus citas médicas y mantener tu información actualizada.
                     .sv-topbar-actions
-                        a.sv-bell(href="/patient/notifications", aria-label="Notificaciones, 2 nuevas")
+                        a.sv-bell(
+                            href="/patient/notifications",
+                            aria-label="Notificaciones, 2 nuevas"
+                        )
                             svg(viewBox="0 0 24 24", aria-hidden="true")
                                 path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
                             span 2
@@ -82,34 +95,44 @@ html(lang="es")
                         a.sv-action-card(href="/patient/appointments/new")
                             span.sv-action-icon.action-green
                                 svg(viewBox="0 0 24 24", aria-hidden="true")
-                                    path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                                    )
                             span.sv-action-arrow(aria-hidden="true") →
                             strong Pedir cita
                             small Agenda una nueva cita médica.
                         a.sv-action-card(href="/patient/appointments")
                             span.sv-action-icon.action-blue
                                 svg(viewBox="0 0 24 24", aria-hidden="true")
-                                    path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                                    )
                             span.sv-action-arrow(aria-hidden="true") →
                             strong Mis citas
                             small Consulta todas tus citas.
                         a.sv-action-card(href="/patient/appointments")
                             span.sv-action-icon.action-purple
                                 svg(viewBox="0 0 24 24", aria-hidden="true")
-                                    path(d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1")
+                                    path(
+                                        d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
+                                    )
                             span.sv-action-arrow(aria-hidden="true") →
                             strong Reprogramar cita
                             small Cambia la fecha de tu cita.
                         a.sv-action-card(href="/patient/notifications")
                             span.sv-action-icon.action-teal
                                 svg(viewBox="0 0 24 24", aria-hidden="true")
-                                    path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                                    path(
+                                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                    )
                             span.sv-action-arrow(aria-hidden="true") →
                             strong Notificaciones
                             small Activa o configura tus avisos.
                     .sv-panels
                         .sv-panel-column
-                            section.sv-panel.sv-appointment(aria-labelledby="next-appointment-title")
+                            section.sv-panel.sv-appointment(
+                                aria-labelledby="next-appointment-title"
+                            )
                                 .sv-panel-heading
                                     h2#next-appointment-title Próxima cita
                                     a(href="/patient/appointments") Ver todas
@@ -120,19 +143,27 @@ html(lang="es")
                                     .sv-appointment-info
                                         p
                                             svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2a7 7 0 0 1 14 0v2Z")
+                                                path(
+                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2a7 7 0 0 1 14 0v2Z"
+                                                )
                                             strong Medicina General
                                         p
                                             svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
+                                                path(
+                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
+                                                )
                                             span Dr. Carlos Ramírez
                                         p
                                             svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z")
+                                                path(
+                                                    d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                )
                                             span 10:00 a. m.
                                         p
                                             svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z")
+                                                path(
+                                                    d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                                )
                                             span Centro Médico SaludVital<br>Sede Dosquebradas
                                     span.sv-status Confirmada
                                 .sv-appointment-buttons
@@ -172,7 +203,9 @@ html(lang="es")
                                                 td
                                                     span.sv-status.status-red Cancelada
                         .sv-panel-column
-                            section.sv-panel.sv-notifications(aria-labelledby="notifications-title")
+                            section.sv-panel.sv-notifications(
+                                aria-labelledby="notifications-title"
+                            )
                                 .sv-panel-heading
                                     h2#notifications-title Notificaciones
                                     a(href="/patient/notifications")
@@ -229,11 +262,15 @@ html(lang="es")
                         span Inicio
                     a(href="/patient/appointments/new")
                         svg(viewBox="0 0 24 24", aria-hidden="true")
-                            path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6")
+                            path(
+                                d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
+                            )
                         span Pedir cita
                     a(href="/patient/appointments")
                         svg(viewBox="0 0 24 24", aria-hidden="true")
-                            path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2")
+                            path(
+                                d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2"
+                            )
                         span Mis citas
                     a(href="/patient/notifications")
                         svg(viewBox="0 0 24 24", aria-hidden="true")
