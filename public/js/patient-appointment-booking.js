@@ -17,6 +17,7 @@ if (form) {
     const calendarDays = document.querySelector("#calendar-days");
     const timeList = document.querySelector("#time-list");
     const result = document.querySelector("#booking-result");
+    const successDialog = document.querySelector("#appointment-success-dialog");
     const spanishDate = new Intl.DateTimeFormat("es-CO", {
         dateStyle: "full",
         timeZone: "America/Bogota",
@@ -249,6 +250,7 @@ if (form) {
         document.querySelector("[data-booking-next]").hidden = state.step === 4;
         document.querySelector(".booking-submit").hidden = state.step !== 4;
         result.textContent = "";
+        result.classList.remove("is-error");
         if (state.step === 4) renderSummary();
         if (window.matchMedia("(max-width: 760px)").matches) {
             document.querySelector(".booking-content").scrollTo({ top: 0, behavior: "smooth" });
@@ -402,16 +404,33 @@ if (form) {
                     reason: document.querySelector("#appointment-reason").value,
                 }),
             });
-            setMessage(
-                "#booking-result",
-                "¡Tu cita quedó solicitada! Puedes consultar su estado en Mis citas.",
-            );
-            submitButton.textContent = "Solicitud enviada";
+            // Clear the selections and optional reason after the server confirms the booking.
+            form.reset();
+            state.step = 1;
+            state.specialty = null;
+            state.doctors = [];
+            state.doctor = null;
+            state.date = "";
+            state.time = "";
+            submitButton.disabled = false;
+            submitButton.textContent = "Confirmar cita";
+            timeList.replaceChildren();
+            setMessage("#time-message", "Primero selecciona un médico.");
+            setMessage("#selected-date-label", "Selecciona un día para consultar horarios.");
+            renderSpecialties();
+            renderDoctors();
+            renderCalendar();
+            updateStep();
+            successDialog.showModal();
         } catch (error) {
             setMessage("#booking-result", error.message, true);
             submitButton.disabled = false;
             submitButton.textContent = "Confirmar cita";
         }
+    });
+
+    document.querySelector("[data-close-success-dialog]").addEventListener("click", () => {
+        successDialog.close();
     });
 
     const sidebar = document.querySelector("#patient-sidebar");

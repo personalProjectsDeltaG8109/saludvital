@@ -134,6 +134,18 @@ html(lang="es")
                                 span(aria-hidden="true") →
                             button.booking-submit(type="submit", hidden) Confirmar cita
 
+                    //- Native dialog keeps the success message accessible and keyboard friendly.
+                    dialog#appointment-success-dialog.booking-success-dialog(
+                        aria-labelledby="appointment-success-title",
+                        aria-describedby="appointment-success-message"
+                    )
+                        .booking-success-icon(aria-hidden="true") ✓
+                        h2#appointment-success-title ¡Cita creada con éxito!
+                        p#appointment-success-message Tu cita quedó confirmada. Puedes consultar los detalles en Mis citas.
+                        .booking-success-actions
+                            button.booking-success-close(type="button", data-close-success-dialog) Cerrar
+                            a.booking-success-link(href="/patient/appointments") Ver mis citas
+
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-appointment-booking.js", defer)

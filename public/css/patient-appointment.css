@@ -240,6 +240,51 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
 .booking-confirmation textarea { width: 100%; min-height: 72px; padding: 9px 10px; border: 1px solid #dce8f2; border-radius: 9px; color: var(--booking-ink); font-size: 12px; resize: vertical; }
 .booking-form-message { margin: 0; color: var(--booking-wellness); font-size: 12px; }
 .booking-form-message.is-error { color: #c93548; }
+.booking-success-dialog {
+    position: fixed;
+    inset: 0;
+    width: min(420px, calc(100% - 32px));
+    max-height: calc(100% - 32px);
+    margin: auto;
+    overflow: auto;
+    padding: 28px;
+    border: 1px solid var(--booking-border);
+    border-radius: 18px;
+    color: var(--booking-ink);
+    text-align: center;
+    box-shadow: 0 18px 60px #123b7330;
+}
+.booking-success-dialog::backdrop { background: #123b7380; backdrop-filter: blur(3px); }
+.booking-success-icon {
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: var(--booking-wellness);
+    font-size: 28px;
+}
+.booking-success-dialog h2 { margin: 0 0 8px; color: var(--booking-ink); font-size: 21px; }
+.booking-success-dialog p { margin: 0; color: #536b8c; font-size: 14px; line-height: 1.5; }
+.booking-success-actions { margin-top: 22px; display: flex; justify-content: center; gap: 10px; }
+.booking-success-actions button, .booking-success-link {
+    min-height: 42px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--booking-blue);
+    border-radius: 9px;
+    color: var(--booking-blue);
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+}
+.booking-success-link { color: #fff; background: var(--booking-blue); }
 .booking-actions { display: none; justify-content: flex-end; gap: 9px; }
 .booking-form.is-confirming .booking-actions { display: flex; }
 @media (min-width: 761px) {
