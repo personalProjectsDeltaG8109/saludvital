@@ -122,7 +122,7 @@ export async function updatePatientAppointmentTime(req, res, next) {
         });
         return res.status(200).json({
             success: true,
-            message: "Appointment rescheduled successfully.",
+            message: "Tu cita se reprogramó correctamente.",
             data: appointment,
         });
     } catch (error) {

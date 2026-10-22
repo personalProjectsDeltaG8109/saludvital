@@ -9,14 +9,25 @@
     const timeMessage = document.querySelector("[data-time-message]");
     const dateLabel = document.querySelector("[data-selected-date-label]");
     const submitButton = document.querySelector(".reschedule-submit");
-    const result = document.querySelector("[data-reschedule-result]");
+    const confirmDialog = document.querySelector("[data-confirm-reschedule-dialog]");
+    const confirmDoctor = document.querySelector("[data-confirm-doctor]");
+    const confirmCurrentDateTime = document.querySelector("[data-confirm-current-datetime]");
+    const confirmNewDateTime = document.querySelector("[data-confirm-new-datetime]");
+    const confirmAction = document.querySelector("[data-confirm-reschedule]");
+    const feedbackDialog = document.querySelector("[data-feedback-dialog]");
+    const feedbackTitle = document.querySelector("[data-feedback-title]");
+    const feedbackMessage = document.querySelector("[data-feedback-message]");
+    const feedbackIcon = document.querySelector("[data-feedback-icon]");
+    const feedbackClose = document.querySelector("[data-close-feedback]");
+    const viewAppointments = document.querySelector("[data-view-appointments]");
     const summaryDoctor = document.querySelector("[data-summary-doctor]");
     const summarySpecialty = document.querySelector("[data-summary-specialty]");
     const summaryDate = document.querySelector("[data-summary-date]");
     const summaryTime = document.querySelector("[data-summary-time]");
     const summarySite = document.querySelector("[data-summary-site]");
+    const rescheduleLimitNote = document.querySelector("[data-reschedule-limit-note]");
     const stepItems = [...document.querySelectorAll("[data-reschedule-step]")];
-    const minRescheduleAt = Date.now() + 24 * 60 * 60 * 1000;
+    const maxReschedules = 3;
     let selectedRow = rows.find((row) => row.querySelector("input").checked) || rows[0];
     let selectedDate = "";
     let selectedTime = "";
@@ -41,6 +52,23 @@
             minute: "2-digit",
             timeZone: "America/Bogota",
         }).format(dateAtTime("2000-01-01", time));
+    const formatDateTime = (date) =>
+        new Intl.DateTimeFormat("es-CO", {
+            dateStyle: "long",
+            timeStyle: "short",
+            timeZone: "America/Bogota",
+        }).format(date);
+
+    function showFeedback({ title, message, isSuccess }) {
+        feedbackTitle.textContent = title;
+        feedbackMessage.textContent = message;
+        feedbackIcon.textContent = isSuccess ? "✓" : "!";
+        feedbackDialog.classList.toggle("is-success", isSuccess);
+        feedbackDialog.classList.toggle("is-error", !isSuccess);
+        feedbackClose.textContent = isSuccess ? "Cerrar" : "Intentar de nuevo";
+        viewAppointments.hidden = !isSuccess;
+        feedbackDialog.showModal();
+    }
 
     function setCurrentStep(step) {
         stepItems.forEach((item) =>
@@ -54,6 +82,12 @@
         summarySite.textContent = selectedRow.dataset.site;
         summaryDate.textContent = selectedDate ? formatDate(selectedDate) : "Selecciona una fecha";
         summaryTime.textContent = selectedTime ? formatTime(selectedTime) : "Selecciona un horario";
+        const remainingReschedules =
+            maxReschedules - Number(selectedRow.dataset.reschedulesUsed || 0);
+        rescheduleLimitNote.textContent =
+            remainingReschedules === 1
+                ? "Te queda 1 reprogramación para esta cita."
+                : `Puedes reprogramar esta cita ${remainingReschedules} veces más.`;
         submitButton.disabled = !(selectedDate && selectedTime);
         setCurrentStep(selectedTime ? 3 : selectedDate ? 2 : 1);
     }
@@ -80,12 +114,11 @@
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudieron consultar los horarios.");
 
-            const availableTimes = payload.data.filter(
-                (time) => dateAtTime(date, time).getTime() >= minRescheduleAt,
-            );
+            // The availability endpoint already enforces the booking notice period.
+            const availableTimes = payload.data;
             if (!availableTimes.length) {
                 setMessage(
-                    "No hay horarios disponibles con 24 horas de anticipación para esta fecha.",
+                    "No hay horarios disponibles con la anticipación mínima requerida para esta fecha.",
                 );
                 return;
             }
@@ -136,7 +169,7 @@
             button.type = "button";
             button.className = "reschedule-calendar-day";
             button.textContent = String(day);
-            button.disabled = dateAtTime(key, "23:30").getTime() < minRescheduleAt;
+            button.disabled = dateAtTime(key, "23:30").getTime() < Date.now();
             button.classList.toggle("is-selected", key === selectedDate);
             button.addEventListener("click", () => {
                 calendarDays
@@ -168,13 +201,10 @@
         }),
     );
 
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        if (!selectedDate || !selectedTime) return;
+    async function saveRescheduledAppointment() {
         submitButton.disabled = true;
         submitButton.textContent = "Guardando cambio…";
-        result.textContent = "";
-        result.classList.remove("is-error", "is-success");
+        confirmAction.disabled = true;
 
         try {
             const response = await fetch(
@@ -189,17 +219,49 @@
             const payload = await response.json();
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudo reprogramar la cita.");
-            result.textContent = "Tu cita fue reprogramada correctamente.";
-            result.classList.add("is-success");
             setCurrentStep(4);
             submitButton.textContent = "Cita reprogramada";
+            confirmDialog.close();
+            showFeedback({
+                title: "¡Cita reprogramada!",
+                message: "Tu cita fue reprogramada correctamente. Puedes consultar el nuevo horario en Mis citas.",
+                isSuccess: true,
+            });
         } catch (error) {
-            result.textContent = error.message || "Ocurrió un error al reprogramar la cita.";
-            result.classList.add("is-error");
             submitButton.disabled = false;
             submitButton.textContent = "Confirmar reprogramación";
+            confirmDialog.close();
+            showFeedback({
+                title: "No se pudo reprogramar la cita",
+                message: error.message || "Ocurrió un error al reprogramar la cita.",
+                isSuccess: false,
+            });
+        } finally {
+            confirmAction.disabled = false;
         }
+    }
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!selectedDate || !selectedTime) return;
+
+        confirmDoctor.textContent = selectedRow.dataset.doctorName;
+        confirmCurrentDateTime.textContent = formatDateTime(new Date(selectedRow.dataset.startAt));
+        confirmNewDateTime.textContent = formatDateTime(dateAtTime(selectedDate, selectedTime));
+        confirmDialog.showModal();
     });
+
+    document.querySelector("[data-cancel-reschedule]").addEventListener("click", () => {
+        confirmDialog.close();
+    });
+    confirmAction.addEventListener("click", saveRescheduledAppointment);
+    feedbackClose.addEventListener("click", () => feedbackDialog.close());
+
+    [confirmDialog, feedbackDialog].forEach((dialog) =>
+        dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+        }),
+    );
 
     const initialDate = new Date(selectedRow.dataset.startAt);
     monthCursor = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);

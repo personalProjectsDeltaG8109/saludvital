@@ -19,6 +19,9 @@ const MINIMUM_ADVANCE_HOURS = 5;
 // Define the duration of each appointment slot in minutes.
 const APPOINTMENT_SLOT_MINUTES = 30;
 
+// Limit each appointment to three patient rescheduling actions.
+const MAX_APPOINTMENT_RESCHEDULES = 3;
+
 // Limit each patient to two active appointments per Bogotá calendar day.
 const MAX_DAILY_APPOINTMENTS = 2;
 
@@ -645,7 +648,7 @@ export async function getReschedulableAppointments(userId) {
     const patient = await getPatientByUserId(userId);
     const cutoff = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    return Appointment.findAll({
+    const appointments = await Appointment.findAll({
         where: {
             patient_id: patient.id,
             start_at: { [Op.gt]: cutoff },
@@ -659,9 +662,21 @@ export async function getReschedulableAppointments(userId) {
             },
             { model: Doctor, as: "doctor", required: true },
             { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
+            {
+                model: AppointmentHistory,
+                as: "history",
+                attributes: ["event_type"],
+            },
         ],
         order: [["start_at", "ASC"]],
     });
+
+    // Hide appointments that have already reached the rescheduling limit.
+    return appointments.filter(
+        (appointment) =>
+            appointment.history.filter((event) => event.event_type === "Rescheduled").length <
+            MAX_APPOINTMENT_RESCHEDULES,
+    );
 }
 
 /**
@@ -820,6 +835,19 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
+
+        // Count rescheduling events while the appointment row is locked.
+        const rescheduleCount = await AppointmentHistory.count({
+            where: { appointment_id: appointment.id, event_type: "Rescheduled" },
+            transaction,
+        });
+        if (rescheduleCount >= MAX_APPOINTMENT_RESCHEDULES) {
+            throw new AppointmentError(
+                "Esta cita ya alcanzó el límite máximo de 3 reprogramaciones.",
+                409,
+            );
+        }
+
         await validateDailyAppointmentLimit({
             patientId: patient.id,
             specialtyId: appointment.specialty_id,
