@@ -94,22 +94,22 @@ export async function up(queryInterface) {
         }
     }
 
-    // Find an active Pending status for the sample appointment.
+    // Find the Confirmed status for the sample appointment.
     const statuses = await queryInterface.sequelize.query(
         `SELECT id
          FROM appointment_statuses
          WHERE name = :name
          LIMIT 1`,
         {
-            replacements: { name: "Pending" },
+            replacements: { name: "Confirmed" },
             type: QueryTypes.SELECT,
         },
     );
 
-    const pendingStatus = statuses[0];
+    const confirmedStatus = statuses[0];
 
-    if (!pendingStatus) {
-        throw new Error("The Pending appointment status is missing. Run the status seeder first.");
+    if (!confirmedStatus) {
+        throw new Error("The Confirmed appointment status is missing. Run the status seeder first.");
     }
 
     // Choose tomorrow at 9:00 a. m. in Colombia for the sample appointment.
@@ -155,7 +155,7 @@ export async function up(queryInterface) {
                 patient_id: patient.id,
                 doctor_id: doctor.id,
                 specialty_id: doctor.specialty_id,
-                status_id: pendingStatus.id,
+                status_id: confirmedStatus.id,
                 start_at: startAt,
                 end_at: endAt,
                 reason: "Cita de prueba para validar el flujo de reserva.",

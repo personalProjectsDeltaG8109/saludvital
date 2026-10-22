@@ -20,7 +20,7 @@ const MINIMUM_ADVANCE_HOURS = 5;
 const APPOINTMENT_SLOT_MINUTES = 30;
 
 // Keep appointment statuses aligned with the existing database seed.
-const PENDING_STATUS = "Pending";
+const CONFIRMED_STATUS = "Confirmed";
 const CANCELLED_STATUS = "Cancelled";
 
 /**
@@ -506,7 +506,7 @@ export async function getReschedulableAppointments(userId) {
                 model: AppointmentStatus,
                 as: "status",
                 required: true,
-                where: { name: PENDING_STATUS },
+                where: { name: CONFIRMED_STATUS },
             },
             { model: Doctor, as: "doctor", required: true },
             { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
@@ -554,31 +554,37 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
         const hasAvailability = await hasRegularAvailability(doctorId, startAt, endAt, transaction);
 
         if (!hasAvailability) {
-            throw new AppointmentError("The doctor is not available during this time.", 409);
+            throw new AppointmentError(
+                "El médico no tiene disponibilidad para ese horario. Elige otra fecha u hora.",
+                409,
+            );
         }
 
         const isBlocked = await hasBlockingScheduleException(doctorId, startAt, endAt, transaction);
 
         if (isBlocked) {
-            throw new AppointmentError("The selected time is blocked by the doctor.", 409);
+            throw new AppointmentError(
+                "El horario seleccionado está bloqueado por el médico. Elige otro.",
+                409,
+            );
         }
 
         const hasConflict = await hasConflictingAppointment(doctorId, startAt, endAt, transaction);
 
         if (hasConflict) {
             throw new AppointmentError(
-                "This appointment slot has already been booked. Please select another time.",
+                "Este horario acaba de ser reservado. Actualiza la disponibilidad y elige otro.",
                 409,
             );
         }
 
-        const pendingStatus = await AppointmentStatus.findOne({
-            where: { name: PENDING_STATUS },
+        const confirmedStatus = await AppointmentStatus.findOne({
+            where: { name: CONFIRMED_STATUS },
             transaction,
         });
 
-        if (!pendingStatus) {
-            throw new Error("The Pending appointment status is not configured.");
+        if (!confirmedStatus) {
+            throw new Error("The Confirmed appointment status is not configured.");
         }
 
         const appointment = await Appointment.create(
@@ -586,7 +592,7 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
                 patient_id: patient.id,
                 doctor_id: doctorId,
                 specialty_id: specialtyId,
-                status_id: pendingStatus.id,
+                status_id: confirmedStatus.id,
                 start_at: startAt,
                 end_at: endAt,
                 reason: normalizedReason,
@@ -606,7 +612,7 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
                     patient_id: patient.id,
                     doctor_id: doctorId,
                     specialty_id: specialtyId,
-                    status: PENDING_STATUS,
+                    status: CONFIRMED_STATUS,
                     start_at: startAt.toISOString(),
                     end_at: endAt.toISOString(),
                 },
@@ -647,8 +653,8 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (!appointment) {
             throw new AppointmentError("The appointment could not be found.", 404);
         }
-        if (appointment.status.name !== PENDING_STATUS) {
-            throw new AppointmentError("Only pending appointments can be rescheduled.", 409);
+        if (appointment.status.name !== CONFIRMED_STATUS) {
+            throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
         if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
             throw new AppointmentError(

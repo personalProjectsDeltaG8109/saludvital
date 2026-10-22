@@ -28,9 +28,9 @@ describe("Initial appointment statuses seeder", () => {
 
         expect(tableName).toBe("appointment_statuses");
         expect(insertedStatuses.map((status) => status.name)).toEqual([
-            "Pending",
+            "Confirmed",
             "In Progress",
-            "Completed",
+            "Attended",
             "Cancelled",
         ]);
 
@@ -42,9 +42,9 @@ describe("Initial appointment statuses seeder", () => {
     });
 
     test("inserts only statuses that are missing", async () => {
-        // Simulate a catalog where Pending and Completed already exist.
+        // Simulate a catalog where Confirmed and Attended already exist.
         queryInterface.sequelize.query.mockResolvedValue([
-            [{ name: "Pending" }, { name: "Completed" }],
+            [{ name: "Confirmed" }, { name: "Attended" }],
         ]);
 
         await up(queryInterface);
@@ -59,9 +59,9 @@ describe("Initial appointment statuses seeder", () => {
         // Simulate a catalog that already contains all four statuses.
         queryInterface.sequelize.query.mockResolvedValue([
             [
-                { name: "Pending" },
+                { name: "Confirmed" },
                 { name: "In Progress" },
-                { name: "Completed" },
+                { name: "Attended" },
                 { name: "Cancelled" },
             ],
         ]);
