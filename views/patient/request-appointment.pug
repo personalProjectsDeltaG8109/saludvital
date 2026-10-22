@@ -3,7 +3,7 @@ html(lang="es")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        meta(name="theme-color", content="#f2faff")
+        meta(name="theme-color", content="#FFFFFF")
         title= pageTitle || "Pedir una nueva cita | SaludVital"
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
@@ -65,11 +65,6 @@ html(lang="es")
                                     span.booking-section-number 2.
                                     h2#doctor-heading Selecciona el médico
                                     p Elige el profesional con el que deseas agendar tu cita.
-                                label.booking-sort
-                                    span Ordenar por
-                                    select#doctor-sort(aria-label="Ordenar médicos")
-                                        option(value="availability") Disponibilidad
-                                        option(value="name") Nombre
                             p#doctor-message.booking-message(role="status") Selecciona una especialidad para ver médicos disponibles.
                             #doctor-list.booking-doctor-grid
 
@@ -138,6 +133,18 @@ html(lang="es")
                                 span Siguiente
                                 span(aria-hidden="true") →
                             button.booking-submit(type="submit", hidden) Confirmar cita
+
+                    //- Native dialog keeps the success message accessible and keyboard friendly.
+                    dialog#appointment-success-dialog.booking-success-dialog(
+                        aria-labelledby="appointment-success-title",
+                        aria-describedby="appointment-success-message"
+                    )
+                        .booking-success-icon(aria-hidden="true") ✓
+                        h2#appointment-success-title ¡Cita creada con éxito!
+                        p#appointment-success-message Tu cita quedó confirmada. Puedes consultar los detalles en Mis citas.
+                        .booking-success-actions
+                            button.booking-success-close(type="button", data-close-success-dialog) Cerrar
+                            a.booking-success-link(href="/patient/appointments") Ver mis citas
 
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)

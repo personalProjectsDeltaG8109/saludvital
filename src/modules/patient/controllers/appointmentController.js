@@ -61,7 +61,11 @@ export async function listAvailableDoctors(req, res, next) {
  */
 export async function listAvailableTimeSlots(req, res, next) {
     try {
-        const times = await getAvailableTimeSlots(req.params.doctorId, req.query.date);
+        const times = await getAvailableTimeSlots(
+            req.params.doctorId,
+            req.query.date,
+            req.auth.userId,
+        );
 
         return res.status(200).json({
             success: true,
@@ -89,7 +93,7 @@ export async function createPatientAppointment(req, res, next) {
 
         return res.status(201).json({
             success: true,
-            message: "Appointment booked successfully.",
+            message: "Tu cita se reservó correctamente.",
             data: appointment,
         });
     } catch (error) {

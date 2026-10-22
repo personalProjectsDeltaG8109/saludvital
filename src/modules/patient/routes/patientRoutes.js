@@ -37,8 +37,8 @@ import { getDepartments, getMunicipalities } from "../../auth/services/locationS
 const patientRoutes = Router();
 const appointmentStats = [
     { key: "all", label: "Total de citas", status: null },
-    { key: "confirmed", label: "Confirmadas", status: "active" },
-    { key: "attended", label: "Asistida", status: "Completed" },
+    { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
+    { key: "attended", label: "Atendida", status: "Attended" },
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
 ];
 
@@ -175,7 +175,7 @@ patientRoutes.get(
                 {
                     id: "demo-1",
                     start_at: "2026-11-15T15:00:00.000Z",
-                    status: { name: "Pending" },
+                    status: { name: "Confirmed" },
                     specialty: { name: "Medicina General" },
                     doctor_label: "Dr. Carlos Ramírez",
                     site_label: "Sede Dosquebradas",
@@ -191,7 +191,7 @@ patientRoutes.get(
                 {
                     id: "demo-3",
                     start_at: "2026-09-03T13:00:00.000Z",
-                    status: { name: "Completed" },
+                    status: { name: "Attended" },
                     specialty: { name: "Oftalmología" },
                     doctor_label: "Dr. Luis Gómez",
                     site_label: "Sede Pereira",
@@ -207,7 +207,7 @@ patientRoutes.get(
                 {
                     id: "demo-5",
                     start_at: "2026-12-05T16:00:00.000Z",
-                    status: { name: "Pending" },
+                    status: { name: "Confirmed" },
                     specialty: { name: "Pediatría" },
                     doctor_label: "Dra. Laura Vélez",
                     site_label: "Sede Dosquebradas",

@@ -16,11 +16,11 @@
             const rowStatus = row.dataset.status;
             const future =
                 new Date(row.dataset.date) >= today &&
-                !["Cancelled", "Completed"].includes(rowStatus);
+                !["Cancelled", "Attended"].includes(rowStatus);
             const tabMatches =
                 filter === "all" ||
                 (filter === "upcoming" && future) ||
-                (filter === "attended" && rowStatus === "Completed") ||
+                (filter === "attended" && rowStatus === "Attended") ||
                 (filter === "cancelled" && rowStatus === "Cancelled");
             const statusMatches = !status?.value || status.value === rowStatus;
             const specialtyMatches = !specialty?.value || specialty.value === row.dataset.specialty;

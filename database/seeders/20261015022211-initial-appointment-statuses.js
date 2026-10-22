@@ -4,16 +4,16 @@
 export async function up(queryInterface) {
     const statuses = [
         {
-            name: "Pending",
-            description: "The appointment is awaiting attention.",
+            name: "Confirmed",
+            description: "The appointment has been confirmed.",
         },
         {
             name: "In Progress",
             description: "The appointment is currently being attended.",
         },
         {
-            name: "Completed",
-            description: "The appointment has been completed.",
+            name: "Attended",
+            description: "The appointment has been attended.",
         },
         {
             name: "Cancelled",
