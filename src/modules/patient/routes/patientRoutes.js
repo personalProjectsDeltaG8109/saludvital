@@ -30,6 +30,7 @@ import {
     notificationEvents,
 } from "../services/notificationService.js";
 import { getPatientProfile } from "../services/profileService.js";
+import { getPatientClinicalHistory } from "../services/clinicalHistoryService.js";
 import { getDepartments, getMunicipalities } from "../../auth/services/locationService.js";
 
 // Define the routes available to patients.
@@ -289,6 +290,177 @@ patientRoutes.get(
                     : await getPatientName(req.auth.userId),
                 notificationEvents,
                 ...notificationSettings,
+            });
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+patientRoutes.get(
+    "/patient/clinical-history",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            const previewMode = process.env.NODE_ENV !== "production" && req.query.preview === "1";
+            const sampleConsultations = [
+                {
+                    id: "demo-1",
+                    started_at: "2026-10-15T13:00:00.000Z",
+                    date_label: "15 oct 2026",
+                    time_label: "08:00 a. m. - 08:30 a. m.",
+                    specialty_label: "Medicina General",
+                    doctor_label: "Dra. Laura Vélez",
+                    symptoms: "Dolor abdominal leve y malestar general.",
+                    clinical_notes:
+                        "Paciente en buen estado general. Se recomienda seguimiento y cambios en la alimentación.",
+                    vital_signs: {
+                        blood_pressure: "120/80 mmHg",
+                        heart_rate: "72 lpm",
+                        temperature: "36.5 °C",
+                        weight: "68 kg",
+                        height: "1.70 m",
+                        bmi: "23.5",
+                    },
+                    diagnoses: [{ diagnosis: "Gastritis leve", notes: "Control en tres meses." }],
+                    prescriptions: [
+                        {
+                            items: [
+                                {
+                                    medication_name: "Omeprazol",
+                                    dosage: "20 mg",
+                                    frequency: "Una vez al día",
+                                    duration: "14 días",
+                                    instructions: "Tomar antes del desayuno.",
+                                },
+                            ],
+                        },
+                    ],
+                    documents: ["Resumen de atención", "Orden médica"],
+                },
+                {
+                    id: "demo-2",
+                    started_at: "2026-09-12T14:00:00.000Z",
+                    date_label: "12 sep 2026",
+                    time_label: "09:00 a. m. - 09:30 a. m.",
+                    specialty_label: "Odontología",
+                    doctor_label: "Dr. Andrés Torres",
+                    symptoms: "Sensibilidad dental al frío.",
+                    clinical_notes:
+                        "Se realiza valoración odontológica y se indica higiene oral diaria.",
+                    vital_signs: {},
+                    diagnoses: [{ diagnosis: "Hipersensibilidad dental", notes: "" }],
+                    prescriptions: [
+                        {
+                            items: [
+                                {
+                                    medication_name: "Flúor tópico",
+                                    dosage: "Aplicación local",
+                                    frequency: "Una vez",
+                                    duration: "Según valoración",
+                                    instructions: "Uso profesional en consulta.",
+                                },
+                            ],
+                        },
+                    ],
+                    documents: ["Registro odontológico"],
+                },
+                {
+                    id: "demo-3",
+                    started_at: "2026-08-18T15:00:00.000Z",
+                    date_label: "18 ago 2026",
+                    time_label: "10:00 a. m. - 10:30 a. m.",
+                    specialty_label: "Cardiología",
+                    doctor_label: "Dra. Camila Rojas",
+                    symptoms: "Control preventivo.",
+                    clinical_notes: "Signos vitales estables. Continuar hábitos saludables.",
+                    vital_signs: { blood_pressure: "118/78 mmHg", heart_rate: "70 lpm" },
+                    diagnoses: [
+                        { diagnosis: "Control cardiovascular", notes: "Sin hallazgos de alarma." },
+                    ],
+                    prescriptions: [],
+                    documents: ["Resultado de electrocardiograma"],
+                },
+                {
+                    id: "demo-4",
+                    started_at: "2026-07-10T16:00:00.000Z",
+                    date_label: "10 jul 2026",
+                    time_label: "11:00 a. m. - 11:30 a. m.",
+                    specialty_label: "Neumología",
+                    doctor_label: "Dr. Felipe Díaz",
+                    symptoms: "Tos ocasional sin fiebre.",
+                    clinical_notes: "Evaluación respiratoria sin signos de dificultad.",
+                    vital_signs: { temperature: "36.7 °C", oxygen_saturation: "98 %" },
+                    diagnoses: [],
+                    prescriptions: [
+                        {
+                            items: [
+                                {
+                                    medication_name: "Solución salina",
+                                    dosage: "0.9 %",
+                                    frequency: "Según necesidad",
+                                    duration: "7 días",
+                                    instructions: "Usar según indicación médica.",
+                                },
+                            ],
+                        },
+                    ],
+                    documents: ["Indicaciones de cuidado"],
+                },
+                {
+                    id: "demo-5",
+                    started_at: "2026-06-05T13:00:00.000Z",
+                    date_label: "05 jun 2026",
+                    time_label: "08:00 a. m. - 08:30 a. m.",
+                    specialty_label: "Medicina General",
+                    doctor_label: "Dra. Laura Vélez",
+                    symptoms: "Consulta de control general.",
+                    clinical_notes: "Se revisan antecedentes y se mantiene el plan de cuidado.",
+                    vital_signs: {},
+                    diagnoses: [],
+                    prescriptions: [
+                        {
+                            items: [
+                                {
+                                    medication_name: "Vitamina D",
+                                    dosage: "1000 UI",
+                                    frequency: "Una vez al día",
+                                    duration: "30 días",
+                                    instructions: "Tomar con alimentos.",
+                                },
+                            ],
+                        },
+                    ],
+                    documents: ["Resumen de atención"],
+                },
+            ];
+            const consultations = previewMode
+                ? sampleConsultations
+                : await getPatientClinicalHistory(req.auth.userId);
+            const totals = consultations.reduce(
+                (counts, consultation) => {
+                    counts.diagnoses += consultation.diagnoses.length;
+                    counts.treatments += consultation.prescriptions.reduce(
+                        (prescriptionCount, prescription) =>
+                            prescriptionCount + (prescription.items?.length || 0),
+                        0,
+                    );
+                    counts.documents += consultation.documents?.length || 0;
+                    return counts;
+                },
+                { diagnoses: 0, treatments: 0, documents: 0 },
+            );
+
+            return res.render("patient/clinical-history", {
+                pageTitle: "Historial clínico | SaludVital",
+                activeNav: "clinical-history",
+                welcomeMessage: "Aquí puedes consultar el registro de tus atenciones médicas.",
+                patientName: await getPatientName(req.auth.userId),
+                consultations,
+                totals: { consultations: consultations.length, ...totals },
+                previewMode,
+                previewAvailable: process.env.NODE_ENV !== "production",
             });
         } catch (error) {
             return next(error);

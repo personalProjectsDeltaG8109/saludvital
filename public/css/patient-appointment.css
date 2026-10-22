@@ -13,7 +13,7 @@
     padding: 17px clamp(16px, 2vw, 28px) 24px;
     flex: 1;
     overflow: auto;
-    scrollbar-color: #c6d9e9 transparent;
+    scrollbar-color: #fff transparent;
 }
 .booking-stepper {
     margin: 0 14px 14px;
@@ -271,7 +271,7 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
 .booking-actions button:disabled { opacity: .65; cursor: wait; }
 .booking-actions button[hidden] { display: none; }
 
-@media (max-width: 1100px) and (min-width: 761px) {
+@media (max-width: 1000px) and (min-width: 761px) {
     .booking-specialty-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .booking-date-time-grid { grid-template-columns: 1fr; }
 }
@@ -310,7 +310,6 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
     .booking-form .booking-actions { display: flex; }
     .booking-form.is-confirming .booking-actions { display: flex; }
     .booking-actions button { min-width: 0; min-height: 43px; flex: 1; }
-    .booking-page .sv-bottom-nav { height: calc(66px + env(safe-area-inset-bottom)); }
 }
 
 @media (max-width: 360px) {

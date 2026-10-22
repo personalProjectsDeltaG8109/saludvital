@@ -6,10 +6,8 @@
 }
 
 .profile-page .sv-main {
-    width: calc(100% - 238px);
     min-width: 0;
     height: 100%;
-    margin-left: 238px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -704,10 +702,6 @@
 }
 
 @media (max-width: 1000px) and (min-width: 761px) {
-    .profile-page .sv-main {
-        margin-left: 210px;
-    }
-
     .profile-content {
         padding-right: 14px;
         padding-left: 14px;
@@ -748,45 +742,6 @@
         padding-bottom: calc(66px + env(safe-area-inset-bottom));
         display: block;
         overflow: visible;
-    }
-
-    .profile-page .sv-topbar {
-        min-height: 54px;
-        height: 54px;
-        padding: 5px 12px;
-        display: flex;
-        align-items: center;
-        flex-wrap: nowrap;
-        border-bottom: 1px solid #e8f1f8;
-    }
-
-    .profile-page .sv-mobile-brand,
-    .profile-page .sv-mobile-brand img {
-        width: 158px;
-        height: 43px;
-        flex-basis: 158px;
-    }
-
-    .profile-page .sv-topbar-copy {
-        display: none;
-    }
-
-    .profile-page .sv-topbar-actions {
-        top: 7px;
-        right: 64px;
-    }
-
-    .profile-page .sv-bell {
-        width: 38px;
-        height: 38px;
-    }
-
-    .profile-page .sv-mobile-menu-toggle {
-        position: absolute;
-        top: 7px;
-        right: 12px;
-        width: 40px;
-        height: 40px;
     }
 
     .profile-content {
@@ -1085,25 +1040,6 @@
 }
 
 @media (max-width: 360px) {
-    .profile-page .sv-topbar {
-        padding-right: 9px;
-        padding-left: 9px;
-    }
-
-    .profile-page .sv-mobile-brand,
-    .profile-page .sv-mobile-brand img {
-        width: 137px;
-        flex-basis: 137px;
-    }
-
-    .profile-page .sv-topbar-actions {
-        right: 58px;
-    }
-
-    .profile-page .sv-mobile-menu-toggle {
-        right: 9px;
-    }
-
     .profile-content {
         padding-right: 9px;
         padding-left: 9px;
