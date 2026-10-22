@@ -194,11 +194,20 @@ patientRoutes.get(
                             new Date(first.occurred_at).getTime() -
                             new Date(second.occurred_at).getTime(),
                     );
-                nextAppointment.can_reschedule =
-                    nextAppointment.status.name === "Confirmed" &&
+                const isConfirmed = nextAppointment.status.name === "Confirmed";
+                const hasEnoughNotice =
                     new Date(nextAppointment.start_at).getTime() >
-                        Date.now() + 24 * 60 * 60 * 1000 &&
-                    nextAppointment.history.length < 3;
+                    Date.now() + 24 * 60 * 60 * 1000;
+                const hasReschedulesLeft = nextAppointment.history.length < 3;
+                nextAppointment.can_reschedule =
+                    isConfirmed && hasEnoughNotice && hasReschedulesLeft;
+                nextAppointment.reschedule_unavailable_reason = !isConfirmed
+                    ? "Esta cita ya no está confirmada, por eso no se puede reprogramar."
+                    : !hasEnoughNotice
+                      ? "Para reprogramar una cita deben faltar más de 24 horas para su inicio."
+                      : !hasReschedulesLeft
+                        ? "Esta cita ya alcanzó el máximo de 3 reprogramaciones."
+                        : "Esta cita no está disponible para reprogramación.";
             }
 
             return res.render("patient/dashboard", {

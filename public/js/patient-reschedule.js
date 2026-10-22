@@ -71,12 +71,31 @@
     }
 
     function setCurrentStep(step) {
-        stepItems.forEach((item) =>
-            item.classList.toggle("is-current", Number(item.dataset.rescheduleStep) === step),
-        );
+        stepItems.forEach((item) => {
+            const itemStep = Number(item.dataset.rescheduleStep);
+            const isComplete = itemStep <= step;
+
+            // Keep completed steps filled while highlighting the current step for assistive technology.
+            item.classList.toggle("is-complete", isComplete);
+            item.classList.toggle("is-current", itemStep === step);
+            if (itemStep === step) item.setAttribute("aria-current", "step");
+            else item.removeAttribute("aria-current");
+        });
     }
 
     function updateSummary() {
+        if (!selectedRow) {
+            summaryDoctor.textContent = "Selecciona una cita";
+            summarySpecialty.textContent = "Especialidad";
+            summarySite.textContent = "Sede";
+            summaryDate.textContent = "Selecciona una fecha";
+            summaryTime.textContent = "Selecciona un horario";
+            rescheduleLimitNote.textContent = "";
+            submitButton.disabled = true;
+            setCurrentStep(1);
+            return;
+        }
+
         summaryDoctor.textContent = selectedRow.dataset.doctorName;
         summarySpecialty.textContent = selectedRow.dataset.specialty;
         summarySite.textContent = selectedRow.dataset.site;
@@ -89,7 +108,30 @@
                 ? "Te queda 1 reprogramación para esta cita."
                 : `Puedes reprogramar esta cita ${remainingReschedules} veces más.`;
         submitButton.disabled = !(selectedDate && selectedTime);
-        setCurrentStep(selectedTime ? 3 : selectedDate ? 2 : 1);
+        // A date alone is not enough; step 2 starts once a time is selected as well.
+        setCurrentStep(selectedTime ? 2 : 1);
+    }
+
+    function clearFormAfterSuccess() {
+        // Clear the selected appointment and new date after a successful reschedule.
+        selectedRow = null;
+        selectedDate = "";
+        selectedTime = "";
+        rows.forEach((row) => {
+            row.classList.remove("is-selected");
+            row.querySelector("input").checked = false;
+        });
+        calendarDays.replaceChildren();
+        timeList.replaceChildren();
+        dateLabel.textContent = "Selecciona una fecha disponible.";
+        setMessage("Selecciona una cita para consultar horarios.");
+        summaryDoctor.textContent = "Selecciona una cita";
+        summarySpecialty.textContent = "Especialidad";
+        summarySite.textContent = "Sede";
+        summaryDate.textContent = "Selecciona una fecha";
+        summaryTime.textContent = "Selecciona un horario";
+        rescheduleLimitNote.textContent = "";
+        submitButton.disabled = true;
     }
 
     function setMessage(message, isError = false) {
@@ -219,9 +261,10 @@
             const payload = await response.json();
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudo reprogramar la cita.");
-            setCurrentStep(4);
             submitButton.textContent = "Cita reprogramada";
             confirmDialog.close();
+            clearFormAfterSuccess();
+            setCurrentStep(4);
             showFeedback({
                 title: "¡Cita reprogramada!",
                 message: "Tu cita fue reprogramada correctamente. Puedes consultar el nuevo horario en Mis citas.",
@@ -231,6 +274,7 @@
             submitButton.disabled = false;
             submitButton.textContent = "Confirmar reprogramación";
             confirmDialog.close();
+            setCurrentStep(4);
             showFeedback({
                 title: "No se pudo reprogramar la cita",
                 message: error.message || "Ocurrió un error al reprogramar la cita.",
@@ -254,7 +298,11 @@
     document.querySelector("[data-cancel-reschedule]").addEventListener("click", () => {
         confirmDialog.close();
     });
-    confirmAction.addEventListener("click", saveRescheduledAppointment);
+    confirmAction.addEventListener("click", () => {
+        // Advance to confirmation only after the patient accepts the confirmation dialog.
+        setCurrentStep(3);
+        saveRescheduledAppointment();
+    });
     feedbackClose.addEventListener("click", () => feedbackDialog.close());
 
     [confirmDialog, feedbackDialog].forEach((dialog) =>

@@ -11,6 +11,16 @@
         });
     });
 
+    // Explain why the next appointment cannot be rescheduled without navigating away.
+    document.querySelectorAll("[data-open-reschedule-unavailable]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `reschedule-unavailable-${button.dataset.openRescheduleUnavailable}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
     // Close detail dialogs from their controls or by clicking the backdrop.
     document.querySelectorAll(".appointment-details-dialog").forEach((dialog) => {
         dialog.querySelectorAll("[data-close-appointment-details]").forEach((button) => {

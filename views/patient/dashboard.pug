@@ -108,11 +108,21 @@ html(lang="es")
                                             aria-controls="appointment-details-" + appointmentId,
                                             data-open-appointment-details=appointmentId
                                         ) Ver detalles
-                                        a.sv-button-primary(
-                                            href=nextAppointment.can_reschedule ? `/patient/appointments/reschedule?appointmentId=${appointmentId}` : "/patient/appointments/reschedule"
-                                        )
-                                            span.sv-button-wide Reprogramar cita
-                                            span.sv-button-short Reprogramar
+                                        if nextAppointment.can_reschedule
+                                            a.sv-button-primary(
+                                                href=`/patient/appointments/reschedule?appointmentId=${appointmentId}`
+                                            )
+                                                span.sv-button-wide Reprogramar cita
+                                                span.sv-button-short Reprogramar
+                                        else
+                                            button.sv-button-primary(
+                                                type="button",
+                                                aria-haspopup="dialog",
+                                                aria-controls="reschedule-unavailable-" + appointmentId,
+                                                data-open-reschedule-unavailable=appointmentId
+                                            )
+                                                span.sv-button-wide Reprogramar cita
+                                                span.sv-button-short Reprogramar
                                     dialog.appointment-details-dialog(
                                         id="appointment-details-" + appointmentId,
                                         aria-labelledby="appointment-details-title-" + appointmentId
@@ -156,6 +166,24 @@ html(lang="es")
                                                                     span Fecha de reprogramación registrada
                                         .appointment-dialog-footer
                                             button.appointment-dialog-done(type="button", data-close-appointment-details) Listo
+                                    unless nextAppointment.can_reschedule
+                                        dialog.appointment-details-dialog(
+                                            id="reschedule-unavailable-" + appointmentId,
+                                            aria-labelledby="reschedule-unavailable-title-" + appointmentId
+                                        )
+                                            .appointment-dialog-header
+                                                div
+                                                    span.appointment-dialog-kicker Reprogramación no disponible
+                                                    h2(id="reschedule-unavailable-title-" + appointmentId) No puedes reprogramar esta cita
+                                                button.appointment-dialog-close(
+                                                    type="button",
+                                                    aria-label="Cerrar mensaje",
+                                                    data-close-appointment-details
+                                                ) ×
+                                            .appointment-dialog-body
+                                                p= nextAppointment.reschedule_unavailable_reason
+                                            .appointment-dialog-footer
+                                                button.appointment-dialog-done(type="button", data-close-appointment-details) Entendido
                                 else
                                     .sv-appointment-empty
                                         strong No tienes citas próximas
