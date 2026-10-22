@@ -32,8 +32,8 @@ function validatePositiveIntegerId(value, fieldName) {
         typeof value === "number"
             ? value
             : typeof value === "string" && /^\d+$/.test(value)
-              ? Number(value)
-              : NaN;
+                ? Number(value)
+                : NaN;
 
     if (!Number.isSafeInteger(normalizedValue) || normalizedValue <= 0) {
         throw new AppointmentError(`${fieldName} must be a valid positive integer.`, 400);
@@ -141,7 +141,7 @@ function getBogotaDateTime(date) {
 function validateAppointmentDate(startAt, endAt) {
     // Reject invalid date objects before performing comparisons.
     if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
-        throw new AppointmentError("The selected appointment date or time is invalid.", 400);
+        throw new AppointmentError("La fecha o la hora seleccionada no es válida.", 400);
     }
 
     // Require at least five hours of advance notice.
@@ -149,12 +149,15 @@ function validateAppointmentDate(startAt, endAt) {
     const minimumStart = new Date(now.getTime() + MINIMUM_ADVANCE_HOURS * 60 * 60 * 1000);
 
     if (startAt < minimumStart) {
-        throw new AppointmentError("Appointments must be booked at least 5 hours in advance.", 400);
+        throw new AppointmentError(
+            "La cita debe reservarse con al menos 5 horas de anticipación.",
+            400,
+        );
     }
 
     // Ensure the appointment ends after it starts.
     if (endAt <= startAt) {
-        throw new AppointmentError("The appointment end time must be after its start time.", 400);
+        throw new AppointmentError("La hora de finalización debe ser posterior a la hora de inicio.", 400);
     }
 
     // Require appointment starts to align with a 30-minute boundary.
@@ -163,14 +166,14 @@ function validateAppointmentDate(startAt, endAt) {
         startAt.getUTCSeconds() !== 0 ||
         startAt.getUTCMilliseconds() !== 0
     ) {
-        throw new AppointmentError("Appointments must start on a 30-minute interval.", 400);
+        throw new AppointmentError("La cita debe comenzar en un intervalo de 30 minutos.", 400);
     }
 
     // Enforce the required 30-minute appointment duration.
     const durationMinutes = (endAt.getTime() - startAt.getTime()) / 60000;
 
     if (durationMinutes !== APPOINTMENT_SLOT_MINUTES) {
-        throw new AppointmentError("Appointments must last exactly 30 minutes.", 400);
+        throw new AppointmentError("La cita debe tener una duración de 30 minutos.", 400);
     }
 }
 
