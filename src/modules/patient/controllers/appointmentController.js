@@ -89,7 +89,7 @@ export async function createPatientAppointment(req, res, next) {
 
         return res.status(201).json({
             success: true,
-            message: "Appointment booked successfully.",
+            message: "Tu cita se reservó correctamente.",
             data: appointment,
         });
     } catch (error) {
