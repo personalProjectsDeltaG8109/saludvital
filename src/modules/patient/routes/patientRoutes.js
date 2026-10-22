@@ -182,13 +182,6 @@ patientRoutes.get(
                       order: [["start_at", "DESC"]],
                   })
                 : [];
-            const reschedulableAppointmentIds = new Set(
-                patient
-                    ? (await getReschedulableAppointments(req.auth.userId)).map(
-                          (appointment) => appointment.id,
-                      )
-                    : [],
-            );
             const previewMode = process.env.NODE_ENV !== "production" && req.query.preview === "1";
             const previewAppointments = [
                 {
@@ -236,9 +229,8 @@ patientRoutes.get(
                 (item) => {
                     const appointment =
                         typeof item.get === "function" ? item.get({ plain: true }) : item;
-                    appointment.canReschedule = reschedulableAppointmentIds.has(appointment.id);
                     appointment.history = (appointment.history || []).filter(
-                        (event) => event.event_type === "Rescheduled",
+                        (event) => ["Rescheduled", "Cancelled"].includes(event.event_type),
                     ).sort(
                         (first, second) =>
                             new Date(first.occurred_at).getTime() -

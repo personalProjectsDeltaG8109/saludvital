@@ -15,6 +15,27 @@
         day: "2-digit",
     });
     const today = bogotaDate.format(new Date());
+
+    // Open each appointment detail in its accessible native modal dialog.
+    document.querySelectorAll("[data-open-appointment-details]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `appointment-details-${button.dataset.openAppointmentDetails}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
+    // Close the detail dialog from its close controls or by clicking the backdrop.
+    document.querySelectorAll(".appointment-details-dialog").forEach((dialog) => {
+        dialog.querySelectorAll("[data-close-appointment-details]").forEach((button) => {
+            button.addEventListener("click", () => dialog.close());
+        });
+        dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
+
     function update() {
         let visible = 0;
         rows.forEach((row) => {
