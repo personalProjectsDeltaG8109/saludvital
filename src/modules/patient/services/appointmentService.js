@@ -834,6 +834,10 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
+        // Reject an original appointment that has started, even if the request bypasses the UI.
+        if (new Date(appointment.start_at).getTime() <= Date.now()) {
+            throw new AppointmentError("Esta cita ya inició y no se puede reprogramar.", 409);
+        }
 
         // Revalidate the replacement slot after acquiring the appointment lock.
         validateAppointmentDate(startAt, endAt, {
