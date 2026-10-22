@@ -29,7 +29,7 @@ const CANCELLED_STATUS = "Cancelled";
 /**
  * Validate and normalize a positive integer identifier.
  */
-function validatePositiveIntegerId(value, fieldName) {
+function validatePositiveIntegerId(value) {
     // Accept positive integer numbers and numeric strings from form inputs.
     const normalizedValue =
         typeof value === "number"
@@ -460,7 +460,7 @@ export async function getAvailableSpecialties() {
 
 export async function getAvailableDoctors(specialtyId) {
     // Validate the specialty identifier before querying the database.
-    specialtyId = validatePositiveIntegerId(specialtyId, "Specialty ID");
+    specialtyId = validatePositiveIntegerId(specialtyId);
 
     // Retrieve the selected active specialty.
     const specialty = await getActiveSpecialty(specialtyId);
@@ -484,8 +484,8 @@ export async function getAvailableDoctors(specialtyId) {
  * Return appointment start times that fit a doctor's schedule for a local date.
  */
 export async function getAvailableTimeSlots(doctorId, date, userId) {
-    doctorId = validatePositiveIntegerId(doctorId, "Doctor ID");
-    userId = validatePositiveIntegerId(userId, "User ID");
+    doctorId = validatePositiveIntegerId(doctorId);
+    userId = validatePositiveIntegerId(userId);
 
     if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
@@ -641,7 +641,7 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
  * List a patient's confirmed appointments that still meet the 24-hour reschedule window.
  */
 export async function getReschedulableAppointments(userId) {
-    userId = validatePositiveIntegerId(userId, "User ID");
+    userId = validatePositiveIntegerId(userId);
     const patient = await getPatientByUserId(userId);
     const cutoff = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -669,9 +669,9 @@ export async function getReschedulableAppointments(userId) {
  */
 export async function bookAppointment({ userId, specialtyId, doctorId, date, time, reason }) {
     // Validate identifiers before starting the booking transaction.
-    userId = validatePositiveIntegerId(userId, "User ID");
-    specialtyId = validatePositiveIntegerId(specialtyId, "Specialty ID");
-    doctorId = validatePositiveIntegerId(doctorId, "Doctor ID");
+    userId = validatePositiveIntegerId(userId);
+    specialtyId = validatePositiveIntegerId(specialtyId);
+    doctorId = validatePositiveIntegerId(doctorId);
     // Validate the optional reason before opening the transaction.
     const normalizedReason = normalizeAppointmentReason(reason);
 
@@ -791,8 +791,8 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
  * Move one of the authenticated patient's appointments to a new available slot.
  */
 export async function reschedulePatientAppointment({ userId, appointmentId, date, time }) {
-    userId = validatePositiveIntegerId(userId, "User ID");
-    appointmentId = validatePositiveIntegerId(appointmentId, "Appointment ID");
+    userId = validatePositiveIntegerId(userId);
+    appointmentId = validatePositiveIntegerId(appointmentId);
     const startAt = buildDateTime(date, time);
     const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
     validateAppointmentDate(startAt, endAt);
