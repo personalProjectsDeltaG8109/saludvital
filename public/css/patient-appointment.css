@@ -310,7 +310,6 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
     .booking-form .booking-actions { display: flex; }
     .booking-form.is-confirming .booking-actions { display: flex; }
     .booking-actions button { min-width: 0; min-height: 43px; flex: 1; }
-    .booking-page .sv-bottom-nav { height: calc(66px + env(safe-area-inset-bottom)); }
 }
 
 @media (max-width: 360px) {

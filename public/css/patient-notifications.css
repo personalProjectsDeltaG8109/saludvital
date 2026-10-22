@@ -207,8 +207,6 @@
 .notifications-history-empty strong { color: #123b73; font-size: 15px; }
 .notifications-history-empty p { margin: 0; font-size: 12px; }
 .notifications-empty-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 50%; color: #078bed; background: #e9f6ff; }
-.notifications-page .sv-bottom-nav { display: none; }
-
 @media (max-width: 1000px) and (min-width: 761px) {
     .notifications-channel { grid-template-columns: 42px minmax(0, 1fr) 38px; gap: 8px; }
     .notifications-channel-icon { width: 40px; height: 40px; }
@@ -268,10 +266,6 @@
     .notifications-history-table tr.is-history-extra { display: none; }
     .notifications-history-table.is-expanded tr.is-history-extra { display: grid; }
     .notifications-history-empty { min-height: 125px; }
-    .notifications-page .sv-bottom-nav { position: fixed; inset: auto 0 0; z-index: 10; height: calc(66px + env(safe-area-inset-bottom)); min-height: 0; padding: 5px 3px max(6px,env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); border-top: 1px solid #e4eff8; background: #ffffffed; box-shadow: 0 -5px 16px #123b730c; backdrop-filter: blur(12px); }
-    .notifications-page .sv-bottom-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: #526b8a; font-size: clamp(0.5rem, 2.3vw, 0.625rem); line-height: 1.05; text-align: center; }
-    .notifications-page .sv-bottom-nav a.is-active { color: #078bed; }
-    .notifications-page .sv-bottom-nav svg { width: 19px; height: 19px; }
 }
 
 @media (max-width: 360px) {
