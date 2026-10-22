@@ -3,7 +3,7 @@ html(lang="es")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        meta(name="theme-color", content="#f2faff")
+        meta(name="theme-color", content="#FFFFFF")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
@@ -21,43 +21,23 @@ html(lang="es")
                     section.appointments-hero
                         .appointments-hero-copy
                             h2 Mis citas
-                            p Consulta el estado de tus citas médicas, reprograma o cancela cuando lo necesites.
+                            p Consulta el estado y los detalles de tus citas médicas.
                     if previewMode
                         p.appointments-preview-note Vista previa: estas citas son ficticias y solo se muestran para revisar el diseño.
                     section.appointment-stats(aria-label="Resumen de citas")
                         each stat in appointmentStats
                             - const count = stat.status ? appointments.filter((a) => (a.status && a.status.name) === stat.status).length : appointments.length;
                             article.appointment-stat(class="stat-" + stat.key)
-                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" ? "✓" : stat.key === "attended" ? "◷" : "×"
+                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" ? "✓" : stat.key === "in-progress" ? "◷" : stat.key === "attended" ? "✓" : "×"
                                 span.stat-copy
                                     strong= count
                                     small= stat.label
                     section.appointment-list-panel(aria-label="Listado de citas")
-                        .appointment-tabs(role="tablist", aria-label="Filtrar citas")
-                            button.is-active(
-                                type="button",
-                                data-filter="all",
-                                role="tab",
-                                aria-selected="true"
-                            ) Todas
-                            button(
-                                type="button",
-                                data-filter="upcoming",
-                                role="tab",
-                                aria-selected="false"
-                            ) Próximas
-                            button(
-                                type="button",
-                                data-filter="attended",
-                                role="tab",
-                                aria-selected="false"
-                            ) Asistidas
-                            button(
-                                type="button",
-                                data-filter="cancelled",
-                                role="tab",
-                                aria-selected="false"
-                            ) Canceladas
+                        .appointment-tabs(role="group", aria-label="Filtrar citas")
+                            button.is-active(type="button", data-filter="all", aria-pressed="true") Todas
+                            button(type="button", data-filter="upcoming", aria-pressed="false") Próximas
+                            button(type="button", data-filter="attended", aria-pressed="false") Asistidas
+                            button(type="button", data-filter="cancelled", aria-pressed="false") Canceladas
                         .appointment-tools
                             label.appointment-search
                                 span(aria-hidden="true") ⌕
@@ -78,9 +58,11 @@ html(lang="es")
                                         option(value=name)= name
                             label.appointment-select.desktop-filter
                                 span.sr-only Estado
+                                span.appointment-filter-icon(aria-hidden="true") ◷
                                 select(data-status)
                                     option(value="") Todos los estados
                                     option(value="Confirmed") Confirmadas
+                                    option(value="In Progress") En curso
                                     option(value="Attended") Atendidas
                                     option(value="Cancelled") Canceladas
                         if appointments.length
@@ -93,12 +75,14 @@ html(lang="es")
                                             th Médico
                                             th Sede
                                             th Estado
-                                            th Acciones
+                                            th Detalles
                                     tbody
                                         each appointment in appointments
                                             - const date = new Date(appointment.start_at);
                                             - const status = (appointment.status && appointment.status.name) || "Confirmed";
-                                            - const doctorName = appointment.doctor_label || "Médico asignado";
+                                            - const doctorName = appointment.doctor_label || (appointment.doctor ? `Médico #${appointment.doctor.id}` : "Médico asignado");
+                                            - const statusClass = status === "In Progress" ? "in-progress" : status.toLowerCase();
+                                            - const statusLabel = status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada";
                                             tr(
                                                 id="appointment-" + appointment.id,
                                                 data-appointment,
@@ -117,17 +101,76 @@ html(lang="es")
                                                 td(data-label="Médico")= doctorName
                                                 td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
                                                 td(data-label="Estado")
-                                                    span.appointment-status(
-                                                        class="status-" + (status === "Attended" ? "attended" : status.toLowerCase())
-                                                    )= status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada"
-                                                td(data-label="Acciones")
-                                                    a.appointment-detail(
-                                                        href="#appointment-" + appointment.id,
-                                                        aria-label="Ver detalles de esta cita"
+                                                    span.appointment-status(class="status-" + statusClass)= statusLabel
+                                                td.appointment-details-cell(data-label="Detalles")
+                                                    button.appointment-detail-toggle(
+                                                        type="button",
+                                                        aria-haspopup="dialog",
+                                                        aria-controls=`appointment-details-${appointment.id}`,
+                                                        data-open-appointment-details=appointment.id
                                                     ) Ver detalles
-                            p.appointment-empty(hidden, data-empty) No encontramos citas con ese criterio.
+                                                    dialog.appointment-details-dialog(
+                                                        id=`appointment-details-${appointment.id}`,
+                                                        aria-labelledby=`appointment-details-title-${appointment.id}`
+                                                    )
+                                                        .appointment-dialog-header
+                                                            div
+                                                                span.appointment-dialog-kicker Detalles de tu cita
+                                                                h2(
+                                                                    id=`appointment-details-title-${appointment.id}`
+                                                                )= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                                p= doctorName
+                                                            button.appointment-dialog-close(
+                                                                type="button",
+                                                                aria-label="Cerrar detalles",
+                                                                data-close-appointment-details
+                                                            ) ×
+                                                        .appointment-dialog-body
+                                                            .appointment-dialog-status
+                                                                span Estado actual
+                                                                span.appointment-status(
+                                                                    class="status-" + statusClass
+                                                                )= statusLabel
+                                                            dl.appointment-detail-list
+                                                                div
+                                                                    dt Fecha y hora
+                                                                    dd= date.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" })
+                                                                div
+                                                                    dt Sede
+                                                                    dd= appointment.site_label || "Sede SaludVital"
+                                                                if appointment.reason
+                                                                    div
+                                                                        dt Motivo de la consulta
+                                                                        dd= appointment.reason
+                                                            if appointment.history.length
+                                                                section.appointment-dialog-history(
+                                                                    aria-label="Historial de la cita"
+                                                                )
+                                                                    h3 Historial de la cita
+                                                                    ol.appointment-history
+                                                                        each event in appointment.history
+                                                                            - const previousStart = event.previous_values?.start_at ? new Date(event.previous_values.start_at) : null;
+                                                                            - const newStart = event.new_values?.start_at ? new Date(event.new_values.start_at) : null;
+                                                                            li
+                                                                                if event.event_type === "Cancelled"
+                                                                                    span Cita cancelada; el registro y su historial se conservaron.
+                                                                                else if previousStart && newStart
+                                                                                    span= `Reprogramada de ${previousStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })} a ${newStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })}`
+                                                                                else
+                                                                                    span Fecha de reprogramación registrada
+                                                        .appointment-dialog-footer
+                                                            button.appointment-dialog-done(
+                                                                type="button",
+                                                                data-close-appointment-details
+                                                            ) Listo
+                            p.appointment-empty(
+                                hidden,
+                                data-empty,
+                                role="status",
+                                aria-live="polite"
+                            ) No encontramos citas con ese criterio.
                             .appointment-summary
-                                span(data-summary)= `Mostrando ${appointments.length} de ${appointments.length} citas`
+                                span(data-summary, aria-live="polite")= `Mostrando ${appointments.length} de ${appointments.length} citas`
                         else
                             .appointment-no-results
                                 strong Aún no tienes citas

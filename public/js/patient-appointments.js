@@ -8,14 +8,40 @@
     const empty = document.querySelector("[data-empty]");
     const summary = document.querySelector("[data-summary]");
     let filter = "all";
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const bogotaDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
+    const today = bogotaDate.format(new Date());
+
+    // Open each appointment detail in its accessible native modal dialog.
+    document.querySelectorAll("[data-open-appointment-details]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `appointment-details-${button.dataset.openAppointmentDetails}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
+    // Close the detail dialog from its close controls or by clicking the backdrop.
+    document.querySelectorAll(".appointment-details-dialog").forEach((dialog) => {
+        dialog.querySelectorAll("[data-close-appointment-details]").forEach((button) => {
+            button.addEventListener("click", () => dialog.close());
+        });
+        dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
+
     function update() {
         let visible = 0;
         rows.forEach((row) => {
             const rowStatus = row.dataset.status;
             const future =
-                new Date(row.dataset.date) >= today &&
+                bogotaDate.format(new Date(row.dataset.date)) >= today &&
                 !["Cancelled", "Attended"].includes(rowStatus);
             const tabMatches =
                 filter === "all" ||
@@ -42,7 +68,7 @@
             tabs.forEach((item) => {
                 const active = item === tab;
                 item.classList.toggle("is-active", active);
-                item.setAttribute("aria-selected", String(active));
+                item.setAttribute("aria-pressed", String(active));
             });
             update();
         }),

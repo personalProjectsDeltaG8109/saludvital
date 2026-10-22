@@ -6,6 +6,7 @@ import {
     Doctor,
     Specialities,
     AppointmentStatus,
+    AppointmentHistory,
 } from "../../../models/associations.js";
 import {
     listPatientNotifications,
@@ -38,7 +39,8 @@ const patientRoutes = Router();
 const appointmentStats = [
     { key: "all", label: "Total de citas", status: null },
     { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
-    { key: "attended", label: "Atendida", status: "Attended" },
+    { key: "in-progress", label: "En curso", status: "In Progress" },
+    { key: "attended", label: "Atendidas", status: "Attended" },
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
 ];
 
@@ -166,6 +168,16 @@ patientRoutes.get(
                           { model: Doctor, as: "doctor" },
                           { model: Specialities, as: "specialty", attributes: ["name"] },
                           { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                          {
+                              model: AppointmentHistory,
+                              as: "history",
+                              attributes: [
+                                  "event_type",
+                                  "previous_values",
+                                  "new_values",
+                                  "occurred_at",
+                              ],
+                          },
                       ],
                       order: [["start_at", "DESC"]],
                   })
@@ -214,7 +226,18 @@ patientRoutes.get(
                 },
             ];
             const appointments = (previewMode ? previewAppointments : storedAppointments).map(
-                (item) => (typeof item.get === "function" ? item.get({ plain: true }) : item),
+                (item) => {
+                    const appointment =
+                        typeof item.get === "function" ? item.get({ plain: true }) : item;
+                    appointment.history = (appointment.history || [])
+                        .filter((event) => ["Rescheduled", "Cancelled"].includes(event.event_type))
+                        .sort(
+                            (first, second) =>
+                                new Date(first.occurred_at).getTime() -
+                                new Date(second.occurred_at).getTime(),
+                        );
+                    return appointment;
+                },
             );
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",
