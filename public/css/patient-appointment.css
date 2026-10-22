@@ -13,7 +13,7 @@
     padding: 17px clamp(16px, 2vw, 28px) 24px;
     flex: 1;
     overflow: auto;
-    scrollbar-color: #c6d9e9 transparent;
+    scrollbar-color: #fff transparent;
 }
 .booking-stepper {
     margin: 0 14px 14px;
