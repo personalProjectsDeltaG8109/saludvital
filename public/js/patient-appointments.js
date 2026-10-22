@@ -8,14 +8,19 @@
     const empty = document.querySelector("[data-empty]");
     const summary = document.querySelector("[data-summary]");
     let filter = "all";
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const bogotaDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
+    const today = bogotaDate.format(new Date());
     function update() {
         let visible = 0;
         rows.forEach((row) => {
             const rowStatus = row.dataset.status;
             const future =
-                new Date(row.dataset.date) >= today &&
+                bogotaDate.format(new Date(row.dataset.date)) >= today &&
                 !["Cancelled", "Attended"].includes(rowStatus);
             const tabMatches =
                 filter === "all" ||
@@ -42,7 +47,7 @@
             tabs.forEach((item) => {
                 const active = item === tab;
                 item.classList.toggle("is-active", active);
-                item.setAttribute("aria-selected", String(active));
+                item.setAttribute("aria-pressed", String(active));
             });
             update();
         }),
