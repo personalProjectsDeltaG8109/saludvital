@@ -5,6 +5,7 @@ import {
     bookAppointment,
     getReschedulableAppointments,
     reschedulePatientAppointment,
+    cancelPatientAppointment,
 } from "../services/appointmentService.js";
 import { AppointmentError } from "../errors/appointmentError.js";
 
@@ -123,6 +124,23 @@ export async function updatePatientAppointmentTime(req, res, next) {
         return res.status(200).json({
             success: true,
             message: "Tu cita se reprogramó correctamente.",
+            data: appointment,
+        });
+    } catch (error) {
+        return handleAppointmentError(error, res, next);
+    }
+}
+
+/** Cancel an appointment owned by the authenticated patient. */
+export async function cancelPatientAppointmentRequest(req, res, next) {
+    try {
+        const appointment = await cancelPatientAppointment({
+            userId: req.auth.userId,
+            appointmentId: req.params.appointmentId,
+        });
+        return res.status(200).json({
+            success: true,
+            message: "Tu cita se canceló correctamente.",
             data: appointment,
         });
     } catch (error) {

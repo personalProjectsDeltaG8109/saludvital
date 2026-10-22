@@ -25,6 +25,7 @@ import {
     createPatientAppointment,
     listReschedulableAppointments,
     updatePatientAppointmentTime,
+    cancelPatientAppointmentRequest,
 } from "../controllers/appointmentController.js";
 import { getReschedulableAppointments } from "../services/appointmentService.js";
 import {
@@ -132,6 +133,14 @@ patientRoutes.post(
     authenticateToken,
     requireRole("Patient"),
     updatePatientAppointmentTime,
+);
+
+// Cancel an appointment through the authenticated patient's portal.
+patientRoutes.post(
+    "/api/patient/appointments/:appointmentId/cancel",
+    authenticateToken,
+    requireRole("Patient"),
+    cancelPatientAppointmentRequest,
 );
 // Render the patient dashboard with authentication and role authorization.
 patientRoutes.get(

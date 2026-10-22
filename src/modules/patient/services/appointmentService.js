@@ -28,6 +28,8 @@ const MAX_DAILY_APPOINTMENTS = 2;
 // Keep appointment statuses aligned with the existing database seed.
 const CONFIRMED_STATUS = "Confirmed";
 const CANCELLED_STATUS = "Cancelled";
+// Require at least one day of notice before a patient cancels an appointment.
+const CANCELLATION_NOTICE_HOURS = 24;
 
 /**
  * Validate and normalize a positive integer identifier.
@@ -925,6 +927,74 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
                 previous_values: previousValues,
                 new_values: { start_at: startAt.toISOString(), end_at: endAt.toISOString() },
                 reason: "Patient rescheduled through the web portal.",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        return appointment;
+    });
+}
+
+/** Cancel one of the authenticated patient's confirmed appointments. */
+export async function cancelPatientAppointment({ userId, appointmentId }) {
+    userId = validatePositiveIntegerId(userId);
+    appointmentId = validatePositiveIntegerId(appointmentId);
+
+    return database.transaction(async (transaction) => {
+        // Resolve the patient from the authenticated account, never from request data.
+        const patient = await getPatientByUserId(userId, transaction);
+        const appointment = await Appointment.findOne({
+            where: { id: appointmentId, patient_id: patient.id },
+            include: [{ model: AppointmentStatus, as: "status", required: true }],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+
+        if (!appointment) {
+            throw new AppointmentError("No se encontró la cita que deseas cancelar.", 404);
+        }
+        if (appointment.status.name !== CONFIRMED_STATUS) {
+            throw new AppointmentError("Solo puedes cancelar citas confirmadas.", 409);
+        }
+
+        const now = Date.now();
+        const appointmentStart = new Date(appointment.start_at).getTime();
+        const minimumNotice = CANCELLATION_NOTICE_HOURS * 60 * 60 * 1000;
+
+        // The appointment must still be in the future and at least 24 hours away.
+        if (appointmentStart - now < minimumNotice) {
+            throw new AppointmentError(
+                "Solo puedes cancelar la cita con al menos 24 horas de anticipación.",
+                409,
+            );
+        }
+
+        const cancelledStatus = await AppointmentStatus.findOne({
+            where: { name: CANCELLED_STATUS },
+            transaction,
+        });
+        if (!cancelledStatus) {
+            throw new AppointmentError("El estado de cancelación no está configurado.", 500);
+        }
+
+        const previousValues = {
+            status: appointment.status.name,
+            start_at: new Date(appointment.start_at).toISOString(),
+            end_at: new Date(appointment.end_at).toISOString(),
+        };
+
+        // Change the status and write its audit event atomically to preserve history.
+        await appointment.update({ status_id: cancelledStatus.id }, { transaction });
+        await AppointmentHistory.create(
+            {
+                appointment_id: appointment.id,
+                actor_user_id: userId,
+                actor_snapshot: `Patient ${patient.id}`,
+                event_type: "Cancelled",
+                previous_values: previousValues,
+                new_values: { status: CANCELLED_STATUS },
+                reason: "Patient cancelled through the web portal.",
                 occurred_at: new Date(),
             },
             { transaction },
