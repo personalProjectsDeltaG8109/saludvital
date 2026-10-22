@@ -6,6 +6,7 @@ import {
     Doctor,
     Specialities,
     AppointmentStatus,
+    AppointmentHistory,
 } from "../../../models/associations.js";
 import {
     listPatientNotifications,
@@ -167,10 +168,27 @@ patientRoutes.get(
                           { model: Doctor, as: "doctor" },
                           { model: Specialities, as: "specialty", attributes: ["name"] },
                           { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                          {
+                              model: AppointmentHistory,
+                              as: "history",
+                              attributes: [
+                                  "event_type",
+                                  "previous_values",
+                                  "new_values",
+                                  "occurred_at",
+                              ],
+                          },
                       ],
                       order: [["start_at", "DESC"]],
                   })
                 : [];
+            const reschedulableAppointmentIds = new Set(
+                patient
+                    ? (await getReschedulableAppointments(req.auth.userId)).map(
+                          (appointment) => appointment.id,
+                      )
+                    : [],
+            );
             const previewMode = process.env.NODE_ENV !== "production" && req.query.preview === "1";
             const previewAppointments = [
                 {
@@ -215,7 +233,19 @@ patientRoutes.get(
                 },
             ];
             const appointments = (previewMode ? previewAppointments : storedAppointments).map(
-                (item) => (typeof item.get === "function" ? item.get({ plain: true }) : item),
+                (item) => {
+                    const appointment =
+                        typeof item.get === "function" ? item.get({ plain: true }) : item;
+                    appointment.canReschedule = reschedulableAppointmentIds.has(appointment.id);
+                    appointment.history = (appointment.history || []).filter(
+                        (event) => event.event_type === "Rescheduled",
+                    ).sort(
+                        (first, second) =>
+                            new Date(first.occurred_at).getTime() -
+                            new Date(second.occurred_at).getTime(),
+                    );
+                    return appointment;
+                },
             );
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",

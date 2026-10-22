@@ -304,6 +304,66 @@
     background: #eef3f8;
 }
 
+.appointment-detail-toggle {
+    color: var(--appointments-secondary);
+    cursor: pointer;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.appointment-detail-content {
+    min-width: 250px;
+    max-width: 360px;
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid #d9e7f3;
+    border-radius: 9px;
+    background: #fff;
+    white-space: normal;
+}
+
+.appointment-detail-list {
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.appointment-detail-list div {
+    display: grid;
+    gap: 2px;
+}
+
+.appointment-detail-list dt {
+    color: #526b8a;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.appointment-detail-list dd {
+    margin: 0;
+    color: var(--appointments-primary);
+}
+
+.appointment-detail-content h3 {
+    margin: 12px 0 6px;
+    color: var(--appointments-primary);
+    font-size: 12px;
+}
+
+.appointment-history {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 5px;
+}
+
+.appointment-reschedule-link {
+    margin-top: 10px;
+    display: inline-block;
+    color: var(--appointments-secondary);
+    font-weight: 700;
+}
+
 
 
 .appointment-summary {
@@ -588,6 +648,16 @@
     .appointment-table td:nth-child(5) {
         grid-column: 2;
         grid-row: 3;
+    }
+
+    .appointment-table td.appointment-details-cell {
+        grid-column: 1 / -1;
+        grid-row: 4;
+    }
+
+    .appointment-detail-content {
+        min-width: 0;
+        max-width: none;
     }
 
     .appointment-table td[data-label]::before {

@@ -91,6 +91,7 @@ html(lang="es")
                                             th Médico
                                             th Sede
                                             th Estado
+                                            th Detalles
                                     tbody
                                         each appointment in appointments
                                             - const date = new Date(appointment.start_at);
@@ -118,6 +119,40 @@ html(lang="es")
                                                     span.appointment-status(
                                                         class="status-" + statusClass
                                                     )= status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada"
+                                                td.appointment-details-cell(data-label="Detalles")
+                                                    details.appointment-details
+                                                        summary.appointment-detail-toggle Ver detalles
+                                                        .appointment-detail-content
+                                                            dl.appointment-detail-list
+                                                                div
+                                                                    dt Especialidad
+                                                                    dd= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                                div
+                                                                    dt Médico
+                                                                    dd= doctorName
+                                                                div
+                                                                    dt Fecha y hora actual
+                                                                    dd= date.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" })
+                                                                div
+                                                                    dt Estado
+                                                                    dd= status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada"
+                                                                if appointment.reason
+                                                                    div
+                                                                        dt Motivo
+                                                                        dd= appointment.reason
+                                                            if appointment.history.length
+                                                                h3 Historial de reprogramaciones
+                                                                ol.appointment-history
+                                                                    each event in appointment.history
+                                                                        - const previousStart = event.previous_values?.start_at ? new Date(event.previous_values.start_at) : null;
+                                                                        - const newStart = event.new_values?.start_at ? new Date(event.new_values.start_at) : null;
+                                                                        li
+                                                                            if previousStart && newStart
+                                                                                span= `Cita reprogramada de ${previousStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })} a ${newStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })}`
+                                                                            else
+                                                                                span Fecha de reprogramación registrada
+                                                            if appointment.canReschedule
+                                                                a.appointment-reschedule-link(href="/patient/appointments/reschedule") Reprogramar cita
                             p.appointment-empty(hidden, data-empty, role="status", aria-live="polite") No encontramos citas con ese criterio.
                             .appointment-summary
                                 span(data-summary, aria-live="polite")= `Mostrando ${appointments.length} de ${appointments.length} citas`
