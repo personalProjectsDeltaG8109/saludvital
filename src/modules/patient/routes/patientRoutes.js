@@ -195,15 +195,14 @@ patientRoutes.get(
                             new Date(second.occurred_at).getTime(),
                     );
                 const isConfirmed = nextAppointment.status.name === "Confirmed";
-                const hasEnoughNotice =
-                    new Date(nextAppointment.start_at).getTime() > Date.now() + 24 * 60 * 60 * 1000;
+                const isFutureAppointment = new Date(nextAppointment.start_at).getTime() > Date.now();
                 const hasReschedulesLeft = nextAppointment.history.length < 3;
                 nextAppointment.can_reschedule =
-                    isConfirmed && hasEnoughNotice && hasReschedulesLeft;
+                    isConfirmed && isFutureAppointment && hasReschedulesLeft;
                 nextAppointment.reschedule_unavailable_reason = !isConfirmed
                     ? "Esta cita ya no está confirmada, por eso no se puede reprogramar."
-                    : !hasEnoughNotice
-                      ? "Para reprogramar una cita deben faltar más de 24 horas para su inicio."
+                    : !isFutureAppointment
+                      ? "Esta cita ya inició y no se puede reprogramar."
                       : !hasReschedulesLeft
                         ? "Esta cita ya alcanzó el máximo de 3 reprogramaciones."
                         : "Esta cita no está disponible para reprogramación.";

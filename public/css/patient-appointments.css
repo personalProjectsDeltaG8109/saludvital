@@ -316,12 +316,43 @@
     white-space: nowrap;
 }
 
+/* Keep appointment details and the rescheduling shortcut aligned in one action group. */
+.appointment-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.appointment-reschedule-link {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid #cfe5f7;
+    border-radius: 50%;
+    color: var(--appointments-secondary);
+    background: #f3faff;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.appointment-reschedule-link svg {
+    width: 19px;
+    height: 19px;
+}
+
+.appointment-reschedule-link:hover {
+    border-color: var(--appointments-secondary);
+    color: #fff;
+    background: var(--appointments-secondary);
+}
+
 .appointment-detail-toggle:hover {
     border-color: var(--appointments-secondary);
     background: #eaf6ff;
 }
 
 .appointment-detail-toggle:focus-visible,
+.appointment-reschedule-link:focus-visible,
 .appointment-dialog-close:focus-visible,
 .appointment-dialog-done:focus-visible {
     outline: 3px solid var(--appointments-teal);

@@ -59,7 +59,7 @@ html(lang="es")
                                                 th Sede
                                                 th Estado
                                         tbody
-                                            each appointment, index in appointments
+                                            each appointment in appointments
                                                 - const startAt = new Date(appointment.start_at);
                                                 - const doctorName = appointment.doctor_label || "Médico asignado";
                                                 - const specialtyName = appointment.specialty ? appointment.specialty.name : "Consulta médica";
@@ -73,7 +73,7 @@ html(lang="es")
                                                     data-doctor-name=doctorName,
                                                     data-site=appointment.site_label || "Sede SaludVital",
                                                     data-start-at=startAt.toISOString(),
-                                                    class=index === 0 ? "is-selected" : null
+                                                    class=appointment.id === selectedAppointmentId ? "is-selected" : null
                                                 )
                                                     td(data-label="Seleccionar")
                                                         input(

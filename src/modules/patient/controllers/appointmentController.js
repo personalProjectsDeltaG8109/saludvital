@@ -65,6 +65,8 @@ export async function listAvailableTimeSlots(req, res, next) {
             req.params.doctorId,
             req.query.date,
             req.auth.userId,
+            // Use the shorter notice only for the rescheduling workflow.
+            { rescheduling: req.query.purpose === "reschedule" },
         );
 
         return res.status(200).json({

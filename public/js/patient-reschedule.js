@@ -149,14 +149,14 @@
 
         try {
             const response = await fetch(
-                `/api/patient/doctors/${selectedRow.dataset.doctorId}/availability?date=${encodeURIComponent(date)}`,
+                `/api/patient/doctors/${selectedRow.dataset.doctorId}/availability?date=${encodeURIComponent(date)}&purpose=reschedule`,
                 { headers: { Accept: "application/json" }, credentials: "same-origin" },
             );
             const payload = await response.json();
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudieron consultar los horarios.");
 
-            // The availability endpoint already enforces the booking notice period.
+            // The availability endpoint enforces the thirty-minute rescheduling notice.
             const availableTimes = payload.data;
             if (!availableTimes.length) {
                 setMessage(
