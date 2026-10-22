@@ -75,9 +75,7 @@
 .reschedule-empty strong { color: #123b73; font-size: 20px; }
 .reschedule-empty p { margin: 0; }
 .reschedule-page .sv-bottom-nav { display: none; }
-@media (max-width: 1050px) and (min-width: 761px) {
-    .reschedule-page .sv-sidebar { width: 205px; }
-    .reschedule-page .sv-main { width: calc(100% - 205px); margin-left: 205px; }
+@media (max-width: 1000px) and (min-width: 761px) {
     .reschedule-table th,.reschedule-table td { padding-right: 5px; padding-left: 5px; font-size: 10px; }
     .reschedule-date-time { grid-template-columns: minmax(220px,.9fr) minmax(240px,1.1fr); }
     .reschedule-summary { grid-column: 1 / -1; }

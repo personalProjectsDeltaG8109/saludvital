@@ -356,16 +356,12 @@
     display: none;
 }
 
-@media (max-width: 1050px) and (min-width: 761px) {
-    .appointments-page .sv-sidebar {
-        width: 205px;
-    }
+.appointments-page .sv-main {
+    margin-left: 205px;
+    width: calc(100% - 205px);
+}
 
-    .appointments-page .sv-main {
-        width: calc(100% - 205px);
-        margin-left: 205px;
-    }
-
+@media (max-width: 1000px) and (min-width: 761px) {
     .appointment-tools {
         grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(130px, .8fr));
     }

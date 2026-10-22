@@ -6,10 +6,8 @@
 }
 
 .profile-page .sv-main {
-    width: calc(100% - 238px);
     min-width: 0;
     height: 100%;
-    margin-left: 238px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -704,10 +702,6 @@
 }
 
 @media (max-width: 1000px) and (min-width: 761px) {
-    .profile-page .sv-main {
-        margin-left: 210px;
-    }
-
     .profile-content {
         padding-right: 14px;
         padding-left: 14px;

@@ -209,9 +209,7 @@
 .notifications-empty-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 50%; color: #078bed; background: #e9f6ff; }
 .notifications-page .sv-bottom-nav { display: none; }
 
-@media (max-width: 1050px) and (min-width: 761px) {
-    .notifications-page .sv-sidebar { width: 205px; }
-    .notifications-page .sv-main { width: calc(100% - 205px); margin-left: 205px; }
+@media (max-width: 1000px) and (min-width: 761px) {
     .notifications-channel { grid-template-columns: 42px minmax(0, 1fr) 38px; gap: 8px; }
     .notifications-channel-icon { width: 40px; height: 40px; }
     .notifications-card { padding: 11px; }
