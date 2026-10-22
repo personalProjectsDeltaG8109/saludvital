@@ -140,7 +140,9 @@ html(lang="es")
                                         .appointment-dialog-body
                                             .appointment-dialog-status
                                                 span Estado actual
-                                                span.appointment-status(class="status-" + appointmentStatusClass)= appointmentStatusLabel
+                                                span.appointment-status(
+                                                    class="status-" + appointmentStatusClass
+                                                )= appointmentStatusLabel
                                             dl.appointment-detail-list
                                                 div
                                                     dt Fecha y hora
@@ -153,7 +155,9 @@ html(lang="es")
                                                         dt Motivo de la consulta
                                                         dd= nextAppointment.reason
                                             if nextAppointment.history.length
-                                                section.appointment-dialog-history(aria-label="Historial de la cita")
+                                                section.appointment-dialog-history(
+                                                    aria-label="Historial de la cita"
+                                                )
                                                     h3 Historial de la cita
                                                     ol.appointment-history
                                                         each event in nextAppointment.history
@@ -165,7 +169,10 @@ html(lang="es")
                                                                 else
                                                                     span Fecha de reprogramación registrada
                                         .appointment-dialog-footer
-                                            button.appointment-dialog-done(type="button", data-close-appointment-details) Listo
+                                            button.appointment-dialog-done(
+                                                type="button",
+                                                data-close-appointment-details
+                                            ) Listo
                                     unless nextAppointment.can_reschedule
                                         dialog.appointment-details-dialog(
                                             id="reschedule-unavailable-" + appointmentId,
@@ -174,7 +181,9 @@ html(lang="es")
                                             .appointment-dialog-header
                                                 div
                                                     span.appointment-dialog-kicker Reprogramación no disponible
-                                                    h2(id="reschedule-unavailable-title-" + appointmentId) No puedes reprogramar esta cita
+                                                    h2(
+                                                        id="reschedule-unavailable-title-" + appointmentId
+                                                    ) No puedes reprogramar esta cita
                                                 button.appointment-dialog-close(
                                                     type="button",
                                                     aria-label="Cerrar mensaje",
@@ -183,7 +192,10 @@ html(lang="es")
                                             .appointment-dialog-body
                                                 p= nextAppointment.reschedule_unavailable_reason
                                             .appointment-dialog-footer
-                                                button.appointment-dialog-done(type="button", data-close-appointment-details) Entendido
+                                                button.appointment-dialog-done(
+                                                    type="button",
+                                                    data-close-appointment-details
+                                                ) Entendido
                                 else
                                     .sv-appointment-empty
                                         strong No tienes citas próximas
