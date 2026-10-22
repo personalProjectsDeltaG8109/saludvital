@@ -196,8 +196,7 @@ patientRoutes.get(
                     );
                 const isConfirmed = nextAppointment.status.name === "Confirmed";
                 const hasEnoughNotice =
-                    new Date(nextAppointment.start_at).getTime() >
-                    Date.now() + 24 * 60 * 60 * 1000;
+                    new Date(nextAppointment.start_at).getTime() > Date.now() + 24 * 60 * 60 * 1000;
                 const hasReschedulesLeft = nextAppointment.history.length < 3;
                 nextAppointment.can_reschedule =
                     isConfirmed && hasEnoughNotice && hasReschedulesLeft;
@@ -213,9 +212,7 @@ patientRoutes.get(
             return res.render("patient/dashboard", {
                 pageTitle: "Panel del paciente | SaludVital",
                 activeNav: "home",
-                patientName: patient
-                    ? `${patient.first_name} ${patient.last_name}`
-                    : "Paciente",
+                patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
                 nextAppointment,
             });
         } catch (error) {

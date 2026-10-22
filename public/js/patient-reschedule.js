@@ -267,7 +267,8 @@
             setCurrentStep(4);
             showFeedback({
                 title: "¡Cita reprogramada!",
-                message: "Tu cita fue reprogramada correctamente. Puedes consultar el nuevo horario en Mis citas.",
+                message:
+                    "Tu cita fue reprogramada correctamente. Puedes consultar el nuevo horario en Mis citas.",
                 isSuccess: true,
             });
         } catch (error) {
