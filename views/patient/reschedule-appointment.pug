@@ -47,7 +47,7 @@ html(lang="es")
                                         p Elige una de tus citas próximas que se puedan reprogramar.
                                     aside.reschedule-notice(role="note")
                                         span(aria-hidden="true") i
-                                        | Cada cita puede reprogramarse máximo 3 veces y solo con al menos 24 horas de anticipación.
+                                        | Puedes reprogramar cada cita confirmada hasta 3 veces. La nueva fecha debe estar al menos 30 minutos en el futuro y conservar el mismo médico.
                                 .reschedule-table-wrap
                                     table.reschedule-table
                                         thead
@@ -194,7 +194,7 @@ html(lang="es")
                     else
                         section.reschedule-empty
                             strong No tienes citas para reprogramar
-                            p Solo aparecen aquí las citas confirmadas con más de 24 horas de anticipación y que no han alcanzado el máximo de 3 reprogramaciones.
+                            p Solo aparecen aquí las citas confirmadas que aún no han comenzado y que no han alcanzado el máximo de 3 reprogramaciones.
                     include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
