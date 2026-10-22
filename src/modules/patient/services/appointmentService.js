@@ -35,8 +35,8 @@ function validatePositiveIntegerId(value, fieldName) {
         typeof value === "number"
             ? value
             : typeof value === "string" && /^\d+$/.test(value)
-                ? Number(value)
-                : NaN;
+              ? Number(value)
+              : NaN;
 
     if (!Number.isSafeInteger(normalizedValue) || normalizedValue <= 0) {
         throw new AppointmentError("El identificador enviado no es válido.", 400);
@@ -68,7 +68,10 @@ function normalizeAppointmentReason(reason) {
 
     // Match the maximum length allowed by the appointments table.
     if (normalizedReason.length > 500) {
-        throw new AppointmentError("El motivo de la cita no puede superar los 500 caracteres.", 400);
+        throw new AppointmentError(
+            "El motivo de la cita no puede superar los 500 caracteres.",
+            400,
+        );
     }
 
     return normalizedReason;
@@ -160,7 +163,10 @@ function validateAppointmentDate(startAt, endAt) {
 
     // Ensure the appointment ends after it starts.
     if (endAt <= startAt) {
-        throw new AppointmentError("La hora de finalización debe ser posterior a la hora de inicio.", 400);
+        throw new AppointmentError(
+            "La hora de finalización debe ser posterior a la hora de inicio.",
+            400,
+        );
     }
 
     // Require appointment starts to align with a 30-minute boundary.
@@ -604,15 +610,19 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
         });
 
         const fitsAdditionalAvailability = exceptions.some(
-            (exception) => exception.exception_type === "AdditionalAvailability" &&
-                exception.start_at <= startAt && exception.end_at >= endAt,
+            (exception) =>
+                exception.exception_type === "AdditionalAvailability" &&
+                exception.start_at <= startAt &&
+                exception.end_at >= endAt,
         );
 
         if (!fitsRegularSchedule && !fitsAdditionalAvailability) continue;
 
         const isBlocked = exceptions.some(
-            (exception) => exception.exception_type === "Unavailable" &&
-                exception.start_at < endAt && exception.end_at > startAt,
+            (exception) =>
+                exception.exception_type === "Unavailable" &&
+                exception.start_at < endAt &&
+                exception.end_at > startAt,
         );
         const isBooked = appointments.some(
             (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
@@ -681,9 +691,7 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
             startAt,
             transaction,
         });
-        if (
-            await hasConflictingPatientAppointment(patient.id, startAt, endAt, transaction)
-        ) {
+        if (await hasConflictingPatientAppointment(patient.id, startAt, endAt, transaction)) {
             throw new AppointmentError(
                 "Ya tienes otra cita a esa hora. Elige un horario diferente.",
                 409,
@@ -791,7 +799,10 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
     const rescheduleCutoff = Date.now() + 24 * 60 * 60 * 1000;
     if (startAt.getTime() < rescheduleCutoff) {
-        throw new AppointmentError("Debes reprogramar la cita con al menos 24 horas de anticipación.", 400);
+        throw new AppointmentError(
+            "Debes reprogramar la cita con al menos 24 horas de anticipación.",
+            400,
+        );
     }
 
     return database.transaction(async (transaction) => {
@@ -852,7 +863,10 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (
             await hasBlockingScheduleException(appointment.doctor_id, startAt, endAt, transaction)
         ) {
-            throw new AppointmentError("El horario seleccionado está bloqueado por el médico.", 409);
+            throw new AppointmentError(
+                "El horario seleccionado está bloqueado por el médico.",
+                409,
+            );
         }
         if (
             await hasConflictingAppointment(

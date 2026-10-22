@@ -109,7 +109,9 @@ export async function up(queryInterface) {
     const confirmedStatus = statuses[0];
 
     if (!confirmedStatus) {
-        throw new Error("The Confirmed appointment status is missing. Run the status seeder first.");
+        throw new Error(
+            "The Confirmed appointment status is missing. Run the status seeder first.",
+        );
     }
 
     // Choose tomorrow at 9:00 a. m. in Colombia for the sample appointment.
