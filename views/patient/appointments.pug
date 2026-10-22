@@ -34,26 +34,10 @@ html(lang="es")
                                     small= stat.label
                     section.appointment-list-panel(aria-label="Listado de citas")
                         .appointment-tabs(role="group", aria-label="Filtrar citas")
-                            button.is-active(
-                                type="button",
-                                data-filter="all",
-                                aria-pressed="true"
-                            ) Todas
-                            button(
-                                type="button",
-                                data-filter="upcoming",
-                                aria-pressed="false"
-                            ) Próximas
-                            button(
-                                type="button",
-                                data-filter="attended",
-                                aria-pressed="false"
-                            ) Asistidas
-                            button(
-                                type="button",
-                                data-filter="cancelled",
-                                aria-pressed="false"
-                            ) Canceladas
+                            button.is-active(type="button", data-filter="all", aria-pressed="true") Todas
+                            button(type="button", data-filter="upcoming", aria-pressed="false") Próximas
+                            button(type="button", data-filter="attended", aria-pressed="false") Asistidas
+                            button(type="button", data-filter="cancelled", aria-pressed="false") Canceladas
                         .appointment-tools
                             label.appointment-search
                                 span(aria-hidden="true") ⌕
@@ -117,9 +101,7 @@ html(lang="es")
                                                 td(data-label="Médico")= doctorName
                                                 td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
                                                 td(data-label="Estado")
-                                                    span.appointment-status(
-                                                        class="status-" + statusClass
-                                                    )= statusLabel
+                                                    span.appointment-status(class="status-" + statusClass)= statusLabel
                                                 td.appointment-details-cell(data-label="Detalles")
                                                     button.appointment-detail-toggle(
                                                         type="button",
@@ -134,7 +116,9 @@ html(lang="es")
                                                         .appointment-dialog-header
                                                             div
                                                                 span.appointment-dialog-kicker Detalles de tu cita
-                                                                h2(id=`appointment-details-title-${appointment.id}`)= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                                h2(
+                                                                    id=`appointment-details-title-${appointment.id}`
+                                                                )= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
                                                                 p= doctorName
                                                             button.appointment-dialog-close(
                                                                 type="button",
@@ -144,7 +128,9 @@ html(lang="es")
                                                         .appointment-dialog-body
                                                             .appointment-dialog-status
                                                                 span Estado actual
-                                                                span.appointment-status(class="status-" + statusClass)= statusLabel
+                                                                span.appointment-status(
+                                                                    class="status-" + statusClass
+                                                                )= statusLabel
                                                             dl.appointment-detail-list
                                                                 div
                                                                     dt Fecha y hora
@@ -157,7 +143,9 @@ html(lang="es")
                                                                         dt Motivo de la consulta
                                                                         dd= appointment.reason
                                                             if appointment.history.length
-                                                                section.appointment-dialog-history(aria-label="Historial de la cita")
+                                                                section.appointment-dialog-history(
+                                                                    aria-label="Historial de la cita"
+                                                                )
                                                                     h3 Historial de la cita
                                                                     ol.appointment-history
                                                                         each event in appointment.history
@@ -171,8 +159,16 @@ html(lang="es")
                                                                                 else
                                                                                     span Fecha de reprogramación registrada
                                                         .appointment-dialog-footer
-                                                            button.appointment-dialog-done(type="button", data-close-appointment-details) Listo
-                            p.appointment-empty(hidden, data-empty, role="status", aria-live="polite") No encontramos citas con ese criterio.
+                                                            button.appointment-dialog-done(
+                                                                type="button",
+                                                                data-close-appointment-details
+                                                            ) Listo
+                            p.appointment-empty(
+                                hidden,
+                                data-empty,
+                                role="status",
+                                aria-live="polite"
+                            ) No encontramos citas con ese criterio.
                             .appointment-summary
                                 span(data-summary, aria-live="polite")= `Mostrando ${appointments.length} de ${appointments.length} citas`
                         else

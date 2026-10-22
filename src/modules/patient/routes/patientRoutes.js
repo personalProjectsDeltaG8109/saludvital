@@ -229,13 +229,13 @@ patientRoutes.get(
                 (item) => {
                     const appointment =
                         typeof item.get === "function" ? item.get({ plain: true }) : item;
-                    appointment.history = (appointment.history || []).filter(
-                        (event) => ["Rescheduled", "Cancelled"].includes(event.event_type),
-                    ).sort(
-                        (first, second) =>
-                            new Date(first.occurred_at).getTime() -
-                            new Date(second.occurred_at).getTime(),
-                    );
+                    appointment.history = (appointment.history || [])
+                        .filter((event) => ["Rescheduled", "Cancelled"].includes(event.event_type))
+                        .sort(
+                            (first, second) =>
+                                new Date(first.occurred_at).getTime() -
+                                new Date(second.occurred_at).getTime(),
+                        );
                     return appointment;
                 },
             );
