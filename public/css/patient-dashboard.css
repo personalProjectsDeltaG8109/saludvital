@@ -13,6 +13,11 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.sv-dashboard :is(h1, h2, h3, h4, h5, h6) {
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 700 !important;
+}
+
 .sv-layout {
     width: 100%;
     height: 100%;
@@ -919,8 +924,9 @@
         width: 40px;
         height: 40px;
         position: absolute;
-        top: 10px;
-        right: 68px;
+        top: 7px;
+        right: 12px;
+        z-index: 2;
         display: grid;
         align-content: center;
         justify-items: center;
@@ -954,13 +960,15 @@
     }
 
     .sv-topbar {
-        min-height: 112px;
-        padding: 9px 18px 10px;
+        min-height: 54px;
+        height: 54px;
+        padding: 5px 12px;
         position: relative;
         display: flex;
-        flex-wrap: wrap;
-        align-content: flex-start;
-        gap: 2px;
+        flex-wrap: nowrap;
+        align-content: center;
+        gap: 0;
+        border-bottom: 1px solid #e8f1f8;
     }
 
     .sv-mobile-brand {
@@ -977,11 +985,6 @@
         object-position: left center;
     }
 
-    .sv-topbar-copy {
-        width: calc(100% - 48px);
-        flex: 1 0 calc(100% - 48px);
-    }
-
     .sv-topbar-copy h1 {
         margin: 0 0 3px;
         font-size: 19px;
@@ -996,18 +999,39 @@
 
     .sv-topbar-actions {
         position: absolute;
-        top: 10px;
-        right: 18px;
+        top: 7px;
+        right: 64px;
+        z-index: 2;
         gap: 0;
     }
 
     .sv-bell {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
     }
 
     .sv-user-chip {
         display: none;
+    }
+
+    .sv-topbar-copy {
+        display: none;
+    }
+
+    .patient-home-page .sv-topbar {
+        min-height: 112px;
+        height: 112px;
+        padding: 5px 12px 8px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        gap: 0;
+    }
+
+    .patient-home-page .sv-topbar-copy {
+        width: 100%;
+        flex: 1 0 100%;
+        display: block;
+        padding-top: 1px;
     }
 
     .sv-content {
@@ -1231,11 +1255,6 @@
 }
 
 @media (max-width: 360px) {
-    .sv-topbar {
-        padding-right: 11px;
-        padding-left: 11px;
-    }
-
     .sv-content {
         padding-right: 10px;
         padding-left: 10px;
@@ -1430,39 +1449,6 @@
 }
 
 @media (max-width: 760px) and (max-height: 740px) {
-    .sv-topbar {
-        min-height: 88px;
-        padding-top: 5px;
-        padding-bottom: 6px;
-    }
-
-    .sv-mobile-brand,
-    .sv-mobile-brand img {
-        height: 34px;
-    }
-
-    .sv-mobile-brand {
-        width: 132px;
-        flex-basis: 132px;
-    }
-
-    .sv-mobile-brand img {
-        width: 132px;
-    }
-
-    .sv-topbar-actions {
-        top: 5px;
-        right: 12px;
-    }
-
-    .sv-topbar-copy h1 {
-        font-size: 16px;
-    }
-
-    .sv-topbar-copy p {
-        font-size: 10px;
-    }
-
     .sv-content {
         padding-top: 7px;
         padding-bottom: 6px;
