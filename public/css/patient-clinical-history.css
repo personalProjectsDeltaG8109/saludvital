@@ -690,16 +690,6 @@
         overflow: visible;
     }
 
-    .clinical-history-page .sv-topbar {
-        min-height: 54px;
-        height: 54px;
-        padding: 5px 12px;
-    }
-
-    .clinical-history-page .sv-topbar-copy {
-        display: none;
-    }
-
     .clinical-history-content {
         width: 100%;
         padding: 4px 8px 14px;
