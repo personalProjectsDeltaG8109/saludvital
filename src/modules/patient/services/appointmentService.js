@@ -13,11 +13,8 @@ import database from "../../../../config/database.js";
 import { Op } from "sequelize";
 import { AppointmentError } from "../errors/appointmentError.js";
 
-// Define the minimum booking notice required by the application.
-const MINIMUM_ADVANCE_HOURS = 5;
-
-// Allow rescheduling to an available slot at least thirty minutes in advance.
-const MINIMUM_RESCHEDULE_ADVANCE_MINUTES = 30;
+// Require at least thirty minutes of notice for booking or rescheduling.
+const MINIMUM_ADVANCE_MINUTES = 30;
 
 // Define the duration of each appointment slot in minutes.
 const APPOINTMENT_SLOT_MINUTES = 30;
@@ -154,8 +151,8 @@ function validateAppointmentDate(
     startAt,
     endAt,
     {
-        minimumAdvanceMinutes = MINIMUM_ADVANCE_HOURS * 60,
-        noticeMessage = "La cita debe reservarse con al menos 5 horas de anticipación.",
+        minimumAdvanceMinutes = MINIMUM_ADVANCE_MINUTES,
+        noticeMessage = "La cita debe reservarse con al menos 30 minutos de anticipación.",
     } = {},
 ) {
     // Reject invalid date objects before performing comparisons.
@@ -493,7 +490,7 @@ export async function getAvailableDoctors(specialtyId) {
 /**
  * Return appointment start times that fit a doctor's schedule for a local date.
  */
-export async function getAvailableTimeSlots(doctorId, date, userId, { rescheduling = false } = {}) {
+export async function getAvailableTimeSlots(doctorId, date, userId) {
     doctorId = validatePositiveIntegerId(doctorId);
     userId = validatePositiveIntegerId(userId);
 
@@ -597,10 +594,7 @@ export async function getAvailableTimeSlots(doctorId, date, userId, { rescheduli
         }),
     ]);
 
-    const minimumAdvanceMinutes = rescheduling
-        ? MINIMUM_RESCHEDULE_ADVANCE_MINUTES
-        : MINIMUM_ADVANCE_HOURS * 60;
-    const minimumStart = new Date(Date.now() + minimumAdvanceMinutes * 60 * 1000);
+    const minimumStart = new Date(Date.now() + MINIMUM_ADVANCE_MINUTES * 60 * 1000);
     const availableTimes = [];
 
     for (
@@ -821,7 +815,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
     const startAt = buildDateTime(date, time);
     const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
     validateAppointmentDate(startAt, endAt, {
-        minimumAdvanceMinutes: MINIMUM_RESCHEDULE_ADVANCE_MINUTES,
+        minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
         noticeMessage: "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
     });
 
@@ -843,7 +837,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
         // Revalidate the replacement slot after acquiring the appointment lock.
         validateAppointmentDate(startAt, endAt, {
-            minimumAdvanceMinutes: MINIMUM_RESCHEDULE_ADVANCE_MINUTES,
+            minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
             noticeMessage: "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
         });
 
