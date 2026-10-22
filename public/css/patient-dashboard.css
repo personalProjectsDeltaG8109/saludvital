@@ -552,6 +552,30 @@
     margin-top: 12px;
 }
 
+.sv-status.status-in-progress {
+    color: #123B73;
+    background: #e5faf8;
+}
+
+.sv-appointment-empty {
+    min-height: 160px;
+    display: grid;
+    justify-items: start;
+    align-content: center;
+    gap: 8px;
+    color: #526b8a;
+}
+
+.sv-appointment-empty strong {
+    color: var(--sv-navy);
+    font-size: 17px;
+}
+
+.sv-appointment-empty p {
+    margin: 0 0 6px;
+    font-size: 13px;
+}
+
 .sv-appointment-buttons {
     margin-top: 14px;
     display: grid;
@@ -559,7 +583,8 @@
     gap: 10px;
 }
 
-.sv-appointment-buttons a {
+.sv-appointment-buttons a,
+.sv-appointment-buttons button {
     min-width: 0;
     min-height: 41px;
     padding: 0 8px;
@@ -574,6 +599,16 @@
     text-align: center;
     text-decoration: none;
     white-space: nowrap;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.sv-appointment-buttons .appointment-detail-toggle {
+    min-height: 41px;
+    display: grid;
+    place-items: center;
+    font-size: clamp(0.625rem, 0.78vw, 0.8125rem);
+    font-weight: 650;
 }
 
 .sv-button-short {
@@ -1175,7 +1210,8 @@
         gap: 7px;
     }
 
-    .sv-appointment-buttons a {
+    .sv-appointment-buttons a,
+    .sv-appointment-buttons button {
         min-height: 32px;
         padding-right: 5px;
         padding-left: 5px;
@@ -1421,7 +1457,8 @@
         gap: 8px;
     }
 
-    .sv-appointment-buttons a {
+    .sv-appointment-buttons a,
+    .sv-appointment-buttons button {
         min-height: 38px;
     }
 
@@ -1518,7 +1555,8 @@
         margin-top: 5px;
     }
 
-    .sv-appointment-buttons a {
+    .sv-appointment-buttons a,
+    .sv-appointment-buttons button {
         min-height: 28px;
         font-size: clamp(0.5625rem, 2.7vw, 0.6875rem);
     }
@@ -1603,7 +1641,8 @@
     font-size: var(--sv-text-xs);
 }
 
-.sv-appointment-buttons a {
+.sv-appointment-buttons a,
+.sv-appointment-buttons button {
     font-size: var(--sv-text-sm);
 }
 
@@ -1674,7 +1713,8 @@
         font-size: var(--sv-text-xs);
     }
 
-    .sv-appointment-buttons a {
+    .sv-appointment-buttons a,
+    .sv-appointment-buttons button {
         font-size: var(--sv-text-xs);
     }
 

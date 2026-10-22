@@ -1,5 +1,36 @@
 ﻿(() => {
     const rows = [...document.querySelectorAll("[data-appointment]")];
+
+    // Open appointment details on both the dashboard and appointments page.
+    document.querySelectorAll("[data-open-appointment-details]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `appointment-details-${button.dataset.openAppointmentDetails}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
+    // Explain why the next appointment cannot be rescheduled without navigating away.
+    document.querySelectorAll("[data-open-reschedule-unavailable]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `reschedule-unavailable-${button.dataset.openRescheduleUnavailable}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
+    // Close detail dialogs from their controls or by clicking the backdrop.
+    document.querySelectorAll(".appointment-details-dialog").forEach((dialog) => {
+        dialog.querySelectorAll("[data-close-appointment-details]").forEach((button) => {
+            button.addEventListener("click", () => dialog.close());
+        });
+        dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
+
     if (!rows.length) return;
     const tabs = [...document.querySelectorAll("[data-filter]")];
     const search = document.querySelector("[data-search]");
@@ -15,26 +46,6 @@
         day: "2-digit",
     });
     const today = bogotaDate.format(new Date());
-
-    // Open each appointment detail in its accessible native modal dialog.
-    document.querySelectorAll("[data-open-appointment-details]").forEach((button) => {
-        button.addEventListener("click", () => {
-            const dialog = document.getElementById(
-                `appointment-details-${button.dataset.openAppointmentDetails}`,
-            );
-            if (dialog instanceof HTMLDialogElement) dialog.showModal();
-        });
-    });
-
-    // Close the detail dialog from its close controls or by clicking the backdrop.
-    document.querySelectorAll(".appointment-details-dialog").forEach((dialog) => {
-        dialog.querySelectorAll("[data-close-appointment-details]").forEach((button) => {
-            button.addEventListener("click", () => dialog.close());
-        });
-        dialog.addEventListener("click", (event) => {
-            if (event.target === dialog) dialog.close();
-        });
-    });
 
     function update() {
         let visible = 0;

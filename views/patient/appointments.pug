@@ -83,6 +83,9 @@ html(lang="es")
                                             - const doctorName = appointment.doctor_label || (appointment.doctor ? `Médico #${appointment.doctor.id}` : "Médico asignado");
                                             - const statusClass = status === "In Progress" ? "in-progress" : status.toLowerCase();
                                             - const statusLabel = status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada";
+                                            //- Only confirmed future appointments with remaining attempts can be rescheduled.
+                                            - const reschedulesUsed = (appointment.history || []).filter((event) => event.event_type === "Rescheduled").length;
+                                            - const canReschedule = !previewMode && status === "Confirmed" && date.getTime() > Date.now() && reschedulesUsed < 3;
                                             tr(
                                                 id="appointment-" + appointment.id,
                                                 data-appointment,
@@ -103,12 +106,39 @@ html(lang="es")
                                                 td(data-label="Estado")
                                                     span.appointment-status(class="status-" + statusClass)= statusLabel
                                                 td.appointment-details-cell(data-label="Detalles")
-                                                    button.appointment-detail-toggle(
-                                                        type="button",
-                                                        aria-haspopup="dialog",
-                                                        aria-controls=`appointment-details-${appointment.id}`,
-                                                        data-open-appointment-details=appointment.id
-                                                    ) Ver detalles
+                                                    .appointment-row-actions
+                                                        button.appointment-detail-toggle(
+                                                            type="button",
+                                                            aria-haspopup="dialog",
+                                                            aria-controls=`appointment-details-${appointment.id}`,
+                                                            data-open-appointment-details=appointment.id
+                                                        ) Ver detalles
+                                                        if canReschedule
+                                                            a.appointment-reschedule-link(
+                                                                href=`/patient/appointments/reschedule?appointmentId=${appointment.id}`,
+                                                                aria-label=`Reprogramar cita de ${(appointment.specialty && appointment.specialty.name) || "consulta médica"}`,
+                                                                title="Reprogramar cita"
+                                                            )
+                                                                svg(
+                                                                    viewBox="0 0 24 24",
+                                                                    fill="none",
+                                                                    stroke="currentColor",
+                                                                    stroke-width="1.8",
+                                                                    stroke-linecap="round",
+                                                                    stroke-linejoin="round",
+                                                                    aria-hidden="true",
+                                                                    focusable="false"
+                                                                )
+                                                                    rect(
+                                                                        x="3",
+                                                                        y="5",
+                                                                        width="18",
+                                                                        height="16",
+                                                                        rx="2"
+                                                                    )
+                                                                    path(d="M16 3v4M8 3v4M3 10h18")
+                                                                    path(d="M12 14a3 3 0 1 0 3 3")
+                                                                    path(d="M15 14v3h-3")
                                                     dialog.appointment-details-dialog(
                                                         id=`appointment-details-${appointment.id}`,
                                                         aria-labelledby=`appointment-details-title-${appointment.id}`

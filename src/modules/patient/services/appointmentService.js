@@ -13,11 +13,14 @@ import database from "../../../../config/database.js";
 import { Op } from "sequelize";
 import { AppointmentError } from "../errors/appointmentError.js";
 
-// Define the minimum booking notice required by the application.
-const MINIMUM_ADVANCE_HOURS = 5;
+// Require at least thirty minutes of notice for booking or rescheduling.
+const MINIMUM_ADVANCE_MINUTES = 30;
 
 // Define the duration of each appointment slot in minutes.
 const APPOINTMENT_SLOT_MINUTES = 30;
+
+// Limit each appointment to three patient rescheduling actions.
+const MAX_APPOINTMENT_RESCHEDULES = 3;
 
 // Limit each patient to two active appointments per Bogotá calendar day.
 const MAX_DAILY_APPOINTMENTS = 2;
@@ -142,23 +145,27 @@ function getBogotaDateTime(date) {
 }
 
 /**
- * Validate the appointment date and time against the booking rules.
+ * Validate the appointment date and time against the selected workflow rules.
  */
-function validateAppointmentDate(startAt, endAt) {
+function validateAppointmentDate(
+    startAt,
+    endAt,
+    {
+        minimumAdvanceMinutes = MINIMUM_ADVANCE_MINUTES,
+        noticeMessage = "La cita debe reservarse con al menos 30 minutos de anticipación.",
+    } = {},
+) {
     // Reject invalid date objects before performing comparisons.
     if (Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime())) {
         throw new AppointmentError("La fecha o la hora seleccionada no es válida.", 400);
     }
 
-    // Require at least five hours of advance notice.
+    // Enforce the workflow-specific minimum notice before validating the slot.
     const now = new Date();
-    const minimumStart = new Date(now.getTime() + MINIMUM_ADVANCE_HOURS * 60 * 60 * 1000);
+    const minimumStart = new Date(now.getTime() + minimumAdvanceMinutes * 60 * 1000);
 
     if (startAt < minimumStart) {
-        throw new AppointmentError(
-            "La cita debe reservarse con al menos 5 horas de anticipación.",
-            400,
-        );
+        throw new AppointmentError(noticeMessage, 400);
     }
 
     // Ensure the appointment ends after it starts.
@@ -587,7 +594,7 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
         }),
     ]);
 
-    const minimumStart = new Date(Date.now() + MINIMUM_ADVANCE_HOURS * 60 * 60 * 1000);
+    const minimumStart = new Date(Date.now() + MINIMUM_ADVANCE_MINUTES * 60 * 1000);
     const availableTimes = [];
 
     for (
@@ -638,14 +645,14 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
 }
 
 /**
- * List a patient's confirmed appointments that still meet the 24-hour reschedule window.
+ * List a patient's future confirmed appointments that remain within the reschedule limit.
  */
 export async function getReschedulableAppointments(userId) {
     userId = validatePositiveIntegerId(userId);
     const patient = await getPatientByUserId(userId);
-    const cutoff = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const cutoff = new Date();
 
-    return Appointment.findAll({
+    const appointments = await Appointment.findAll({
         where: {
             patient_id: patient.id,
             start_at: { [Op.gt]: cutoff },
@@ -659,9 +666,21 @@ export async function getReschedulableAppointments(userId) {
             },
             { model: Doctor, as: "doctor", required: true },
             { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
+            {
+                model: AppointmentHistory,
+                as: "history",
+                attributes: ["event_type"],
+            },
         ],
         order: [["start_at", "ASC"]],
     });
+
+    // Hide appointments that have already reached the rescheduling limit.
+    return appointments.filter(
+        (appointment) =>
+            appointment.history.filter((event) => event.event_type === "Rescheduled").length <
+            MAX_APPOINTMENT_RESCHEDULES,
+    );
 }
 
 /**
@@ -795,15 +814,10 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
     appointmentId = validatePositiveIntegerId(appointmentId);
     const startAt = buildDateTime(date, time);
     const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
-    validateAppointmentDate(startAt, endAt);
-
-    const rescheduleCutoff = Date.now() + 24 * 60 * 60 * 1000;
-    if (startAt.getTime() < rescheduleCutoff) {
-        throw new AppointmentError(
-            "Debes reprogramar la cita con al menos 24 horas de anticipación.",
-            400,
-        );
-    }
+    validateAppointmentDate(startAt, endAt, {
+        minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
+        noticeMessage: "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
+    });
 
     return database.transaction(async (transaction) => {
         const patient = await getPatientByUserId(userId, transaction);
@@ -820,6 +834,30 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
+        // Reject an original appointment that has started, even if the request bypasses the UI.
+        if (new Date(appointment.start_at).getTime() <= Date.now()) {
+            throw new AppointmentError("Esta cita ya inició y no se puede reprogramar.", 409);
+        }
+
+        // Revalidate the replacement slot after acquiring the appointment lock.
+        validateAppointmentDate(startAt, endAt, {
+            minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
+            noticeMessage:
+                "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
+        });
+
+        // Count rescheduling events while the appointment row is locked.
+        const rescheduleCount = await AppointmentHistory.count({
+            where: { appointment_id: appointment.id, event_type: "Rescheduled" },
+            transaction,
+        });
+        if (rescheduleCount >= MAX_APPOINTMENT_RESCHEDULES) {
+            throw new AppointmentError(
+                "Esta cita ya alcanzó el límite máximo de 3 reprogramaciones.",
+                409,
+            );
+        }
+
         await validateDailyAppointmentLimit({
             patientId: patient.id,
             specialtyId: appointment.specialty_id,
@@ -841,13 +879,6 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
                 409,
             );
         }
-        if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
-            throw new AppointmentError(
-                "La cita está dentro del periodo de 24 horas en el que no se permite reprogramar.",
-                409,
-            );
-        }
-
         const lockedDoctor = await Doctor.findByPk(appointment.doctor_id, {
             transaction,
             lock: transaction.LOCK.UPDATE,

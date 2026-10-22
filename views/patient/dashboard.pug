@@ -8,6 +8,7 @@ html(lang="es")
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
         link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/patient-appointments.css")
     body.sv-dashboard.patient-home-page
         .sv-layout
             include partials/sidebar
@@ -38,7 +39,7 @@ html(lang="es")
                             span.sv-action-arrow(aria-hidden="true") →
                             strong Mis citas
                             small Consulta todas tus citas.
-                        a.sv-action-card(href="/patient/appointments")
+                        a.sv-action-card(href="/patient/appointments/reschedule")
                             span.sv-action-icon.action-purple
                                 svg(viewBox="0 0 24 24", aria-hidden="true")
                                     path(
@@ -64,41 +65,142 @@ html(lang="es")
                                 .sv-panel-heading
                                     h2#next-appointment-title Próxima cita
                                     a(href="/patient/appointments") Ver todas
-                                .sv-appointment-content
-                                    .sv-date-tile
-                                        strong 15
-                                        span Oct 2026
-                                    .sv-appointment-info
-                                        p
-                                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(
-                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2a7 7 0 0 1 14 0v2Z"
+                                if nextAppointment
+                                    - const appointmentDate = new Date(nextAppointment.start_at);
+                                    - const appointmentStatus = nextAppointment.status.name;
+                                    - const appointmentStatusClass = appointmentStatus === "In Progress" ? "in-progress" : appointmentStatus.toLowerCase();
+                                    - const appointmentStatusLabel = appointmentStatus === "In Progress" ? "En curso" : "Confirmada";
+                                    - const appointmentId = nextAppointment.id;
+                                    .sv-appointment-content
+                                        .sv-date-tile
+                                            strong= appointmentDate.toLocaleDateString("es-CO", { day: "2-digit", timeZone: "America/Bogota" })
+                                            span= appointmentDate.toLocaleDateString("es-CO", { month: "short", year: "numeric", timeZone: "America/Bogota" })
+                                        .sv-appointment-info
+                                            p
+                                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                    path(
+                                                        d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-2a7 7 0 0 1 14 0v2Z"
+                                                    )
+                                                strong= nextAppointment.specialty.name
+                                            p
+                                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                    path(
+                                                        d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
+                                                    )
+                                                span= nextAppointment.doctor_label
+                                            p
+                                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                    path(
+                                                        d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                                    )
+                                                span= appointmentDate.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" })
+                                            p
+                                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                    path(
+                                                        d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                                                    )
+                                                span= nextAppointment.site_label
+                                        span.sv-status(class="status-" + appointmentStatusClass)= appointmentStatusLabel
+                                    .sv-appointment-buttons
+                                        button.sv-button-outline.appointment-detail-toggle(
+                                            type="button",
+                                            aria-haspopup="dialog",
+                                            aria-controls="appointment-details-" + appointmentId,
+                                            data-open-appointment-details=appointmentId
+                                        ) Ver detalles
+                                        if nextAppointment.can_reschedule
+                                            a.sv-button-primary(
+                                                href=`/patient/appointments/reschedule?appointmentId=${appointmentId}`
+                                            )
+                                                span.sv-button-wide Reprogramar cita
+                                                span.sv-button-short Reprogramar
+                                        else
+                                            button.sv-button-primary(
+                                                type="button",
+                                                aria-haspopup="dialog",
+                                                aria-controls="reschedule-unavailable-" + appointmentId,
+                                                data-open-reschedule-unavailable=appointmentId
+                                            )
+                                                span.sv-button-wide Reprogramar cita
+                                                span.sv-button-short Reprogramar
+                                    dialog.appointment-details-dialog(
+                                        id="appointment-details-" + appointmentId,
+                                        aria-labelledby="appointment-details-title-" + appointmentId
+                                    )
+                                        .appointment-dialog-header
+                                            div
+                                                span.appointment-dialog-kicker Detalles de tu cita
+                                                h2(id="appointment-details-title-" + appointmentId)= nextAppointment.specialty.name
+                                                p= nextAppointment.doctor_label
+                                            button.appointment-dialog-close(
+                                                type="button",
+                                                aria-label="Cerrar detalles",
+                                                data-close-appointment-details
+                                            ) ×
+                                        .appointment-dialog-body
+                                            .appointment-dialog-status
+                                                span Estado actual
+                                                span.appointment-status(
+                                                    class="status-" + appointmentStatusClass
+                                                )= appointmentStatusLabel
+                                            dl.appointment-detail-list
+                                                div
+                                                    dt Fecha y hora
+                                                    dd= appointmentDate.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" })
+                                                div
+                                                    dt Centro de atención
+                                                    dd= nextAppointment.site_label
+                                                if nextAppointment.reason
+                                                    div
+                                                        dt Motivo de la consulta
+                                                        dd= nextAppointment.reason
+                                            if nextAppointment.history.length
+                                                section.appointment-dialog-history(
+                                                    aria-label="Historial de la cita"
                                                 )
-                                            strong Medicina General
-                                        p
-                                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(
-                                                    d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
-                                                )
-                                            span Dr. Carlos Ramírez
-                                        p
-                                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(
-                                                    d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                )
-                                            span 10:00 a. m.
-                                        p
-                                            svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                path(
-                                                    d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                                                )
-                                            span Centro Médico SaludVital<br>Sede Dosquebradas
-                                    span.sv-status Confirmada
-                                .sv-appointment-buttons
-                                    a.sv-button-outline(href="/patient/appointments") Ver detalles
-                                    a.sv-button-primary(href="/patient/appointments")
-                                        span.sv-button-wide Reprogramar cita
-                                        span.sv-button-short Reprogramar
+                                                    h3 Historial de la cita
+                                                    ol.appointment-history
+                                                        each event in nextAppointment.history
+                                                            - const previousStart = event.previous_values?.start_at ? new Date(event.previous_values.start_at) : null;
+                                                            - const newStart = event.new_values?.start_at ? new Date(event.new_values.start_at) : null;
+                                                            li
+                                                                if previousStart && newStart
+                                                                    span= `Reprogramada de ${previousStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })} a ${newStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })}`
+                                                                else
+                                                                    span Fecha de reprogramación registrada
+                                        .appointment-dialog-footer
+                                            button.appointment-dialog-done(
+                                                type="button",
+                                                data-close-appointment-details
+                                            ) Listo
+                                    unless nextAppointment.can_reschedule
+                                        dialog.appointment-details-dialog(
+                                            id="reschedule-unavailable-" + appointmentId,
+                                            aria-labelledby="reschedule-unavailable-title-" + appointmentId
+                                        )
+                                            .appointment-dialog-header
+                                                div
+                                                    span.appointment-dialog-kicker Reprogramación no disponible
+                                                    h2(
+                                                        id="reschedule-unavailable-title-" + appointmentId
+                                                    ) No puedes reprogramar esta cita
+                                                button.appointment-dialog-close(
+                                                    type="button",
+                                                    aria-label="Cerrar mensaje",
+                                                    data-close-appointment-details
+                                                ) ×
+                                            .appointment-dialog-body
+                                                p= nextAppointment.reschedule_unavailable_reason
+                                            .appointment-dialog-footer
+                                                button.appointment-dialog-done(
+                                                    type="button",
+                                                    data-close-appointment-details
+                                                ) Entendido
+                                else
+                                    .sv-appointment-empty
+                                        strong No tienes citas próximas
+                                        p Cuando tengas una cita confirmada, aquí verás sus detalles.
+                                        a.sv-button-primary(href="/patient/appointments/new") Pedir una cita
                             section.sv-panel.sv-history(aria-labelledby="history-title")
                                 .sv-panel-heading
                                     h2#history-title Mis últimas citas
@@ -186,3 +288,4 @@ html(lang="es")
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/patient-appointments.js", defer)
