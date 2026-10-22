@@ -19,6 +19,9 @@ const MINIMUM_ADVANCE_HOURS = 5;
 // Define the duration of each appointment slot in minutes.
 const APPOINTMENT_SLOT_MINUTES = 30;
 
+// Limit each patient to two active appointments per Bogotá calendar day.
+const MAX_DAILY_APPOINTMENTS = 2;
+
 // Keep appointment statuses aligned with the existing database seed.
 const CONFIRMED_STATUS = "Confirmed";
 const CANCELLED_STATUS = "Cancelled";
@@ -184,6 +187,7 @@ async function getPatientByUserId(userId, transaction) {
     const patient = await Patient.findOne({
         where: { user_id: userId },
         transaction,
+        ...(transaction ? { lock: transaction.LOCK.UPDATE } : {}),
     });
 
     if (!patient) {
@@ -191,6 +195,67 @@ async function getPatientByUserId(userId, transaction) {
     }
 
     return patient;
+}
+
+/**
+ * Ensure a patient has no more than one appointment per specialty and two per day.
+ */
+async function validateDailyAppointmentLimit({
+    patientId,
+    specialtyId,
+    startAt,
+    transaction,
+    excludeAppointmentId,
+}) {
+    // Convert the selected instant into the start and end of its Bogotá calendar day.
+    const localDate = getBogotaDateTime(startAt).date;
+    const [year, month, day] = localDate.split("-").map(Number);
+    const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
+    const nextLocalDate = [
+        nextDay.getUTCFullYear(),
+        String(nextDay.getUTCMonth() + 1).padStart(2, "0"),
+        String(nextDay.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+    const dayStart = buildDateTime(localDate, "00:00");
+    const dayEnd = buildDateTime(nextLocalDate, "00:00");
+    const appointmentWhere = {
+        patient_id: patientId,
+        start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+        ...(excludeAppointmentId ? { id: { [Op.ne]: excludeAppointmentId } } : {}),
+    };
+    const activeStatusInclude = {
+        model: AppointmentStatus,
+        as: "status",
+        required: true,
+        where: { name: { [Op.ne]: CANCELLED_STATUS } },
+    };
+
+    // Reject a second appointment in the same specialty before checking the daily total.
+    const sameSpecialtyCount = await Appointment.count({
+        where: { ...appointmentWhere, specialty_id: specialtyId },
+        include: [activeStatusInclude],
+        transaction,
+    });
+
+    if (sameSpecialtyCount > 0) {
+        throw new AppointmentError(
+            "Ya tienes una cita activa de esta especialidad para ese día. Elige otra fecha o especialidad.",
+            409,
+        );
+    }
+
+    const dailyCount = await Appointment.count({
+        where: appointmentWhere,
+        include: [activeStatusInclude],
+        transaction,
+    });
+
+    if (dailyCount >= MAX_DAILY_APPOINTMENTS) {
+        throw new AppointmentError(
+            "Solo puedes tener hasta 2 citas activas por día y deben ser de especialidades diferentes.",
+            409,
+        );
+    }
 }
 
 /**
@@ -555,6 +620,12 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
         const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
 
         validateAppointmentDate(startAt, endAt);
+        await validateDailyAppointmentLimit({
+            patientId: patient.id,
+            specialtyId,
+            startAt,
+            transaction,
+        });
 
         // Lock the doctor row to serialize booking attempts for this doctor.
         const lockedDoctor = await Doctor.findByPk(doctorId, {
@@ -675,6 +746,13 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
+        await validateDailyAppointmentLimit({
+            patientId: patient.id,
+            specialtyId: appointment.specialty_id,
+            startAt,
+            transaction,
+            excludeAppointmentId: appointment.id,
+        });
         if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
             throw new AppointmentError(
                 "La cita está dentro del periodo de 24 horas en el que no se permite reprogramar.",
