@@ -406,6 +406,38 @@ async function hasConflictingAppointment(
 }
 
 /**
+ * Check whether the patient already has an overlapping active appointment.
+ */
+async function hasConflictingPatientAppointment(
+    patientId,
+    startAt,
+    endAt,
+    transaction,
+    excludeAppointmentId,
+) {
+    const conflict = await Appointment.findOne({
+        where: {
+            patient_id: patientId,
+            ...(excludeAppointmentId ? { id: { [Op.ne]: excludeAppointmentId } } : {}),
+            start_at: { [Op.lt]: endAt },
+            end_at: { [Op.gt]: startAt },
+        },
+        include: [
+            {
+                model: AppointmentStatus,
+                as: "status",
+                required: true,
+                where: { name: { [Op.ne]: CANCELLED_STATUS } },
+            },
+        ],
+        transaction,
+        ...(transaction ? { lock: true } : {}),
+    });
+
+    return Boolean(conflict);
+}
+
+/**
  * Retrieve active specialties available for booking.
  */
 export async function getAvailableSpecialties() {
@@ -445,8 +477,9 @@ export async function getAvailableDoctors(specialtyId) {
 /**
  * Return appointment start times that fit a doctor's schedule for a local date.
  */
-export async function getAvailableTimeSlots(doctorId, date) {
+export async function getAvailableTimeSlots(doctorId, date, userId) {
     doctorId = validatePositiveIntegerId(doctorId, "Doctor ID");
+    userId = validatePositiveIntegerId(userId, "User ID");
 
     if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
@@ -462,6 +495,8 @@ export async function getAvailableTimeSlots(doctorId, date) {
     ) {
         throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
     }
+
+    const patient = await getPatientByUserId(userId);
 
     const doctor = await Doctor.findOne({
         where: { id: doctorId },
@@ -491,7 +526,7 @@ export async function getAvailableTimeSlots(doctorId, date) {
     const dateEnd = buildDateTime(nextDate, "00:00");
     const weekday = localDay.getUTCDay() === 0 ? 7 : localDay.getUTCDay();
 
-    const [schedules, exceptions, appointments] = await Promise.all([
+    const [schedules, exceptions, appointments, patientAppointments] = await Promise.all([
         DoctorAvailability.findAll({
             where: {
                 doctor_id: doctorId,
@@ -513,6 +548,23 @@ export async function getAvailableTimeSlots(doctorId, date) {
         Appointment.findAll({
             where: {
                 doctor_id: doctorId,
+                start_at: { [Op.lt]: dateEnd },
+                end_at: { [Op.gt]: dateStart },
+            },
+            include: [
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    required: true,
+                    where: { name: { [Op.ne]: CANCELLED_STATUS } },
+                    attributes: [],
+                },
+            ],
+            attributes: ["start_at", "end_at"],
+        }),
+        Appointment.findAll({
+            where: {
+                patient_id: patient.id,
                 start_at: { [Op.lt]: dateEnd },
                 end_at: { [Op.gt]: dateStart },
             },
@@ -565,8 +617,11 @@ export async function getAvailableTimeSlots(doctorId, date) {
         const isBooked = appointments.some(
             (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
         );
+        const conflictsWithPatientAppointment = patientAppointments.some(
+            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
+        );
 
-        if (!isBlocked && !isBooked) availableTimes.push(time);
+        if (!isBlocked && !isBooked && !conflictsWithPatientAppointment) availableTimes.push(time);
     }
 
     return availableTimes;
@@ -626,6 +681,14 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
             startAt,
             transaction,
         });
+        if (
+            await hasConflictingPatientAppointment(patient.id, startAt, endAt, transaction)
+        ) {
+            throw new AppointmentError(
+                "Ya tienes otra cita a esa hora. Elige un horario diferente.",
+                409,
+            );
+        }
 
         // Lock the doctor row to serialize booking attempts for this doctor.
         const lockedDoctor = await Doctor.findByPk(doctorId, {
@@ -753,6 +816,20 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
             transaction,
             excludeAppointmentId: appointment.id,
         });
+        if (
+            await hasConflictingPatientAppointment(
+                patient.id,
+                startAt,
+                endAt,
+                transaction,
+                appointment.id,
+            )
+        ) {
+            throw new AppointmentError(
+                "Ya tienes otra cita a esa hora. Elige un horario diferente.",
+                409,
+            );
+        }
         if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
             throw new AppointmentError(
                 "La cita está dentro del periodo de 24 horas en el que no se permite reprogramar.",

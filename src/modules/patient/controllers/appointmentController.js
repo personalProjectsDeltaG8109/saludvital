@@ -61,7 +61,11 @@ export async function listAvailableDoctors(req, res, next) {
  */
 export async function listAvailableTimeSlots(req, res, next) {
     try {
-        const times = await getAvailableTimeSlots(req.params.doctorId, req.query.date);
+        const times = await getAvailableTimeSlots(
+            req.params.doctorId,
+            req.query.date,
+            req.auth.userId,
+        );
 
         return res.status(200).json({
             success: true,
