@@ -195,7 +195,8 @@ patientRoutes.get(
                             new Date(second.occurred_at).getTime(),
                     );
                 const isConfirmed = nextAppointment.status.name === "Confirmed";
-                const isFutureAppointment = new Date(nextAppointment.start_at).getTime() > Date.now();
+                const isFutureAppointment =
+                    new Date(nextAppointment.start_at).getTime() > Date.now();
                 const hasReschedulesLeft = nextAppointment.history.length < 3;
                 nextAppointment.can_reschedule =
                     isConfirmed && isFutureAppointment && hasReschedulesLeft;

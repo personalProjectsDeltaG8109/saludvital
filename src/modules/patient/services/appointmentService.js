@@ -842,7 +842,8 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         // Revalidate the replacement slot after acquiring the appointment lock.
         validateAppointmentDate(startAt, endAt, {
             minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
-            noticeMessage: "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
+            noticeMessage:
+                "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
         });
 
         // Count rescheduling events while the appointment row is locked.
