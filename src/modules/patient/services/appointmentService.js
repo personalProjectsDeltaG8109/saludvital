@@ -36,7 +36,7 @@ function validatePositiveIntegerId(value, fieldName) {
                 : NaN;
 
     if (!Number.isSafeInteger(normalizedValue) || normalizedValue <= 0) {
-        throw new AppointmentError(`${fieldName} must be a valid positive integer.`, 400);
+        throw new AppointmentError("El identificador enviado no es válido.", 400);
     }
 
     return normalizedValue;
@@ -52,7 +52,7 @@ function normalizeAppointmentReason(reason) {
     }
 
     if (typeof reason !== "string") {
-        throw new AppointmentError("The appointment reason must be text.", 400);
+        throw new AppointmentError("El motivo de la cita debe ser texto.", 400);
     }
 
     // Remove unnecessary whitespace from the submitted reason.
@@ -65,7 +65,7 @@ function normalizeAppointmentReason(reason) {
 
     // Match the maximum length allowed by the appointments table.
     if (normalizedReason.length > 500) {
-        throw new AppointmentError("The appointment reason cannot exceed 500 characters.", 400);
+        throw new AppointmentError("El motivo de la cita no puede superar los 500 caracteres.", 400);
     }
 
     return normalizedReason;
@@ -83,7 +83,7 @@ function buildDateTime(date, time) {
         typeof time !== "string" ||
         !/^\d{2}:\d{2}$/.test(time)
     ) {
-        throw new AppointmentError("The selected appointment date or time is invalid.", 400);
+        throw new AppointmentError("La fecha o la hora seleccionada no es válida.", 400);
     }
 
     const [year, month, day] = date.split("-").map(Number);
@@ -102,7 +102,7 @@ function buildDateTime(date, time) {
         hours > 23 ||
         minutes > 59
     ) {
-        throw new AppointmentError("The selected appointment date or time is invalid.", 400);
+        throw new AppointmentError("La fecha o la hora seleccionada no es válida.", 400);
     }
 
     // Convert Colombia's UTC-5 wall-clock time into a UTC instant.
@@ -187,7 +187,7 @@ async function getPatientByUserId(userId, transaction) {
     });
 
     if (!patient) {
-        throw new AppointmentError("No patient profile is associated with this account.", 404);
+        throw new AppointmentError("No hay un perfil de paciente asociado a esta cuenta.", 404);
     }
 
     return patient;
@@ -206,7 +206,7 @@ async function getActiveSpecialty(specialtyId, transaction) {
     });
 
     if (!specialty) {
-        throw new AppointmentError("The selected medical specialty is not available.", 404);
+        throw new AppointmentError("La especialidad médica seleccionada no está disponible.", 404);
     }
 
     return specialty;
@@ -235,7 +235,7 @@ async function getActiveDoctor(doctorId, specialtyId, transaction) {
 
     if (!doctor) {
         throw new AppointmentError(
-            "The selected doctor is not active or does not belong to this specialty.",
+            "El médico seleccionado no está activo o no pertenece a esta especialidad.",
             404,
         );
     }
@@ -244,9 +244,9 @@ async function getActiveDoctor(doctorId, specialtyId, transaction) {
 }
 
 /**
- * Check whether a doctor's regular schedule covers the entire appointment slot.
+ * Check whether the regular schedule or an additional period covers the slot.
  */
-async function hasRegularAvailability(doctorId, startAt, endAt, transaction) {
+async function hasDoctorAvailability(doctorId, startAt, endAt, transaction) {
     // Use Colombian local time to compare against the doctor's weekly schedule.
     const start = getBogotaDateTime(startAt);
     const end = getBogotaDateTime(endAt);
@@ -271,8 +271,21 @@ async function hasRegularAvailability(doctorId, startAt, endAt, transaction) {
         transaction,
     });
 
-    // A single availability block must contain the complete appointment.
-    return Boolean(availability);
+    // A regular weekly block must contain the complete appointment.
+    if (availability) return true;
+
+    // Also honor one-time additional availability configured by the doctor.
+    const additionalAvailability = await DoctorScheduleException.findOne({
+        where: {
+            doctor_id: doctorId,
+            exception_type: "AdditionalAvailability",
+            start_at: { [Op.lte]: startAt },
+            end_at: { [Op.gte]: endAt },
+        },
+        transaction,
+    });
+
+    return Boolean(additionalAvailability);
 }
 
 /**
@@ -371,7 +384,7 @@ export async function getAvailableTimeSlots(doctorId, date) {
     doctorId = validatePositiveIntegerId(doctorId, "Doctor ID");
 
     if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        throw new AppointmentError("A valid appointment date is required.", 400);
+        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
     }
 
     const [year, month, day] = date.split("-").map(Number);
@@ -382,7 +395,7 @@ export async function getAvailableTimeSlots(doctorId, date) {
         localDay.getUTCMonth() !== month - 1 ||
         localDay.getUTCDate() !== day
     ) {
-        throw new AppointmentError("A valid appointment date is required.", 400);
+        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
     }
 
     const doctor = await Doctor.findOne({
@@ -400,7 +413,7 @@ export async function getAvailableTimeSlots(doctorId, date) {
     });
 
     if (!doctor) {
-        throw new AppointmentError("The selected doctor is not available.", 404);
+        throw new AppointmentError("El médico seleccionado no está disponible.", 404);
     }
 
     const dateStart = buildDateTime(date, "00:00");
@@ -426,11 +439,11 @@ export async function getAvailableTimeSlots(doctorId, date) {
         DoctorScheduleException.findAll({
             where: {
                 doctor_id: doctorId,
-                exception_type: "Unavailable",
+                exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
                 start_at: { [Op.lt]: dateEnd },
                 end_at: { [Op.gt]: dateStart },
             },
-            attributes: ["start_at", "end_at"],
+            attributes: ["start_at", "end_at", "exception_type"],
         }),
         Appointment.findAll({
             where: {
@@ -467,16 +480,22 @@ export async function getAvailableTimeSlots(doctorId, date) {
 
         if (startAt < minimumStart) continue;
 
-        const fitsSchedule = schedules.some((schedule) => {
+        const fitsRegularSchedule = schedules.some((schedule) => {
             const scheduleStart = String(schedule.start_time).slice(0, 5);
             const scheduleEnd = String(schedule.end_time).slice(0, 5);
             return time >= scheduleStart && endTime <= scheduleEnd;
         });
 
-        if (!fitsSchedule) continue;
+        const fitsAdditionalAvailability = exceptions.some(
+            (exception) => exception.exception_type === "AdditionalAvailability" &&
+                exception.start_at <= startAt && exception.end_at >= endAt,
+        );
+
+        if (!fitsRegularSchedule && !fitsAdditionalAvailability) continue;
 
         const isBlocked = exceptions.some(
-            (exception) => exception.start_at < endAt && exception.end_at > startAt,
+            (exception) => exception.exception_type === "Unavailable" &&
+                exception.start_at < endAt && exception.end_at > startAt,
         );
         const isBooked = appointments.some(
             (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
@@ -489,7 +508,7 @@ export async function getAvailableTimeSlots(doctorId, date) {
 }
 
 /**
- * List a patient's pending appointments that still meet the 24-hour reschedule window.
+ * List a patient's confirmed appointments that still meet the 24-hour reschedule window.
  */
 export async function getReschedulableAppointments(userId) {
     userId = validatePositiveIntegerId(userId, "User ID");
@@ -545,13 +564,13 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
 
         // Abort if the doctor row could not be locked because it no longer exists.
         if (!lockedDoctor) {
-            throw new AppointmentError("The selected doctor is no longer available.", 404);
+            throw new AppointmentError("El médico seleccionado ya no está disponible.", 404);
         }
 
         // Revalidate the doctor and specialty after acquiring the row lock.
         await getActiveDoctor(doctorId, specialtyId, transaction);
 
-        const hasAvailability = await hasRegularAvailability(doctorId, startAt, endAt, transaction);
+        const hasAvailability = await hasDoctorAvailability(doctorId, startAt, endAt, transaction);
 
         if (!hasAvailability) {
             throw new AppointmentError(
@@ -638,7 +657,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
     const rescheduleCutoff = Date.now() + 24 * 60 * 60 * 1000;
     if (startAt.getTime() < rescheduleCutoff) {
-        throw new AppointmentError("Reschedule appointments at least 24 hours in advance.", 400);
+        throw new AppointmentError("Debes reprogramar la cita con al menos 24 horas de anticipación.", 400);
     }
 
     return database.transaction(async (transaction) => {
@@ -651,14 +670,14 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         });
 
         if (!appointment) {
-            throw new AppointmentError("The appointment could not be found.", 404);
+            throw new AppointmentError("No se encontró la cita que deseas reprogramar.", 404);
         }
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
         if (new Date(appointment.start_at).getTime() < rescheduleCutoff) {
             throw new AppointmentError(
-                "This appointment is inside the 24-hour reschedule window.",
+                "La cita está dentro del periodo de 24 horas en el que no se permite reprogramar.",
                 409,
             );
         }
@@ -668,17 +687,17 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
             lock: transaction.LOCK.UPDATE,
         });
         if (!lockedDoctor) {
-            throw new AppointmentError("The assigned doctor is no longer available.", 409);
+            throw new AppointmentError("El médico asignado ya no está disponible.", 409);
         }
 
         await getActiveDoctor(appointment.doctor_id, appointment.specialty_id, transaction);
-        if (!(await hasRegularAvailability(appointment.doctor_id, startAt, endAt, transaction))) {
-            throw new AppointmentError("The doctor is not available during this time.", 409);
+        if (!(await hasDoctorAvailability(appointment.doctor_id, startAt, endAt, transaction))) {
+            throw new AppointmentError("El médico no tiene disponibilidad en ese horario.", 409);
         }
         if (
             await hasBlockingScheduleException(appointment.doctor_id, startAt, endAt, transaction)
         ) {
-            throw new AppointmentError("The selected time is blocked by the doctor.", 409);
+            throw new AppointmentError("El horario seleccionado está bloqueado por el médico.", 409);
         }
         if (
             await hasConflictingAppointment(
@@ -689,7 +708,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
                 appointment.id,
             )
         ) {
-            throw new AppointmentError("This appointment slot has already been booked.", 409);
+            throw new AppointmentError("Ese horario ya fue reservado. Elige otro.", 409);
         }
 
         const previousValues = {

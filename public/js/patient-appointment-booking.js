@@ -312,11 +312,6 @@ if (form) {
         renderSpecialties(event.target.value);
     });
 
-    document.querySelector("#doctor-sort").addEventListener("change", () => {
-        state.doctors.reverse();
-        renderDoctors();
-    });
-
     calendarDays.addEventListener("click", async (event) => {
         const day = event.target.closest("[data-date]");
         if (!day || day.disabled) return;

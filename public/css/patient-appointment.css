@@ -1,7 +1,11 @@
 .booking-page {
     --booking-border: #e4eef7;
-    --booking-ink: #073d72;
-    --booking-blue: #078bed;
+    --booking-ink: #123B73;
+    --booking-blue: #168DE2;
+    --booking-teal: #13B8B0;
+    --booking-wellness: #36A96B;
+    --booking-background: #FFFFFF;
+    background: var(--booking-background);
 }
 
 .booking-main { min-height: 0; }
@@ -67,7 +71,7 @@
     border-color: var(--booking-blue);
     color: #fff;
     background: var(--booking-blue);
-    box-shadow: 0 3px 8px #078bed35;
+    box-shadow: 0 3px 8px #168DE235;
 }
 .booking-form { display: grid; gap: 10px; }
 .booking-panel {
@@ -119,16 +123,6 @@
     stroke-linecap: round;
 }
 .booking-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--booking-ink); font-size: 12px; }
-.booking-sort { display: flex; align-items: center; gap: 8px; color: #526b8a; font-size: 12px; white-space: nowrap; }
-.booking-sort select {
-    height: 36px;
-    padding: 0 25px 0 10px;
-    border: 1px solid #d9e7f3;
-    border-radius: 8px;
-    color: var(--booking-ink);
-    background: #fff;
-    font-size: 12px;
-}
 .booking-specialty-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .booking-specialty-card, .booking-doctor-card {
     min-width: 0;
@@ -148,9 +142,9 @@
 }
 .booking-specialty-card:hover, .booking-doctor-card:hover { border-color: #9fd0f5; background: #f7fcff; }
 .booking-specialty-card.is-selected, .booking-doctor-card.is-selected {
-    border: 1.5px solid #078bed;
+    border: 1.5px solid var(--booking-blue);
     background: linear-gradient(110deg, #e9f7ff, #f7fcff);
-    box-shadow: 0 3px 10px #078bed16;
+    box-shadow: 0 3px 10px #168DE216;
 }
 .booking-specialty-icon {
     width: 46px;
@@ -158,12 +152,12 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    color: #078bed;
+    color: var(--booking-blue);
     background: #e9f6ff;
 }
-.booking-specialty-card:nth-child(4n + 2) .booking-specialty-icon { color: #b87844; background: #fff2e8; }
-.booking-specialty-card:nth-child(4n + 3) .booking-specialty-icon { color: #078d82; background: #e5faf6; }
-.booking-specialty-card:nth-child(4n + 4) .booking-specialty-icon { color: #7b59d0; background: #f0ebff; }
+.booking-specialty-card:nth-child(4n + 2) .booking-specialty-icon { color: var(--booking-ink); background: #eaf1f8; }
+.booking-specialty-card:nth-child(4n + 3) .booking-specialty-icon { color: var(--booking-teal); background: #e5faf6; }
+.booking-specialty-card:nth-child(4n + 4) .booking-specialty-icon { color: var(--booking-wellness); background: #eaf7ef; }
 .booking-specialty-icon svg {
     width: 25px;
     height: 25px;
@@ -218,8 +212,8 @@
     font-size: 15px;
     font-weight: 750;
 }
-.booking-doctor-card:nth-child(2n) .booking-doctor-avatar { color: #087f71; background: linear-gradient(145deg, #e3f7f2, #ccefe6); }
-.booking-doctor-card .booking-doctor-note { color: #078bed; }
+.booking-doctor-card:nth-child(2n) .booking-doctor-avatar { color: var(--booking-teal); background: linear-gradient(145deg, #e3f7f2, #ccefe6); }
+.booking-doctor-card .booking-doctor-note { color: var(--booking-blue); }
 .booking-date-time-grid { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.3fr); gap: 14px; }
 .booking-calendar, .booking-times { min-width: 0; padding: 12px; border: 1px solid #e1edf7; border-radius: 12px; background: #f9fcff; }
 .booking-calendar-heading { margin-bottom: 9px; display: flex; align-items: center; justify-content: space-between; }
@@ -230,7 +224,7 @@
 .booking-day { min-width: 0; aspect-ratio: 1; display: grid; place-items: center; border-radius: 7px; color: #285276; background: transparent; font-size: 11px; }
 button.booking-day { cursor: pointer; }
 button.booking-day:not(:disabled):hover { background: #e2f3ff; }
-.booking-day.is-selected { color: #fff; background: var(--booking-blue); box-shadow: 0 3px 8px #078bed35; }
+.booking-day.is-selected { color: #fff; background: var(--booking-blue); box-shadow: 0 3px 8px #168DE235; }
 .booking-day.is-disabled { color: #b5c4d2; }
 .booking-day:disabled { cursor: not-allowed; }
 .booking-times>p { margin: 4px 0 9px; color: #627891; font-size: 11px; text-transform: capitalize; }
@@ -244,7 +238,7 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
 .booking-reason-label { display: block; margin-bottom: 6px; color: var(--booking-ink); font-size: 12px; font-weight: 650; }
 .booking-reason-label span { color: #70839a; font-weight: 400; }
 .booking-confirmation textarea { width: 100%; min-height: 72px; padding: 9px 10px; border: 1px solid #dce8f2; border-radius: 9px; color: var(--booking-ink); font-size: 12px; resize: vertical; }
-.booking-form-message { margin: 0; color: #087b53; font-size: 12px; }
+.booking-form-message { margin: 0; color: var(--booking-wellness); font-size: 12px; }
 .booking-form-message.is-error { color: #c93548; }
 .booking-actions { display: none; justify-content: flex-end; gap: 9px; }
 .booking-form.is-confirming .booking-actions { display: flex; }
@@ -267,7 +261,7 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
     font-weight: 650;
     cursor: pointer;
 }
-.booking-actions .booking-next, .booking-actions .booking-submit { color: #fff; background: linear-gradient(100deg, #078bed, #087de7); }
+.booking-actions .booking-next, .booking-actions .booking-submit { color: #fff; background: var(--booking-blue); }
 .booking-actions button:disabled { opacity: .65; cursor: wait; }
 .booking-actions button[hidden] { display: none; }
 
@@ -291,7 +285,6 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
     .booking-panel-heading h2, .booking-section-number { font-size: 15px; }
     .booking-panel-heading p { font-size: 11px; line-height: 1.35; }
     .booking-search { width: 100%; height: 37px; }
-    .booking-sort { width: 100%; justify-content: flex-end; }
     .booking-specialty-grid, .booking-doctor-grid { grid-template-columns: 1fr; gap: 5px; }
     .booking-specialty-card { min-height: 53px; padding: 5px 7px; grid-template-columns: 43px minmax(0, 1fr) 18px; gap: 8px; border-radius: 10px; }
     .booking-specialty-icon { width: 40px; height: 40px; }
