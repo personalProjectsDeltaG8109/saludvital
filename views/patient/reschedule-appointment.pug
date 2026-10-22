@@ -81,7 +81,7 @@ html(lang="es")
                                                             type="radio",
                                                             name="appointmentId",
                                                             value=appointment.id,
-                                                            checked=index === 0,
+                                                            checked=appointment.id === selectedAppointmentId,
                                                             aria-label="Seleccionar esta cita"
                                                         )
                                                     td(data-label="Fecha y hora")

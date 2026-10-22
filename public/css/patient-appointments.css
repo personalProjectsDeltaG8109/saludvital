@@ -329,6 +329,9 @@
 }
 
 .appointment-details-dialog {
+    --appointments-primary: #123B73;
+    --appointments-secondary: #168DE2;
+    --appointments-teal: #13B8B0;
     position: fixed;
     inset: 50% auto auto 50%;
     width: min(540px, calc(100vw - 32px));

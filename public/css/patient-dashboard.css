@@ -552,6 +552,30 @@
     margin-top: 12px;
 }
 
+.sv-status.status-in-progress {
+    color: #123B73;
+    background: #e5faf8;
+}
+
+.sv-appointment-empty {
+    min-height: 160px;
+    display: grid;
+    justify-items: start;
+    align-content: center;
+    gap: 8px;
+    color: #526b8a;
+}
+
+.sv-appointment-empty strong {
+    color: var(--sv-navy);
+    font-size: 17px;
+}
+
+.sv-appointment-empty p {
+    margin: 0 0 6px;
+    font-size: 13px;
+}
+
 .sv-appointment-buttons {
     margin-top: 14px;
     display: grid;
@@ -574,6 +598,14 @@
     text-align: center;
     text-decoration: none;
     white-space: nowrap;
+}
+
+.sv-appointment-buttons .appointment-detail-toggle {
+    min-height: 41px;
+    display: grid;
+    place-items: center;
+    font-size: clamp(0.625rem, 0.78vw, 0.8125rem);
+    font-weight: 650;
 }
 
 .sv-button-short {

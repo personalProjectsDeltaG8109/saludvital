@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
+import { Op } from "sequelize";
 import {
     Appointment,
     Patient as PatientModel,
@@ -139,10 +140,74 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
+            const patient = await PatientModel.findOne({
+                where: { user_id: req.auth.userId },
+                attributes: ["id", "first_name", "last_name"],
+            });
+            const storedNextAppointment = patient
+                ? await Appointment.findOne({
+                      where: {
+                          patient_id: patient.id,
+                          end_at: { [Op.gt]: new Date() },
+                      },
+                      include: [
+                          {
+                              model: AppointmentStatus,
+                              as: "status",
+                              required: true,
+                              where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
+                              attributes: ["name"],
+                          },
+                          { model: Doctor, as: "doctor", required: true, attributes: ["id"] },
+                          {
+                              model: Specialities,
+                              as: "specialty",
+                              required: true,
+                              attributes: ["name"],
+                          },
+                          {
+                              model: AppointmentHistory,
+                              as: "history",
+                              attributes: [
+                                  "event_type",
+                                  "previous_values",
+                                  "new_values",
+                                  "occurred_at",
+                              ],
+                          },
+                      ],
+                      order: [["start_at", "ASC"]],
+                  })
+                : null;
+            const nextAppointment = storedNextAppointment
+                ? storedNextAppointment.get({ plain: true })
+                : null;
+
+            if (nextAppointment) {
+                // Add patient-facing fallback labels where the schema has no clinic or doctor name.
+                nextAppointment.doctor_label = `Médico #${nextAppointment.doctor.id}`;
+                nextAppointment.site_label = "Sede SaludVital";
+                nextAppointment.history = nextAppointment.history
+                    .filter((event) => event.event_type === "Rescheduled")
+                    .sort(
+                        (first, second) =>
+                            new Date(first.occurred_at).getTime() -
+                            new Date(second.occurred_at).getTime(),
+                    );
+                nextAppointment.can_reschedule =
+                    nextAppointment.status.name === "Confirmed" &&
+                    new Date(nextAppointment.start_at).getTime() >
+                        Date.now() + 24 * 60 * 60 * 1000 &&
+                    nextAppointment.history.length < 3;
+            }
+
             return res.render("patient/dashboard", {
                 pageTitle: "Panel del paciente | SaludVital",
                 activeNav: "home",
-                patientName: await getPatientName(req.auth.userId),
+                patientName: patient
+                    ? `${patient.first_name} ${patient.last_name}`
+                    : "Paciente",
+                nextAppointment,
             });
         } catch (error) {
             return next(error);
@@ -283,13 +348,22 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
+            const appointments = (await getReschedulableAppointments(req.auth.userId)).map((item) =>
+                item.get({ plain: true }),
+            );
+            const requestedAppointmentId = Number(req.query.appointmentId);
+            const selectedAppointmentId = appointments.some(
+                (appointment) => appointment.id === requestedAppointmentId,
+            )
+                ? requestedAppointmentId
+                : appointments[0]?.id;
+
             return res.render("patient/reschedule-appointment", {
                 pageTitle: "Reprogramar cita | SaludVital",
                 activeNav: "reschedule",
                 patientName: await getPatientName(req.auth.userId),
-                appointments: (await getReschedulableAppointments(req.auth.userId)).map((item) =>
-                    item.get({ plain: true }),
-                ),
+                appointments,
+                selectedAppointmentId,
             });
         } catch (error) {
             return next(error);
