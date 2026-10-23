@@ -3,22 +3,16 @@
     if (!page) return;
 
     const sections = [...page.querySelectorAll("[data-profile-section]")];
-    const dependentSections = [...page.querySelectorAll("[data-edit-dependent]")];
     const feedback = page.querySelector("[data-profile-feedback]");
     const mobile = window.matchMedia("(max-width: 760px)");
-
-    const updateDependentSections = () => {
-        const personalForm = page.querySelector('[data-profile-form="personal"]');
-        dependentSections.forEach((section) => {
-            section.hidden = !mobile.matches && personalForm.hidden;
-            if (!section.hidden) section.open = mobile.matches ? false : true;
-        });
-    };
+    const municipality = page.querySelector("[data-profile-municipality]");
+    const originalMunicipalityOptions = municipality
+        ? [...municipality.options].map((option) => option.cloneNode(true))
+        : [];
 
     const setMobileSections = () => {
         if (mobile.matches) sections.forEach((section) => (section.open = false));
         else sections.forEach((section) => (section.open = true));
-        updateDependentSections();
     };
     setMobileSections();
     mobile.addEventListener("change", setMobileSections);
@@ -32,15 +26,24 @@
         const section = page.querySelector(`[data-profile-section][data-section="${sectionName}"]`);
         if (!section) return;
         const editing = Boolean(editButton);
+        const form = section.querySelector(`[data-profile-form="${sectionName}"]`);
         section.querySelector(`[data-readonly-section="${sectionName}"]`).hidden = editing;
-        section.querySelector(`[data-profile-form="${sectionName}"]`).hidden = !editing;
+        form.hidden = !editing;
         if (editing) section.open = true;
-        if (sectionName === "personal") updateDependentSections();
+        else {
+            // Discard unsaved values when the patient cancels editing a section.
+            form.reset();
+            if (sectionName === "personal" && municipality) {
+                municipality.replaceChildren(
+                    ...originalMunicipalityOptions.map((option) => option.cloneNode(true)),
+                );
+                municipality.disabled = false;
+            }
+        }
         if (feedback) feedback.textContent = "";
     });
 
     const department = page.querySelector("[data-profile-department]");
-    const municipality = page.querySelector("[data-profile-municipality]");
     department?.addEventListener("change", async () => {
         municipality.disabled = true;
         municipality.replaceChildren(new Option("Cargando municipios…", ""));
