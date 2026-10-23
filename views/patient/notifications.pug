@@ -21,7 +21,7 @@ html(lang="es")
                     section.notifications-hero(aria-labelledby="notifications-title")
                         .notifications-hero-copy
                             h2#notifications-title Notificaciones
-                            p Recibe recordatorios, confirmaciones y novedades sobre tus citas médicas en el canal que prefieras.
+                            p Elige por qué canal quieres recibir avisos importantes sobre tus citas.
                         .notifications-hero-art(aria-hidden="true")
                             span.notifications-art-bubble.notifications-art-whatsapp
                                 img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
@@ -41,9 +41,9 @@ html(lang="es")
                         )
                             .notifications-section-heading
                                 h2#channel-heading Canales de notificación
-                                p Activa los canales por los que deseas recibir tus notificaciones.
+                                p Mantén al menos un canal activo. SMS está activado inicialmente; puedes agregar WhatsApp o correo.
                             .notifications-channel-list
-                                - const channelItems = [{ key: "WhatsApp", label: "WhatsApp", description: "Recibe confirmaciones y recordatorios en tu WhatsApp.", icon: "whatsapp" }, { key: "SMS", label: "SMS", description: "Recibe recordatorios en mensajes de texto.", icon: "sms" }, { key: "Email", label: "Correo electrónico", description: "Recibe confirmaciones, recordatorios y novedades en tu correo.", icon: "email" }]
+                                - const channelItems = [{ key: "WhatsApp", label: "WhatsApp", description: "Recibe avisos en tu WhatsApp.", icon: "whatsapp" }, { key: "SMS", label: "SMS", description: "Recibe avisos en mensajes de texto.", icon: "sms" }, { key: "Email", label: "Correo electrónico", description: "Recibe avisos en tu correo electrónico.", icon: "email" }]
                                 each channel in channelItems
                                     - const channelPreferences = preferences.filter((preference) => preference.channel === channel.key);
                                     - const channelEnabled = channelPreferences.some((preference) => preference.isEnabled);
@@ -87,22 +87,15 @@ html(lang="es")
                         )
                             .notifications-section-heading
                                 h2#types-heading Tipos de notificaciones
-                                p Selecciona qué notificaciones deseas recibir.
+                                p Estos avisos se mantienen activos. Elige los canales anteriores para recibirlos.
                             .notifications-event-list
                                 each event in notificationEvents
-                                    - const eventPreferences = preferences.filter((preference) => preference.eventType === event.key);
-                                    - const eventEnabled = eventPreferences.some((preference) => preference.isEnabled);
                                     .notifications-event(data-notification-event-row=event.key)
                                         span(
                                             class=`notifications-event-icon is-${event.key}`,
                                             aria-hidden="true"
                                         )
-                                            if event.key === "appointment_confirmation"
-                                                svg(viewBox="0 0 24 24")
-                                                    path(
-                                                        d="M8 3v4m8-4v4M4 9h16M5 5h14v16H5zM8 13h3m2 0h3m-8 4h3"
-                                                    )
-                                            else if event.key === "appointment_reminder"
+                                            if event.key === "appointment_reminder"
                                                 svg(viewBox="0 0 24 24")
                                                     path(
                                                         d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
@@ -116,26 +109,18 @@ html(lang="es")
                                                 svg(viewBox="0 0 24 24")
                                                     circle(cx="12", cy="12", r="9")
                                                     path(d="m9 9 6 6m0-6-6 6")
-                                            else
-                                                svg(viewBox="0 0 24 24")
-                                                    path(d="m3 11 18-5-5 18-4-8-9-5Zm9 5 7-8")
                                         .notifications-event-copy
                                             strong= event.label
                                             p= event.description
-                                        label.notifications-switch
-                                            input(
-                                                type="checkbox",
-                                                role="switch",
-                                                aria-label=`Activar ${event.label.toLowerCase()}`,
-                                                checked=eventEnabled,
-                                                data-notification-event-toggle=event.key
-                                            )
-                                            span.notifications-switch-track
+                                        span.notifications-fixed-status Siempre activo
                         p.notifications-save-status(
                             role="status",
                             aria-live="polite",
                             data-notification-save-status
                         )
+                        .notifications-form-actions
+                            button.notifications-save-button(type="button", data-notification-save, disabled) Guardar cambios
+                            button.notifications-cancel-button(type="button", data-notification-cancel, disabled) Cancelar
                     section.notifications-card.notifications-history(
                         aria-labelledby="history-heading"
                     )
