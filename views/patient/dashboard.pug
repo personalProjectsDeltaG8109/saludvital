@@ -212,7 +212,7 @@ html(lang="es")
                                         a.sv-button-primary(href="/patient/appointments/new") Pedir una cita
                             section.sv-panel.sv-history(aria-labelledby="history-title")
                                 .sv-panel-heading
-                                    h2#history-title Mis últimas citas
+                                    h2#history-title Próximas citas
                                     a(href="/patient/appointments") Ver todas
                                 .sv-table-wrap
                                     table
@@ -223,8 +223,8 @@ html(lang="es")
                                                 th Médico
                                                 th Estado
                                         tbody
-                                            if recentAppointments.length
-                                                each appointment in recentAppointments
+                                            if upcomingAppointments.length
+                                                each appointment in upcomingAppointments
                                                     - const recentStatus = appointment.status.name;
                                                     - const recentStatusClass = recentStatus === "In Progress" ? "status-in-progress" : recentStatus === "Attended" ? "status-blue" : recentStatus === "Cancelled" ? "status-red" : "";
                                                     - const recentStatusLabel = recentStatus === "In Progress" ? "En curso" : recentStatus === "Attended" ? "Atendida" : recentStatus === "Cancelled" ? "Cancelada" : "Confirmada";
@@ -236,7 +236,7 @@ html(lang="es")
                                                             span(class=recentStatusClass ? "sv-status " + recentStatusClass : "sv-status")= recentStatusLabel
                                             else
                                                 tr
-                                                    td(colspan="4") Aún no tienes citas registradas.
+                                                    td(colspan="4") No tienes próximas citas confirmadas.
                         .sv-panel-column
                             section.sv-panel.sv-notifications(
                                 aria-labelledby="notifications-title"

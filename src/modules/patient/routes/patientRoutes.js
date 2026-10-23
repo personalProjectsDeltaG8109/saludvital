@@ -156,16 +156,25 @@ patientRoutes.get(
                 where: { user_id: req.auth.userId },
                 attributes: ["id", "first_name", "last_name", "profile_photo_url"],
             });
-            // Load the patient's five most recently scheduled appointments for the dashboard.
-            const recentAppointments = patient
+            // Show the five closest upcoming confirmed appointments on the dashboard.
+            const upcomingAppointments = patient
                 ? await Appointment.findAll({
-                      where: { patient_id: patient.id },
+                      where: {
+                          patient_id: patient.id,
+                          start_at: { [Op.gt]: new Date() },
+                      },
                       include: [
                           { model: Doctor, as: "doctor", attributes: ["display_name"] },
                           { model: Specialities, as: "specialty", attributes: ["name"] },
-                          { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                          {
+                              model: AppointmentStatus,
+                              as: "status",
+                              attributes: ["name"],
+                              where: { name: "Confirmed" },
+                              required: true,
+                          },
                       ],
-                      order: [["start_at", "DESC"]],
+                      order: [["start_at", "ASC"]],
                       limit: 5,
                   })
                 : [];
@@ -241,7 +250,7 @@ patientRoutes.get(
                 patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
                 patientPhotoUrl: patient?.profile_photo_url || null,
                 nextAppointment,
-                recentAppointments: recentAppointments.map((appointment) =>
+                upcomingAppointments: upcomingAppointments.map((appointment) =>
                     appointment.get({ plain: true }),
                 ),
             });
