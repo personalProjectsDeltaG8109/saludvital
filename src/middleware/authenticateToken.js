@@ -16,11 +16,11 @@ function clearAuthenticationCookie(res) {
 
 // Validate the JWT and verify that the account is still active.
 
-export async function authenticateToken(req, res, next) {
+async function authenticateRequest(req, res, next, { optional = false } = {}) {
     const token = req.cookies?.token;
 
     if (!token) {
-        return res.redirect(303, "/login");
+        return optional ? next() : res.redirect(303, "/login");
     }
 
     let payload;
@@ -33,7 +33,7 @@ export async function authenticateToken(req, res, next) {
     } catch {
         // Remove expired or invalid tokens before requesting sign-in.
         clearAuthenticationCookie(res);
-        return res.redirect(303, "/login");
+        return optional ? next() : res.redirect(303, "/login");
     }
 
     // Reject malformed identity claims before checking the session identifier.
@@ -44,19 +44,19 @@ export async function authenticateToken(req, res, next) {
         !payload.role
     ) {
         clearAuthenticationCookie(res);
-        return res.status(401).send("Invalid authentication token.");
+        return optional ? next() : res.status(401).send("Invalid authentication token.");
     }
 
     // Redirect tokens without a session identifier to the login page.
     if (typeof payload.sid !== "string" || !payload.sid) {
         clearAuthenticationCookie(res);
-        return res.redirect(303, "/login");
+        return optional ? next() : res.redirect(303, "/login");
     }
 
     // Reject sessions that have exceeded the inactivity limit.
     if (isSessionExpired(payload.sid)) {
         clearAuthenticationCookie(res);
-        return res.redirect(303, "/login");
+        return optional ? next() : res.redirect(303, "/login");
     }
 
     try {
@@ -77,19 +77,19 @@ export async function authenticateToken(req, res, next) {
         // Reject deleted, inactive, or unassigned accounts.
         if (!user || !user.is_active || !user.rol) {
             clearAuthenticationCookie(res);
-            return res.redirect(303, "/login");
+            return optional ? next() : res.redirect(303, "/login");
         }
 
         // Invalidate sessions whose role no longer matches the database.
         if (user.rol.name !== payload.role) {
             clearAuthenticationCookie(res);
-            return res.redirect(303, "/login");
+            return optional ? next() : res.redirect(303, "/login");
         }
 
         // Refresh activity only for an existing, authenticated session.
         if (!refreshSession(payload.sid)) {
             clearAuthenticationCookie(res);
-            return res.redirect(303, "/login");
+            return optional ? next() : res.redirect(303, "/login");
         }
 
         // Attach the verified identity and session identifier to the request.
@@ -104,6 +104,15 @@ export async function authenticateToken(req, res, next) {
         // Forward database failures instead of treating them as invalid tokens.
         return next(error);
     }
+}
+
+export function authenticateToken(req, res, next) {
+    return authenticateRequest(req, res, next);
+}
+
+// Resolve a valid session when present without redirecting anonymous 404 requests.
+export function authenticateTokenOptional(req, res, next) {
+    return authenticateRequest(req, res, next, { optional: true });
 }
 
 // Restrict access to users with an explicitly permitted database role.
