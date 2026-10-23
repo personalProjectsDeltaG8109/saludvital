@@ -18,10 +18,9 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     overflow-x: clip;
     color: var(--error-primary);
     background:
-        radial-gradient(ellipse at 8% 14%, rgb(255 224 190 / 42%), transparent 30rem),
-        radial-gradient(ellipse at 93% 21%, rgb(255 239 211 / 54%), transparent 28rem),
-        radial-gradient(ellipse at 90% 92%, rgb(205 244 234 / 58%), transparent 28rem),
-        linear-gradient(138deg, #fffaf2 0%, #fff 52%, #f7fcff 100%);
+        radial-gradient(ellipse at 0 0, rgb(205 234 255 / 72%), transparent 31rem),
+        radial-gradient(ellipse at 100% 100%, rgb(207 247 236 / 70%), transparent 29rem),
+        #fff;
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -29,32 +28,25 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
 .error-404-page:after {
     position: fixed;
     z-index: 0;
-    width: min(38vw, 480px);
-    height: 230px;
+    width: 200px;
+    height: 115px;
     pointer-events: none;
     content: "";
-    filter: blur(9px);
-    opacity: .78;
+    opacity: .75;
 }
 
 .error-404-page:before {
-    top: -115px;
-    left: -120px;
-    background:
-        radial-gradient(ellipse at 32% 74%, #fff 0 22%, transparent 23%),
-        radial-gradient(ellipse at 50% 62%, #fffdf9 0 32%, transparent 33%),
-        radial-gradient(ellipse at 70% 74%, #fff 0 24%, transparent 25%),
-        linear-gradient(145deg, #ffe7cb, #fff5e8 68%, transparent 84%);
+    top: -74px;
+    left: -72px;
+    border-radius: 0 0 100% 0;
+    background: linear-gradient(135deg, #b6ddff, #edf8ff);
 }
 
 .error-404-page:after {
-    right: -120px;
-    bottom: -118px;
-    background:
-        radial-gradient(ellipse at 34% 32%, #fff 0 24%, transparent 25%),
-        radial-gradient(ellipse at 55% 22%, #fffdf9 0 34%, transparent 35%),
-        radial-gradient(ellipse at 75% 34%, #fff 0 24%, transparent 25%),
-        linear-gradient(135deg, #ffeacc, #fff5e8 65%, transparent 84%);
+    right: -85px;
+    bottom: 22px;
+    border-radius: 100% 0 0;
+    background: linear-gradient(135deg, #d4f8e9, #d8f3ff);
 }
 
 .error-404-shell {
