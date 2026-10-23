@@ -4,15 +4,22 @@ aside.sv-sidebar(id=sidebarId)
 
     nav.sv-side-nav(aria-label=sidebarLabel)
         each item in sidebarItems
-            a.sv-nav-link(
-                class=activeNav === item.key ? "is-active" : null,
-                href=item.href,
-                aria-current=activeNav === item.key ? "page" : null
-            )
-                span.sv-nav-icon(aria-hidden="true")
-                    svg(viewBox="0 0 24 24")
-                        path(d=item.icon)
-                span= item.label
+            if item.disabled
+                span.sv-nav-link.is-disabled(aria-disabled="true", title="Esta sección aún no está disponible")
+                    span.sv-nav-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24")
+                            path(d=item.icon)
+                    span= item.label
+            else
+                a.sv-nav-link(
+                    class=activeNav === item.key ? "is-active" : null,
+                    href=item.href,
+                    aria-current=activeNav === item.key ? "page" : null
+                )
+                    span.sv-nav-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24")
+                            path(d=item.icon)
+                    span= item.label
 
     .sv-sidebar-footer
         form.sv-logout(action="/logout", method="POST")

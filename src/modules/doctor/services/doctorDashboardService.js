@@ -5,6 +5,7 @@ import {
     Consultation,
     Doctor,
     Patient,
+    User,
 } from "../../../models/associations.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
@@ -47,27 +48,69 @@ function formatBogotaTime(date) {
     }).format(date);
 }
 
+function getBogotaTimeParts(date) {
+    const parts = new Intl.DateTimeFormat("es-CO", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: BOGOTA_TIME_ZONE,
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+    return {
+        time: `${values.hour}:${values.minute}`,
+        meridiem: values.dayPeriod?.toLowerCase().includes("a") ? "AM" : "PM",
+    };
+}
+
 function formatBogotaDate(date) {
     return new Intl.DateTimeFormat("es-CO", {
-        day: "2-digit",
-        month: "short",
+        day: "numeric",
+        month: "long",
         timeZone: BOGOTA_TIME_ZONE,
     }).format(date);
+}
+
+function getAge(dateOfBirth, now = new Date()) {
+    if (!dateOfBirth) return null;
+    const [year, month, day] = String(dateOfBirth).slice(0, 10).split("-").map(Number);
+    if (!year || !month || !day) return null;
+
+    const today = getBogotaDateParts(now);
+    let age = today.year - year;
+    if (today.month < month || (today.month === month && today.day < day)) age -= 1;
+    return age >= 0 ? age : null;
 }
 
 function getPatientName(patient) {
     return [patient?.first_name, patient?.last_name].filter(Boolean).join(" ") || "Paciente";
 }
 
+function getAppointmentStatusLabel(status) {
+    return {
+        Confirmed: "Confirmada",
+        "In Progress": "En curso",
+        Attended: "Atendida",
+        Cancelled: "Cancelada",
+    }[status] || status || "Programada";
+}
+
 function serializeAppointment(appointment) {
     return {
         id: appointment.id,
         patientName: getPatientName(appointment.patient),
+        patientPhotoUrl: appointment.patient?.profile_photo_url || null,
+        patientAge: getAge(appointment.patient?.date_of_birth),
+        patientPhone: appointment.patient?.phone || null,
+        patientEmail: appointment.patient?.user?.email || null,
         reason: appointment.reason,
         status: appointment.status?.name || "Programada",
+        statusLabel: getAppointmentStatusLabel(appointment.status?.name),
+        statusKey: (appointment.status?.name || "scheduled").toLowerCase().replaceAll(" ", "-"),
         startAt: appointment.start_at,
         endAt: appointment.end_at,
         timeLabel: formatBogotaTime(appointment.start_at),
+        ...getBogotaTimeParts(appointment.start_at),
         dateLabel: formatBogotaDate(appointment.start_at),
     };
 }
@@ -139,8 +182,13 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
                 },
                 include: [
-                    { model: Patient, as: "patient", attributes: ["id", "first_name", "last_name"] },
-                    { model: AppointmentStatus, as: "status", attributes: ["name"], required: true, where: { name: { [Op.ne]: CANCELLED_STATUS } } },
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
+                        include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+                    },
+                    { model: AppointmentStatus, as: "status", attributes: ["name"], required: true },
                 ],
                 order: [["start_at", "ASC"]],
             }),
@@ -150,7 +198,12 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     start_at: { [Op.gte]: now },
                 },
                 include: [
-                    { model: Patient, as: "patient", attributes: ["id", "first_name", "last_name"] },
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
+                        include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+                    },
                     {
                         model: AppointmentStatus,
                         as: "status",
@@ -178,14 +231,17 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
         ? Math.round(durations.reduce((total, duration) => total + duration, 0) / durations.length)
         : null;
 
-    // Keep the dashboard response limited to summary fields; cancelled records were excluded in SQL.
+    // Keep cancelled appointments visible in today's list while excluding them from the count.
     const visibleAppointments = todayAppointments;
+    const countableTodayAppointments = visibleAppointments.filter(
+        (appointment) => appointment.status?.name !== CANCELLED_STATUS,
+    );
 
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
         metrics: {
-            appointmentsToday: visibleAppointments.length,
+            appointmentsToday: countableTodayAppointments.length,
             activePatients: distinctPatients.size,
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
@@ -225,7 +281,12 @@ export async function getDoctorAppointments(userId) {
     const appointments = await Appointment.findAll({
         where: { doctor_id: doctor.id },
         include: [
-            { model: Patient, as: "patient", attributes: ["id", "first_name", "last_name"] },
+            {
+                model: Patient,
+                as: "patient",
+                attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
+                include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+            },
             { model: AppointmentStatus, as: "status", attributes: ["name"] },
         ],
         order: [["start_at", "DESC"]],

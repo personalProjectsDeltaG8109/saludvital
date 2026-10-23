@@ -58,19 +58,26 @@ html(lang="es")
                         section.doctor-panel.doctor-today(aria-labelledby="today-title")
                             .doctor-panel-heading
                                 div
-                                    p.doctor-eyebrow Agenda
                                     h2#today-title Citas de hoy
+                                a.doctor-panel-action(href="/doctor/agenda") Ver agenda
                             if todayAppointments.length
                                 ul.doctor-appointment-list
                                     each appointment in todayAppointments
                                         li.doctor-appointment-row(id=`appointment-${appointment.id}`)
-                                            time.doctor-appointment-time(datetime=appointment.startAt.toISOString())= appointment.timeLabel
-                                            span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                            time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
+                                                strong= appointment.time
+                                                small= appointment.meridiem
+                                            span.doctor-patient-avatar(aria-hidden="true")
+                                                if appointment.patientPhotoUrl
+                                                    img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
+                                                else
+                                                    = appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                             span.doctor-appointment-info
                                                 strong= appointment.patientName
                                                 small= appointment.reason || "Consulta médica"
-                                            span.doctor-status(class=`status-${appointment.status.toLowerCase().replaceAll(" ", "-")}`)= appointment.status
-                                            a.doctor-row-link(href=`/doctor/appointments#appointment-${appointment.id}`, aria-label=`Ver cita de ${appointment.patientName} a las ${appointment.timeLabel}`) Ver
+                                            span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
+                                            if appointment.status !== "Cancelled"
+                                                a.doctor-row-link(href=`/doctor/agenda#appointment-${appointment.id}`, aria-label=`Iniciar consulta con ${appointment.patientName}`) Iniciar consulta
                             else
                                 .doctor-empty-state
                                     span.doctor-empty-icon(aria-hidden="true") ▦
@@ -79,20 +86,29 @@ html(lang="es")
 
                         section.doctor-panel.doctor-next(aria-labelledby="next-title")
                             .doctor-panel-heading
-                                div
-                                    p.doctor-eyebrow Lo que viene
-                                    h2#next-title Próxima cita
+                                h2#next-title Próxima cita
+                                a.doctor-panel-action(href="/doctor/agenda") Ver agenda
                             if nextAppointment
                                 .doctor-next-card
-                                    .doctor-next-date
-                                        strong= nextAppointment.dateLabel
-                                        span= nextAppointment.timeLabel
-                                    span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")= nextAppointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                    .doctor-next-info
-                                        strong= nextAppointment.patientName
-                                        span= nextAppointment.reason || "Consulta médica"
-                                        span.doctor-status(class=`status-${nextAppointment.status.toLowerCase().replaceAll(" ", "-")}`)= nextAppointment.status
-                                    a.doctor-primary-link(href=`/doctor/appointments#appointment-${nextAppointment.id}`) Ver cita
+                                    .doctor-next-date= nextAppointment.dateLabel
+                                    .doctor-next-details
+                                        .doctor-next-meta
+                                            strong.doctor-next-time= `${nextAppointment.time} ${nextAppointment.meridiem}`
+                                            span.doctor-status(class=`status-${nextAppointment.statusKey}`)= nextAppointment.statusLabel
+                                        .doctor-next-identity
+                                            span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")
+                                                if nextAppointment.patientPhotoUrl
+                                                    img(src=nextAppointment.patientPhotoUrl, alt="", loading="lazy")
+                                                else
+                                                    = nextAppointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                            .doctor-next-info
+                                                strong= nextAppointment.patientName
+                                                span= nextAppointment.reason || "Consulta médica"
+                                        .doctor-next-contact
+                                            span= nextAppointment.patientAge === null ? "Edad no disponible" : `${nextAppointment.patientAge} años`
+                                            span= nextAppointment.patientPhone || "Teléfono no registrado"
+                                            span= nextAppointment.patientEmail || "Correo no registrado"
+                                    a.doctor-primary-link(href=`/doctor/agenda#appointment-${nextAppointment.id}`) Iniciar consulta
                             else
                                 .doctor-empty-state.doctor-next-empty
                                     span.doctor-empty-icon(aria-hidden="true") ◷

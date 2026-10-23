@@ -31,7 +31,7 @@ html(lang="es")
                                         span.doctor-appointment-info
                                             strong= appointment.patientName
                                             small= appointment.reason || "Consulta médica"
-                                        span.doctor-status(class=`status-${appointment.status.toLowerCase().replaceAll(" ", "-")}`)= appointment.status
+                                        span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
                         else
                             .doctor-empty-state
                                 span.doctor-empty-icon(aria-hidden="true") ▦
