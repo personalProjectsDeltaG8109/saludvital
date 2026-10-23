@@ -39,7 +39,17 @@ async function sendEmail(notification, message) {
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_EMAIL_FROM) {
         throw new Error("Twilio email credentials and sender must be configured.");
     }
-    const subject = "Actualización de tu cita en SaludVital";
+    const eventTemplate = {
+        appointment_reminder: "REMINDER",
+        appointment_reschedule: "RESCHEDULE",
+        appointment_cancellation: "CANCELLATION",
+    }[notification.event_type];
+    const subject =
+        process.env[`TWILIO_EMAIL_${eventTemplate}_SUBJECT`]?.trim() ||
+        "Actualización de tu cita en SaludVital";
+    const html =
+        process.env[`TWILIO_EMAIL_${eventTemplate}_HTML`]?.trim() ||
+        `<p>${escapeHtml(message)}</p><p>SaludVital</p>`;
     const response = await fetch("https://comms.twilio.com/v1/Emails", {
         method: "POST",
         headers: {
@@ -54,17 +64,21 @@ async function sendEmail(notification, message) {
             to: [{ address: notification.recipient_address }],
             content: {
                 subject,
-                html: `<p>${escapeHtml(message)}</p><p>SaludVital</p>`,
+                html,
             },
         }),
     });
     const responseBody = await response.json().catch(() => ({}));
     if (!response.ok) {
         const apiError = responseBody.message || responseBody.error || `HTTP ${response.status}`;
-        throw new Error(`Twilio email request failed: ${String(apiError).slice(0, 300)}`);
+        const error = new Error(`Twilio email request failed: ${String(apiError).slice(0, 300)}`);
+        error.retryable =
+            response.status === 408 || response.status === 429 || response.status >= 500;
+        throw error;
     }
     return {
         id:
+            responseBody.operationId ||
             responseBody.id ||
             responseBody.operation_id ||
             response.headers.get("location") ||
@@ -77,7 +91,13 @@ async function sendEmail(notification, message) {
 export async function deliverNotification(notification) {
     const message = messageFor(notification);
     if (notification.channel === "SMS") {
-        return sendSms({ to: notification.recipient_address, body: message });
+        const templateKey = {
+            appointment_reminder: "TWILIO_SMS_REMINDER_BODY",
+            appointment_reschedule: "TWILIO_SMS_RESCHEDULE_BODY",
+            appointment_cancellation: "TWILIO_SMS_CANCELLATION_BODY",
+        }[notification.event_type];
+        const body = templateKey ? process.env[templateKey]?.trim() || message : message;
+        return sendSms({ to: notification.recipient_address, body });
     }
     if (notification.channel === "WhatsApp") {
         const eventVariablesKey = {

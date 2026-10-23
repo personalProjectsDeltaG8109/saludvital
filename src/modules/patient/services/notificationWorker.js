@@ -7,6 +7,21 @@ const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 15 * 60_000, 60 * 60_000];
 const STALE_PROCESSING_MS = 10 * 60_000;
 
+function isRetryable(error) {
+    if (typeof error?.retryable === "boolean") return error.retryable;
+    const status = Number(error?.status || error?.statusCode);
+    if (Number.isFinite(status) && status > 0) {
+        return status === 408 || status === 429 || status >= 500;
+    }
+    const message = error instanceof Error ? error.message : "";
+    if (
+        /not configured|invalid|unsupported|required|must use|must contain|template/i.test(message)
+    ) {
+        return false;
+    }
+    return true;
+}
+
 function deliveryEnabled() {
     return process.env.NOTIFICATION_DELIVERY_ENABLED === "true";
 }
@@ -77,7 +92,7 @@ async function processOne(notification) {
     } catch (error) {
         const attempts = Number(notification.attempt_count);
         const retryDelay = RETRY_DELAYS_MS[attempts - 1];
-        const retry = attempts < MAX_ATTEMPTS && retryDelay !== undefined;
+        const retry = isRetryable(error) && attempts < MAX_ATTEMPTS && retryDelay !== undefined;
         const errorMessage = error instanceof Error ? error.message : "Unknown delivery error.";
         await notification.update({
             status: retry ? "Pending" : "Failed",

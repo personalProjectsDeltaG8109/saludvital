@@ -10,7 +10,9 @@ export async function sendWhatsApp({ to, eventType, contentVariables }) {
     }[eventType];
     const contentSid = (
         eventContentSid ||
-        (eventType === "appointment_reminder" ? process.env.TWILIO_WHATSAPP_CONTENT_SID : "")
+        (eventType === "appointment_reminder" || !eventType
+            ? process.env.TWILIO_WHATSAPP_CONTENT_SID
+            : "")
     )?.trim();
     const configuredVariables = process.env.TWILIO_WHATSAPP_CONTENT_VARIABLES?.trim();
     const configuredSender = process.env.TWILIO_WHATSAPP_FROM;
