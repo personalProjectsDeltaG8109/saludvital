@@ -153,6 +153,19 @@ patientRoutes.get(
                 where: { user_id: req.auth.userId },
                 attributes: ["id", "first_name", "last_name"],
             });
+            // Load the patient's five most recently scheduled appointments for the dashboard.
+            const recentAppointments = patient
+                ? await Appointment.findAll({
+                      where: { patient_id: patient.id },
+                      include: [
+                          { model: Doctor, as: "doctor", attributes: ["display_name"] },
+                          { model: Specialities, as: "specialty", attributes: ["name"] },
+                          { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                      ],
+                      order: [["start_at", "DESC"]],
+                      limit: 5,
+                  })
+                : [];
             const storedNextAppointment = patient
                 ? await Appointment.findOne({
                       where: {
@@ -224,6 +237,9 @@ patientRoutes.get(
                 activeNav: "home",
                 patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
                 nextAppointment,
+                recentAppointments: recentAppointments.map((appointment) =>
+                    appointment.get({ plain: true }),
+                ),
             });
         } catch (error) {
             return next(error);

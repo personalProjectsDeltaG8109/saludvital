@@ -223,24 +223,20 @@ html(lang="es")
                                                 th Médico
                                                 th Estado
                                         tbody
-                                            tr
-                                                td 15 Oct 2026
-                                                td Medicina General
-                                                td Dr. Carlos Ramírez
-                                                td
-                                                    span.sv-status Confirmada
-                                            tr
-                                                td 03 Sep 2026
-                                                td Dermatología
-                                                td Dra. Ana Torres
-                                                td
-                                                    span.sv-status.status-blue Asistida
-                                            tr
-                                                td 12 Ago 2026
-                                                td Oftalmología
-                                                td Dr. Luis Gómez
-                                                td
-                                                    span.sv-status.status-red Cancelada
+                                            if recentAppointments.length
+                                                each appointment in recentAppointments
+                                                    - const recentStatus = appointment.status.name;
+                                                    - const recentStatusClass = recentStatus === "In Progress" ? "status-in-progress" : recentStatus === "Attended" ? "status-blue" : recentStatus === "Cancelled" ? "status-red" : "";
+                                                    - const recentStatusLabel = recentStatus === "In Progress" ? "En curso" : recentStatus === "Attended" ? "Atendida" : recentStatus === "Cancelled" ? "Cancelada" : "Confirmada";
+                                                    tr
+                                                        td= new Date(appointment.start_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" })
+                                                        td= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                        td= (appointment.doctor && appointment.doctor.display_name) || "Médico asignado"
+                                                        td
+                                                            span(class=recentStatusClass ? "sv-status " + recentStatusClass : "sv-status")= recentStatusLabel
+                                            else
+                                                tr
+                                                    td(colspan="4") Aún no tienes citas registradas.
                         .sv-panel-column
                             section.sv-panel.sv-notifications(
                                 aria-labelledby="notifications-title"
