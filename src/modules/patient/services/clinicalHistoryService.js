@@ -2,6 +2,7 @@ import {
     Appointment,
     Consultation,
     Diagnosis,
+    Doctor,
     Patient,
     Prescription,
     PrescriptionItem,
@@ -54,6 +55,11 @@ export async function getPatientClinicalHistory(userId) {
             },
             { model: Diagnosis, as: "diagnoses" },
             {
+                model: Doctor,
+                as: "doctor",
+                attributes: ["id"],
+            },
+            {
                 model: Prescription,
                 as: "prescriptions",
                 include: [{ model: PrescriptionItem, as: "items" }],
@@ -74,7 +80,10 @@ export async function getPatientClinicalHistory(userId) {
                 endedAt ? ` - ${formatConsultationTime(endedAt)}` : ""
             }`,
             specialty_label: record.appointment?.specialty?.name || "Consulta médica",
-            doctor_label: "Profesional de salud",
+            // Identify the responsible clinician without exposing account details.
+            doctor_label: record.doctor?.id
+                ? `Médico #${record.doctor.id}`
+                : "Profesional de salud",
             diagnoses: record.diagnoses || [],
             prescriptions: record.prescriptions || [],
         };

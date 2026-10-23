@@ -352,7 +352,8 @@
 }
 
 .clinical-detail-record[hidden],
-.clinical-detail-content[hidden] {
+.clinical-detail-content[hidden],
+.clinical-detail-placeholder[hidden] {
     display: none;
 }
 
@@ -382,6 +383,24 @@
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
+}
+
+/* Keep the detail close action readable beside the print control. */
+.clinical-close-detail-button {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid #d6e7f6;
+    border-radius: 8px;
+    color: #123b73;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.clinical-close-detail-button:hover {
+    border-color: #168de2;
+    color: #168de2;
 }
 
 .clinical-print-button svg {

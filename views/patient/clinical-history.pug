@@ -104,6 +104,7 @@ html(lang="es")
                                             data-has-diagnosis=diagnoses.length > 0,
                                             data-has-treatment=treatmentCount > 0,
                                             aria-pressed=index === 0 ? "true" : "false"
+                                            aria-expanded=index === 0 ? "true" : "false"
                                         )
                                             span.clinical-card-icon(
                                                 class="icon-" + (index % 5),
@@ -150,6 +151,12 @@ html(lang="es")
                             aria-label="Detalle de la consulta",
                             data-consultation-detail
                         )
+                            .clinical-detail-placeholder(
+                                data-clinical-detail-placeholder,
+                                hidden
+                            )
+                                strong Selecciona una consulta
+                                p El detalle de la atenciÃ³n aparecerÃ¡ aquÃ­.
                             if consultations.length
                                 each consultation, index in consultations
                                     - const specialty = consultation.specialty_label || (consultation.appointment && consultation.appointment.specialty && consultation.appointment.specialty.name) || "Consulta médica";
@@ -172,6 +179,10 @@ html(lang="es")
                                                         d="M7 8V3h10v5m-10 9H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-10-4h10v8H7v-8Zm10-6h.01"
                                                     )
                                                 span Imprimir
+                                            button.clinical-close-detail-button(
+                                                type="button",
+                                                data-close-consultation
+                                            ) Cerrar detalle
                                         .clinical-visit-summary
                                             span.clinical-visit-icon(aria-hidden="true")
                                                 svg(viewBox="0 0 24 24")

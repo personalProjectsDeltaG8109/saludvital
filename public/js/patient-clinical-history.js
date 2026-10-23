@@ -40,11 +40,14 @@
             const isSelected = item === card;
             item.classList.toggle("is-selected", isSelected);
             item.setAttribute("aria-pressed", String(isSelected));
+            item.setAttribute("aria-expanded", String(isSelected));
         });
 
         records.forEach((record) => {
             record.hidden = record.dataset.recordId !== consultationId;
         });
+        const placeholder = document.querySelector("[data-clinical-detail-placeholder]");
+        if (placeholder) placeholder.hidden = true;
 
         if (shouldScroll && window.matchMedia("(max-width: 760px)").matches) {
             document.querySelector("[data-consultation-detail]")?.scrollIntoView({
@@ -54,8 +57,33 @@
         }
     }
 
+    // Clear the selected record when the patient closes the details panel.
+    function closeConsultation() {
+        cards.forEach((card) => {
+            card.classList.remove("is-selected");
+            card.setAttribute("aria-pressed", "false");
+            card.setAttribute("aria-expanded", "false");
+        });
+        records.forEach((record) => {
+            record.hidden = true;
+        });
+        const placeholder = document.querySelector("[data-clinical-detail-placeholder]");
+        if (placeholder) placeholder.hidden = false;
+    }
+
     cards.forEach((card) => {
-        card.addEventListener("click", () => selectConsultation(card));
+        card.addEventListener("click", () => {
+            if (card.classList.contains("is-selected")) {
+                closeConsultation();
+                return;
+            }
+            selectConsultation(card);
+        });
+    });
+
+    // Let the patient close the selected clinical record from its detail panel.
+    document.querySelectorAll("[data-close-consultation]").forEach((button) => {
+        button.addEventListener("click", closeConsultation);
     });
 
     searchInput?.addEventListener("input", applyFilters);
