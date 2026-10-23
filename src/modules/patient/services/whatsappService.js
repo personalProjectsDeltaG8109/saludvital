@@ -1,10 +1,18 @@
 import { createTwilioClient } from "./twilioClient.js";
 
 // Send one WhatsApp message through a Twilio WhatsApp sender or Sandbox.
-export async function sendWhatsApp({ to }) {
+export async function sendWhatsApp({ to, eventType, contentVariables }) {
     const recipient = typeof to === "string" ? to.trim() : "";
-    const contentSid = process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim();
-    const contentVariables = process.env.TWILIO_WHATSAPP_CONTENT_VARIABLES?.trim();
+    const eventContentSid = {
+        appointment_reminder: process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID,
+        appointment_reschedule: process.env.TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID,
+        appointment_cancellation: process.env.TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID,
+    }[eventType];
+    const contentSid = (
+        eventContentSid ||
+        (eventType === "appointment_reminder" ? process.env.TWILIO_WHATSAPP_CONTENT_SID : "")
+    )?.trim();
+    const configuredVariables = process.env.TWILIO_WHATSAPP_CONTENT_VARIABLES?.trim();
     const configuredSender = process.env.TWILIO_WHATSAPP_FROM;
 
     if (!configuredSender) {
@@ -35,10 +43,11 @@ export async function sendWhatsApp({ to }) {
         contentSid,
     };
 
-    if (contentVariables) {
+    const variables = contentVariables || configuredVariables;
+    if (variables) {
         let parsedVariables;
         try {
-            parsedVariables = JSON.parse(contentVariables);
+            parsedVariables = typeof variables === "string" ? JSON.parse(variables) : variables;
         } catch {
             throw new Error("TWILIO_WHATSAPP_CONTENT_VARIABLES must be valid JSON.");
         }
