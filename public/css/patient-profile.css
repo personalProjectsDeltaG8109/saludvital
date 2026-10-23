@@ -613,14 +613,19 @@
     color: #d92d48;
 }
 
+/* Center the account deletion confirmation on every viewport. */
 .profile-delete-dialog {
     width: min(440px, calc(100vw - 28px));
     max-width: none;
+    position: fixed;
+    inset: 50% auto auto 50%;
+    margin: 0;
     padding: 26px;
     border: 1px solid #e4eff8;
     border-radius: 18px;
     color: var(--profile-ink);
     box-shadow: 0 20px 70px #082f5580;
+    transform: translate(-50%, -50%);
 }
 
 .profile-image-dialog {
