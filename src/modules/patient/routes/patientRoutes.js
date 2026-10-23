@@ -349,6 +349,24 @@ patientRoutes.get(
                     return appointment;
                 },
             );
+            // Keep the closest future confirmed appointments first and retain recent history after them.
+            const now = Date.now();
+            appointments.sort((first, second) => {
+                const firstDate = new Date(first.start_at).getTime();
+                const secondDate = new Date(second.start_at).getTime();
+                const firstIsUpcomingConfirmed =
+                    first.status?.name === "Confirmed" && firstDate > now;
+                const secondIsUpcomingConfirmed =
+                    second.status?.name === "Confirmed" && secondDate > now;
+
+                if (firstIsUpcomingConfirmed !== secondIsUpcomingConfirmed) {
+                    return firstIsUpcomingConfirmed ? -1 : 1;
+                }
+
+                return firstIsUpcomingConfirmed
+                    ? firstDate - secondDate
+                    : secondDate - firstDate;
+            });
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",
                 activeNav: "appointments",
