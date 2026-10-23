@@ -75,7 +75,7 @@ function serializeAppointment(appointment) {
 async function getDoctorForUser(userId) {
     return Doctor.findOne({
         where: { user_id: userId },
-        attributes: ["id", "display_name", "professional_information"],
+        attributes: ["id", "display_name", "profile_photo_url"],
     });
 }
 
@@ -183,6 +183,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
 
     return {
         doctorName: doctor.display_name || "Médico",
+        doctorPhotoUrl: doctor.profile_photo_url,
         metrics: {
             appointmentsToday: visibleAppointments.length,
             activePatients: distinctPatients.size,
@@ -210,7 +211,11 @@ export async function getDoctorActivePatients(userId) {
         });
     }
 
-    return [...uniquePatients.values()].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    return {
+        doctorName: doctor.display_name || "Médico",
+        doctorPhotoUrl: doctor.profile_photo_url,
+        patients: [...uniquePatients.values()].sort((a, b) => a.name.localeCompare(b.name, "es")),
+    };
 }
 
 export async function getDoctorAppointments(userId) {
@@ -227,5 +232,9 @@ export async function getDoctorAppointments(userId) {
         limit: 100,
     });
 
-    return appointments.map(serializeAppointment);
+    return {
+        doctorName: doctor.display_name || "Médico",
+        doctorPhotoUrl: doctor.profile_photo_url,
+        appointments: appointments.map(serializeAppointment),
+    };
 }

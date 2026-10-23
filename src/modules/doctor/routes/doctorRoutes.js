@@ -30,13 +30,13 @@ doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) =
 
 doctorRoutes.get("/doctor/appointments", ...requireDoctor, async (req, res, next) => {
     try {
-        const appointments = await getDoctorAppointments(req.auth.userId);
-        if (!appointments) return res.status(404).send("No se encontró el perfil médico.");
+        const dashboard = await getDoctorAppointments(req.auth.userId);
+        if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
 
         return res.render("doctor/appointments", {
             pageTitle: "Mis citas | SaludVital",
             activeNav: "appointments",
-            appointments,
+            ...dashboard,
         });
     } catch (error) {
         return next(error);
@@ -45,13 +45,13 @@ doctorRoutes.get("/doctor/appointments", ...requireDoctor, async (req, res, next
 
 doctorRoutes.get("/doctor/patients", ...requireDoctor, async (req, res, next) => {
     try {
-        const patients = await getDoctorActivePatients(req.auth.userId);
-        if (!patients) return res.status(404).send("No se encontró el perfil médico.");
+        const dashboard = await getDoctorActivePatients(req.auth.userId);
+        if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
 
         return res.render("doctor/patients", {
             pageTitle: "Pacientes activos | SaludVital",
             activeNav: "patients",
-            patients,
+            ...dashboard,
         });
     } catch (error) {
         return next(error);

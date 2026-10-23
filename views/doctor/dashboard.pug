@@ -6,25 +6,15 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
-    body.doctor-page
-        .doctor-shell
+    body.sv-dashboard.doctor-home-page
+        .sv-layout
             include ./partials/sidebar.pug
-            main.doctor-main
-                header.doctor-topbar
-                    a.doctor-mobile-brand(href="/doctor/dashboard", aria-label="SaludVital, inicio")
-                        img(src="/brand/logo-primary.png", alt="SaludVital")
-                    .doctor-welcome
-                        p.doctor-eyebrow Panel médico
-                        h1 ¡Hola, #{doctorName}!
-                        p Aquí tienes el resumen de tu jornada.
-                    .doctor-topbar-user
-                        span.doctor-avatar(aria-hidden="true")= doctorName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                        span
-                            strong= doctorName
-                            small Médico
-
-                .doctor-dashboard-content
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content
                     section.doctor-hero(aria-labelledby="doctor-hero-title")
                         .doctor-hero-copy
                             p.doctor-eyebrow Tu agenda
@@ -109,4 +99,6 @@ html(lang="es")
                                     strong No tienes próximas citas
                                     p Las próximas citas aparecerán aquí.
 
+                include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)

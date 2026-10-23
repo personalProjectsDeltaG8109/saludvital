@@ -6,26 +6,32 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
-    body.doctor-page
-        .doctor-shell
+    body.sv-dashboard.doctor-home-page
+        .sv-layout
             include ./partials/sidebar.pug
-            main.doctor-main
-                header.doctor-page-heading
-                    p.doctor-eyebrow Seguimiento
-                    h1 Pacientes activos
-                    p Pacientes con una consulta completada contigo durante los últimos 12 meses.
-                section.doctor-panel.doctor-list-panel(aria-label="Pacientes activos del médico")
-                    if patients.length
-                        ul.doctor-patient-list
-                            each patient in patients
-                                li.doctor-patient-row
-                                    span.doctor-patient-avatar(aria-hidden="true")= patient.name.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                    strong= patient.name
-                                    span.doctor-patient-label Paciente activo
-                    else
-                        .doctor-empty-state
-                            span.doctor-empty-icon(aria-hidden="true") ♙
-                            strong No tienes pacientes activos
-                            p Los pacientes con consultas recientes aparecerán aquí.
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.doctor-subpage-content
+                    header.doctor-page-heading
+                        p.doctor-eyebrow Seguimiento
+                        h1 Pacientes activos
+                        p Pacientes con una consulta completada contigo durante los últimos 12 meses.
+                    section.doctor-panel.doctor-list-panel(aria-label="Pacientes activos del médico")
+                        if patients.length
+                            ul.doctor-patient-list
+                                each patient in patients
+                                    li.doctor-patient-row
+                                        span.doctor-patient-avatar(aria-hidden="true")= patient.name.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                        strong= patient.name
+                                        span.doctor-patient-label Paciente activo
+                        else
+                            .doctor-empty-state
+                                span.doctor-empty-icon(aria-hidden="true") ♙
+                                strong No tienes pacientes activos
+                                p Los pacientes con consultas recientes aparecerán aquí.
+                include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)

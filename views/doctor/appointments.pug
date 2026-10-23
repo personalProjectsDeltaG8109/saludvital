@@ -6,31 +6,37 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
-    body.doctor-page
-        .doctor-shell
+    body.sv-dashboard.doctor-home-page
+        .sv-layout
             include ./partials/sidebar.pug
-            main.doctor-main
-                header.doctor-page-heading
-                    p.doctor-eyebrow Agenda médica
-                    h1 Mis citas
-                    p Revisa las citas asignadas a tu perfil.
-                section.doctor-panel.doctor-list-panel(aria-label="Citas del médico")
-                    if appointments.length
-                        ul.doctor-appointment-list.doctor-full-list
-                            each appointment in appointments
-                                li.doctor-appointment-row(id=`appointment-${appointment.id}`)
-                                    time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
-                                        strong= appointment.dateLabel
-                                        span= appointment.timeLabel
-                                    span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                    span.doctor-appointment-info
-                                        strong= appointment.patientName
-                                        small= appointment.reason || "Consulta médica"
-                                    span.doctor-status(class=`status-${appointment.status.toLowerCase().replaceAll(" ", "-")}`)= appointment.status
-                    else
-                        .doctor-empty-state
-                            span.doctor-empty-icon(aria-hidden="true") ▦
-                            strong Aún no tienes citas
-                            p Tus citas asignadas aparecerán aquí.
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.doctor-subpage-content
+                    header.doctor-page-heading
+                        p.doctor-eyebrow Agenda médica
+                        h1 Mis citas
+                        p Revisa las citas asignadas a tu perfil.
+                    section.doctor-panel.doctor-list-panel(aria-label="Citas del médico")
+                        if appointments.length
+                            ul.doctor-appointment-list.doctor-full-list
+                                each appointment in appointments
+                                    li.doctor-appointment-row(id=`appointment-${appointment.id}`)
+                                        time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
+                                            strong= appointment.dateLabel
+                                            span= appointment.timeLabel
+                                        span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                        span.doctor-appointment-info
+                                            strong= appointment.patientName
+                                            small= appointment.reason || "Consulta médica"
+                                        span.doctor-status(class=`status-${appointment.status.toLowerCase().replaceAll(" ", "-")}`)= appointment.status
+                        else
+                            .doctor-empty-state
+                                span.doctor-empty-icon(aria-hidden="true") ▦
+                                strong Aún no tienes citas
+                                p Tus citas asignadas aparecerán aquí.
+                include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)

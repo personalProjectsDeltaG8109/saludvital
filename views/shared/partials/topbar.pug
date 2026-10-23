@@ -1,0 +1,44 @@
+mixin topbarUserContent()
+    span.sv-avatar(aria-hidden="true")
+        if profilePhotoUrl
+            img.profile-avatar-image(src=profilePhotoUrl, alt="")
+        else
+            = displayName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+    span
+        strong= displayName
+        small= roleLabel
+
+header.sv-topbar
+    a.sv-mobile-brand(href=homeHref, aria-label="SaludVital, inicio")
+        if mobileLogoSrc
+            picture
+                source(media="(max-width: 760px)", srcset=mobileLogoSrc)
+                img(src="/brand/logo-primary.png", alt="SaludVital")
+        else
+            img(src="/brand/logo-primary.png", alt="SaludVital")
+    button.sv-mobile-menu-toggle(
+        type="button",
+        aria-label="Abrir menú",
+        aria-expanded="false",
+        aria-controls=sidebarId,
+        data-toggle-sidebar
+    )
+        span
+        span
+        span
+    .sv-topbar-copy
+        h1 ¡Hola, #{displayName}!
+        p= topbarMessage
+    .sv-topbar-actions
+        if notificationHref
+            a.sv-bell(href=notificationHref, aria-label=notificationLabel)
+                svg(viewBox="0 0 24 24", aria-hidden="true")
+                    path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+                if notificationCount
+                    span= notificationCount
+        if profileHref
+            a.sv-user-chip(href=profileHref, aria-label=profileLabel)
+                +topbarUserContent()
+        else
+            .sv-user-chip(aria-label=profileLabel)
+                +topbarUserContent()

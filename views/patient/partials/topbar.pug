@@ -1,32 +1,14 @@
-header.sv-topbar
-    a.sv-mobile-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
-        picture
-            source(media="(max-width: 760px)", srcset="/brand/patient/logo-primary-background.png")
-            img(src="/brand/logo-primary.png", alt="SaludVital")
-    button.sv-mobile-menu-toggle(
-        type="button",
-        aria-label="Abrir menú",
-        aria-expanded="false",
-        aria-controls="patient-sidebar",
-        data-toggle-sidebar
-    )
-        span
-        span
-        span
-    .sv-topbar-copy
-        h1 ¡Hola, #{ patientName }!
-        p= welcomeMessage || "Aquí puedes gestionar tus citas médicas y mantener tu información actualizada."
-    .sv-topbar-actions
-        a.sv-bell(href="/patient/notifications", aria-label="Notificaciones, 2 nuevas")
-            svg(viewBox="0 0 24 24", aria-hidden="true")
-                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
-            span 2
-        a.sv-user-chip(href="/patient/profile", aria-label="Abrir mi perfil")
-            span.sv-avatar(aria-hidden="true")
-                if patientPhotoUrl
-                    img.profile-avatar-image(src=patientPhotoUrl, alt="")
-                else
-                    = patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-            span
-                strong= patientName
-                small Paciente
+- var homeHref = "/patient/dashboard"
+- var sidebarId = "patient-sidebar"
+- var displayName = patientName
+- var topbarMessage = typeof welcomeMessage !== "undefined" ? welcomeMessage : "Aquí puedes gestionar tus citas médicas y mantener tu información actualizada."
+- var roleLabel = "Paciente"
+- var mobileLogoSrc = "/brand/patient/logo-primary-background.png"
+- var notificationHref = "/patient/notifications"
+- var notificationLabel = "Notificaciones, 2 nuevas"
+- var notificationCount = 2
+- var profileHref = "/patient/profile"
+- var profileLabel = "Abrir mi perfil"
+- var profilePhotoUrl = typeof patientPhotoUrl !== "undefined" ? patientPhotoUrl : null
+
+include ../../shared/partials/topbar.pug
