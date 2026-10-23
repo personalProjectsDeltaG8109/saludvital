@@ -24,7 +24,9 @@ html(lang="es")
                             ul.doctor-appointment-list.doctor-full-list
                                 each appointment in appointments
                                     li.doctor-appointment-row(id=`appointment-${appointment.id}`)
-                                        time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
+                                        time.doctor-appointment-time(
+                                            datetime=appointment.startAt.toISOString()
+                                        )
                                             strong= appointment.dateLabel
                                             span= appointment.timeLabel
                                         span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()

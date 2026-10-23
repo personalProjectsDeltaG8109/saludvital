@@ -89,12 +89,16 @@ function getPatientName(patient) {
 }
 
 function getAppointmentStatusLabel(status) {
-    return {
-        Confirmed: "Confirmada",
-        "In Progress": "En curso",
-        Attended: "Atendida",
-        Cancelled: "Cancelada",
-    }[status] || status || "Programada";
+    return (
+        {
+            Confirmed: "Confirmada",
+            "In Progress": "En curso",
+            Attended: "Atendida",
+            Cancelled: "Cancelada",
+        }[status] ||
+        status ||
+        "Programada"
+    );
 }
 
 function serializeAppointment(appointment, { includePatientPhoto = false } = {}) {
@@ -189,7 +193,12 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                         as: "patient",
                         attributes: ["id", "first_name", "last_name", "profile_photo_url"],
                     },
-                    { model: AppointmentStatus, as: "status", attributes: ["name"], required: true },
+                    {
+                        model: AppointmentStatus,
+                        as: "status",
+                        attributes: ["name"],
+                        required: true,
+                    },
                 ],
                 order: [["start_at", "ASC"]],
             }),
@@ -224,7 +233,9 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
     }
 
     const durations = weeklyConsultations
-        .filter(({ duration_seconds }) => duration_seconds !== null && duration_seconds !== undefined)
+        .filter(
+            ({ duration_seconds }) => duration_seconds !== null && duration_seconds !== undefined,
+        )
         .map(({ duration_seconds }) => Number(duration_seconds))
         .filter((duration) => Number.isFinite(duration) && duration >= 0);
     const averageDurationSeconds = durations.length

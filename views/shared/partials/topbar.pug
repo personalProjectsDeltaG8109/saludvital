@@ -1,4 +1,4 @@
-mixin topbarUserContent()
+mixin topbarUserContent
     span.sv-avatar(aria-hidden="true")
         if profilePhotoUrl
             img.profile-avatar-image(src=profilePhotoUrl, alt="")
@@ -8,7 +8,7 @@ mixin topbarUserContent()
         strong= displayName
         small= roleLabel
 
-mixin notificationBellIcon()
+mixin notificationBellIcon
     svg(viewBox="0 0 24 24", aria-hidden="true")
         path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
     if notificationCount
@@ -33,18 +33,18 @@ header.sv-topbar
         span
         span
     .sv-topbar-copy
-        h1 ¡Hola, #{displayName}!
+        h1 ¡Hola, #{ displayName }!
         p= topbarMessage
     .sv-topbar-actions
         if notificationHref
             a.sv-bell(href=notificationHref, aria-label=notificationLabel)
-                +notificationBellIcon()
+                +notificationBellIcon
         else if showNotificationBell
             button.sv-bell(type="button", aria-label=notificationLabel, disabled)
-                +notificationBellIcon()
+                +notificationBellIcon
         if profileHref
             a.sv-user-chip(href=profileHref, aria-label=profileLabel)
-                +topbarUserContent()
+                +topbarUserContent
         else
             .sv-user-chip(aria-label=profileLabel)
-                +topbarUserContent()
+                +topbarUserContent

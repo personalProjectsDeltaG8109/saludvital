@@ -5,7 +5,10 @@ aside.sv-sidebar(id=sidebarId)
     nav.sv-side-nav(aria-label=sidebarLabel)
         each item in sidebarItems
             if item.disabled
-                span.sv-nav-link.is-disabled(aria-disabled="true", title="Esta sección aún no está disponible")
+                span.sv-nav-link.is-disabled(
+                    aria-disabled="true",
+                    title="Esta sección aún no está disponible"
+                )
                     span.sv-nav-icon(aria-hidden="true")
                         svg(viewBox="0 0 24 24")
                             path(d=item.icon)

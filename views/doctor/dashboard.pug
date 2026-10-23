@@ -21,21 +21,34 @@ html(lang="es")
                             h2#doctor-hero-title Tu jornada médica de hoy
                             p= metrics.appointmentsToday === 1 ? "Tienes 1 cita programada para hoy. Aquí tienes tu jornada organizada." : `Tienes ${metrics.appointmentsToday} citas programadas para hoy. Aquí tienes tu jornada organizada.`
                             span.doctor-hero-note Agenda · Pacientes · Seguimiento
-                        img.doctor-hero-image(src="/brand/patient/banner-home-patient.png", alt="Ilustración de un médico preparando su agenda")
+                        img.doctor-hero-image(
+                            src="/brand/patient/banner-home-patient.png",
+                            alt="Ilustración de un médico preparando su agenda"
+                        )
 
                     section.doctor-metrics(aria-label="Resumen de actividad")
-                        a.doctor-metric-card.metric-blue(href="/doctor/appointments", aria-label=`Citas de hoy: ${metrics.appointmentsToday}. Abrir agenda.`)
+                        a.doctor-metric-card.metric-blue(
+                            href="/doctor/appointments",
+                            aria-label=`Citas de hoy: ${metrics.appointmentsToday}. Abrir agenda.`
+                        )
                             span.metric-icon(aria-hidden="true")
                                 svg(viewBox="0 0 24 24")
-                                    path(d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2"
+                                    )
                             span.metric-copy
                                 small HOY
                                 strong= metrics.appointmentsToday
                                 span Citas de hoy
-                        a.doctor-metric-card.metric-green(href="/doctor/patients", aria-label=`Pacientes activos: ${metrics.activePatients}. Abrir pacientes.`)
+                        a.doctor-metric-card.metric-green(
+                            href="/doctor/patients",
+                            aria-label=`Pacientes activos: ${metrics.activePatients}. Abrir pacientes.`
+                        )
                             span.metric-icon(aria-hidden="true")
                                 svg(viewBox="0 0 24 24")
-                                    path(d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-3a4 4 0 0 1 0 7m3 6v-2a4 4 0 0 0-3-3.87")
+                                    path(
+                                        d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-3a4 4 0 0 1 0 7m3 6v-2a4 4 0 0 0-3-3.87"
+                                    )
                             span.metric-copy
                                 small SEGUIMIENTO
                                 strong= metrics.activePatients
@@ -51,7 +64,9 @@ html(lang="es")
                         article.doctor-metric-card.metric-orange
                             span.metric-icon(aria-hidden="true")
                                 svg(viewBox="0 0 24 24")
-                                    path(d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 2v2m10 8h-2")
+                                    path(
+                                        d="M12 8v4l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 2v2m10 8h-2"
+                                    )
                             span.metric-copy
                                 small DURACIÓN
                                 strong= averageDurationLabel
@@ -71,13 +86,19 @@ html(lang="es")
                                             id=`appointment-${appointment.id}`,
                                             class=appointment.patientPhotoUrl ? null : "without-photo"
                                         )
-                                            time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
+                                            time.doctor-appointment-time(
+                                                datetime=appointment.startAt.toISOString()
+                                            )
                                                 strong= appointment.time
                                                 small= appointment.meridiem
                                             .doctor-patient-summary
                                                 if appointment.patientPhotoUrl
                                                     span.doctor-patient-avatar(aria-hidden="true")
-                                                        img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
+                                                        img(
+                                                            src=appointment.patientPhotoUrl,
+                                                            alt="",
+                                                            loading="lazy"
+                                                        )
                                                 else
                                                     span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                                 span.doctor-appointment-info
@@ -85,7 +106,10 @@ html(lang="es")
                                                     small= appointment.reason || "Consulta médica"
                                             span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
                                             if appointment.status !== "Cancelled"
-                                                a.doctor-row-link(href=`/doctor/agenda#appointment-${appointment.id}`, aria-label=`Ver cita de ${appointment.patientName} en la agenda`) Ver cita
+                                                a.doctor-row-link(
+                                                    href=`/doctor/agenda#appointment-${appointment.id}`,
+                                                    aria-label=`Ver cita de ${appointment.patientName} en la agenda`
+                                                ) Ver cita
                             else
                                 .doctor-empty-state
                                     span.doctor-empty-icon(aria-hidden="true") ▦
@@ -107,14 +131,24 @@ html(lang="es")
                                             span.doctor-status(class=`status-${nextAppointment.statusKey}`)= nextAppointment.statusLabel
                                         .doctor-next-identity
                                             if nextAppointment.patientPhotoUrl
-                                                span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")
-                                                    img(src=nextAppointment.patientPhotoUrl, alt="", loading="lazy")
+                                                span.doctor-patient-avatar.doctor-next-avatar(
+                                                    aria-hidden="true"
+                                                )
+                                                    img(
+                                                        src=nextAppointment.patientPhotoUrl,
+                                                        alt="",
+                                                        loading="lazy"
+                                                    )
                                             else
-                                                span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")= nextAppointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                                span.doctor-patient-avatar.doctor-next-avatar(
+                                                    aria-hidden="true"
+                                                )= nextAppointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                             .doctor-next-info
                                                 strong= nextAppointment.patientName
                                                 span= nextAppointment.reason || "Consulta médica"
-                                    a.doctor-primary-link(href=`/doctor/agenda#appointment-${nextAppointment.id}`) Ver cita
+                                    a.doctor-primary-link(
+                                        href=`/doctor/agenda#appointment-${nextAppointment.id}`
+                                    ) Ver cita
                             else
                                 .doctor-empty-state.doctor-next-empty
                                     span.doctor-empty-icon(aria-hidden="true") ◷

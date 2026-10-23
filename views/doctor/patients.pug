@@ -19,7 +19,9 @@ html(lang="es")
                         p.doctor-eyebrow Seguimiento
                         h1 Pacientes activos
                         p Pacientes con una consulta completada contigo durante los últimos 12 meses.
-                    section.doctor-panel.doctor-list-panel(aria-label="Pacientes activos del médico")
+                    section.doctor-panel.doctor-list-panel(
+                        aria-label="Pacientes activos del médico"
+                    )
                         if patients.length
                             ul.doctor-patient-list
                                 each patient in patients
