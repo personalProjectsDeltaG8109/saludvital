@@ -155,9 +155,12 @@ html(lang="es")
                                             hidden,
                                             data-profile-form="personal"
                                         )
+                                            p.profile-required-legend Los campos marcados con * son obligatorios.
                                             .profile-form-grid
                                                 label
-                                                    span Nombres
+                                                    span
+                                                        | Nombres
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -166,7 +169,9 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Apellidos
+                                                    span
+                                                        | Apellidos
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -175,7 +180,9 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Correo electrónico
+                                                    span
+                                                        | Correo electrónico
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="email",
                                                         name="email",
@@ -185,7 +192,9 @@ html(lang="es")
                                                         autocomplete="email"
                                                     )
                                                 label
-                                                    span Teléfono
+                                                    span
+                                                        | Teléfono
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="tel",
                                                         name="phone",
@@ -195,7 +204,9 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Fecha de nacimiento
+                                                    span
+                                                        | Fecha de nacimiento
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="date",
                                                         name="date_of_birth",
@@ -203,7 +214,9 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Tipo de documento
+                                                    span
+                                                        | Tipo de documento
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     select(name="document_type", required)
                                                         option(
                                                             value="CC",
@@ -214,7 +227,9 @@ html(lang="es")
                                                             selected=patient.document_type === "CE"
                                                         ) Cédula de extranjería
                                                 label
-                                                    span Número de documento
+                                                    span
+                                                        | Número de documento
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="text",
                                                         name="document_number",
@@ -232,7 +247,9 @@ html(lang="es")
                                                         maxlength="150"
                                                     )
                                                 label
-                                                    span Departamento
+                                                    span
+                                                        | Departamento
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     select(
                                                         name="department",
                                                         required,
@@ -244,7 +261,9 @@ html(lang="es")
                                                                 selected=department.code === currentDepartmentCode
                                                             )= department.name
                                                 label
-                                                    span Municipio
+                                                    span
+                                                        | Municipio
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     select(
                                                         name="municipality",
                                                         required,
@@ -367,9 +386,12 @@ html(lang="es")
                                             hidden,
                                             data-profile-form="emergency"
                                         )
+                                            p.profile-required-legend El contacto es opcional. Si lo agregas, nombres, apellidos y teléfono son obligatorios (*).
                                             .profile-form-grid
                                                 label
-                                                    span Nombres
+                                                    span
+                                                        | Nombres
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -377,7 +399,9 @@ html(lang="es")
                                                         maxlength="50"
                                                     )
                                                 label
-                                                    span Apellidos
+                                                    span
+                                                        | Apellidos
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -385,7 +409,9 @@ html(lang="es")
                                                         maxlength="50"
                                                     )
                                                 label
-                                                    span Teléfono
+                                                    span
+                                                        | Teléfono
+                                                        span.profile-required-mark(aria-hidden="true")  *
                                                     input(
                                                         type="tel",
                                                         name="phone",

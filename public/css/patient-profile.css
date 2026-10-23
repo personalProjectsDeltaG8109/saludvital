@@ -461,6 +461,18 @@
     font-weight: 700;
 }
 
+.profile-required-legend {
+    margin: 0 0 9px;
+    color: #607695;
+    font-size: .72rem;
+}
+
+.profile-required-mark {
+    margin-left: 2px;
+    color: #c23952;
+    font-weight: 800;
+}
+
 .profile-form-wide {
     grid-column: 1 / -1;
 }
