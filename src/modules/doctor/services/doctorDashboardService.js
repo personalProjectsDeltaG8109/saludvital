@@ -109,14 +109,23 @@ function getAppointmentStatusLabel(status) {
     }[status] || status || "Programada";
 }
 
-function serializeAppointment(appointment) {
+function serializeAppointment(
+    appointment,
+    { includePatientPhoto = false, includePatientContact = false } = {},
+) {
     return {
         id: appointment.id,
         patientName: getPatientName(appointment.patient),
-        patientPhotoUrl: appointment.patient?.profile_photo_url || null,
-        patientAge: getAge(appointment.patient?.date_of_birth),
-        patientPhone: appointment.patient?.phone || null,
-        patientEmail: appointment.patient?.user?.email || null,
+        ...(includePatientPhoto
+            ? { patientPhotoUrl: appointment.patient?.profile_photo_url || null }
+            : {}),
+        ...(includePatientContact
+            ? {
+                  patientAge: getAge(appointment.patient?.date_of_birth),
+                  patientPhone: appointment.patient?.phone || null,
+                  patientEmail: appointment.patient?.user?.email || null,
+              }
+            : {}),
         reason: appointment.reason,
         status: appointment.status?.name || "Programada",
         statusLabel: getAppointmentStatusLabel(appointment.status?.name),
@@ -200,8 +209,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     {
                         model: Patient,
                         as: "patient",
-                        attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
-                        include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
                     },
                     { model: AppointmentStatus, as: "status", attributes: ["name"], required: true },
                 ],
@@ -261,8 +269,15 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
         },
-        todayAppointments: visibleAppointments.map(serializeAppointment),
-        nextAppointment: nextAppointment ? serializeAppointment(nextAppointment) : null,
+        todayAppointments: visibleAppointments.map((appointment) =>
+            serializeAppointment(appointment, { includePatientPhoto: true }),
+        ),
+        nextAppointment: nextAppointment
+            ? serializeAppointment(nextAppointment, {
+                  includePatientPhoto: true,
+                  includePatientContact: true,
+              })
+            : null,
     };
 }
 
@@ -299,8 +314,7 @@ export async function getDoctorAppointments(userId) {
             {
                 model: Patient,
                 as: "patient",
-                attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
-                include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+                attributes: ["id", "first_name", "last_name"],
             },
             { model: AppointmentStatus, as: "status", attributes: ["name"] },
         ],
@@ -311,6 +325,6 @@ export async function getDoctorAppointments(userId) {
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
-        appointments: appointments.map(serializeAppointment),
+        appointments: appointments.map((appointment) => serializeAppointment(appointment)),
     };
 }
