@@ -46,12 +46,15 @@ const appointmentStats = [
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
 ];
 
-async function getPatientName(userId) {
+async function getPatientHeader(userId) {
     const patient = await PatientModel.findOne({
         where: { user_id: userId },
-        attributes: ["first_name", "last_name"],
+        attributes: ["first_name", "last_name", "profile_photo_url"],
     });
-    return patient ? `${patient.first_name} ${patient.last_name}` : "Paciente";
+    return {
+        patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
+        patientPhotoUrl: patient?.profile_photo_url || null,
+    };
 }
 
 patientRoutes.get(
@@ -151,7 +154,7 @@ patientRoutes.get(
         try {
             const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name"],
+                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
             });
             // Load the patient's five most recently scheduled appointments for the dashboard.
             const recentAppointments = patient
@@ -236,6 +239,7 @@ patientRoutes.get(
                 pageTitle: "Panel del paciente | SaludVital",
                 activeNav: "home",
                 patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
+                patientPhotoUrl: patient?.profile_photo_url || null,
                 nextAppointment,
                 recentAppointments: recentAppointments.map((appointment) =>
                     appointment.get({ plain: true }),
@@ -256,7 +260,7 @@ patientRoutes.get(
         try {
             const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name"],
+                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
             });
             const storedAppointments = patient
                 ? await Appointment.findAll({
@@ -347,6 +351,7 @@ patientRoutes.get(
                 patientName: patient?.first_name
                     ? `${patient.first_name} ${patient.last_name}`
                     : "Paciente",
+                patientPhotoUrl: patient?.profile_photo_url || null,
                 previewMode,
                 previewAvailable: process.env.NODE_ENV !== "production",
             });
@@ -366,7 +371,7 @@ patientRoutes.get(
             return res.render("patient/request-appointment", {
                 pageTitle: "Pedir una nueva cita | SaludVital",
                 activeNav: "book",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
             });
         } catch (error) {
             return next(error);
@@ -393,7 +398,7 @@ patientRoutes.get(
             return res.render("patient/reschedule-appointment", {
                 pageTitle: "Reprogramar cita | SaludVital",
                 activeNav: "reschedule",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 appointments,
                 selectedAppointmentId,
             });
@@ -414,9 +419,7 @@ patientRoutes.get(
                 pageTitle: "Notificaciones | SaludVital",
                 activeNav: "notifications",
                 welcomeMessage: "Configura tus notificaciones y mantente siempre informado.",
-                patientName: notificationSettings.patient
-                    ? `${notificationSettings.patient.first_name} ${notificationSettings.patient.last_name}`
-                    : await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 notificationEvents,
                 ...notificationSettings,
             });
@@ -585,7 +588,7 @@ patientRoutes.get(
                 pageTitle: "Historial clínico | SaludVital",
                 activeNav: "clinical-history",
                 welcomeMessage: "Aquí puedes consultar el registro de tus atenciones médicas.",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 consultations,
                 totals: { consultations: consultations.length, ...totals },
                 previewMode,
@@ -614,6 +617,7 @@ patientRoutes.get(
                 welcomeMessage:
                     "Aquí puedes gestionar tu perfil y mantener tu información actualizada.",
                 patientName: `${profile.patient.first_name} ${profile.patient.last_name}`,
+                patientPhotoUrl: profile.patient.profile_photo_url,
                 ...profile,
                 departments,
                 currentDepartmentCode: currentDepartment?.code || "",
