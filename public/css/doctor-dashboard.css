@@ -132,6 +132,7 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-home-page .sv-main { width: calc(100% - 205px); margin-left: 205px; }
     .doctor-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .doctor-metric-card { min-height: 100px; }
+    .doctor-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 760px) {
