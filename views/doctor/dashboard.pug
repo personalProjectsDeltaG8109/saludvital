@@ -70,14 +70,15 @@ html(lang="es")
                                             time.doctor-appointment-time(datetime=appointment.startAt.toISOString())
                                                 strong= appointment.time
                                                 small= appointment.meridiem
-                                            if appointment.patientPhotoUrl
-                                                span.doctor-patient-avatar(aria-hidden="true")
-                                                    img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
-                                            else
-                                                span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                            span.doctor-appointment-info
-                                                strong= appointment.patientName
-                                                small= appointment.reason || "Consulta médica"
+                                            .doctor-patient-summary
+                                                if appointment.patientPhotoUrl
+                                                    span.doctor-patient-avatar(aria-hidden="true")
+                                                        img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
+                                                else
+                                                    span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                                span.doctor-appointment-info
+                                                    strong= appointment.patientName
+                                                    small= appointment.reason || "Consulta médica"
                                             span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
                                             if appointment.status !== "Cancelled"
                                                 a.doctor-row-link(href=`/doctor/agenda#appointment-${appointment.id}`, aria-label=`Iniciar consulta con ${appointment.patientName}`) Iniciar consulta
