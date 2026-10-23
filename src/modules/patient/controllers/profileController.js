@@ -1,6 +1,7 @@
 import { updatePatientProfile } from "../services/profileService.js";
 import {
     deactivatePatientAccount,
+    deletePatientProfilePhoto,
     updatePatientProfilePhoto,
 } from "../services/profileMediaService.js";
 
@@ -26,6 +27,21 @@ export async function savePatientProfilePhoto(req, res, next) {
     try {
         const photoUrl = await updatePatientProfilePhoto(req.auth.userId, req.body?.photo);
         return res.status(200).json({ success: true, photoUrl });
+    } catch (error) {
+        if (error.status) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
+        return next(error);
+    }
+}
+
+export async function removePatientProfilePhoto(req, res, next) {
+    try {
+        await deletePatientProfilePhoto(req.auth.userId);
+        return res.status(200).json({
+            success: true,
+            message: "Tu foto de perfil se eliminó correctamente.",
+        });
     } catch (error) {
         if (error.status) {
             return res.status(error.status).json({ success: false, message: error.message });

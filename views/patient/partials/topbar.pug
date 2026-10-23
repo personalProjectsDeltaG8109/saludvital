@@ -21,8 +21,12 @@ header.sv-topbar
             svg(viewBox="0 0 24 24", aria-hidden="true")
                 path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
             span 2
-        .sv-user-chip
-            span.sv-avatar(aria-hidden="true")= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+        a.sv-user-chip(href="/patient/profile", aria-label="Abrir mi perfil")
+            span.sv-avatar(aria-hidden="true")
+                if patientPhotoUrl
+                    img.profile-avatar-image(src=patientPhotoUrl, alt="")
+                else
+                    = patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
             span
                 strong= patientName
                 small Paciente

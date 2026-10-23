@@ -106,11 +106,18 @@ html(lang="es")
                                                 td(data-label="Médico")
                                                     .appointment-doctor-cell
                                                         if appointment.doctor && appointment.doctor.profile_photo_url
-                                                            img.appointment-doctor-photo(
-                                                                src=appointment.doctor.profile_photo_url,
-                                                                alt="Foto de " + doctorName,
-                                                                loading="lazy"
+                                                            button.appointment-doctor-photo-trigger(
+                                                                type="button",
+                                                                aria-label="Ver foto de " + doctorName,
+                                                                aria-haspopup="dialog",
+                                                                data-open-doctor-photo=appointment.doctor.profile_photo_url,
+                                                                data-doctor-name=doctorName
                                                             )
+                                                                img.profile-avatar-image(
+                                                                    src=appointment.doctor.profile_photo_url,
+                                                                    alt="",
+                                                                    loading="lazy"
+                                                                )
                                                         else
                                                             span.appointment-doctor-photo-fallback(
                                                                 aria-hidden="true"
@@ -185,7 +192,25 @@ html(lang="es")
                                                                 h2(
                                                                     id=`appointment-details-title-${appointment.id}`
                                                                 )= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
-                                                                p= doctorName
+                                                                .appointment-dialog-doctor
+                                                                    if appointment.doctor && appointment.doctor.profile_photo_url
+                                                                        button.appointment-dialog-doctor-photo-trigger(
+                                                                            type="button",
+                                                                            aria-label="Ver foto de " + doctorName,
+                                                                            aria-haspopup="dialog",
+                                                                            data-open-doctor-photo=appointment.doctor.profile_photo_url,
+                                                                            data-doctor-name=doctorName
+                                                                        )
+                                                                            img.profile-avatar-image(
+                                                                                src=appointment.doctor.profile_photo_url,
+                                                                                alt="",
+                                                                                loading="lazy"
+                                                                            )
+                                                                    else
+                                                                        span.appointment-dialog-doctor-avatar(
+                                                                            aria-hidden="true"
+                                                                        )= doctorName.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                                    p= doctorName
                                                             button.appointment-dialog-close(
                                                                 type="button",
                                                                 aria-label="Cerrar detalles",
@@ -288,3 +313,14 @@ html(lang="es")
                         .appointment-dialog-footer
                             button.appointment-dialog-done(type="button", data-close-feedback) Entendido
         include partials/bottom-nav
+        if appointments.some((appointment) => appointment.doctor && appointment.doctor.profile_photo_url)
+            dialog.doctor-photo-viewer-dialog(
+                aria-label="Foto del médico ampliada",
+                data-doctor-photo-viewer
+            )
+                button.doctor-photo-viewer-close(
+                    type="button",
+                    aria-label="Cerrar foto",
+                    data-close-doctor-photo-viewer
+                ) ×
+                img.profile-avatar-image(src="", alt="", data-doctor-photo-viewer-image)

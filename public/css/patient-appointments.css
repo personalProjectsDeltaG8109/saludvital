@@ -447,6 +447,31 @@
     font-size: 14px;
 }
 
+/* Keep the doctor's portrait and name grouped in appointment detail dialogs. */
+.appointment-dialog-doctor {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.appointment-dialog-doctor-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border: 2px solid #ffffffb3;
+    border-radius: 50%;
+}
+
+.appointment-dialog-doctor-avatar {
+    display: grid;
+    place-items: center;
+    color: #123b73;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .appointment-dialog-close {
     width: 36px;
     height: 36px;
@@ -916,14 +941,104 @@
     min-width: 0;
 }
 
-.appointment-doctor-photo,
 .appointment-doctor-photo-fallback {
     width: 38px;
     height: 38px;
     flex: 0 0 38px;
     border: 1px solid #d8e8f5;
     border-radius: 50%;
-    object-fit: cover;
+}
+
+/* Keep portrait buttons visually identical to the small doctor photos. */
+.appointment-doctor-photo-trigger,
+.sv-appointment-doctor-photo-trigger,
+.appointment-dialog-doctor-photo-trigger {
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.appointment-doctor-photo-trigger {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #d8e8f5;
+}
+
+.appointment-dialog-doctor-photo-trigger {
+    width: 42px;
+    height: 42px;
+    border: 2px solid #ffffffb3;
+    background: #fff;
+}
+
+.appointment-doctor-photo-trigger:focus-visible,
+.sv-appointment-doctor-photo-trigger:focus-visible,
+.appointment-dialog-doctor-photo-trigger:focus-visible {
+    outline: 3px solid #13b8b0;
+    outline-offset: 3px;
+}
+
+.doctor-photo-viewer-dialog .profile-avatar-image {
+    width: min(280px, calc(100dvh - 110px), 100%);
+    height: min(280px, calc(100dvh - 110px), 100%);
+    min-width: 0;
+    min-height: 0;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    border: 3px solid #ffffffb3;
+    background: #e4f3ff;
+}
+
+.doctor-photo-viewer-dialog {
+    position: fixed;
+    inset: 50% auto auto 50%;
+    width: min(340px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    margin: 0;
+    padding: 48px 16px 16px;
+    overflow: hidden;
+    border: 1px solid #ffffff40;
+    border-radius: 16px;
+    background: #071c36;
+    box-shadow: 0 24px 80px #09264e66;
+    transform: translate(-50%, -50%);
+}
+
+.doctor-photo-viewer-dialog::backdrop {
+    background: #071c36b3;
+    backdrop-filter: blur(4px);
+}
+
+.doctor-photo-viewer-dialog > img {
+    display: block;
+    width: 100%;
+    max-height: calc(100dvh - 100px);
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.doctor-photo-viewer-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid #ffffff80;
+    border-radius: 50%;
+    color: #fff;
+    background: #ffffff20;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
 }
 
 .appointment-doctor-photo-fallback {

@@ -83,10 +83,24 @@ html(lang="es")
                                                     )
                                                 strong= nextAppointment.specialty.name
                                             p
-                                                svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                    path(
-                                                        d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
+                                                if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                                                    button.sv-appointment-doctor-photo-trigger(
+                                                        type="button",
+                                                        aria-label="Ver foto de " + nextAppointment.doctor_label,
+                                                        aria-haspopup="dialog",
+                                                        data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
+                                                        data-doctor-name=nextAppointment.doctor_label
                                                     )
+                                                        img.profile-avatar-image(
+                                                            src=nextAppointment.doctor.profile_photo_url,
+                                                            alt="",
+                                                            loading="lazy"
+                                                        )
+                                                else
+                                                    svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                        path(
+                                                            d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0"
+                                                        )
                                                 span= nextAppointment.doctor_label
                                             p
                                                 svg(viewBox="0 0 24 24", aria-hidden="true")
@@ -131,7 +145,25 @@ html(lang="es")
                                             div
                                                 span.appointment-dialog-kicker Detalles de tu cita
                                                 h2(id="appointment-details-title-" + appointmentId)= nextAppointment.specialty.name
-                                                p= nextAppointment.doctor_label
+                                                .appointment-dialog-doctor
+                                                    if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                                                        button.appointment-dialog-doctor-photo-trigger(
+                                                            type="button",
+                                                            aria-label="Ver foto de " + nextAppointment.doctor_label,
+                                                            aria-haspopup="dialog",
+                                                            data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
+                                                            data-doctor-name=nextAppointment.doctor_label
+                                                        )
+                                                            img.profile-avatar-image(
+                                                                src=nextAppointment.doctor.profile_photo_url,
+                                                                alt="",
+                                                                loading="lazy"
+                                                            )
+                                                    else
+                                                        span.appointment-dialog-doctor-avatar(
+                                                            aria-hidden="true"
+                                                        )= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                    p= nextAppointment.doctor_label
                                             button.appointment-dialog-close(
                                                 type="button",
                                                 aria-label="Cerrar detalles",
@@ -203,7 +235,7 @@ html(lang="es")
                                         a.sv-button-primary(href="/patient/appointments/new") Pedir una cita
                             section.sv-panel.sv-history(aria-labelledby="history-title")
                                 .sv-panel-heading
-                                    h2#history-title Mis últimas citas
+                                    h2#history-title Próximas citas
                                     a(href="/patient/appointments") Ver todas
                                 .sv-table-wrap
                                     table
@@ -214,24 +246,22 @@ html(lang="es")
                                                 th Médico
                                                 th Estado
                                         tbody
-                                            tr
-                                                td 15 Oct 2026
-                                                td Medicina General
-                                                td Dr. Carlos Ramírez
-                                                td
-                                                    span.sv-status Confirmada
-                                            tr
-                                                td 03 Sep 2026
-                                                td Dermatología
-                                                td Dra. Ana Torres
-                                                td
-                                                    span.sv-status.status-blue Asistida
-                                            tr
-                                                td 12 Ago 2026
-                                                td Oftalmología
-                                                td Dr. Luis Gómez
-                                                td
-                                                    span.sv-status.status-red Cancelada
+                                            if upcomingAppointments.length
+                                                each appointment in upcomingAppointments
+                                                    - const recentStatus = appointment.status.name;
+                                                    - const recentStatusClass = recentStatus === "In Progress" ? "status-in-progress" : recentStatus === "Attended" ? "status-blue" : recentStatus === "Cancelled" ? "status-red" : "";
+                                                    - const recentStatusLabel = recentStatus === "In Progress" ? "En curso" : recentStatus === "Attended" ? "Atendida" : recentStatus === "Cancelled" ? "Cancelada" : "Confirmada";
+                                                    tr
+                                                        td= new Date(appointment.start_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" })
+                                                        td= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
+                                                        td= (appointment.doctor && appointment.doctor.display_name) || "Médico asignado"
+                                                        td
+                                                            span(
+                                                                class=recentStatusClass ? "sv-status " + recentStatusClass : "sv-status"
+                                                            )= recentStatusLabel
+                                            else
+                                                tr
+                                                    td(colspan="4") No tienes próximas citas confirmadas.
                         .sv-panel-column
                             section.sv-panel.sv-notifications(
                                 aria-labelledby="notifications-title"
@@ -267,25 +297,59 @@ html(lang="es")
                                     .sv-profile-details
                                         p
                                             | ♙
-                                            span Juan Esteban Montoya Marín
+                                            span= patientName
                                         p
                                             | ▣
-                                            span CC 1.234.567.890
+                                            span= patient ? patient.document_type + " " + patient.document_number : "Documento no registrado"
                                         p
                                             | ✉
-                                            span juan.montoya@gmail.com
+                                            span= patient && patient.user ? patient.user.email : "Correo no registrado"
                                         p
                                             | ▯
-                                            span +57 310 123 4567
+                                            span= patient && patient.phone ? (patient.phone.startsWith("+") ? patient.phone : "+57 " + patient.phone) : "Teléfono no registrado"
                                         p
                                             | ⌖
-                                            span Dosquebradas, Risaralda
+                                            span= patient ? patient.municipality + ", " + patient.department : "Ubicación no registrada"
                                     .sv-profile-person
-                                        span(aria-hidden="true") JM
+                                        if patientPhotoUrl
+                                            button.sv-profile-photo-trigger(
+                                                type="button",
+                                                aria-label="Ver mi foto de perfil ampliada",
+                                                data-open-home-profile-photo
+                                            )
+                                                img(src=patientPhotoUrl, alt="", loading="lazy")
+                                        else
+                                            span.sv-profile-photo-fallback(aria-hidden="true")= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                         small Paciente
                     form.sv-mobile-logout(action="/logout", method="POST")
                         button(type="submit") Cerrar sesión
                 include partials/bottom-nav
+                if patientPhotoUrl
+                    dialog.sv-profile-photo-dialog(
+                        aria-label="Foto de perfil ampliada",
+                        data-home-profile-photo
+                    )
+                        button.sv-profile-photo-close(
+                            type="button",
+                            aria-label="Cerrar foto",
+                            data-close-home-profile-photo
+                        ) ×
+                        img.profile-avatar-image(
+                            src=patientPhotoUrl,
+                            alt="Foto de perfil de " + patientName,
+                            data-home-profile-photo-image
+                        )
+                if nextAppointment && nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                    dialog.doctor-photo-viewer-dialog(
+                        aria-label="Foto del médico ampliada",
+                        data-doctor-photo-viewer
+                    )
+                        button.doctor-photo-viewer-close(
+                            type="button",
+                            aria-label="Cerrar foto",
+                            data-close-doctor-photo-viewer
+                        ) ×
+                        img(src="", alt="", data-doctor-photo-viewer-image)
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/patient-appointments.js", defer)

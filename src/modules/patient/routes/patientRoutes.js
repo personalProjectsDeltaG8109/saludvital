@@ -15,6 +15,7 @@ import {
 } from "../controllers/notificationController.js";
 import {
     deletePatientAccount,
+    removePatientProfilePhoto,
     savePatientProfile,
     savePatientProfilePhoto,
 } from "../controllers/profileController.js";
@@ -46,12 +47,15 @@ const appointmentStats = [
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
 ];
 
-async function getPatientName(userId) {
+async function getPatientHeader(userId) {
     const patient = await PatientModel.findOne({
         where: { user_id: userId },
-        attributes: ["first_name", "last_name"],
+        attributes: ["first_name", "last_name", "profile_photo_url"],
     });
-    return patient ? `${patient.first_name} ${patient.last_name}` : "Paciente";
+    return {
+        patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
+        patientPhotoUrl: patient?.profile_photo_url || null,
+    };
 }
 
 patientRoutes.get(
@@ -80,6 +84,13 @@ patientRoutes.post(
     authenticateToken,
     requireRole("Patient"),
     savePatientProfilePhoto,
+);
+
+patientRoutes.delete(
+    "/api/patient/profile/photo",
+    authenticateToken,
+    requireRole("Patient"),
+    removePatientProfilePhoto,
 );
 
 patientRoutes.delete(
@@ -151,8 +162,41 @@ patientRoutes.get(
         try {
             const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name"],
+                attributes: [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "phone",
+                    "document_type",
+                    "document_number",
+                    "municipality",
+                    "department",
+                    "profile_photo_url",
+                ],
+                include: [{ association: "user", attributes: ["email"] }],
             });
+            // Show the five closest upcoming confirmed appointments on the dashboard.
+            const upcomingAppointments = patient
+                ? await Appointment.findAll({
+                      where: {
+                          patient_id: patient.id,
+                          start_at: { [Op.gt]: new Date() },
+                      },
+                      include: [
+                          { model: Doctor, as: "doctor", attributes: ["display_name"] },
+                          { model: Specialities, as: "specialty", attributes: ["name"] },
+                          {
+                              model: AppointmentStatus,
+                              as: "status",
+                              attributes: ["name"],
+                              where: { name: "Confirmed" },
+                              required: true,
+                          },
+                      ],
+                      order: [["start_at", "ASC"]],
+                      limit: 5,
+                  })
+                : [];
             const storedNextAppointment = patient
                 ? await Appointment.findOne({
                       where: {
@@ -167,7 +211,12 @@ patientRoutes.get(
                               where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
                               attributes: ["name"],
                           },
-                          { model: Doctor, as: "doctor", required: true, attributes: ["id"] },
+                          {
+                              model: Doctor,
+                              as: "doctor",
+                              required: true,
+                              attributes: ["id", "display_name", "profile_photo_url"],
+                          },
                           {
                               model: Specialities,
                               as: "specialty",
@@ -223,7 +272,12 @@ patientRoutes.get(
                 pageTitle: "Panel del paciente | SaludVital",
                 activeNav: "home",
                 patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
+                patientPhotoUrl: patient?.profile_photo_url || null,
+                patient: patient ? patient.get({ plain: true }) : null,
                 nextAppointment,
+                upcomingAppointments: upcomingAppointments.map((appointment) =>
+                    appointment.get({ plain: true }),
+                ),
             });
         } catch (error) {
             return next(error);
@@ -240,7 +294,7 @@ patientRoutes.get(
         try {
             const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name"],
+                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
             });
             const storedAppointments = patient
                 ? await Appointment.findAll({
@@ -320,6 +374,22 @@ patientRoutes.get(
                     return appointment;
                 },
             );
+            // Keep the closest future confirmed appointments first and retain recent history after them.
+            const now = Date.now();
+            appointments.sort((first, second) => {
+                const firstDate = new Date(first.start_at).getTime();
+                const secondDate = new Date(second.start_at).getTime();
+                const firstIsUpcomingConfirmed =
+                    first.status?.name === "Confirmed" && firstDate > now;
+                const secondIsUpcomingConfirmed =
+                    second.status?.name === "Confirmed" && secondDate > now;
+
+                if (firstIsUpcomingConfirmed !== secondIsUpcomingConfirmed) {
+                    return firstIsUpcomingConfirmed ? -1 : 1;
+                }
+
+                return firstIsUpcomingConfirmed ? firstDate - secondDate : secondDate - firstDate;
+            });
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",
                 activeNav: "appointments",
@@ -331,6 +401,7 @@ patientRoutes.get(
                 patientName: patient?.first_name
                     ? `${patient.first_name} ${patient.last_name}`
                     : "Paciente",
+                patientPhotoUrl: patient?.profile_photo_url || null,
                 previewMode,
                 previewAvailable: process.env.NODE_ENV !== "production",
             });
@@ -350,7 +421,7 @@ patientRoutes.get(
             return res.render("patient/request-appointment", {
                 pageTitle: "Pedir una nueva cita | SaludVital",
                 activeNav: "book",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
             });
         } catch (error) {
             return next(error);
@@ -377,7 +448,7 @@ patientRoutes.get(
             return res.render("patient/reschedule-appointment", {
                 pageTitle: "Reprogramar cita | SaludVital",
                 activeNav: "reschedule",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 appointments,
                 selectedAppointmentId,
             });
@@ -398,9 +469,7 @@ patientRoutes.get(
                 pageTitle: "Notificaciones | SaludVital",
                 activeNav: "notifications",
                 welcomeMessage: "Configura tus notificaciones y mantente siempre informado.",
-                patientName: notificationSettings.patient
-                    ? `${notificationSettings.patient.first_name} ${notificationSettings.patient.last_name}`
-                    : await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 notificationEvents,
                 ...notificationSettings,
             });
@@ -569,7 +638,7 @@ patientRoutes.get(
                 pageTitle: "Historial clínico | SaludVital",
                 activeNav: "clinical-history",
                 welcomeMessage: "Aquí puedes consultar el registro de tus atenciones médicas.",
-                patientName: await getPatientName(req.auth.userId),
+                ...(await getPatientHeader(req.auth.userId)),
                 consultations,
                 totals: { consultations: consultations.length, ...totals },
                 previewMode,
@@ -598,6 +667,7 @@ patientRoutes.get(
                 welcomeMessage:
                     "Aquí puedes gestionar tu perfil y mantener tu información actualizada.",
                 patientName: `${profile.patient.first_name} ${profile.patient.last_name}`,
+                patientPhotoUrl: profile.patient.profile_photo_url,
                 ...profile,
                 departments,
                 currentDepartmentCode: currentDepartment?.code || "",

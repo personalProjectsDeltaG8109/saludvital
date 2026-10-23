@@ -29,8 +29,10 @@ html(lang="es")
                         aside.profile-overview
                             section.profile-card.profile-identity
                                 .profile-avatar-wrap
-                                    span.profile-avatar(
-                                        aria-hidden="true",
+                                    button.profile-avatar(
+                                        type="button",
+                                        aria-label="Ver foto de perfil ampliada",
+                                        data-open-photo,
                                         data-profile-initials=patient.first_name.charAt(0).toUpperCase() + patient.last_name.charAt(0).toUpperCase()
                                     )
                                         if patient.profile_photo_url
@@ -40,15 +42,33 @@ html(lang="es")
                                             )
                                         else
                                             = patient.first_name.charAt(0).toUpperCase() + patient.last_name.charAt(0).toUpperCase()
-                                    label.profile-avatar-upload(
-                                        for="profile-photo-input",
-                                        aria-label="Cambiar foto de perfil"
+                                    button.profile-avatar-upload(
+                                        type="button",
+                                        aria-label="Opciones de foto de perfil",
+                                        aria-expanded="false",
+                                        aria-controls="profile-photo-actions",
+                                        data-toggle-photo-actions
                                     )
                                         svg(viewBox="0 0 24 24", aria-hidden="true")
                                             path(
                                                 d="M4 7h3l2-2h6l2 2h3v12H4zM12 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"
                                             )
-                                        input#profile-photo-input(
+                                    #profile-photo-actions.profile-photo-actions(hidden)
+                                        button.profile-photo-action(
+                                            type="button",
+                                            data-open-photo,
+                                            disabled=!patient.profile_photo_url
+                                        ) Ver foto
+                                        button.profile-photo-action(
+                                            type="button",
+                                            data-trigger-photo
+                                        ) Subir foto
+                                        button.profile-photo-action.is-danger(
+                                            type="button",
+                                            data-delete-photo,
+                                            disabled=!patient.profile_photo_url
+                                        ) Eliminar foto
+                                        input#profile-photo-input.profile-photo-input(
                                             type="file",
                                             accept="image/jpeg,image/png,image/webp",
                                             data-profile-photo
@@ -69,24 +89,28 @@ html(lang="es")
                                     p
                                         span(aria-hidden="true") ◉
                                         span= patient.municipality + ", " + patient.department
-                            section.profile-card.profile-photo-card
-                                .profile-photo-heading
-                                    div
-                                        h2 Foto de perfil
-                                        p JPG, PNG o WEBP · máximo 2 MB
-                                .profile-photo-content
-                                    if patient.profile_photo_url
-                                        img.profile-photo-preview(
-                                            src=patient.profile_photo_url,
-                                            alt="Foto de perfil actual"
-                                        )
-                                    else
-                                        span.profile-photo-preview.profile-photo-placeholder(
-                                            aria-hidden="true"
-                                        )= patient.first_name.charAt(0).toUpperCase()
-                                    button.profile-photo-button(type="button", data-trigger-photo)
-                                        span(aria-hidden="true") ✎
-                                        | Cambiar foto
+                            section.profile-quick-actions(aria-label="Seguridad y preferencias")
+                                a.profile-quick-card(href="/forgot-password?source=profile")
+                                    span.profile-quick-icon.is-security(aria-hidden="true") ♙
+                                    span
+                                        strong Contraseña
+                                        small Mantén tu cuenta segura con una contraseña fuerte.
+                                    span.profile-quick-action Cambiar contraseña →
+                                a.profile-quick-card(href="/patient/notifications")
+                                    span.profile-quick-icon.is-notifications(aria-hidden="true") ♧
+                                    span
+                                        strong Preferencias de notificaciones
+                                        small Configura cómo quieres recibir recordatorios y novedades.
+                                    span.profile-quick-action Gestionar notificaciones →
+                                button.profile-quick-card.profile-delete-card(
+                                    type="button",
+                                    data-open-delete
+                                )
+                                    span.profile-quick-icon.is-danger(aria-hidden="true") ♲
+                                    span
+                                        strong Eliminar cuenta
+                                        small La cuenta se desactivará y se cerrará tu sesión.
+                                    span.profile-quick-action Eliminar cuenta →
                         .profile-main-column
                             section.profile-stats(aria-label="Resumen de actividad")
                                 article.profile-stat
@@ -155,9 +179,14 @@ html(lang="es")
                                             hidden,
                                             data-profile-form="personal"
                                         )
+                                            p.profile-required-legend Los campos marcados con * son obligatorios.
                                             .profile-form-grid
                                                 label
-                                                    span Nombres
+                                                    span
+                                                        | Nombres
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -166,7 +195,11 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Apellidos
+                                                    span
+                                                        | Apellidos
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -175,7 +208,11 @@ html(lang="es")
                                                         required
                                                     )
                                                 label
-                                                    span Correo electrónico
+                                                    span
+                                                        | Correo electrónico
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="email",
                                                         name="email",
@@ -185,7 +222,11 @@ html(lang="es")
                                                         autocomplete="email"
                                                     )
                                                 label
-                                                    span Teléfono
+                                                    span
+                                                        | Teléfono
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="tel",
                                                         name="phone",
@@ -194,35 +235,21 @@ html(lang="es")
                                                         pattern="[0-9]{7,15}",
                                                         required
                                                     )
-                                                label
-                                                    span Fecha de nacimiento
-                                                    input(
-                                                        type="date",
-                                                        name="date_of_birth",
-                                                        value=String(patient.date_of_birth).slice(0, 10),
-                                                        required
-                                                    )
-                                                label
-                                                    span Tipo de documento
-                                                    select(name="document_type", required)
-                                                        option(
-                                                            value="CC",
-                                                            selected=patient.document_type === "CC"
-                                                        ) Cédula de ciudadanía
-                                                        option(
-                                                            value="CE",
-                                                            selected=patient.document_type === "CE"
-                                                        ) Cédula de extranjería
-                                                label
-                                                    span Número de documento
-                                                    input(
-                                                        type="text",
-                                                        name="document_number",
-                                                        value=patient.document_number,
-                                                        maxlength="15",
-                                                        pattern="[0-9]{1,15}",
-                                                        required
-                                                    )
+                                                //- These identity fields are read-only for patient self-service.
+                                                .profile-locked-fields.profile-form-wide(
+                                                    role="note",
+                                                    aria-label="Datos de identificación que requieren un administrador"
+                                                )
+                                                    .profile-locked-field
+                                                        span Fecha de nacimiento
+                                                        strong= new Date(String(patient.date_of_birth).slice(0, 10) + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Bogota" })
+                                                    .profile-locked-field
+                                                        span Tipo de documento
+                                                        strong= patient.document_type === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"
+                                                    .profile-locked-field
+                                                        span Número de documento
+                                                        strong= patient.document_number
+                                                    p.profile-locked-help Para solicitar un cambio, comunícate con un administrador.
                                                 label.profile-form-wide
                                                     span Dirección de residencia
                                                     input(
@@ -232,7 +259,11 @@ html(lang="es")
                                                         maxlength="150"
                                                     )
                                                 label
-                                                    span Departamento
+                                                    span
+                                                        | Departamento
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     select(
                                                         name="department",
                                                         required,
@@ -244,7 +275,11 @@ html(lang="es")
                                                                 selected=department.code === currentDepartmentCode
                                                             )= department.name
                                                 label
-                                                    span Municipio
+                                                    span
+                                                        | Municipio
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     select(
                                                         name="municipality",
                                                         required,
@@ -264,9 +299,7 @@ html(lang="es")
                                 details.profile-card.profile-section(
                                     open,
                                     data-profile-section,
-                                    data-section="medical",
-                                    data-edit-dependent,
-                                    hidden
+                                    data-section="medical"
                                 )
                                     summary
                                         span.profile-section-icon.is-medical(aria-hidden="true") ♧
@@ -328,9 +361,7 @@ html(lang="es")
                                 details.profile-card.profile-section(
                                     open,
                                     data-profile-section,
-                                    data-section="emergency",
-                                    data-edit-dependent,
-                                    hidden
+                                    data-section="emergency"
                                 )
                                     summary
                                         span.profile-section-icon.is-emergency(aria-hidden="true") ♡
@@ -362,15 +393,23 @@ html(lang="es")
                                                     div
                                                         dt Correo electrónico
                                                         dd= emergencyContact.email || "Sin registrar"
+                                                    div
+                                                        dt Parentesco
+                                                        dd= emergencyContact.relationship || "Sin registrar"
                                             else
                                                 p.profile-no-emergency Aún no has agregado un contacto de emergencia.
                                         form.profile-edit-form(
                                             hidden,
                                             data-profile-form="emergency"
                                         )
+                                            p.profile-required-legend El contacto es opcional. Si lo agregas, nombres, apellidos y teléfono son obligatorios (*).
                                             .profile-form-grid
                                                 label
-                                                    span Nombres
+                                                    span
+                                                        | Nombres
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -378,7 +417,11 @@ html(lang="es")
                                                         maxlength="50"
                                                     )
                                                 label
-                                                    span Apellidos
+                                                    span
+                                                        | Apellidos
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -386,7 +429,11 @@ html(lang="es")
                                                         maxlength="50"
                                                     )
                                                 label
-                                                    span Teléfono
+                                                    span
+                                                        | Teléfono
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="tel",
                                                         name="phone",
@@ -416,28 +463,6 @@ html(lang="es")
                                                     data-cancel-section="emergency"
                                                 ) Cancelar
                                                 button.profile-save(type="submit") Guardar cambios
-                    section.profile-quick-actions(aria-label="Seguridad y preferencias")
-                        a.profile-quick-card(href="/forgot-password")
-                            span.profile-quick-icon.is-security(aria-hidden="true") ♙
-                            span
-                                strong Contraseña
-                                small Mantén tu cuenta segura con una contraseña fuerte.
-                            span.profile-quick-action Cambiar contraseña →
-                        a.profile-quick-card(href="/patient/notifications")
-                            span.profile-quick-icon.is-notifications(aria-hidden="true") ♧
-                            span
-                                strong Preferencias de notificaciones
-                                small Configura cómo quieres recibir recordatorios y novedades.
-                            span.profile-quick-action Gestionar notificaciones →
-                        button.profile-quick-card.profile-delete-card(
-                            type="button",
-                            data-open-delete
-                        )
-                            span.profile-quick-icon.is-danger(aria-hidden="true") ♲
-                            span
-                                strong Eliminar cuenta
-                                small La cuenta se desactivará y se cerrará tu sesión.
-                            span.profile-quick-action Eliminar cuenta →
                     p.profile-feedback(role="status", aria-live="polite", data-profile-feedback)
                     dialog.profile-delete-dialog(
                         data-delete-dialog,
@@ -477,4 +502,18 @@ html(lang="es")
                             .profile-form-actions
                                 button.profile-cancel(type="button", data-close-delete) Cancelar
                                 button.profile-delete-confirm(type="submit", disabled) Eliminar cuenta
+                    dialog.profile-image-dialog(
+                        aria-label="Foto de perfil ampliada",
+                        data-profile-image-dialog
+                    )
+                        button.profile-image-dialog-close(
+                            type="button",
+                            aria-label="Cerrar foto",
+                            data-close-profile-image
+                        ) ×
+                        img.profile-avatar-image.profile-image-dialog-content(
+                            src="",
+                            alt="Foto de perfil ampliada",
+                            data-profile-image-dialog-content
+                        )
                 include partials/bottom-nav

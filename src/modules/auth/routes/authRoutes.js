@@ -81,6 +81,11 @@ const passwordRecoveryLimiter = rateLimit({
             pageTitle: "Recuperar contraseña | SaludVital",
             error: "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
             success: null,
+            source: req.body?.source === "profile" ? "profile" : "login",
+            returnDestination:
+                req.body?.source === "profile"
+                    ? { href: "/patient/profile", label: "Volver a mi perfil" }
+                    : { href: "/login", label: "Volver a iniciar sesión" },
         });
     },
 });

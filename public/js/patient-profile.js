@@ -3,22 +3,16 @@
     if (!page) return;
 
     const sections = [...page.querySelectorAll("[data-profile-section]")];
-    const dependentSections = [...page.querySelectorAll("[data-edit-dependent]")];
     const feedback = page.querySelector("[data-profile-feedback]");
     const mobile = window.matchMedia("(max-width: 760px)");
-
-    const updateDependentSections = () => {
-        const personalForm = page.querySelector('[data-profile-form="personal"]');
-        dependentSections.forEach((section) => {
-            section.hidden = !mobile.matches && personalForm.hidden;
-            if (!section.hidden) section.open = mobile.matches ? false : true;
-        });
-    };
+    const municipality = page.querySelector("[data-profile-municipality]");
+    const originalMunicipalityOptions = municipality
+        ? [...municipality.options].map((option) => option.cloneNode(true))
+        : [];
 
     const setMobileSections = () => {
         if (mobile.matches) sections.forEach((section) => (section.open = false));
         else sections.forEach((section) => (section.open = true));
-        updateDependentSections();
     };
     setMobileSections();
     mobile.addEventListener("change", setMobileSections);
@@ -32,15 +26,24 @@
         const section = page.querySelector(`[data-profile-section][data-section="${sectionName}"]`);
         if (!section) return;
         const editing = Boolean(editButton);
+        const form = section.querySelector(`[data-profile-form="${sectionName}"]`);
         section.querySelector(`[data-readonly-section="${sectionName}"]`).hidden = editing;
-        section.querySelector(`[data-profile-form="${sectionName}"]`).hidden = !editing;
+        form.hidden = !editing;
         if (editing) section.open = true;
-        if (sectionName === "personal") updateDependentSections();
+        else {
+            // Discard unsaved values when the patient cancels editing a section.
+            form.reset();
+            if (sectionName === "personal" && municipality) {
+                municipality.replaceChildren(
+                    ...originalMunicipalityOptions.map((option) => option.cloneNode(true)),
+                );
+                municipality.disabled = false;
+            }
+        }
         if (feedback) feedback.textContent = "";
     });
 
     const department = page.querySelector("[data-profile-department]");
-    const municipality = page.querySelector("[data-profile-municipality]");
     department?.addEventListener("change", async () => {
         municipality.disabled = true;
         municipality.replaceChildren(new Option("Cargando municipios…", ""));
@@ -99,9 +102,54 @@
 
     const photoInput = page.querySelector("[data-profile-photo]");
     const deleteDialog = page.querySelector("[data-delete-dialog]");
+    const photoDialog = page.querySelector("[data-profile-image-dialog]");
+    const expandedPhoto = page.querySelector("[data-profile-image-dialog-content]");
     const photoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    const photoActions = page.querySelector("[data-toggle-photo-actions]");
+    const photoActionsMenu = page.querySelector("#profile-photo-actions");
 
-    page.querySelectorAll(".profile-avatar-image, .profile-photo-preview[src]").forEach((image) => {
+    // Toggle the profile photo actions and close the menu after choosing an action.
+    photoActions?.addEventListener("click", () => {
+        const isExpanded = photoActions.getAttribute("aria-expanded") === "true";
+        photoActions.setAttribute("aria-expanded", String(!isExpanded));
+        photoActionsMenu.hidden = isExpanded;
+    });
+
+    page.addEventListener("click", (event) => {
+        if (!photoActionsMenu?.hidden && !event.target.closest(".profile-avatar-wrap")) {
+            photoActionsMenu.hidden = true;
+            photoActions?.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    page.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && photoActionsMenu && !photoActionsMenu.hidden) {
+            photoActionsMenu.hidden = true;
+            photoActions?.setAttribute("aria-expanded", "false");
+        }
+    });
+
+    // Open the current profile photo in a keyboard-accessible dialog.
+    page.addEventListener("click", (event) => {
+        const photoButton = event.target.closest("[data-open-photo]");
+        if (photoButton) {
+            const photo = page.querySelector(".profile-avatar .profile-avatar-image");
+            if (!photo || !photoDialog || !expandedPhoto) return;
+            photoActionsMenu.hidden = true;
+            photoActions?.setAttribute("aria-expanded", "false");
+            expandedPhoto.src = photo.currentSrc || photo.src;
+            photoDialog.showModal();
+            return;
+        }
+
+        if (event.target.closest("[data-close-profile-image]")) photoDialog?.close();
+    });
+
+    photoDialog?.addEventListener("click", (event) => {
+        if (event.target === photoDialog) photoDialog.close();
+    });
+
+    page.querySelectorAll(".profile-avatar .profile-avatar-image").forEach((image) => {
         const showImageFallback = () => {
             if (image.classList.contains("profile-avatar-image")) {
                 image.parentElement.textContent = image.parentElement.dataset.profileInitials;
@@ -118,9 +166,35 @@
         if (image.complete && image.naturalWidth === 0) showImageFallback();
     });
 
-    page.querySelector("[data-trigger-photo]")?.addEventListener("click", () =>
-        photoInput?.click(),
-    );
+    page.querySelector("[data-trigger-photo]")?.addEventListener("click", () => {
+        photoActionsMenu.hidden = true;
+        photoActions?.setAttribute("aria-expanded", "false");
+        photoInput?.click();
+    });
+
+    // Remove the current profile image from storage and clear its patient record.
+    page.querySelector("[data-delete-photo]")?.addEventListener("click", async (event) => {
+        photoActionsMenu.hidden = true;
+        photoActions?.setAttribute("aria-expanded", "false");
+        if (!window.confirm("¿Deseas eliminar tu foto de perfil?")) return;
+
+        const button = event.currentTarget;
+        button.disabled = true;
+        try {
+            const response = await fetch("/api/patient/profile/photo", {
+                method: "DELETE",
+                headers: { Accept: "application/json" },
+                credentials: "same-origin",
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "No se pudo eliminar la foto.");
+            if (feedback) feedback.textContent = result.message;
+            window.setTimeout(() => window.location.reload(), 500);
+        } catch (error) {
+            if (feedback) feedback.textContent = error.message;
+            button.disabled = false;
+        }
+    });
 
     photoInput?.addEventListener("change", async () => {
         const file = photoInput.files?.[0];
