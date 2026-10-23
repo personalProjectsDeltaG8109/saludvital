@@ -388,9 +388,7 @@ patientRoutes.get(
                     return firstIsUpcomingConfirmed ? -1 : 1;
                 }
 
-                return firstIsUpcomingConfirmed
-                    ? firstDate - secondDate
-                    : secondDate - firstDate;
+                return firstIsUpcomingConfirmed ? firstDate - secondDate : secondDate - firstDate;
             });
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",

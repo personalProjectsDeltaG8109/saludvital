@@ -31,9 +31,11 @@
         });
     });
 
-    homeProfilePhotoDialog?.querySelectorAll("[data-close-home-profile-photo]").forEach((button) => {
-        button.addEventListener("click", () => homeProfilePhotoDialog.close());
-    });
+    homeProfilePhotoDialog
+        ?.querySelectorAll("[data-close-home-profile-photo]")
+        .forEach((button) => {
+            button.addEventListener("click", () => homeProfilePhotoDialog.close());
+        });
     homeProfilePhotoDialog?.addEventListener("click", (event) => {
         if (event.target === homeProfilePhotoDialog) homeProfilePhotoDialog.close();
     });
