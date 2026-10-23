@@ -12,6 +12,10 @@ import {
 import database from "../../../../config/database.js";
 import { Op } from "sequelize";
 import { AppointmentError } from "../errors/appointmentError.js";
+import {
+    cancelPendingAppointmentReminders,
+    enqueueAppointmentNotifications,
+} from "./notificationAutomationService.js";
 
 // Require at least thirty minutes of notice for booking or rescheduling.
 const MINIMUM_ADVANCE_MINUTES = 30;
@@ -811,6 +815,16 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
             { transaction },
         );
 
+        const reminderAt = new Date(startAt.getTime() - 24 * 60 * 60 * 1000);
+        if (reminderAt > new Date()) {
+            await enqueueAppointmentNotifications({
+                appointmentId: appointment.id,
+                eventType: "appointment_reminder",
+                scheduledAt: reminderAt,
+                transaction,
+            });
+        }
+
         return appointment;
     });
 }
@@ -939,6 +953,22 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
             { transaction },
         );
 
+        await cancelPendingAppointmentReminders(appointment.id, transaction);
+        await enqueueAppointmentNotifications({
+            appointmentId: appointment.id,
+            eventType: "appointment_reschedule",
+            transaction,
+        });
+        const reminderAt = new Date(startAt.getTime() - 24 * 60 * 60 * 1000);
+        if (reminderAt > new Date()) {
+            await enqueueAppointmentNotifications({
+                appointmentId: appointment.id,
+                eventType: "appointment_reminder",
+                scheduledAt: reminderAt,
+                transaction,
+            });
+        }
+
         return appointment;
     });
 }
@@ -1006,6 +1036,13 @@ export async function cancelPatientAppointment({ userId, appointmentId }) {
             },
             { transaction },
         );
+
+        await cancelPendingAppointmentReminders(appointment.id, transaction);
+        await enqueueAppointmentNotifications({
+            appointmentId: appointment.id,
+            eventType: "appointment_cancellation",
+            transaction,
+        });
 
         return appointment;
     });
