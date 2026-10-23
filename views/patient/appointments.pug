@@ -80,7 +80,7 @@ html(lang="es")
                                         each appointment in appointments
                                             - const date = new Date(appointment.start_at);
                                             - const status = (appointment.status && appointment.status.name) || "Confirmed";
-                                            - const doctorName = appointment.doctor_label || (appointment.doctor ? `Médico #${appointment.doctor.id}` : "Médico asignado");
+                                            - const doctorName = appointment.doctor_label || (appointment.doctor && appointment.doctor.display_name) || "Médico asignado";
                                             - const statusClass = status === "In Progress" ? "in-progress" : status.toLowerCase();
                                             - const statusLabel = status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : "Confirmada";
                                             //- Only confirmed future appointments with remaining attempts can be rescheduled.
@@ -103,7 +103,19 @@ html(lang="es")
                                                     span.appointment-time= date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" })
                                                 td(data-label="Especialidad")
                                                     strong= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
-                                                td(data-label="Médico")= doctorName
+                                                td(data-label="Médico")
+                                                    .appointment-doctor-cell
+                                                        if appointment.doctor && appointment.doctor.profile_photo_url
+                                                            img.appointment-doctor-photo(
+                                                                src=appointment.doctor.profile_photo_url,
+                                                                alt="Foto de " + doctorName,
+                                                                loading="lazy"
+                                                            )
+                                                        else
+                                                            span.appointment-doctor-photo-fallback(
+                                                                aria-hidden="true"
+                                                            )= doctorName.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                        span= doctorName
                                                 td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
                                                 td(data-label="Estado")
                                                     span.appointment-status(class="status-" + statusClass)= statusLabel

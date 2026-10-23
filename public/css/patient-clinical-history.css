@@ -270,6 +270,22 @@
     background: #e2f2ff;
 }
 
+/* Show the responsible doctor's portrait in the consultation list. */
+.clinical-doctor-avatar {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border: 1px solid #d8e8f5;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #e2f2ff;
+}
+
+.clinical-doctor-avatar-detail {
+    width: 54px;
+    height: 54px;
+}
+
 .clinical-card-icon svg {
     width: 30px;
     height: 30px;
@@ -352,7 +368,8 @@
 }
 
 .clinical-detail-record[hidden],
-.clinical-detail-content[hidden] {
+.clinical-detail-content[hidden],
+.clinical-detail-placeholder[hidden] {
     display: none;
 }
 
@@ -382,6 +399,24 @@
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
+}
+
+/* Keep the detail close action readable beside the print control. */
+.clinical-close-detail-button {
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid #d6e7f6;
+    border-radius: 8px;
+    color: #123b73;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.clinical-close-detail-button:hover {
+    border-color: #168de2;
+    color: #168de2;
 }
 
 .clinical-print-button svg {

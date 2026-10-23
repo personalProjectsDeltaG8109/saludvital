@@ -2,6 +2,7 @@ import {
     Appointment,
     Consultation,
     Diagnosis,
+    Doctor,
     Patient,
     Prescription,
     PrescriptionItem,
@@ -54,6 +55,11 @@ export async function getPatientClinicalHistory(userId) {
             },
             { model: Diagnosis, as: "diagnoses" },
             {
+                model: Doctor,
+                as: "doctor",
+                attributes: ["id", "display_name", "profile_photo_url"],
+            },
+            {
                 model: Prescription,
                 as: "prescriptions",
                 include: [{ model: PrescriptionItem, as: "items" }],
@@ -74,7 +80,10 @@ export async function getPatientClinicalHistory(userId) {
                 endedAt ? ` - ${formatConsultationTime(endedAt)}` : ""
             }`,
             specialty_label: record.appointment?.specialty?.name || "Consulta médica",
-            doctor_label: "Profesional de salud",
+            // Identify the responsible clinician without exposing account details.
+            doctor_label: record.doctor?.display_name || "Profesional de salud",
+            // Return only the configured public image path for the responsible doctor.
+            doctor_photo_url: record.doctor?.profile_photo_url || null,
             diagnoses: record.diagnoses || [],
             prescriptions: record.prescriptions || [],
         };

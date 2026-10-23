@@ -61,7 +61,7 @@ html(lang="es")
                                         tbody
                                             each appointment in appointments
                                                 - const startAt = new Date(appointment.start_at);
-                                                - const doctorName = appointment.doctor_label || "Médico asignado";
+                                                - const doctorName = appointment.doctor_label || (appointment.doctor && appointment.doctor.display_name) || "Médico asignado";
                                                 - const specialtyName = appointment.specialty ? appointment.specialty.name : "Consulta médica";
                                                 - const reschedulesUsed = (appointment.history || []).filter((event) => event.event_type === "Rescheduled").length;
                                                 tr.reschedule-appointment-row(
