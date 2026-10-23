@@ -289,16 +289,41 @@
 
 /* Crop patient profile photos inside the shared topbar avatar. */
 .sv-avatar {
+    box-sizing: border-box;
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    min-height: 45px;
+    flex: 0 0 45px;
+    aspect-ratio: 1;
     position: relative;
     overflow: hidden;
+    clip-path: circle(50%);
 }
 
-.sv-avatar-image {
+/* Reuse one square, circular crop rule for every patient and doctor portrait. */
+.profile-avatar-image {
     width: 100%;
     height: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    max-width: none;
     display: block;
-    border-radius: inherit;
+    border-radius: 50%;
     object-fit: cover;
+    object-position: center;
+}
+
+.sv-profile-photo-dialog .profile-avatar-image,
+.profile-image-dialog .profile-avatar-image {
+    width: min(280px, calc(100dvh - 110px), 100%);
+    height: min(280px, calc(100dvh - 110px), 100%);
+    min-width: 0;
+    min-height: 0;
+    margin: 0 auto;
+    aspect-ratio: 1;
+    border: 3px solid #ffffffb3;
+    background: #e4f3ff;
 }
 
 .sv-user-chip strong,
@@ -590,13 +615,11 @@
 }
 
 /* Show the assigned doctor's portrait beside their name on the dashboard. */
-.sv-appointment-info .sv-appointment-doctor-photo {
+.sv-appointment-info .sv-appointment-doctor-photo-trigger {
     width: 34px;
     height: 34px;
     flex: 0 0 34px;
     border: 2px solid #d8ecfb;
-    border-radius: 50%;
-    object-fit: cover;
 }
 
 .sv-status {
@@ -888,21 +911,15 @@
     cursor: zoom-in;
 }
 
-.sv-profile-photo-trigger img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-}
-
 .sv-profile-photo-dialog {
-    width: min(900px, calc(100vw - 28px));
+    width: min(340px, calc(100vw - 32px));
     max-width: none;
-    max-height: calc(100dvh - 28px);
+    max-height: calc(100dvh - 32px);
     position: fixed;
     inset: 50% auto auto 50%;
     margin: 0;
-    padding: 48px 14px 14px;
+    padding: 48px 16px 16px;
+    overflow: hidden;
     border: 1px solid #ffffff50;
     border-radius: 16px;
     background: #071c36;
@@ -916,11 +933,7 @@
 }
 
 .sv-profile-photo-dialog>img {
-    width: 100%;
-    max-height: calc(100dvh - 90px);
-    display: block;
-    border-radius: 8px;
-    object-fit: contain;
+    aspect-ratio: 1;
 }
 
 .sv-profile-photo-close {

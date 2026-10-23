@@ -84,11 +84,18 @@ html(lang="es")
                                                 strong= nextAppointment.specialty.name
                                             p
                                                 if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
-                                                    img.sv-appointment-doctor-photo(
-                                                        src=nextAppointment.doctor.profile_photo_url,
-                                                        alt="Foto de " + nextAppointment.doctor_label,
-                                                        loading="lazy"
+                                                    button.sv-appointment-doctor-photo-trigger(
+                                                        type="button",
+                                                        aria-label="Ver foto de " + nextAppointment.doctor_label,
+                                                        aria-haspopup="dialog",
+                                                        data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
+                                                        data-doctor-name=nextAppointment.doctor_label
                                                     )
+                                                        img.profile-avatar-image(
+                                                            src=nextAppointment.doctor.profile_photo_url,
+                                                            alt="",
+                                                            loading="lazy"
+                                                        )
                                                 else
                                                     svg(viewBox="0 0 24 24", aria-hidden="true")
                                                         path(
@@ -140,13 +147,22 @@ html(lang="es")
                                                 h2(id="appointment-details-title-" + appointmentId)= nextAppointment.specialty.name
                                                 .appointment-dialog-doctor
                                                     if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
-                                                        img.appointment-dialog-doctor-photo(
-                                                            src=nextAppointment.doctor.profile_photo_url,
-                                                            alt="Foto de " + nextAppointment.doctor_label,
-                                                            loading="lazy"
+                                                        button.appointment-dialog-doctor-photo-trigger(
+                                                            type="button",
+                                                            aria-label="Ver foto de " + nextAppointment.doctor_label,
+                                                            aria-haspopup="dialog",
+                                                            data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
+                                                            data-doctor-name=nextAppointment.doctor_label
                                                         )
+                                                            img.profile-avatar-image(
+                                                                src=nextAppointment.doctor.profile_photo_url,
+                                                                alt="",
+                                                                loading="lazy"
+                                                            )
                                                     else
-                                                        span.appointment-dialog-doctor-avatar(aria-hidden="true")= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                        span.appointment-dialog-doctor-avatar(
+                                                            aria-hidden="true"
+                                                        )= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
                                                     p= nextAppointment.doctor_label
                                             button.appointment-dialog-close(
                                                 type="button",
@@ -240,7 +256,9 @@ html(lang="es")
                                                         td= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
                                                         td= (appointment.doctor && appointment.doctor.display_name) || "Médico asignado"
                                                         td
-                                                            span(class=recentStatusClass ? "sv-status " + recentStatusClass : "sv-status")= recentStatusLabel
+                                                            span(
+                                                                class=recentStatusClass ? "sv-status " + recentStatusClass : "sv-status"
+                                                            )= recentStatusLabel
                                             else
                                                 tr
                                                     td(colspan="4") No tienes próximas citas confirmadas.
@@ -299,11 +317,7 @@ html(lang="es")
                                                 aria-label="Ver mi foto de perfil ampliada",
                                                 data-open-home-profile-photo
                                             )
-                                                img(
-                                                    src=patientPhotoUrl,
-                                                    alt="",
-                                                    loading="lazy"
-                                                )
+                                                img(src=patientPhotoUrl, alt="", loading="lazy")
                                         else
                                             span.sv-profile-photo-fallback(aria-hidden="true")= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                         small Paciente
@@ -320,11 +334,22 @@ html(lang="es")
                             aria-label="Cerrar foto",
                             data-close-home-profile-photo
                         ) ×
-                        img(
+                        img.profile-avatar-image(
                             src=patientPhotoUrl,
                             alt="Foto de perfil de " + patientName,
                             data-home-profile-photo-image
                         )
+                if nextAppointment && nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                    dialog.doctor-photo-viewer-dialog(
+                        aria-label="Foto del médico ampliada",
+                        data-doctor-photo-viewer
+                    )
+                        button.doctor-photo-viewer-close(
+                            type="button",
+                            aria-label="Cerrar foto",
+                            data-close-doctor-photo-viewer
+                        ) ×
+                        img(src="", alt="", data-doctor-photo-viewer-image)
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/patient-appointments.js", defer)

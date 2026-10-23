@@ -15,6 +15,7 @@ import {
 } from "../controllers/notificationController.js";
 import {
     deletePatientAccount,
+    removePatientProfilePhoto,
     savePatientProfile,
     savePatientProfilePhoto,
 } from "../controllers/profileController.js";
@@ -83,6 +84,13 @@ patientRoutes.post(
     authenticateToken,
     requireRole("Patient"),
     savePatientProfilePhoto,
+);
+
+patientRoutes.delete(
+    "/api/patient/profile/photo",
+    authenticateToken,
+    requireRole("Patient"),
+    removePatientProfilePhoto,
 );
 
 patientRoutes.delete(

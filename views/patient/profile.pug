@@ -42,15 +42,33 @@ html(lang="es")
                                             )
                                         else
                                             = patient.first_name.charAt(0).toUpperCase() + patient.last_name.charAt(0).toUpperCase()
-                                    label.profile-avatar-upload(
-                                        for="profile-photo-input",
-                                        aria-label="Cambiar foto de perfil"
+                                    button.profile-avatar-upload(
+                                        type="button",
+                                        aria-label="Opciones de foto de perfil",
+                                        aria-expanded="false",
+                                        aria-controls="profile-photo-actions",
+                                        data-toggle-photo-actions
                                     )
                                         svg(viewBox="0 0 24 24", aria-hidden="true")
                                             path(
                                                 d="M4 7h3l2-2h6l2 2h3v12H4zM12 10a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"
                                             )
-                                        input#profile-photo-input(
+                                    #profile-photo-actions.profile-photo-actions(hidden)
+                                        button.profile-photo-action(
+                                            type="button",
+                                            data-open-photo,
+                                            disabled=!patient.profile_photo_url
+                                        ) Ver foto
+                                        button.profile-photo-action(
+                                            type="button",
+                                            data-trigger-photo
+                                        ) Subir foto
+                                        button.profile-photo-action.is-danger(
+                                            type="button",
+                                            data-delete-photo,
+                                            disabled=!patient.profile_photo_url
+                                        ) Eliminar foto
+                                        input#profile-photo-input.profile-photo-input(
                                             type="file",
                                             accept="image/jpeg,image/png,image/webp",
                                             data-profile-photo
@@ -71,31 +89,8 @@ html(lang="es")
                                     p
                                         span(aria-hidden="true") ◉
                                         span= patient.municipality + ", " + patient.department
-                            section.profile-card.profile-photo-card
-                                .profile-photo-heading
-                                    div
-                                        h2 Foto de perfil
-                                        p JPG, PNG o WEBP · máximo 2 MB
-                                .profile-photo-content
-                                    if patient.profile_photo_url
-                                        button.profile-photo-preview-button(
-                                            type="button",
-                                            aria-label="Ver foto de perfil ampliada",
-                                            data-open-photo
-                                        )
-                                            img.profile-photo-preview(
-                                                src=patient.profile_photo_url,
-                                                alt=""
-                                            )
-                                    else
-                                        span.profile-photo-preview.profile-photo-placeholder(
-                                            aria-hidden="true"
-                                        )= patient.first_name.charAt(0).toUpperCase()
-                                    button.profile-photo-button(type="button", data-trigger-photo)
-                                        span(aria-hidden="true") ✎
-                                        | Cambiar foto
                             section.profile-quick-actions(aria-label="Seguridad y preferencias")
-                                a.profile-quick-card(href="/forgot-password")
+                                a.profile-quick-card(href="/forgot-password?source=profile")
                                     span.profile-quick-icon.is-security(aria-hidden="true") ♙
                                     span
                                         strong Contraseña
@@ -189,7 +184,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Nombres
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -200,7 +197,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Apellidos
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -211,7 +210,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Correo electrónico
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="email",
                                                         name="email",
@@ -223,7 +224,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Teléfono
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="tel",
                                                         name="phone",
@@ -235,7 +238,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Fecha de nacimiento
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="date",
                                                         name="date_of_birth",
@@ -245,7 +250,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Tipo de documento
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     select(name="document_type", required)
                                                         option(
                                                             value="CC",
@@ -258,7 +265,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Número de documento
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="document_number",
@@ -278,7 +287,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Departamento
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     select(
                                                         name="department",
                                                         required,
@@ -292,7 +303,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Municipio
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     select(
                                                         name="municipality",
                                                         required,
@@ -420,7 +433,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Nombres
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="first_name",
@@ -430,7 +445,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Apellidos
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="text",
                                                         name="last_name",
@@ -440,7 +457,9 @@ html(lang="es")
                                                 label
                                                     span
                                                         | Teléfono
-                                                        span.profile-required-mark(aria-hidden="true")  *
+                                                        span.profile-required-mark(
+                                                            aria-hidden="true"
+                                                        ) *
                                                     input(
                                                         type="tel",
                                                         name="phone",
@@ -518,7 +537,7 @@ html(lang="es")
                             aria-label="Cerrar foto",
                             data-close-profile-image
                         ) ×
-                        img.profile-image-dialog-content(
+                        img.profile-avatar-image.profile-image-dialog-content(
                             src="",
                             alt="Foto de perfil ampliada",
                             data-profile-image-dialog-content

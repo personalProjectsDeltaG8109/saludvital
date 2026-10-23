@@ -24,7 +24,7 @@ header.sv-topbar
         a.sv-user-chip(href="/patient/profile", aria-label="Abrir mi perfil")
             span.sv-avatar(aria-hidden="true")
                 if patientPhotoUrl
-                    img.sv-avatar-image(src=patientPhotoUrl, alt="")
+                    img.profile-avatar-image(src=patientPhotoUrl, alt="")
                 else
                     = patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
             span

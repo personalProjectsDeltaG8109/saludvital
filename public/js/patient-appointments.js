@@ -1,6 +1,26 @@
 ﻿(() => {
     const rows = [...document.querySelectorAll("[data-appointment]")];
     const homeProfilePhotoDialog = document.querySelector("[data-home-profile-photo]");
+    const doctorPhotoDialog = document.querySelector("[data-doctor-photo-viewer]");
+    const doctorPhotoImage = doctorPhotoDialog?.querySelector("[data-doctor-photo-viewer-image]");
+
+    // Show a selected doctor's portrait in the shared centered photo viewer.
+    document.querySelectorAll("[data-open-doctor-photo]").forEach((button) => {
+        button.addEventListener("click", () => {
+            if (!(doctorPhotoDialog instanceof HTMLDialogElement) || !doctorPhotoImage) return;
+
+            doctorPhotoImage.src = button.dataset.openDoctorPhoto;
+            doctorPhotoImage.alt = `Foto de ${button.dataset.doctorName || "médico"}`;
+            doctorPhotoDialog.showModal();
+        });
+    });
+
+    doctorPhotoDialog?.querySelectorAll("[data-close-doctor-photo-viewer]").forEach((button) => {
+        button.addEventListener("click", () => doctorPhotoDialog.close());
+    });
+    doctorPhotoDialog?.addEventListener("click", (event) => {
+        if (event.target === doctorPhotoDialog) doctorPhotoDialog.close();
+    });
 
     // Open the patient's profile photo from the dashboard profile card.
     document.querySelectorAll("[data-open-home-profile-photo]").forEach((button) => {

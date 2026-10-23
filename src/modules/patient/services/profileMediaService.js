@@ -80,6 +80,16 @@ export async function updatePatientProfilePhoto(userId, dataUrl) {
     return photoUrl;
 }
 
+// Clear the authenticated patient's photo and remove its stored file when applicable.
+export async function deletePatientProfilePhoto(userId) {
+    const patient = await Patient.findOne({ where: { user_id: userId } });
+    if (!patient) throw profileError("No se encontró el perfil del paciente.", 404);
+
+    const previousPhotoUrl = patient.profile_photo_url;
+    await patient.update({ profile_photo_url: null });
+    await removeStoredPhoto(previousPhotoUrl);
+}
+
 export async function deactivatePatientAccount(userId, password) {
     if (typeof password !== "string" || !password) {
         throw profileError("Ingresa tu contraseña para confirmar la eliminación.");

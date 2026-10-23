@@ -130,13 +130,23 @@
     position: relative;
     width: 76px;
     height: 76px;
+    min-width: 76px;
+    flex: 0 0 76px;
+    aspect-ratio: 1;
 }
 
 .profile-avatar {
+    box-sizing: border-box;
     width: 76px;
     height: 76px;
+    min-width: 76px;
+    min-height: 76px;
+    max-width: 76px;
+    max-height: 76px;
     display: grid;
     place-items: center;
+    padding: 0;
+    overflow: hidden;
     grid-row: span 1;
     border: 5px solid #e4f3ff;
     border-radius: 50%;
@@ -146,14 +156,6 @@
     font-weight: 800;
     cursor: zoom-in;
     appearance: none;
-}
-
-.profile-avatar-image {
-    width: 100%;
-    height: 100%;
-    display: block;
-    border-radius: inherit;
-    object-fit: cover;
 }
 
 .profile-avatar-upload {
@@ -169,6 +171,7 @@
     color: #fff;
     background: var(--profile-blue);
     cursor: pointer;
+    appearance: none;
 }
 
 .profile-avatar-upload svg {
@@ -181,7 +184,7 @@
     stroke-linejoin: round;
 }
 
-.profile-avatar-upload input {
+.profile-photo-input {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -189,6 +192,60 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     clip-path: inset(50%);
+}
+
+/* Anchor the three photo actions to the avatar control on every screen size. */
+.profile-photo-actions {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 8px);
+    left: 0;
+    width: max-content;
+    min-width: 150px;
+    padding: 6px;
+    display: grid;
+    gap: 3px;
+    border: 1px solid #d7e8f7;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 12px 30px #123b7326;
+}
+
+.profile-photo-actions[hidden] {
+    display: none;
+}
+
+.profile-photo-action {
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    color: var(--profile-ink);
+    background: transparent;
+    text-align: left;
+    font: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+}
+
+.profile-photo-action:hover:not(:disabled),
+.profile-photo-action:focus-visible {
+    background: #eaf5ff;
+}
+
+.profile-photo-action.is-danger {
+    color: #b42332;
+}
+
+.profile-photo-action:disabled {
+    color: #8b9aab;
+    cursor: not-allowed;
+}
+
+.profile-photo-action:focus-visible,
+.profile-avatar-upload:focus-visible {
+    outline: 3px solid #13b8b0;
+    outline-offset: 3px;
 }
 
 .profile-identity-copy {
@@ -240,67 +297,6 @@
     gap: 11px;
     background: #eafbf4;
     border-color: #d7f4e8;
-}
-
-.profile-photo-card {
-    padding: 14px;
-}
-
-.profile-photo-heading h2 {
-    margin: 0 0 4px;
-    font-size: .94rem;
-}
-
-.profile-photo-heading p {
-    margin: 0;
-    color: #607695;
-    font-size: .7rem;
-}
-
-.profile-photo-content {
-    margin-top: 11px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.profile-photo-preview {
-    width: 68px;
-    height: 68px;
-    flex: 0 0 auto;
-    border: 4px solid #e8f5ff;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.profile-photo-preview-button {
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    cursor: zoom-in;
-}
-
-.profile-photo-placeholder {
-    display: grid;
-    place-items: center;
-    color: #0879d0;
-    background: #e4f3ff;
-    font-size: 1.5rem;
-    font-weight: 800;
-}
-
-.profile-photo-button {
-    min-height: 38px;
-    padding: 7px 12px;
-    border: 1px solid var(--profile-blue);
-    border-radius: 8px;
-    color: var(--profile-blue);
-    background: #fff;
-    font: inherit;
-    font-size: .78rem;
-    font-weight: 700;
-    cursor: pointer;
 }
 
 .profile-account-status.is-unverified {
@@ -629,14 +625,14 @@
 }
 
 .profile-image-dialog {
-    width: min(900px, calc(100vw - 28px));
+    width: min(340px, calc(100vw - 32px));
     max-width: none;
-    max-height: calc(100dvh - 28px);
+    max-height: calc(100dvh - 32px);
     position: fixed;
     inset: 50% auto auto 50%;
     margin: 0;
-    padding: 48px 14px 14px;
-    overflow: visible;
+    padding: 48px 16px 16px;
+    overflow: hidden;
     border: 1px solid #ffffff50;
     border-radius: 16px;
     background: #071c36;
@@ -650,11 +646,7 @@
 }
 
 .profile-image-dialog-content {
-    width: 100%;
-    max-height: calc(100dvh - 90px);
-    display: block;
-    border-radius: 8px;
-    object-fit: contain;
+    aspect-ratio: 1;
 }
 
 .profile-image-dialog-close {
@@ -888,10 +880,6 @@
         grid-template-columns: 76px minmax(0, 1fr);
         gap: 8px 12px;
         border-radius: 13px;
-    }
-
-    .profile-photo-card {
-        display: none;
     }
 
     .profile-avatar {
