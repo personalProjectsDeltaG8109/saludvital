@@ -87,6 +87,28 @@ html(lang="es")
                                     button.profile-photo-button(type="button", data-trigger-photo)
                                         span(aria-hidden="true") ✎
                                         | Cambiar foto
+                            section.profile-quick-actions(aria-label="Seguridad y preferencias")
+                                a.profile-quick-card(href="/forgot-password")
+                                    span.profile-quick-icon.is-security(aria-hidden="true") ♙
+                                    span
+                                        strong Contraseña
+                                        small Mantén tu cuenta segura con una contraseña fuerte.
+                                    span.profile-quick-action Cambiar contraseña →
+                                a.profile-quick-card(href="/patient/notifications")
+                                    span.profile-quick-icon.is-notifications(aria-hidden="true") ♧
+                                    span
+                                        strong Preferencias de notificaciones
+                                        small Configura cómo quieres recibir recordatorios y novedades.
+                                    span.profile-quick-action Gestionar notificaciones →
+                                button.profile-quick-card.profile-delete-card(
+                                    type="button",
+                                    data-open-delete
+                                )
+                                    span.profile-quick-icon.is-danger(aria-hidden="true") ♲
+                                    span
+                                        strong Eliminar cuenta
+                                        small La cuenta se desactivará y se cerrará tu sesión.
+                                    span.profile-quick-action Eliminar cuenta →
                         .profile-main-column
                             section.profile-stats(aria-label="Resumen de actividad")
                                 article.profile-stat
@@ -441,28 +463,6 @@ html(lang="es")
                                                     data-cancel-section="emergency"
                                                 ) Cancelar
                                                 button.profile-save(type="submit") Guardar cambios
-                    section.profile-quick-actions(aria-label="Seguridad y preferencias")
-                        a.profile-quick-card(href="/forgot-password")
-                            span.profile-quick-icon.is-security(aria-hidden="true") ♙
-                            span
-                                strong Contraseña
-                                small Mantén tu cuenta segura con una contraseña fuerte.
-                            span.profile-quick-action Cambiar contraseña →
-                        a.profile-quick-card(href="/patient/notifications")
-                            span.profile-quick-icon.is-notifications(aria-hidden="true") ♧
-                            span
-                                strong Preferencias de notificaciones
-                                small Configura cómo quieres recibir recordatorios y novedades.
-                            span.profile-quick-action Gestionar notificaciones →
-                        button.profile-quick-card.profile-delete-card(
-                            type="button",
-                            data-open-delete
-                        )
-                            span.profile-quick-icon.is-danger(aria-hidden="true") ♲
-                            span
-                                strong Eliminar cuenta
-                                small La cuenta se desactivará y se cerrará tu sesión.
-                            span.profile-quick-action Eliminar cuenta →
                     p.profile-feedback(role="status", aria-live="polite", data-profile-feedback)
                     dialog.profile-delete-dialog(
                         data-delete-dialog,

@@ -541,6 +541,23 @@
     gap: 12px;
 }
 
+.profile-overview .profile-quick-actions {
+    margin-bottom: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+
+.profile-overview .profile-quick-card {
+    padding: 11px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 3px 9px;
+}
+
+.profile-overview .profile-quick-icon {
+    width: 36px;
+    height: 36px;
+}
+
 .profile-quick-card {
     min-width: 0;
     padding: 14px;
@@ -802,6 +819,7 @@
         width: 100%;
         grid-template-columns: minmax(0, 1fr);
         gap: 7px;
+        order: 1;
     }
 
     .profile-identity {
@@ -1004,12 +1022,22 @@
     }
 
     .profile-quick-actions {
+        width: 100%;
         margin-top: 8px;
         grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        order: 2;
+    }
+
+    .profile-overview .profile-quick-card {
+        padding: 7px 10px;
+        grid-template-columns: 32px minmax(0, 1fr) auto;
         gap: 7px;
+
     }
 
     .profile-quick-card {
+        width: 100%;
         min-height: 48px;
         padding: 7px 10px;
         grid-template-columns: 32px minmax(0, 1fr) auto;
@@ -1026,6 +1054,11 @@
         height: 31px;
         grid-row: auto;
         font-size: .95rem;
+    }
+
+    .profile-overview .profile-quick-icon {
+        width: 31px;
+        height: 31px;
     }
 
     .profile-quick-card strong {
