@@ -627,12 +627,16 @@
     width: min(900px, calc(100vw - 28px));
     max-width: none;
     max-height: calc(100dvh - 28px);
+    position: fixed;
+    inset: 50% auto auto 50%;
+    margin: 0;
     padding: 48px 14px 14px;
     overflow: visible;
     border: 1px solid #ffffff50;
     border-radius: 16px;
     background: #071c36;
     box-shadow: 0 20px 70px #082f5580;
+    transform: translate(-50%, -50%);
 }
 
 .profile-image-dialog::backdrop {
