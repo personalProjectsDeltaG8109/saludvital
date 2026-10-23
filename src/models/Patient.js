@@ -28,6 +28,18 @@ const Patient = database.define(
             type: DataTypes.STRING(15),
             allowNull: false,
         },
+        // Keep notification destinations separate from account contact details.
+        notification_phone: {
+            type: DataTypes.STRING(20),
+            allowNull: true,
+        },
+        notification_email: {
+            type: DataTypes.STRING(254),
+            allowNull: true,
+            validate: {
+                isEmail: true,
+            },
+        },
         date_of_birth: {
             type: DataTypes.DATEONLY,
             allowNull: false,

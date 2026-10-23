@@ -1,10 +1,8 @@
-import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import {
     Notification,
     NotificationPreference,
     Patient,
-    WhatsAppVerification,
 } from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
@@ -52,6 +50,26 @@ const historyEventLabels = {
     promotion: "Novedades y promociones",
 };
 
+function validateNotificationContacts(contacts = {}) {
+    const phone = typeof contacts.phone === "string"
+        ? contacts.phone.trim().replaceAll(/[\s()-]/g, "")
+        : "";
+    const email = typeof contacts.email === "string" ? contacts.email.trim().toLowerCase() : "";
+
+    if (!/^\+?\d{7,15}$/.test(phone)) {
+        const error = new Error("Ingresa un número válido para recibir SMS y WhatsApp.");
+        error.status = 400;
+        throw error;
+    }
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const error = new Error("Ingresa un correo válido para recibir notificaciones.");
+        error.status = 400;
+        throw error;
+    }
+
+    return { phone, email };
+}
+
 function normalizeEventType(eventType) {
     const normalized = String(eventType || "")
         .toLowerCase()
@@ -85,29 +103,32 @@ function toHistoryItem(notification) {
 export async function getPatientNotificationSettings(userId) {
     const patient = await Patient.findOne({
         where: { user_id: userId },
-        attributes: ["id", "first_name", "last_name", "phone"],
+        attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "phone",
+            "notification_phone",
+            "notification_email",
+        ],
         include: [{ association: "user", attributes: ["email"] }],
     });
 
     if (!patient) {
         return {
             patient: null,
+            notificationContacts: { phone: "", email: "" },
             preferences: [],
             history: [],
-            whatsappVerified: false,
         };
     }
 
-    const [storedPreferences, notifications, verifiedWhatsApp] = await Promise.all([
+    const [storedPreferences, notifications] = await Promise.all([
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
         Notification.findAll({
             where: { patient_id: patient.id },
             order: [["scheduled_at", "DESC"]],
             limit: 20,
-        }),
-        WhatsAppVerification.findOne({
-            where: { patient_id: patient.id, verified_at: { [Op.ne]: null }, invalidated_at: null },
-            order: [["verified_at", "DESC"]],
         }),
     ]);
 
@@ -140,13 +161,17 @@ export async function getPatientNotificationSettings(userId) {
 
     return {
         patient: patient.get({ plain: true }),
+        notificationContacts: {
+            phone: patient.notification_phone || patient.phone,
+            email: patient.notification_email || patient.user.email,
+        },
         preferences,
         history: notifications.map(toHistoryItem),
-        whatsappVerified: Boolean(verifiedWhatsApp),
     };
 }
 
-export async function updatePatientNotificationPreferences(userId, updates) {
+export async function updatePatientNotificationPreferences(userId, updates, contacts) {
+    const notificationContacts = validateNotificationContacts(contacts);
     const expectedPreferenceCount = notificationChannels.length * notificationEvents.length;
     if (!Array.isArray(updates) || updates.length !== expectedPreferenceCount) {
         const error = new Error("La configuración de notificaciones no es válida.");
@@ -199,6 +224,15 @@ export async function updatePatientNotificationPreferences(userId, updates) {
     }
 
     await database.transaction(async (transaction) => {
+        // Keep notification destinations separate from profile and login contact details.
+        await patient.update(
+            {
+                notification_phone: notificationContacts.phone,
+                notification_email: notificationContacts.email,
+            },
+            { transaction },
+        );
+
         for (const update of updates) {
             await NotificationPreference.upsert(
                 {
@@ -212,5 +246,5 @@ export async function updatePatientNotificationPreferences(userId, updates) {
         }
     });
 
-    return updates;
+    return { preferences: updates, notificationContacts };
 }
