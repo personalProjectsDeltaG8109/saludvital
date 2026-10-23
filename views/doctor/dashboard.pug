@@ -85,7 +85,7 @@ html(lang="es")
                                                     small= appointment.reason || "Consulta médica"
                                             span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
                                             if appointment.status !== "Cancelled"
-                                                a.doctor-row-link(href=`/doctor/agenda#appointment-${appointment.id}`, aria-label=`Iniciar consulta con ${appointment.patientName}`) Iniciar consulta
+                                                a.doctor-row-link(href=`/doctor/agenda#appointment-${appointment.id}`, aria-label=`Ver cita de ${appointment.patientName} en la agenda`) Ver cita
                             else
                                 .doctor-empty-state
                                     span.doctor-empty-icon(aria-hidden="true") ▦
@@ -114,20 +114,7 @@ html(lang="es")
                                             .doctor-next-info
                                                 strong= nextAppointment.patientName
                                                 span= nextAppointment.reason || "Consulta médica"
-                                        .doctor-next-contact
-                                            span
-                                                svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                    path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
-                                                = nextAppointment.patientAge === null ? "Edad no disponible" : `${nextAppointment.patientAge} años`
-                                            span
-                                                svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                    path(d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 3.2 2 2 0 0 1 4.11 1h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.62a2 2 0 0 1-.45 2.11L8.04 8.72a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.84.31 1.72.53 2.62.65a2 2 0 0 1 1.96 2.27Z")
-                                                = nextAppointment.patientPhone || "Teléfono no registrado"
-                                            span
-                                                svg(viewBox="0 0 24 24", aria-hidden="true")
-                                                    path(d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm18 2-10 7L2 6")
-                                                = nextAppointment.patientEmail || "Correo no registrado"
-                                    a.doctor-primary-link(href=`/doctor/agenda#appointment-${nextAppointment.id}`) Iniciar consulta
+                                    a.doctor-primary-link(href=`/doctor/agenda#appointment-${nextAppointment.id}`) Ver cita
                             else
                                 .doctor-empty-state.doctor-next-empty
                                     span.doctor-empty-icon(aria-hidden="true") ◷

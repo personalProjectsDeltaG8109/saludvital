@@ -5,7 +5,6 @@ import {
     Consultation,
     Doctor,
     Patient,
-    User,
 } from "../../../models/associations.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
@@ -85,17 +84,6 @@ function getBogotaCalendarDate(date) {
     };
 }
 
-function getAge(dateOfBirth, now = new Date()) {
-    if (!dateOfBirth) return null;
-    const [year, month, day] = String(dateOfBirth).slice(0, 10).split("-").map(Number);
-    if (!year || !month || !day) return null;
-
-    const today = getBogotaDateParts(now);
-    let age = today.year - year;
-    if (today.month < month || (today.month === month && today.day < day)) age -= 1;
-    return age >= 0 ? age : null;
-}
-
 function getPatientName(patient) {
     return [patient?.first_name, patient?.last_name].filter(Boolean).join(" ") || "Paciente";
 }
@@ -109,22 +97,12 @@ function getAppointmentStatusLabel(status) {
     }[status] || status || "Programada";
 }
 
-function serializeAppointment(
-    appointment,
-    { includePatientPhoto = false, includePatientContact = false } = {},
-) {
+function serializeAppointment(appointment, { includePatientPhoto = false } = {}) {
     return {
         id: appointment.id,
         patientName: getPatientName(appointment.patient),
         ...(includePatientPhoto
             ? { patientPhotoUrl: appointment.patient?.profile_photo_url || null }
-            : {}),
-        ...(includePatientContact
-            ? {
-                  patientAge: getAge(appointment.patient?.date_of_birth),
-                  patientPhone: appointment.patient?.phone || null,
-                  patientEmail: appointment.patient?.user?.email || null,
-              }
             : {}),
         reason: appointment.reason,
         status: appointment.status?.name || "Programada",
@@ -224,8 +202,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     {
                         model: Patient,
                         as: "patient",
-                        attributes: ["id", "first_name", "last_name", "profile_photo_url", "date_of_birth", "phone"],
-                        include: [{ model: User, as: "user", attributes: ["email"], required: false }],
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
                     },
                     {
                         model: AppointmentStatus,
@@ -273,10 +250,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             serializeAppointment(appointment, { includePatientPhoto: true }),
         ),
         nextAppointment: nextAppointment
-            ? serializeAppointment(nextAppointment, {
-                  includePatientPhoto: true,
-                  includePatientContact: true,
-              })
+            ? serializeAppointment(nextAppointment, { includePatientPhoto: true })
             : null,
     };
 }

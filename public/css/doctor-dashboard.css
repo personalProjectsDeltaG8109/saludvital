@@ -114,9 +114,6 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .doctor-next-info > strong { overflow: hidden; color: #142f59; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .doctor-next-info > span:not(.doctor-status) { overflow: hidden; color: var(--doctor-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .doctor-next-info .doctor-status { font-size: 10px; }
-.doctor-next-contact { display: grid; gap: 5px; color: var(--doctor-muted); font-size: 12px; overflow-wrap: anywhere; }
-.doctor-next-contact > span { display: flex; min-width: 0; align-items: center; gap: 6px; }
-.doctor-next-contact svg { width: 14px; height: 14px; flex: 0 0 14px; fill: none; stroke: #123b8c; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .doctor-primary-link { display: flex; min-height: 38px; grid-column: 1 / -1; align-items: center; justify-content: center; border-radius: 8px; color: #fff; background: #087cf0; font-size: 12px; font-weight: 650; text-decoration: none; }
 .doctor-primary-link:hover { background: #0669ce; }
 .doctor-empty-state { display: grid; min-height: 195px; align-content: center; justify-items: center; gap: 8px; padding: 26px; color: #234568; text-align: center; }
@@ -179,7 +176,6 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-next-avatar { width: 60px; height: 60px; font-size: 15px; }
     .doctor-next-info > strong { font-size: 13px; }
     .doctor-next-info > span:not(.doctor-status) { font-size: 11px; }
-    .doctor-next-contact { font-size: 11px; }
     .doctor-page-heading { padding: 18px 18px 4px; }
     .doctor-page-heading h1 { font-size: 25px; }
     .doctor-page-heading > p:last-child { font-size: 13px; }
