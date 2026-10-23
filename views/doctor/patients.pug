@@ -1,0 +1,31 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/doctor-dashboard.css")
+    body.doctor-page
+        .doctor-shell
+            include ./partials/sidebar.pug
+            main.doctor-main
+                header.doctor-page-heading
+                    p.doctor-eyebrow Seguimiento
+                    h1 Pacientes activos
+                    p Pacientes con una consulta completada contigo durante los últimos 12 meses.
+                section.doctor-panel.doctor-list-panel(aria-label="Pacientes activos del médico")
+                    if patients.length
+                        ul.doctor-patient-list
+                            each patient in patients
+                                li.doctor-patient-row
+                                    span.doctor-patient-avatar(aria-hidden="true")= patient.name.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                    strong= patient.name
+                                    span.doctor-patient-label Paciente activo
+                    else
+                        .doctor-empty-state
+                            span.doctor-empty-icon(aria-hidden="true") ♙
+                            strong No tienes pacientes activos
+                            p Los pacientes con consultas recientes aparecerán aquí.
+        script(src="/js/session-timeout.js", defer)
