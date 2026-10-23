@@ -62,6 +62,8 @@ export async function updatePatientProfilePhoto(userId, dataUrl) {
     const patient = await Patient.findOne({ where: { user_id: userId } });
     if (!patient) throw profileError("No se encontró el perfil del paciente.", 404);
 
+    // Keep the current URL before updating the model so only the old file is removed.
+    const previousPhotoUrl = patient.profile_photo_url;
     await mkdir(PHOTO_DIRECTORY, { recursive: true });
     const filename = `${randomUUID()}.${extension}`;
     const photoUrl = `/uploads/profile-photos/${filename}`;
@@ -74,7 +76,7 @@ export async function updatePatientProfilePhoto(userId, dataUrl) {
         throw error;
     }
 
-    await removeStoredPhoto(patient.profile_photo_url);
+    await removeStoredPhoto(previousPhotoUrl);
     return photoUrl;
 }
 
