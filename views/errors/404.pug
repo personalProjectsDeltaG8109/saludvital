@@ -1,0 +1,55 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="robots", content="noindex, nofollow")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/error-404.css")
+    body.error-404-page
+        main.error-404-shell(aria-labelledby="error-404-title")
+            a.error-404-brand(href=homeHref, aria-label="SaludVital, volver al inicio")
+                img(src="/brand/logo-primary.png", alt="SaludVital")
+
+            .error-404-content
+                figure.error-404-art
+                    img(
+                        src="/brand/404-medical-illustration.png",
+                        alt="Ilustración de una médica junto al número 404",
+                        fetchpriority="high"
+                    )
+
+                section.error-404-copy
+                    p.error-404-eyebrow Error 404
+                    h1#error-404-title ¡Ups!<br> Página no encontrada
+                    p.error-404-description La página que buscas no existe o fue movida. No te preocupes, podemos ayudarte a volver al camino correcto.
+                    nav.error-404-actions(aria-label="Opciones para continuar")
+                        a.error-404-button.error-404-button-primary(href=homeHref)
+                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                path(d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z")
+                            span Volver al inicio
+                        if appointmentsHref
+                            a.error-404-button.error-404-button-secondary(href=appointmentsHref)
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
+                                    )
+                                span Ir a mis citas
+                    a.error-404-support(
+                        href=supportHref,
+                        target="_blank",
+                        rel="noopener noreferrer"
+                    )
+                        svg(viewBox="0 0 24 24", aria-hidden="true")
+                            path(
+                                d="M4 14v-3a8 8 0 0 1 16 0v3m-16-1H3a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v-7Zm16 0h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v-7ZM12 21h3"
+                            )
+                        span ¿Necesitas ayuda? Contacta a soporte.
+
+        footer.error-404-footer
+            p
+                strong SaludVital
+                |
+                | · Cuidamos lo más importante

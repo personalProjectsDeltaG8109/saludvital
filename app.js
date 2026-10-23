@@ -8,6 +8,7 @@ import adminRoutes from "./src/modules/admin/routes/adminRoutes.js";
 import doctorRoutes from "./src/modules/doctor/routes/doctorRoutes.js";
 import patientRoutes from "./src/modules/patient/routes/patientRoutes.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
+import { authenticateTokenOptional } from "./src/middleware/authenticateToken.js";
 import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -31,12 +32,36 @@ app.use(adminRoutes);
 app.use(doctorRoutes);
 app.use(patientRoutes);
 
-// Handle unexpected errors after all routes and middleware.
-app.use(errorHandler);
-
 // Redirect the application root to the login page.
 app.get("/", (req, res) => {
     res.redirect(303, "/login");
 });
+
+// Preserve the verified role for personalized recovery links on the 404 page.
+app.use(authenticateTokenOptional);
+app.use((req, res) => {
+    const homeByRole = {
+        Patient: "/patient/dashboard",
+        Doctor: "/doctor/dashboard",
+        Administrator: "/admin/dashboard",
+    };
+    const appointmentsByRole = {
+        Patient: "/patient/appointments",
+        Doctor: "/doctor/appointments",
+    };
+    const role = req.auth?.role;
+    const supportHref =
+        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.";
+
+    return res.status(404).render("errors/404", {
+        pageTitle: "Página no encontrada | SaludVital",
+        homeHref: homeByRole[role] || "/login",
+        appointmentsHref: role ? appointmentsByRole[role] || null : "/patient/appointments",
+        supportHref,
+    });
+});
+
+// Handle unexpected errors after normal routes and the not-found page.
+app.use(errorHandler);
 
 export default app;
