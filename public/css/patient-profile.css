@@ -144,6 +144,8 @@
     background: linear-gradient(145deg, #d9f0ff, #effaff);
     font-size: 1.8rem;
     font-weight: 800;
+    cursor: zoom-in;
+    appearance: none;
 }
 
 .profile-avatar-image {
@@ -269,6 +271,14 @@
     border: 4px solid #e8f5ff;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.profile-photo-preview-button {
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    cursor: zoom-in;
 }
 
 .profile-photo-placeholder {
@@ -611,6 +621,45 @@
     border-radius: 18px;
     color: var(--profile-ink);
     box-shadow: 0 20px 70px #082f5580;
+}
+
+.profile-image-dialog {
+    width: min(900px, calc(100vw - 28px));
+    max-width: none;
+    max-height: calc(100dvh - 28px);
+    padding: 48px 14px 14px;
+    overflow: visible;
+    border: 1px solid #ffffff50;
+    border-radius: 16px;
+    background: #071c36;
+    box-shadow: 0 20px 70px #082f5580;
+}
+
+.profile-image-dialog::backdrop {
+    background: #071c36c9;
+    backdrop-filter: blur(4px);
+}
+
+.profile-image-dialog-content {
+    width: 100%;
+    max-height: calc(100dvh - 90px);
+    display: block;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.profile-image-dialog-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    border: 1px solid #ffffff50;
+    border-radius: 50%;
+    color: #fff;
+    background: #ffffff20;
+    font-size: 1.4rem;
+    cursor: pointer;
 }
 
 .profile-delete-dialog::backdrop {

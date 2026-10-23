@@ -102,7 +102,27 @@
 
     const photoInput = page.querySelector("[data-profile-photo]");
     const deleteDialog = page.querySelector("[data-delete-dialog]");
+    const photoDialog = page.querySelector("[data-profile-image-dialog]");
+    const expandedPhoto = page.querySelector("[data-profile-image-dialog-content]");
     const photoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+    // Open the current profile photo in a keyboard-accessible dialog.
+    page.addEventListener("click", (event) => {
+        const photoButton = event.target.closest("[data-open-photo]");
+        if (photoButton) {
+            const photo = photoButton.querySelector(".profile-avatar-image, .profile-photo-preview");
+            if (!photo || !photoDialog || !expandedPhoto) return;
+            expandedPhoto.src = photo.currentSrc || photo.src;
+            photoDialog.showModal();
+            return;
+        }
+
+        if (event.target.closest("[data-close-profile-image]")) photoDialog?.close();
+    });
+
+    photoDialog?.addEventListener("click", (event) => {
+        if (event.target === photoDialog) photoDialog.close();
+    });
 
     page.querySelectorAll(".profile-avatar-image, .profile-photo-preview[src]").forEach((image) => {
         const showImageFallback = () => {

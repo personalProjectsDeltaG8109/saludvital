@@ -29,8 +29,10 @@ html(lang="es")
                         aside.profile-overview
                             section.profile-card.profile-identity
                                 .profile-avatar-wrap
-                                    span.profile-avatar(
-                                        aria-hidden="true",
+                                    button.profile-avatar(
+                                        type="button",
+                                        aria-label="Ver foto de perfil ampliada",
+                                        data-open-photo,
                                         data-profile-initials=patient.first_name.charAt(0).toUpperCase() + patient.last_name.charAt(0).toUpperCase()
                                     )
                                         if patient.profile_photo_url
@@ -76,10 +78,15 @@ html(lang="es")
                                         p JPG, PNG o WEBP · máximo 2 MB
                                 .profile-photo-content
                                     if patient.profile_photo_url
-                                        img.profile-photo-preview(
-                                            src=patient.profile_photo_url,
-                                            alt="Foto de perfil actual"
+                                        button.profile-photo-preview-button(
+                                            type="button",
+                                            aria-label="Ver foto de perfil ampliada",
+                                            data-open-photo
                                         )
+                                            img.profile-photo-preview(
+                                                src=patient.profile_photo_url,
+                                                alt=""
+                                            )
                                     else
                                         span.profile-photo-preview.profile-photo-placeholder(
                                             aria-hidden="true"
@@ -502,4 +509,18 @@ html(lang="es")
                             .profile-form-actions
                                 button.profile-cancel(type="button", data-close-delete) Cancelar
                                 button.profile-delete-confirm(type="submit", disabled) Eliminar cuenta
+                    dialog.profile-image-dialog(
+                        aria-label="Foto de perfil ampliada",
+                        data-profile-image-dialog
+                    )
+                        button.profile-image-dialog-close(
+                            type="button",
+                            aria-label="Cerrar foto",
+                            data-close-profile-image
+                        ) ×
+                        img.profile-image-dialog-content(
+                            src="",
+                            alt="Foto de perfil ampliada",
+                            data-profile-image-dialog-content
+                        )
                 include partials/bottom-nav
