@@ -27,31 +27,6 @@ function normalizeText(value, field, maxLength, required = false) {
     return normalized || null;
 }
 
-function validateDateOfBirth(value) {
-    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        throw profileError("Ingresa una fecha de nacimiento válida.");
-    }
-
-    const date = new Date(`${value}T00:00:00.000Z`);
-    const today = new Date();
-    const todayUtc = new Date(
-        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
-    );
-    const oldest = new Date(todayUtc);
-    oldest.setUTCFullYear(oldest.getUTCFullYear() - 120);
-
-    if (
-        !Number.isFinite(date.getTime()) ||
-        date.toISOString().slice(0, 10) !== value ||
-        date > todayUtc ||
-        date < oldest
-    ) {
-        throw profileError("La fecha de nacimiento debe ser válida y no puede estar en el futuro.");
-    }
-
-    return value;
-}
-
 function normalizePhone(value, label, required = true) {
     const phone = normalizeText(value, label, 15, required);
     if (phone && !/^\d{7,15}$/.test(phone)) {
@@ -73,25 +48,18 @@ function validateProfilePayload(payload = {}) {
     const medical = payload.medical || {};
     const emergency = payload.emergency || {};
 
+    // Keep legal identity fields immutable in the patient self-service profile.
+    const protectedFields = ["date_of_birth", "document_type", "document_number"];
+    if (protectedFields.some((field) => Object.hasOwn(personal, field))) {
+        throw profileError(
+            "La fecha de nacimiento y los datos del documento no se pueden cambiar desde el perfil. Solicita el cambio a un administrador.",
+        );
+    }
+
     const firstName = normalizeText(personal.first_name, "los nombres", 50, true);
     const lastName = normalizeText(personal.last_name, "los apellidos", 50, true);
     const phone = normalizePhone(personal.phone, "el paciente");
     const email = validateEmail(personal.email, "el correo electrónico");
-    const documentType = personal.document_type;
-    if (!["CC", "CE"].includes(documentType)) {
-        throw profileError("Selecciona un tipo de documento válido.");
-    }
-
-    const documentNumber = normalizeText(
-        personal.document_number,
-        "el número de documento",
-        15,
-        true,
-    );
-    if (!/^\d{1,15}$/.test(documentNumber)) {
-        throw profileError("Ingresa un número de documento válido.");
-    }
-
     const location = resolveLocation(personal.department, personal.municipality);
     if (!location) throw profileError("Selecciona un municipio válido para el departamento.");
 
@@ -138,9 +106,6 @@ function validateProfilePayload(payload = {}) {
             last_name: lastName,
             phone,
             email,
-            date_of_birth: validateDateOfBirth(personal.date_of_birth),
-            document_type: documentType,
-            document_number: documentNumber,
             department: location.department,
             municipality: location.municipality,
             address: normalizeText(personal.address, "la dirección", 150),

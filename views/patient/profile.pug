@@ -235,47 +235,21 @@ html(lang="es")
                                                         pattern="[0-9]{7,15}",
                                                         required
                                                     )
-                                                label
-                                                    span
-                                                        | Fecha de nacimiento
-                                                        span.profile-required-mark(
-                                                            aria-hidden="true"
-                                                        ) *
-                                                    input(
-                                                        type="date",
-                                                        name="date_of_birth",
-                                                        value=String(patient.date_of_birth).slice(0, 10),
-                                                        required
-                                                    )
-                                                label
-                                                    span
-                                                        | Tipo de documento
-                                                        span.profile-required-mark(
-                                                            aria-hidden="true"
-                                                        ) *
-                                                    select(name="document_type", required)
-                                                        option(
-                                                            value="CC",
-                                                            selected=patient.document_type === "CC"
-                                                        ) Cédula de ciudadanía
-                                                        option(
-                                                            value="CE",
-                                                            selected=patient.document_type === "CE"
-                                                        ) Cédula de extranjería
-                                                label
-                                                    span
-                                                        | Número de documento
-                                                        span.profile-required-mark(
-                                                            aria-hidden="true"
-                                                        ) *
-                                                    input(
-                                                        type="text",
-                                                        name="document_number",
-                                                        value=patient.document_number,
-                                                        maxlength="15",
-                                                        pattern="[0-9]{1,15}",
-                                                        required
-                                                    )
+                                                //- These identity fields are read-only for patient self-service.
+                                                .profile-locked-fields.profile-form-wide(
+                                                    role="note",
+                                                    aria-label="Datos de identificación que requieren un administrador"
+                                                )
+                                                    .profile-locked-field
+                                                        span Fecha de nacimiento
+                                                        strong= new Date(String(patient.date_of_birth).slice(0, 10) + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Bogota" })
+                                                    .profile-locked-field
+                                                        span Tipo de documento
+                                                        strong= patient.document_type === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"
+                                                    .profile-locked-field
+                                                        span Número de documento
+                                                        strong= patient.document_number
+                                                    p.profile-locked-help Para solicitar un cambio, comunícate con un administrador.
                                                 label.profile-form-wide
                                                     span Dirección de residencia
                                                     input(

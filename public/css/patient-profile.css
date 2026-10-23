@@ -484,6 +484,40 @@
     grid-column: 1 / -1;
 }
 
+/* Show protected identity data while keeping it outside the editable form fields. */
+.profile-locked-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.profile-locked-field {
+    min-width: 0;
+    padding: 9px 10px;
+    display: grid;
+    gap: 4px;
+    border: 1px solid #d9e8f5;
+    border-radius: 8px;
+    background: #f5faff;
+    font-size: .74rem;
+}
+
+.profile-locked-field span {
+    color: #607695;
+}
+
+.profile-locked-field strong {
+    color: #173e70;
+    overflow-wrap: anywhere;
+}
+
+.profile-locked-help {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #607695;
+    font-size: .72rem;
+}
+
 .profile-form-grid input,
 .profile-form-grid select,
 .profile-form-grid textarea {
@@ -1043,6 +1077,10 @@
     .profile-form-grid {
         grid-template-columns: minmax(0, 1fr);
         gap: 9px;
+    }
+
+    .profile-locked-fields {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .profile-form-wide {
