@@ -10,7 +10,7 @@ export async function up(queryInterface) {
     const verifiedAt = new Date();
 
     // Allow the seeded patient and doctor accounts to sign in without email delivery.
-    for (const email of ["patient.test@saludvital.local", "doctor.test@saludvital.local"]) {
+    for (const email of ["test@saludvital.local", "doctor.test@saludvital.local"]) {
         await queryInterface.sequelize.query(
             `UPDATE users
              SET email_verified_at = COALESCE(email_verified_at, :verifiedAt),
