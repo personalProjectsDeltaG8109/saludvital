@@ -1,46 +1,28 @@
-import { Op } from "sequelize";
 import database from "../../../../config/database.js";
-import {
-    Notification,
-    NotificationPreference,
-    Patient,
-    WhatsAppVerification,
-} from "../../../models/associations.js";
+import { Notification, NotificationPreference, Patient } from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
 
+// Appointment event switches are fixed; patients choose only the delivery channels.
 export const notificationEvents = [
-    {
-        key: "appointment_confirmation",
-        label: "Confirmación de citas",
-        description: "Recibe un mensaje cuando tu cita sea confirmada.",
-        enabledByDefault: true,
-    },
     {
         key: "appointment_reminder",
         label: "Recordatorios de citas",
         description: "Recibe un recordatorio 24 horas antes de tu cita.",
-        enabledByDefault: true,
     },
     {
         key: "appointment_reschedule",
         label: "Cambios o reprogramaciones",
         description: "Te notificaremos si tu cita se reprograma.",
-        enabledByDefault: true,
     },
     {
         key: "appointment_cancellation",
         label: "Cancelaciones",
         description: "Recibe un mensaje si tu cita es cancelada.",
-        enabledByDefault: true,
-    },
-    {
-        key: "promotion",
-        label: "Novedades y promociones",
-        description: "Recibe información sobre novedades y nuevos servicios.",
-        enabledByDefault: false,
     },
 ];
+
+const DEFAULT_ENABLED_CHANNEL = "SMS";
 
 const channelLabels = {
     WhatsApp: "WhatsApp",
@@ -55,6 +37,44 @@ const historyDetails = {
     appointment_cancellation: "Tu cita fue cancelada.",
     promotion: "Tenemos novedades de servicios de salud para ti.",
 };
+
+const historyEventLabels = {
+    appointment_confirmation: "Confirmación de citas",
+    appointment_reminder: "Recordatorios de citas",
+    appointment_reschedule: "Cambios o reprogramaciones",
+    appointment_cancellation: "Cancelaciones",
+    promotion: "Novedades y promociones",
+};
+
+function validateNotificationContacts(contacts = {}) {
+    const smsPhone =
+        typeof contacts.smsPhone === "string"
+            ? contacts.smsPhone.trim().replaceAll(/[\s()-]/g, "")
+            : "";
+    const whatsappPhone =
+        typeof contacts.whatsappPhone === "string"
+            ? contacts.whatsappPhone.trim().replaceAll(/[\s()-]/g, "")
+            : "";
+    const email = typeof contacts.email === "string" ? contacts.email.trim().toLowerCase() : "";
+
+    if (!/^\+?\d{7,15}$/.test(smsPhone)) {
+        const error = new Error("Ingresa un número válido para recibir SMS.");
+        error.status = 400;
+        throw error;
+    }
+    if (!/^\+?\d{7,15}$/.test(whatsappPhone)) {
+        const error = new Error("Ingresa un número válido para recibir WhatsApp.");
+        error.status = 400;
+        throw error;
+    }
+    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const error = new Error("Ingresa un correo válido para recibir notificaciones.");
+        error.status = 400;
+        throw error;
+    }
+
+    return { smsPhone, whatsappPhone, email };
+}
 
 function normalizeEventType(eventType) {
     const normalized = String(eventType || "")
@@ -73,12 +93,11 @@ function normalizeEventType(eventType) {
 
 function toHistoryItem(notification) {
     const eventKey = normalizeEventType(notification.event_type);
-    const event = notificationEvents.find((item) => item.key === eventKey);
-
     return {
         id: notification.id,
         eventKey,
-        eventLabel: event?.label || String(notification.event_type).replaceAll("_", " "),
+        eventLabel:
+            historyEventLabels[eventKey] || String(notification.event_type).replaceAll("_", " "),
         channel: channelLabels[notification.channel] || notification.channel,
         channelKey: notification.channel,
         status: notification.status,
@@ -90,53 +109,80 @@ function toHistoryItem(notification) {
 export async function getPatientNotificationSettings(userId) {
     const patient = await Patient.findOne({
         where: { user_id: userId },
-        attributes: ["id", "first_name", "last_name", "phone"],
+        attributes: [
+            "id",
+            "first_name",
+            "last_name",
+            "phone",
+            "notification_phone",
+            "notification_whatsapp_phone",
+            "notification_email",
+        ],
         include: [{ association: "user", attributes: ["email"] }],
     });
 
     if (!patient) {
         return {
             patient: null,
+            notificationContacts: { phone: "", email: "" },
             preferences: [],
             history: [],
-            whatsappVerified: false,
         };
     }
 
-    const [storedPreferences, notifications, verifiedWhatsApp] = await Promise.all([
+    const [storedPreferences, notifications] = await Promise.all([
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
         Notification.findAll({
             where: { patient_id: patient.id },
             order: [["scheduled_at", "DESC"]],
             limit: 20,
         }),
-        WhatsAppVerification.findOne({
-            where: { patient_id: patient.id, verified_at: { [Op.ne]: null }, invalidated_at: null },
-            order: [["verified_at", "DESC"]],
-        }),
     ]);
 
     const preferenceLookup = new Map(
         storedPreferences.map((item) => [`${item.channel}:${item.event_type}`, item.is_enabled]),
     );
-    const preferences = notificationChannels.flatMap((channel) =>
-        notificationEvents.map((event) => ({
+    let preferences = notificationChannels.flatMap((channel) => {
+        const storedChannelPreferences = notificationEvents
+            .map((event) => preferenceLookup.get(`${channel}:${event.key}`))
+            .filter((value) => value !== undefined);
+        // Treat legacy event-level settings as one channel choice during migration.
+        const isEnabled = storedChannelPreferences.length
+            ? storedChannelPreferences.some(Boolean)
+            : channel === DEFAULT_ENABLED_CHANNEL;
+
+        return notificationEvents.map((event) => ({
             channel,
             eventType: event.key,
-            isEnabled: preferenceLookup.get(`${channel}:${event.key}`) ?? event.enabledByDefault,
-        })),
-    );
+            isEnabled,
+        }));
+    });
+
+    // Keep SMS enabled when legacy data has every channel disabled.
+    if (!preferences.some((preference) => preference.isEnabled)) {
+        preferences = preferences.map((preference) => ({
+            ...preference,
+            isEnabled: preference.channel === DEFAULT_ENABLED_CHANNEL,
+        }));
+    }
 
     return {
         patient: patient.get({ plain: true }),
+        notificationContacts: {
+            smsPhone: patient.notification_phone || patient.phone,
+            whatsappPhone:
+                patient.notification_whatsapp_phone || patient.notification_phone || patient.phone,
+            email: patient.notification_email || patient.user.email,
+        },
         preferences,
         history: notifications.map(toHistoryItem),
-        whatsappVerified: Boolean(verifiedWhatsApp),
     };
 }
 
-export async function updatePatientNotificationPreferences(userId, updates) {
-    if (!Array.isArray(updates) || updates.length === 0 || updates.length > 15) {
+export async function updatePatientNotificationPreferences(userId, updates, contacts) {
+    const notificationContacts = validateNotificationContacts(contacts);
+    const expectedPreferenceCount = notificationChannels.length * notificationEvents.length;
+    if (!Array.isArray(updates) || updates.length !== expectedPreferenceCount) {
         const error = new Error("La configuración de notificaciones no es válida.");
         error.status = 400;
         throw error;
@@ -150,6 +196,7 @@ export async function updatePatientNotificationPreferences(userId, updates) {
     }
 
     const seen = new Set();
+    const channelStates = new Map();
     for (const update of updates) {
         const key = `${update?.channel}:${update?.eventType}`;
         if (
@@ -163,9 +210,43 @@ export async function updatePatientNotificationPreferences(userId, updates) {
             throw error;
         }
         seen.add(key);
+
+        const channelState = channelStates.get(update.channel);
+        if (channelState !== undefined && channelState !== update.isEnabled) {
+            const error = new Error(
+                "Selecciona los canales de notificación de forma independiente.",
+            );
+            error.status = 400;
+            throw error;
+        }
+        channelStates.set(update.channel, update.isEnabled);
+    }
+
+    if (seen.size !== expectedPreferenceCount) {
+        const error = new Error("La configuración de notificaciones está incompleta.");
+        error.status = 400;
+        throw error;
+    }
+
+    if (![...channelStates.values()].some(Boolean)) {
+        const error = new Error(
+            "Mantén al menos un canal activo para recibir avisos sobre tus citas.",
+        );
+        error.status = 400;
+        throw error;
     }
 
     await database.transaction(async (transaction) => {
+        // Keep notification destinations separate from profile and login contact details.
+        await patient.update(
+            {
+                notification_phone: notificationContacts.smsPhone,
+                notification_whatsapp_phone: notificationContacts.whatsappPhone,
+                notification_email: notificationContacts.email,
+            },
+            { transaction },
+        );
+
         for (const update of updates) {
             await NotificationPreference.upsert(
                 {
@@ -179,5 +260,5 @@ export async function updatePatientNotificationPreferences(userId, updates) {
         }
     });
 
-    return updates;
+    return { preferences: updates, notificationContacts };
 }

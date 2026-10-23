@@ -31,6 +31,10 @@ const Notification = database.define(
             type: DataTypes.STRING(50),
             allowNull: false,
         },
+        payload: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
         status: {
             type: DataTypes.ENUM("Pending", "Processing", "Sent", "Failed", "Cancelled"),
             allowNull: false,

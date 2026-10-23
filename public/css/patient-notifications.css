@@ -54,6 +54,12 @@
     line-height: 1.45;
 }
 
+.notifications-hero .notifications-delivery-note {
+    margin-top: 7px;
+    color: #536b8c;
+    font-size: 11px;
+}
+
 .notifications-hero-art {
     position: absolute;
     inset: 0 8% 0 auto;
@@ -163,6 +169,12 @@
 
 .notifications-contact span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
 .notifications-contact small { margin-left: auto; color: #078357; font-size: 9px; }
+.notifications-contact-editable { min-height: 0; padding: 0; display: block; overflow: visible; color: #285579; background: transparent; white-space: normal; }
+.notifications-contact-field { display: grid; gap: 4px; }
+.notifications-contact-field > span { color: #526b8a; font-size: 10px; font-weight: 650; }
+.notifications-contact-field input { width: 100%; min-width: 0; min-height: 35px; padding: 6px 9px; border: 1px solid #d6e4f1; border-radius: 7px; color: #123b73; background: #fff; font: inherit; font-size: 11px; }
+.notifications-contact-field input:focus-visible { outline: 3px solid #13b8b055; outline-offset: 1px; }
+.notifications-contact-field input:disabled { opacity: .65; }
 
 .notifications-switch { width: 42px; height: 24px; position: relative; justify-self: end; cursor: pointer; }
 .notifications-switch input { width: 1px; height: 1px; position: absolute; opacity: 0; }
@@ -172,16 +184,35 @@
 .notifications-switch input:checked + .notifications-switch-track::after { transform: translateX(18px); }
 .notifications-switch input:focus-visible + .notifications-switch-track { outline: 3px solid #078bed55; outline-offset: 2px; }
 
-.notifications-event { min-height: 59px; padding: 8px 4px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 10px; border-bottom: 1px solid #eaf1f7; }
+.notifications-event { min-height: 59px; padding: 8px 4px; display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid #eaf1f7; }
 .notifications-event-icon { width: 38px; height: 38px; border-radius: 10px; color: #078bed; background: #e9f6ff; }
 .notifications-event-icon svg { width: 22px; height: 22px; }
 .notifications-event-icon.is-appointment_cancellation { color: #ed4055; background: #fff0f1; }
-.notifications-event-icon.is-promotion { color: #078bed; background: #edf7ff; }
 .notifications-event-copy strong { font-size: 12px; }
 .notifications-event-copy p { font-size: 10px; }
-.notifications-event .notifications-switch { transform: scale(.91); }
 .notifications-save-status { min-height: 17px; grid-column: 1 / -1; margin: -7px 2px 0; color: #078357; font-size: 11px; }
 .notifications-save-status.is-error { color: #c93548; }
+
+/* Read-only event states stay visually distinct from the editable channel controls. */
+.notifications-fixed-status { padding: 6px 9px; border-radius: 999px; color: #17613f; background: #e5f7ee; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.notifications-form-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+.notifications-form-actions button { min-height: 36px; padding: 0 14px; border: 1px solid #d4e4f2; border-radius: 8px; color: #123b73; background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.notifications-form-actions .notifications-save-button { border-color: #168de2; color: #fff; background: #168de2; }
+.notifications-form-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.notifications-form-actions button:focus-visible { outline: 3px solid #13b8b055; outline-offset: 2px; }
+
+.notifications-dialog { position: fixed; inset: 0; width: min(440px, calc(100% - 32px)); max-height: calc(100% - 32px); margin: auto; overflow: auto; padding: 26px; border: 1px solid #dceaf6; border-radius: 18px; color: #123b73; background: #fff; text-align: center; box-shadow: 0 18px 60px #123b7330; }
+.notifications-dialog::backdrop { background: #123b7380; backdrop-filter: blur(3px); }
+.notifications-dialog-content { display: grid; justify-items: center; }
+.notifications-dialog-icon { width: 50px; height: 50px; margin-bottom: 13px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #36a96b; font-size: 25px; font-weight: 800; }
+.notifications-dialog-icon.is-error { background: #c93548; }
+.notifications-dialog h2 { margin: 0 0 8px; color: #123b73; font-size: 20px; }
+.notifications-dialog p { margin: 0; color: #536b8c; font-size: 13px; line-height: 1.5; }
+.notifications-dialog .notifications-dialog-summary { margin-top: 12px; padding: 11px; border-radius: 9px; color: #285579; background: #f2f8fc; overflow-wrap: anywhere; }
+.notifications-dialog-actions { width: 100%; margin-top: 20px; display: flex; justify-content: center; gap: 9px; }
+.notifications-dialog-actions button { min-height: 40px; padding: 0 13px; border: 1px solid #168de2; border-radius: 8px; color: #168de2; background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.notifications-dialog-actions .notifications-dialog-primary { color: #fff; background: #168de2; }
+.notifications-dialog-actions button:focus-visible { outline: 3px solid #13b8b055; outline-offset: 2px; }
 
 .notifications-history { margin-top: 14px; padding: 13px 14px 10px; }
 .notifications-history-heading { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -222,6 +253,7 @@
     .notifications-hero::before,.notifications-hero-art { display: none; }
     .notifications-hero h2 { margin-bottom: 2px; font-size: 23px; letter-spacing: -.4px; }
     .notifications-hero p { max-width: 350px; color: #244a78; font-size: 12px; line-height: 1.35; }
+    .notifications-hero .notifications-delivery-note { margin-top: 4px; color: #536b8c; font-size: 10px; }
     .notifications-settings { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .notifications-card { padding: 10px 9px; border-radius: 12px; }
     .notifications-section-heading { margin-bottom: 7px; }
@@ -234,18 +266,27 @@
     .notifications-channel-icon img { width: 23px; }
     .notifications-channel-copy strong { margin-top: 1px; font-size: 11px; }
     .notifications-channel-copy p { display: none; }
-    .notifications-contact { min-height: 0; margin-top: 2px; padding: 0; color: #526b8a; background: none; font-size: 10px; }
+    .notifications-contact { min-height: 0; margin-top: 3px; padding: 0; color: #526b8a; background: none; font-size: 10px; }
+    .notifications-contact-field { gap: 3px; }
+    .notifications-contact-field > span { font-size: 9px; }
+    .notifications-contact-field input { min-height: 33px; padding: 5px 7px; font-size: 10px; }
     .notifications-contact small { display: none; }
     .notifications-switch { width: 40px; height: 23px; }
     .notifications-switch-track::after { width: 17px; height: 17px; }
     .notifications-switch input:checked + .notifications-switch-track::after { transform: translateX(17px); }
-    .notifications-event { min-height: 43px; padding: 5px 1px; grid-template-columns: 31px minmax(0, 1fr) 37px; gap: 7px; }
+    .notifications-event { min-height: 43px; padding: 5px 1px; grid-template-columns: 31px minmax(0, 1fr) auto; gap: 7px; }
     .notifications-event-icon { width: 29px; height: 29px; border-radius: 8px; }
     .notifications-event-icon svg { width: 18px; height: 18px; }
     .notifications-event-copy strong { margin: 0; font-size: 10px; }
     .notifications-event-copy p { display: none; }
-    .notifications-event .notifications-switch { transform: scale(.77); transform-origin: right center; }
+    .notifications-fixed-status { padding: 5px 6px; font-size: 8px; }
     .notifications-save-status { min-height: 12px; margin: 0 2px -4px; font-size: 9px; }
+    .notifications-form-actions { justify-content: stretch; }
+    .notifications-form-actions button { flex: 1; min-height: 35px; padding: 0 7px; font-size: 11px; }
+    .notifications-dialog { padding: 20px 16px; border-radius: 15px; }
+    .notifications-dialog h2 { font-size: 18px; }
+    .notifications-dialog-actions { gap: 7px; }
+    .notifications-dialog-actions button { flex: 1; min-height: 39px; padding: 0 8px; font-size: 11px; }
     .notifications-history { margin-top: 8px; padding: 9px; }
     .notifications-history-heading { margin-bottom: 7px; }
     .notifications-history-heading .notifications-section-heading h2 { font-size: 14px; }

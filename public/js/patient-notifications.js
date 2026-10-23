@@ -3,133 +3,209 @@
     if (!settings) return;
 
     const channelToggles = [...settings.querySelectorAll("[data-notification-channel-toggle]")];
-    const eventToggles = [...settings.querySelectorAll("[data-notification-event-toggle]")];
+    const contactInputs = [...settings.querySelectorAll("[data-notification-contact]")];
+    const saveButton = settings.querySelector("[data-notification-save]");
+    const cancelButton = settings.querySelector("[data-notification-cancel]");
     const saveStatus = settings.querySelector("[data-notification-save-status]");
+    const confirmDialog = settings.querySelector("[data-notification-confirm-dialog]");
+    const confirmSummary = settings.querySelector("[data-notification-confirm-summary]");
+    const confirmSaveButton = settings.querySelector("[data-confirm-notification-save]");
+    const cancelSaveButton = settings.querySelector("[data-cancel-notification-save]");
+    const resultDialog = settings.querySelector("[data-notification-result-dialog]");
+    const resultIcon = settings.querySelector("[data-notification-result-icon]");
+    const resultTitle = settings.querySelector("[data-notification-result-title]");
+    const resultMessage = settings.querySelector("[data-notification-result-message]");
+    const closeResultButton = settings.querySelector("[data-close-notification-result]");
     const historyToggle = document.querySelector("[data-history-toggle]");
     const historyTable = document.querySelector(".notifications-history-table");
     let preferences = JSON.parse(settings.dataset.preferences || "[]");
     let savedPreferences = structuredClone(preferences);
-    let saveTimeout;
+    let savedContacts = getContacts();
+    let isSaving = false;
 
-    const findPreference = (channel, eventType) =>
-        preferences.find((item) => item.channel === channel && item.eventType === eventType);
-
-    function syncEventToggles() {
-        eventToggles.forEach((toggle) => {
-            const eventType = toggle.dataset.notificationEventToggle;
-            const eventPreferences = preferences.filter((item) => item.eventType === eventType);
-            toggle.checked = eventPreferences.some((item) => item.isEnabled);
-        });
+    function getContacts() {
+        return Object.fromEntries(
+            contactInputs.map((input) => [input.dataset.notificationContact, input.value.trim()]),
+        );
     }
 
-    function syncChannelToggles() {
+    function setChannelPreference(channel, isEnabled) {
+        // Each channel controls every fixed appointment notice independently.
+        preferences
+            .filter((preference) => preference.channel === channel)
+            .forEach((preference) => {
+                preference.isEnabled = isEnabled;
+            });
+    }
+
+    function hasActiveChannel(preferenceList) {
+        return channelToggles.some((toggle) =>
+            preferenceList.some(
+                (preference) =>
+                    preference.channel === toggle.dataset.notificationChannelToggle &&
+                    preference.isEnabled,
+            ),
+        );
+    }
+
+    function isDirty() {
+        return (
+            JSON.stringify(preferences) !== JSON.stringify(savedPreferences) ||
+            JSON.stringify(getContacts()) !== JSON.stringify(savedContacts)
+        );
+    }
+
+    function render() {
         channelToggles.forEach((toggle) => {
             const channel = toggle.dataset.notificationChannelToggle;
-            toggle.checked = preferences.some((item) => item.channel === channel && item.isEnabled);
+            toggle.checked = preferences.some(
+                (preference) => preference.channel === channel && preference.isEnabled,
+            );
+            toggle.disabled = isSaving;
         });
+        contactInputs.forEach((input) => {
+            input.disabled = isSaving;
+        });
+
+        saveButton.disabled = isSaving || !isDirty();
+        cancelButton.disabled = isSaving || !isDirty();
+        confirmSaveButton.disabled = isSaving;
     }
 
-    function updatePreference(channel, eventType, isEnabled) {
-        const preference = findPreference(channel, eventType);
-        if (preference) preference.isEnabled = isEnabled;
+    function showResult(success, message) {
+        resultIcon.textContent = success ? "✓" : "!";
+        resultIcon.classList.toggle("is-error", !success);
+        resultTitle.textContent = success
+            ? "Cambios guardados"
+            : "No se pudieron guardar los cambios";
+        resultMessage.textContent = message;
+        resultDialog.showModal();
     }
 
-    function applyChannelToggle(toggle) {
-        const channel = toggle.dataset.notificationChannelToggle;
-        const eventTogglesState = new Map(
-            eventToggles.map((eventToggle) => [
-                eventToggle.dataset.notificationEventToggle,
-                eventToggle.checked,
-            ]),
-        );
-        preferences
-            .filter((item) => item.channel === channel)
-            .forEach((preference) => {
-                const eventToggleState = eventTogglesState.get(preference.eventType);
-                preference.isEnabled = toggle.checked
-                    ? (eventToggleState ?? preference.isEnabled)
-                    : false;
-            });
-
-        if (
-            toggle.checked &&
-            preferences.filter((item) => item.channel === channel).every((item) => !item.isEnabled)
-        ) {
-            preferences
-                .filter((item) => item.channel === channel)
-                .forEach((preference) => {
-                    preference.isEnabled = preference.eventType !== "promotion";
-                });
-        }
-    }
-
-    function applyEventToggle(toggle) {
-        const eventType = toggle.dataset.notificationEventToggle;
-        const enabledChannels = new Set(
-            channelToggles
-                .filter((channelToggle) => channelToggle.checked)
-                .map((channelToggle) => channelToggle.dataset.notificationChannelToggle),
-        );
-        const targetChannels = enabledChannels.size
-            ? enabledChannels
-            : new Set(
-                  channelToggles.map(
-                      (channelToggle) => channelToggle.dataset.notificationChannelToggle,
-                  ),
-              );
-
-        targetChannels.forEach((channel) => updatePreference(channel, eventType, toggle.checked));
-        syncChannelToggles();
+    function describePendingChanges() {
+        const channelLabels = channelToggles
+            .filter((toggle) => toggle.checked)
+            .map(
+                (toggle) =>
+                    toggle.closest(".notifications-channel").querySelector("strong").textContent,
+            );
+        const contacts = getContacts();
+        confirmSummary.textContent =
+            "Canales activos: " +
+            channelLabels.join(", ") +
+            ". Número para SMS: " +
+            contacts.smsPhone +
+            ". Número para WhatsApp: " +
+            contacts.whatsappPhone +
+            ". Correo de notificaciones: " +
+            contacts.email +
+            ".";
     }
 
     async function savePreferences() {
+        if (!hasActiveChannel(preferences)) {
+            showResult(
+                false,
+                "Mantén al menos un canal activo para recibir avisos sobre tus citas.",
+            );
+            return;
+        }
+
+        isSaving = true;
         saveStatus.textContent = "Guardando preferencias…";
         saveStatus.classList.remove("is-error");
+        render();
 
         try {
             const response = await fetch("/api/patient/notifications/preferences", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
                 credentials: "same-origin",
-                body: JSON.stringify({ preferences }),
+                body: JSON.stringify({ preferences, contacts: getContacts() }),
             });
             const payload = await response.json();
             if (!response.ok || !payload.success) {
                 throw new Error(payload.message || "No se pudieron guardar tus preferencias.");
             }
+
             savedPreferences = structuredClone(preferences);
-            saveStatus.textContent = "Preferencias guardadas.";
+            savedContacts = getContacts();
+            settings.dataset.preferences = JSON.stringify(savedPreferences);
+            saveStatus.textContent = "Preferencias guardadas correctamente.";
+            saveStatus.classList.remove("is-error");
+            showResult(true, "Se guardaron tus canales y destinos de notificación.");
         } catch (error) {
-            preferences = savedPreferences;
-            settings.dataset.preferences = JSON.stringify(preferences);
-            syncChannelToggles();
-            syncEventToggles();
             saveStatus.textContent =
                 error.message || "Ocurrió un error al guardar tus preferencias.";
             saveStatus.classList.add("is-error");
+            showResult(false, saveStatus.textContent);
+        } finally {
+            isSaving = false;
+            render();
         }
-    }
-
-    function scheduleSave() {
-        window.clearTimeout(saveTimeout);
-        saveStatus.textContent = "";
-        saveTimeout = window.setTimeout(savePreferences, 250);
     }
 
     channelToggles.forEach((toggle) => {
         toggle.addEventListener("change", () => {
-            applyChannelToggle(toggle);
-            syncEventToggles();
-            scheduleSave();
+            const channel = toggle.dataset.notificationChannelToggle;
+            setChannelPreference(channel, toggle.checked);
+
+            if (!hasActiveChannel(preferences)) {
+                setChannelPreference(channel, true);
+                saveStatus.textContent =
+                    "Mantén al menos un canal activo para recibir avisos sobre tus citas.";
+                saveStatus.classList.add("is-error");
+                render();
+                return;
+            }
+
+            saveStatus.textContent = "Tienes cambios sin guardar.";
+            saveStatus.classList.remove("is-error");
+            render();
         });
     });
 
-    eventToggles.forEach((toggle) => {
-        toggle.addEventListener("change", () => {
-            applyEventToggle(toggle);
-            syncEventToggles();
-            scheduleSave();
+    contactInputs.forEach((input) => {
+        input.addEventListener("input", () => {
+            saveStatus.textContent = "Tienes cambios sin guardar.";
+            saveStatus.classList.remove("is-error");
+            render();
         });
+    });
+
+    saveButton.addEventListener("click", () => {
+        const invalidInput = contactInputs.find((input) => !input.checkValidity());
+        if (invalidInput) {
+            invalidInput.reportValidity();
+            return;
+        }
+
+        describePendingChanges();
+        confirmDialog.showModal();
+    });
+
+    confirmSaveButton.addEventListener("click", () => {
+        confirmDialog.close();
+        savePreferences();
+    });
+
+    cancelSaveButton.addEventListener("click", () => confirmDialog.close());
+    closeResultButton.addEventListener("click", () => resultDialog.close());
+
+    [confirmDialog, resultDialog].forEach((dialog) => {
+        dialog.addEventListener("click", (event) => {
+            if (event.target === dialog) dialog.close();
+        });
+    });
+
+    cancelButton.addEventListener("click", () => {
+        preferences = structuredClone(savedPreferences);
+        contactInputs.forEach((input) => {
+            input.value = savedContacts[input.dataset.notificationContact];
+        });
+        saveStatus.textContent = "Se descartaron los cambios.";
+        saveStatus.classList.remove("is-error");
+        render();
     });
 
     historyToggle?.addEventListener("click", () => {
@@ -138,4 +214,6 @@
         historyToggle.setAttribute("aria-expanded", String(isExpanded));
         historyToggle.textContent = isExpanded ? "Ver menos" : "Ver todas";
     });
+
+    render();
 })();
