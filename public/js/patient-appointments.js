@@ -31,6 +31,97 @@
         });
     });
 
+    // Open the cancellation confirmation dialog for the selected appointment.
+    document.querySelectorAll("[data-open-cancel-dialog]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dialog = document.getElementById(
+                `appointment-cancel-${button.dataset.openCancelDialog}`,
+            );
+            if (dialog instanceof HTMLDialogElement) dialog.showModal();
+        });
+    });
+
+    // Close cancellation confirmation and feedback dialogs from their controls or backdrop.
+    document
+        .querySelectorAll(".appointment-cancel-dialog, .appointment-feedback-dialog")
+        .forEach((dialog) => {
+            dialog
+                .querySelectorAll("[data-close-cancel-dialog], [data-close-feedback]")
+                .forEach((button) => {
+                    button.addEventListener("click", () => dialog.close());
+                });
+            dialog.addEventListener("click", (event) => {
+                if (event.target === dialog) dialog.close();
+            });
+        });
+
+    // Submit cancellation requests and reflect the saved status without leaving the page.
+    document.querySelectorAll("[data-cancel-appointment]").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const appointmentId = button.dataset.cancelAppointment;
+            const confirmation = document.getElementById(`appointment-cancel-${appointmentId}`);
+            const feedback = document.getElementById("appointment-feedback");
+            const feedbackTitle = document.getElementById("appointment-feedback-title");
+            const feedbackMessage = document.querySelector("[data-appointment-feedback-message]");
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`/api/patient/appointments/${appointmentId}/cancel`, {
+                    method: "POST",
+                    headers: { Accept: "application/json" },
+                    credentials: "same-origin",
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "No fue posible cancelar la cita.");
+                }
+
+                const row = document.getElementById(`appointment-${appointmentId}`);
+                if (row) {
+                    row.dataset.status = "Cancelled";
+                    const statusBadge = row.querySelector(
+                        "td[data-label='Estado'] .appointment-status",
+                    );
+                    if (statusBadge) {
+                        statusBadge.className = "appointment-status status-cancelled";
+                        statusBadge.textContent = "Cancelada";
+                    }
+                    row.querySelector(".appointment-row-actions")
+                        ?.querySelectorAll(
+                            ".appointment-reschedule-link, .appointment-cancel-button",
+                        )
+                        .forEach((action) => action.remove());
+                    const detailStatus = row.querySelector(
+                        ".appointment-details-dialog .appointment-dialog-status .appointment-status",
+                    );
+                    if (detailStatus) {
+                        detailStatus.className = "appointment-status status-cancelled";
+                        detailStatus.textContent = "Cancelada";
+                    }
+                    const historyList = row.querySelector(".appointment-history");
+                    if (historyList) {
+                        const historyEntry = document.createElement("li");
+                        historyEntry.textContent =
+                            "Cita cancelada; el registro y su historial se conservaron.";
+                        historyList.append(historyEntry);
+                    }
+                }
+
+                if (confirmation instanceof HTMLDialogElement) confirmation.close();
+                if (feedbackTitle) feedbackTitle.textContent = "Cita cancelada";
+                if (feedbackMessage) feedbackMessage.textContent = result.message;
+                update();
+            } catch (error) {
+                if (feedbackTitle) feedbackTitle.textContent = "No se pudo cancelar";
+                if (feedbackMessage) feedbackMessage.textContent = error.message;
+            } finally {
+                button.disabled = false;
+                if (feedback instanceof HTMLDialogElement) feedback.showModal();
+            }
+        });
+    });
+
     if (!rows.length) return;
     const tabs = [...document.querySelectorAll("[data-filter]")];
     const search = document.querySelector("[data-search]");

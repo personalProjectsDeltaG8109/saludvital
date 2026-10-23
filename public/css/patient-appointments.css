@@ -335,6 +335,38 @@
     transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
 
+/* Match the rescheduling shortcut while using a distinct warning color for cancellation. */
+.appointment-cancel-button {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid #f2c9cf;
+    border-radius: 50%;
+    color: #b83245;
+    background: #fff7f8;
+    cursor: pointer;
+}
+
+.appointment-cancel-button svg { width: 18px; height: 18px; }
+.appointment-cancel-button:hover { color: #fff; background: #b83245; border-color: #b83245; }
+.appointment-cancel-button:focus-visible,
+.appointment-cancel-confirm:focus-visible { outline: 3px solid var(--appointments-teal); outline-offset: 3px; }
+.appointment-cancel-confirm {
+    min-height: 42px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    background: #b83245;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+.appointment-cancel-confirm:disabled { opacity: .65; cursor: wait; }
+.appointment-cancel-actions { justify-content: flex-end; gap: 10px; }
+.appointment-feedback-dialog .appointment-dialog-header { min-height: 125px; }
+
 .appointment-reschedule-link svg {
     width: 19px;
     height: 19px;

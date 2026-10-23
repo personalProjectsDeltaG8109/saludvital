@@ -86,6 +86,8 @@ html(lang="es")
                                             //- Only confirmed future appointments with remaining attempts can be rescheduled.
                                             - const reschedulesUsed = (appointment.history || []).filter((event) => event.event_type === "Rescheduled").length;
                                             - const canReschedule = !previewMode && status === "Confirmed" && date.getTime() > Date.now() && reschedulesUsed < 3;
+                                            //- Cancellation requires a confirmed appointment at least 24 hours away.
+                                            - const canCancel = !previewMode && status === "Confirmed" && date.getTime() - Date.now() >= 24 * 60 * 60 * 1000;
                                             tr(
                                                 id="appointment-" + appointment.id,
                                                 data-appointment,
@@ -139,6 +141,28 @@ html(lang="es")
                                                                     path(d="M16 3v4M8 3v4M3 10h18")
                                                                     path(d="M12 14a3 3 0 1 0 3 3")
                                                                     path(d="M15 14v3h-3")
+                                                        if canCancel
+                                                            button.appointment-cancel-button(
+                                                                type="button",
+                                                                aria-label=`Cancelar cita de ${(appointment.specialty && appointment.specialty.name) || "consulta médica"}`,
+                                                                title="Cancelar cita",
+                                                                data-open-cancel-dialog=appointment.id
+                                                            )
+                                                                svg(
+                                                                    viewBox="0 0 24 24",
+                                                                    fill="none",
+                                                                    stroke="currentColor",
+                                                                    stroke-width="1.8",
+                                                                    stroke-linecap="round",
+                                                                    stroke-linejoin="round",
+                                                                    aria-hidden="true",
+                                                                    focusable="false"
+                                                                )
+                                                                    path(d="M4 7h16")
+                                                                    path(d="M10 11v6M14 11v6")
+                                                                    path(
+                                                                        d="M5 7l1 14h12l1-14M9 7V4h6v3"
+                                                                    )
                                                     dialog.appointment-details-dialog(
                                                         id=`appointment-details-${appointment.id}`,
                                                         aria-labelledby=`appointment-details-title-${appointment.id}`
@@ -193,6 +217,34 @@ html(lang="es")
                                                                 type="button",
                                                                 data-close-appointment-details
                                                             ) Listo
+                                                    if canCancel
+                                                        dialog.appointment-details-dialog.appointment-cancel-dialog(
+                                                            id=`appointment-cancel-${appointment.id}`,
+                                                            aria-labelledby=`appointment-cancel-title-${appointment.id}`
+                                                        )
+                                                            .appointment-dialog-header
+                                                                div
+                                                                    span.appointment-dialog-kicker Confirmación
+                                                                    h2(
+                                                                        id=`appointment-cancel-title-${appointment.id}`
+                                                                    ) ¿Deseas cancelar esta cita?
+                                                                    p= `${(appointment.specialty && appointment.specialty.name) || "Consulta médica"} · ${date.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" })}`
+                                                                button.appointment-dialog-close(
+                                                                    type="button",
+                                                                    aria-label="Cerrar confirmación",
+                                                                    data-close-cancel-dialog
+                                                                ) ×
+                                                            .appointment-dialog-body
+                                                                p Esta acción conservará el registro de tu cita y liberará el horario.
+                                                            .appointment-dialog-footer.appointment-cancel-actions
+                                                                button.appointment-dialog-done(
+                                                                    type="button",
+                                                                    data-close-cancel-dialog
+                                                                ) Volver
+                                                                button.appointment-cancel-confirm(
+                                                                    type="button",
+                                                                    data-cancel-appointment=appointment.id
+                                                                ) Sí, cancelar cita
                             p.appointment-empty(
                                 hidden,
                                 data-empty,
@@ -207,4 +259,20 @@ html(lang="es")
                                 p Aquí aparecerá el historial de tus citas médicas.
                                 if previewAvailable
                                     a(href="/patient/appointments?preview=1") Ver ejemplo con citas ficticias
+                    dialog#appointment-feedback.appointment-details-dialog.appointment-feedback-dialog(
+                        aria-labelledby="appointment-feedback-title",
+                        aria-live="polite"
+                    )
+                        .appointment-dialog-header
+                            div
+                                span.appointment-dialog-kicker SaludVital
+                                h2#appointment-feedback-title
+                                p(data-appointment-feedback-message)
+                            button.appointment-dialog-close(
+                                type="button",
+                                aria-label="Cerrar mensaje",
+                                data-close-feedback
+                            ) ×
+                        .appointment-dialog-footer
+                            button.appointment-dialog-done(type="button", data-close-feedback) Entendido
         include partials/bottom-nav
