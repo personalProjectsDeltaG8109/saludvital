@@ -105,7 +105,7 @@
         if (pageLabel) pageLabel.textContent = `Página ${pageNumber} de ${totalPages}`;
 
         [previousPage, nextPage].filter(Boolean).forEach((input) => {
-            for (const name of ["startDate", "endDate", "specialty", "status", "search"]) {
+            for (const name of ["startDate", "endDate", "status", "search"]) {
                 const filterValue = parameters.get(name) || "";
                 const hiddenInput = input.form.elements.namedItem(name);
                 if (hiddenInput) hiddenInput.value = filterValue;
@@ -119,7 +119,7 @@
 
     function updateQuickFilters(parameters) {
         document.querySelectorAll("[data-appointment-quick-filter]").forEach((form) => {
-            for (const name of ["startDate", "endDate", "specialty", "search"]) {
+            for (const name of ["startDate", "endDate", "search"]) {
                 const input = form.elements.namedItem(name);
                 if (input) input.value = parameters.get(name) || "";
             }
@@ -135,7 +135,7 @@
     }
 
     function updateMainFilters(parameters) {
-        for (const name of ["startDate", "endDate", "specialty", "status", "search"]) {
+        for (const name of ["startDate", "endDate", "status", "search"]) {
             const input = filterForm.elements.namedItem(name);
             if (input) input.value = parameters.get(name) || "";
         }

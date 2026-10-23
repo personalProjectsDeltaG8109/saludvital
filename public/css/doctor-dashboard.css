@@ -153,7 +153,7 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .summary-cancelled .doctor-summary-icon { background: #e36b75; }
 .doctor-summary-item.is-selected { border-color: #168de2; box-shadow: inset 0 0 0 1px #168de2, 0 7px 18px rgb(8 124 240 / 10%); }
 .doctor-summary-item:focus-visible { outline: 3px solid #f4a900; outline-offset: 2px; }
-.doctor-appointment-filters { display: grid; grid-template-columns: minmax(125px, .8fr) minmax(125px, .8fr) minmax(140px, 1fr) minmax(130px, .9fr) minmax(190px, 1.3fr) auto; align-items: end; gap: 12px; padding: 18px; border-bottom: 1px solid #e8f0f8; background: linear-gradient(180deg, #f8fbff, #fff); }
+.doctor-appointment-filters { display: grid; grid-template-columns: minmax(130px, .8fr) minmax(130px, .8fr) minmax(150px, .9fr) minmax(220px, 1.5fr) auto; align-items: end; gap: 12px; padding: 18px; border-bottom: 1px solid #e8f0f8; background: linear-gradient(180deg, #f8fbff, #fff); }
 .doctor-filter-field { display: grid; min-width: 0; gap: 5px; color: #365578; font-size: 11px; font-weight: 650; }
 .doctor-filter-field input, .doctor-filter-field select { box-sizing: border-box; width: 100%; min-width: 0; height: 42px; padding: 0 11px; border: 1px solid #d9e7f3; border-radius: 10px; color: #294b73; background: #fff; font: inherit; font-size: 12px; box-shadow: 0 2px 5px rgb(26 76 130 / 3%); transition: border-color 140ms ease, box-shadow 140ms ease; }
 .doctor-filter-field input:focus, .doctor-filter-field select:focus { outline: 0; border-color: #168de2; box-shadow: 0 0 0 4px rgb(8 124 240 / 13%); }
@@ -254,6 +254,7 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-appointment-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 9px; padding: 14px 12px; }
     .doctor-filter-field { gap: 6px; font-size: 11px; }
     .doctor-filter-field input, .doctor-filter-field select { height: 42px; padding: 0 9px; font-size: 12px; }
+    .doctor-filter-status { grid-column: 1 / -1; }
     .doctor-filter-search { grid-column: 1 / -1; }
     .doctor-filter-actions { grid-column: 1 / -1; justify-content: flex-start; padding-top: 1px; }
     .doctor-filter-reset { display: inline-flex; min-height: 36px; align-items: center; padding: 0 2px; }

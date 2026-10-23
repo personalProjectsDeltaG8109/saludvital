@@ -27,7 +27,6 @@ html(lang="es")
                             form.doctor-summary-filter(method="get", action=appointmentsPath, data-appointment-quick-filter)
                                 input(type="hidden", name="startDate", value=appointmentFilters.startDate)
                                 input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                input(type="hidden", name="specialty", value=appointmentFilters.specialtyId)
                                 input(type="hidden", name="search", value=appointmentFilters.search)
                                 button.doctor-summary-item.is-total(
                                     type="submit",
@@ -43,7 +42,6 @@ html(lang="es")
                                 form.doctor-summary-filter(method="get", action=appointmentsPath, data-appointment-quick-filter)
                                     input(type="hidden", name="startDate", value=appointmentFilters.startDate)
                                     input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="specialty", value=appointmentFilters.specialtyId)
                                     input(type="hidden", name="search", value=appointmentFilters.search)
                                     button.doctor-summary-item(
                                         type="submit",
@@ -64,13 +62,7 @@ html(lang="es")
                             label.doctor-filter-field
                                 span Fecha final
                                 input(type="date", name="endDate", value=appointmentFilters.endDate)
-                            label.doctor-filter-field
-                                span Especialidad
-                                select(name="specialty")
-                                    option(value="") Todas
-                                    each specialty in appointmentSpecialties
-                                        option(value=specialty.id, selected=String(appointmentFilters.specialtyId) === String(specialty.id))= specialty.name
-                            label.doctor-filter-field
+                            label.doctor-filter-field.doctor-filter-status
                                 span Estado
                                 select(name="status")
                                     option(value="") Todos
@@ -140,7 +132,6 @@ html(lang="es")
                                 form(method="get", action=appointmentsPath, data-appointment-page-filter)
                                     input(type="hidden", name="startDate", value=appointmentFilters.startDate)
                                     input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="specialty", value=appointmentFilters.specialtyId)
                                     input(type="hidden", name="status", value=appointmentFilters.status)
                                     input(type="hidden", name="search", value=appointmentFilters.search)
                                     input(type="hidden", name="page", value=appointmentPage - 1, data-previous-page)
@@ -149,7 +140,6 @@ html(lang="es")
                                 form(method="get", action=appointmentsPath, data-appointment-page-filter)
                                     input(type="hidden", name="startDate", value=appointmentFilters.startDate)
                                     input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="specialty", value=appointmentFilters.specialtyId)
                                     input(type="hidden", name="status", value=appointmentFilters.status)
                                     input(type="hidden", name="search", value=appointmentFilters.search)
                                     input(type="hidden", name="page", value=appointmentPage + 1, data-next-page)

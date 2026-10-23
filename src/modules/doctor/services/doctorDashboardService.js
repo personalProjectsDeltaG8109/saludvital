@@ -307,7 +307,6 @@ function parseAppointmentFilters(query) {
         search: readQueryValue("search").slice(0, 100),
         startDate: readQueryValue("startDate"),
         endDate: readQueryValue("endDate"),
-        specialtyId: readQueryValue("specialty"),
         status: readQueryValue("status"),
         page: requestedPage,
     };
@@ -331,12 +330,6 @@ function parseAppointmentFilters(query) {
 
     if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
         const error = new Error("La fecha inicial no puede ser posterior a la fecha final.");
-        error.statusCode = 400;
-        throw error;
-    }
-
-    if (filters.specialtyId && !/^\d+$/.test(filters.specialtyId)) {
-        const error = new Error("La especialidad seleccionada no es válida.");
         error.statusCode = 400;
         throw error;
     }
@@ -367,18 +360,6 @@ export async function getDoctorAppointments(userId, query = {}) {
         appointmentDate[Op.lt] = getBogotaDateBoundary(filters.endDate, true);
     }
     if (Object.keys(appointmentDate).length) where.start_at = appointmentDate;
-    if (filters.specialtyId) {
-        where.specialty_id = Number(filters.specialtyId);
-        const assignedSpecialty = await Appointment.findOne({
-            where: { doctor_id: doctor.id, specialty_id: where.specialty_id },
-            attributes: ["id"],
-        });
-        if (!assignedSpecialty) {
-            const error = new Error("La especialidad seleccionada no es válida.");
-            error.statusCode = 400;
-            throw error;
-        }
-    }
     if (filters.status) {
         if (filters.status === "In Progress") {
             const error = new Error("El estado en curso no está disponible como filtro.");
@@ -413,7 +394,7 @@ export async function getDoctorAppointments(userId, query = {}) {
         ];
     }
 
-    const [result, statusRows, specialtyRows, statusCounts] = await Promise.all([
+    const [result, statusRows, statusCounts] = await Promise.all([
         Appointment.findAndCountAll({
             where,
             include: [
@@ -438,18 +419,6 @@ export async function getDoctorAppointments(userId, query = {}) {
             offset: (filters.page - 1) * limit,
         }),
         AppointmentStatus.findAll({ attributes: ["name"], order: [["name", "ASC"]] }),
-        Appointment.findAll({
-            where: { doctor_id: doctor.id },
-            attributes: ["specialty_id"],
-            group: ["specialty_id"],
-            raw: true,
-        }).then((rows) =>
-            Specialities.findAll({
-                where: { id: rows.map((row) => row.specialty_id) },
-                attributes: ["id", "name"],
-                order: [["name", "ASC"]],
-            }),
-        ),
         Appointment.findAll({
             where: { doctor_id: doctor.id },
             attributes: [
@@ -534,10 +503,6 @@ export async function getDoctorAppointments(userId, query = {}) {
                 count: counts[status.name] || 0,
             })),
         appointmentTotalCount: statusCounts.reduce((total, row) => total + Number(row.count), 0),
-        appointmentSpecialties: specialtyRows.map((specialty) => ({
-            id: specialty.id,
-            name: specialty.name,
-        })),
         appointmentCount: result.count,
         appointmentPage: page,
         appointmentPageSize: limit,
