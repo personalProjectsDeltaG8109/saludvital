@@ -84,7 +84,7 @@ async function getCompletedConsultations(doctorId, start, end) {
         where: {
             doctor_id: doctorId,
             status: "Completed",
-            started_at: { [Op.gte]: start, [Op.lt]: end },
+            ended_at: { [Op.gte]: start, [Op.lt]: end },
         },
         attributes: ["duration_seconds"],
         raw: true,
@@ -104,7 +104,7 @@ async function getActivePatientRows(doctorId, since) {
                 where: {
                     doctor_id: doctorId,
                     status: "Completed",
-                    started_at: { [Op.gte]: since },
+                    ended_at: { [Op.gte]: since },
                 },
             },
             {
@@ -140,7 +140,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                 },
                 include: [
                     { model: Patient, as: "patient", attributes: ["id", "first_name", "last_name"] },
-                    { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                    { model: AppointmentStatus, as: "status", attributes: ["name"], required: true, where: { name: { [Op.ne]: CANCELLED_STATUS } } },
                 ],
                 order: [["start_at", "ASC"]],
             }),
@@ -151,7 +151,13 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                 },
                 include: [
                     { model: Patient, as: "patient", attributes: ["id", "first_name", "last_name"] },
-                    { model: AppointmentStatus, as: "status", attributes: ["name"] },
+                    {
+                        model: AppointmentStatus,
+                        as: "status",
+                        attributes: ["name"],
+                        required: true,
+                        where: { name: { [Op.ne]: CANCELLED_STATUS } },
+                    },
                 ],
                 order: [["start_at", "ASC"]],
             }),
@@ -165,16 +171,15 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
     }
 
     const durations = weeklyConsultations
+        .filter(({ duration_seconds }) => duration_seconds !== null && duration_seconds !== undefined)
         .map(({ duration_seconds }) => Number(duration_seconds))
         .filter((duration) => Number.isFinite(duration) && duration >= 0);
     const averageDurationSeconds = durations.length
         ? Math.round(durations.reduce((total, duration) => total + duration, 0) / durations.length)
         : null;
 
-    // Keep the dashboard response limited to summary fields and exclude cancelled appointments.
-    const visibleAppointments = todayAppointments.filter(
-        (appointment) => appointment.status?.name !== CANCELLED_STATUS,
-    );
+    // Keep the dashboard response limited to summary fields; cancelled records were excluded in SQL.
+    const visibleAppointments = todayAppointments;
 
     return {
         doctorName: doctor.display_name || "Médico",
@@ -185,12 +190,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             averageDurationSeconds,
         },
         todayAppointments: visibleAppointments.map(serializeAppointment),
-        nextAppointment:
-            nextAppointment?.status?.name === CANCELLED_STATUS
-                ? null
-                : nextAppointment
-                  ? serializeAppointment(nextAppointment)
-                  : null,
+        nextAppointment: nextAppointment ? serializeAppointment(nextAppointment) : null,
     };
 }
 

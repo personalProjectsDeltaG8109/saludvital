@@ -17,6 +17,10 @@ doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) =
         return res.render("doctor/dashboard", {
             pageTitle: "Inicio | SaludVital",
             activeNav: "home",
+            averageDurationLabel:
+                dashboard.metrics.averageDurationSeconds === null
+                    ? "Sin datos"
+                    : `${Math.round(dashboard.metrics.averageDurationSeconds / 60)} min`,
             ...dashboard,
         });
     } catch (error) {
