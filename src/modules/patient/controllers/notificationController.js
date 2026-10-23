@@ -5,9 +5,11 @@ import {
 
 export async function savePatientNotificationPreferences(req, res, next) {
     try {
+        // Save channel choices and their notification-only contact destinations together.
         const preferences = await updatePatientNotificationPreferences(
             req.auth.userId,
             req.body?.preferences,
+            req.body?.contacts,
         );
 
         return res.status(200).json({
