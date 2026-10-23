@@ -88,8 +88,10 @@
         confirmSummary.textContent =
             "Canales activos: " +
             channelLabels.join(", ") +
-            ". Número para SMS y WhatsApp: " +
-            contacts.phone +
+            ". Número para SMS: " +
+            contacts.smsPhone +
+            ". Número para WhatsApp: " +
+            contacts.whatsappPhone +
             ". Correo de notificaciones: " +
             contacts.email +
             ".";

@@ -64,25 +64,20 @@ html(lang="es")
                                             strong= channel.label
                                             p= channel.description
                                             if channel.key === "WhatsApp" || channel.key === "SMS"
-                                                .notifications-contact(class=channel.key === "SMS" ? "notifications-contact-editable" : null)
-                                                    if channel.key === "WhatsApp"
-                                                        span(aria-hidden="true") ☎
-                                                        span Usa el mismo número configurado para SMS.
-                                                    else
-                                                        //- One notification number is shared by WhatsApp and SMS.
-                                                        label.notifications-contact-field
-                                                            span Número para SMS y WhatsApp
-                                                            input(
-                                                                type="tel",
-                                                                inputmode="tel",
-                                                                autocomplete="tel",
-                                                                maxlength="20",
-                                                                pattern="[+]?[0-9\\s()-]{7,20}",
-                                                                required,
-                                                                value=notificationContacts.phone,
-                                                                data-notification-contact="phone",
-                                                                aria-label="Número para recibir SMS y WhatsApp"
-                                                            )
+                                                .notifications-contact.notifications-contact-editable
+                                                    label.notifications-contact-field
+                                                        span= channel.key === "SMS" ? "Número para SMS" : "Número para WhatsApp"
+                                                        input(
+                                                            type="tel",
+                                                            inputmode="tel",
+                                                            autocomplete="tel",
+                                                            maxlength="20",
+                                                            pattern="[+]?[0-9\\s()-]{7,20}",
+                                                            required,
+                                                            value=channel.key === "SMS" ? notificationContacts.smsPhone : notificationContacts.whatsappPhone,
+                                                            data-notification-contact=channel.key === "SMS" ? "smsPhone" : "whatsappPhone",
+                                                            aria-label=channel.key === "SMS" ? "Número para recibir SMS" : "Número para recibir WhatsApp"
+                                                        )
                                             else
                                                 .notifications-contact.notifications-contact-editable
                                                     label.notifications-contact-field
