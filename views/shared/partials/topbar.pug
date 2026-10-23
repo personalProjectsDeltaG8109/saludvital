@@ -8,6 +8,12 @@ mixin topbarUserContent()
         strong= displayName
         small= roleLabel
 
+mixin notificationBellIcon()
+    svg(viewBox="0 0 24 24", aria-hidden="true")
+        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
+    if notificationCount
+        span= notificationCount
+
 header.sv-topbar
     a.sv-mobile-brand(href=homeHref, aria-label="SaludVital, inicio")
         if mobileLogoSrc
@@ -32,10 +38,10 @@ header.sv-topbar
     .sv-topbar-actions
         if notificationHref
             a.sv-bell(href=notificationHref, aria-label=notificationLabel)
-                svg(viewBox="0 0 24 24", aria-hidden="true")
-                    path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
-                if notificationCount
-                    span= notificationCount
+                +notificationBellIcon()
+        else if showNotificationBell
+            button.sv-bell(type="button", aria-label=notificationLabel, disabled)
+                +notificationBellIcon()
         if profileHref
             a.sv-user-chip(href=profileHref, aria-label=profileLabel)
                 +topbarUserContent()

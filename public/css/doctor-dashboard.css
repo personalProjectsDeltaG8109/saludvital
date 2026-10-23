@@ -7,6 +7,7 @@
 .doctor-home-page .sv-sidebar { width: 238px; }
 .doctor-home-page .sv-main { width: calc(100% - 238px); margin-left: 238px; }
 .doctor-home-page .sv-nav-link.is-disabled { cursor: not-allowed; opacity: .62; }
+.doctor-home-page .sv-bell { border: 0; }
 
 /* The doctor dashboard reuses the patient portal's shared shell and navigation. */
 .doctor-content {
@@ -136,7 +137,6 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 @media (max-width: 760px) {
     .doctor-home-page .sv-sidebar { width: min(280px, 84vw); }
     .doctor-home-page .sv-main { width: 100%; margin: 0; }
-    .doctor-home-page .sv-topbar-actions { display: none; }
     .doctor-content { gap: 13px; padding: 14px 12px 20px; }
     .doctor-hero { min-height: 140px; padding: 18px; border-radius: 13px; }
     .doctor-hero-copy { max-width: 66%; }
