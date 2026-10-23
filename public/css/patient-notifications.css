@@ -54,6 +54,12 @@
     line-height: 1.45;
 }
 
+.notifications-hero .notifications-delivery-note {
+    margin-top: 7px;
+    color: #536b8c;
+    font-size: 11px;
+}
+
 .notifications-hero-art {
     position: absolute;
     inset: 0 8% 0 auto;
@@ -247,6 +253,7 @@
     .notifications-hero::before,.notifications-hero-art { display: none; }
     .notifications-hero h2 { margin-bottom: 2px; font-size: 23px; letter-spacing: -.4px; }
     .notifications-hero p { max-width: 350px; color: #244a78; font-size: 12px; line-height: 1.35; }
+    .notifications-hero .notifications-delivery-note { margin-top: 4px; color: #536b8c; font-size: 10px; }
     .notifications-settings { grid-template-columns: minmax(0, 1fr); gap: 8px; }
     .notifications-card { padding: 10px 9px; border-radius: 12px; }
     .notifications-section-heading { margin-bottom: 7px; }
