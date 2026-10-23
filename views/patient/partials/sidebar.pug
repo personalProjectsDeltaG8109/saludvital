@@ -1,79 +1,16 @@
-aside#patient-sidebar.sv-sidebar
-    a.sv-sidebar-brand(href="/patient/dashboard", aria-label="SaludVital, inicio")
-        img(src="/brand/logo-primary.png", alt="SaludVital")
+- var sidebarId = "patient-sidebar";
+- var homeHref = "/patient/dashboard";
+- var sidebarLabel = "Navegación principal";
+- var logoutLabel = "Cerrar sesión";
+-
+    var sidebarItems = [
+        { key: "home", label: "Inicio", href: homeHref, icon: "m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" },
+        { key: "book", label: "Pedir cita", href: "/patient/appointments/new", icon: "M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6" },
+        { key: "appointments", label: "Mis citas", href: "/patient/appointments", icon: "M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2" },
+        { key: "reschedule", label: "Reprogramar cita", href: "/patient/appointments/reschedule", icon: "M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1" },
+        { key: "notifications", label: "Notificaciones", href: "/patient/notifications", icon: "M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4" },
+        { key: "clinical-history", label: "Historial clínico", href: "/patient/clinical-history", icon: "M7 3h8l4 4v14H5V3h2Zm7 0v5h5M8 12h8m-8 4h8m-8-8h2" },
+        { key: "profile", label: "Mi perfil", href: "/patient/profile", icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0" },
+    ];
 
-    nav.sv-side-nav(aria-label="Navegación principal")
-        a.sv-nav-link(
-            class=activeNav === "home" ? "is-active" : null,
-            href="/patient/dashboard",
-            aria-current=activeNav === "home" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z")
-            span Inicio
-        a.sv-nav-link(
-            class=activeNav === "book" ? "is-active" : null,
-            href="/patient/appointments/new",
-            aria-current=activeNav === "book" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(
-                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm7 7v6m-3-3h6"
-                    )
-            span Pedir cita
-        a.sv-nav-link(
-            class=activeNav === "appointments" ? "is-active" : null,
-            href="/patient/appointments",
-            aria-current=activeNav === "appointments" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(
-                        d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
-                    )
-            span Mis citas
-        a.sv-nav-link(
-            class=activeNav === "reschedule" ? "is-active" : null,
-            href="/patient/appointments/reschedule",
-            aria-current=activeNav === "reschedule" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(
-                        d="M20 7v5h-5M4 17v-5h5m10-2a7 7 0 0 0-12-3L4 9m16 6-3 2a7 7 0 0 1-12-3m7-3v4l2 1"
-                    )
-            span Reprogramar cita
-        a.sv-nav-link(
-            class=activeNav === "notifications" ? "is-active" : null,
-            href="/patient/notifications",
-            aria-current=activeNav === "notifications" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
-            span Notificaciones
-        a.sv-nav-link(
-            class=activeNav === "clinical-history" ? "is-active" : null,
-            href="/patient/clinical-history",
-            aria-current=activeNav === "clinical-history" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(d="M7 3h8l4 4v14H5V3h2Zm7 0v5h5M8 12h8m-8 4h8m-8-8h2")
-            span Historial clínico
-        a.sv-nav-link(
-            class=activeNav === "profile" ? "is-active" : null,
-            href="/patient/profile",
-            aria-current=activeNav === "profile" ? "page" : null
-        )
-            span.sv-nav-icon(aria-hidden="true")
-                svg(viewBox="0 0 24 24")
-                    path(d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM5 21a7 7 0 0 1 14 0")
-            span Mi perfil
-
-    .sv-sidebar-footer
-        form.sv-logout(action="/logout", method="POST")
-            button(type="submit")
-                span(aria-hidden="true") ↪ Cerrar sesión
+include ../../shared/partials/sidebar.pug

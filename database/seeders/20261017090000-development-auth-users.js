@@ -80,7 +80,7 @@ export async function up(queryInterface) {
             role: "Doctor",
         },
         {
-            email: "patient.test@saludvital.local",
+            email: "test@saludvital.local",
             role: "Patient",
         },
     ];

@@ -1,6 +1,7 @@
 (() => {
-    const sidebar = document.querySelector("#patient-sidebar");
     const menuButton = document.querySelector("[data-toggle-sidebar]");
+    const sidebarId = menuButton?.getAttribute("aria-controls");
+    const sidebar = sidebarId ? document.getElementById(sidebarId) : null;
     const backdrop = document.querySelector("[data-close-sidebar]");
 
     if (!sidebar || !menuButton || !backdrop) return;

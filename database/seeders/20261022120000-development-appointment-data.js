@@ -31,7 +31,7 @@ export async function up(queryInterface) {
          WHERE u.email = :email
          LIMIT 1`,
         {
-            replacements: { email: "patient.test@saludvital.local" },
+            replacements: { email: "test@saludvital.local" },
             type: QueryTypes.SELECT,
         },
     );

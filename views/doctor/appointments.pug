@@ -1,0 +1,44 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-dashboard.css")
+    body.sv-dashboard.doctor-home-page.patient-home-page
+        .sv-layout
+            include ./partials/sidebar.pug
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.doctor-subpage-content
+                    header.doctor-page-heading
+                        p.doctor-eyebrow Agenda médica
+                        h1 Mis citas
+                        p Revisa las citas asignadas a tu perfil.
+                    section.doctor-panel.doctor-list-panel(aria-label="Citas del médico")
+                        if appointments.length
+                            ul.doctor-appointment-list.doctor-full-list
+                                each appointment in appointments
+                                    li.doctor-appointment-row(id=`appointment-${appointment.id}`)
+                                        time.doctor-appointment-time(
+                                            datetime=appointment.startAt.toISOString()
+                                        )
+                                            strong= appointment.dateLabel
+                                            span= appointment.timeLabel
+                                        span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                        span.doctor-appointment-info
+                                            strong= appointment.patientName
+                                            small= appointment.reason || "Consulta médica"
+                                        span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
+                        else
+                            .doctor-empty-state
+                                span.doctor-empty-icon(aria-hidden="true") ▦
+                                strong Aún no tienes citas
+                                p Tus citas asignadas aparecerán aquí.
+                include ./partials/bottom-nav.pug
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)

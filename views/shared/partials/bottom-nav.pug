@@ -1,0 +1,12 @@
+- var currentBottomNav = typeof bottomNavActive !== "undefined" ? bottomNavActive : activeNav;
+
+nav.sv-bottom-nav(aria-label=bottomNavLabel)
+    each item in mobileNavItems
+        a(
+            class=currentBottomNav === item.key ? "is-active" : null,
+            href=item.href,
+            aria-current=currentBottomNav === item.key ? "page" : null
+        )
+            svg(viewBox="0 0 24 24", aria-hidden="true")
+                path(d=item.icon)
+            span= item.mobileLabel || item.label

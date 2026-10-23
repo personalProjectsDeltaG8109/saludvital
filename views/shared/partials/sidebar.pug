@@ -1,0 +1,31 @@
+aside.sv-sidebar(id=sidebarId)
+    a.sv-sidebar-brand(href=homeHref, aria-label="SaludVital, inicio")
+        img(src="/brand/logo-primary.png", alt="SaludVital")
+
+    nav.sv-side-nav(aria-label=sidebarLabel)
+        each item in sidebarItems
+            if item.disabled
+                span.sv-nav-link.is-disabled(
+                    aria-disabled="true",
+                    title="Esta sección aún no está disponible"
+                )
+                    span.sv-nav-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24")
+                            path(d=item.icon)
+                    span= item.label
+            else
+                a.sv-nav-link(
+                    class=activeNav === item.key ? "is-active" : null,
+                    href=item.href,
+                    aria-current=activeNav === item.key ? "page" : null
+                )
+                    span.sv-nav-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24")
+                            path(d=item.icon)
+                    span= item.label
+
+    .sv-sidebar-footer
+        form.sv-logout(action="/logout", method="POST")
+            button(type="submit")
+                span(aria-hidden="true") ↪
+                = ` ${logoutLabel}`
