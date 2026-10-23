@@ -5,6 +5,10 @@ import {
     startEmailOutboxScheduler,
     stopEmailOutboxScheduler,
 } from "./src/modules/auth/services/emailOutboxScheduler.js";
+import {
+    startNotificationScheduler,
+    stopNotificationScheduler,
+} from "./src/modules/patient/services/notificationScheduler.js";
 
 // Start the application only after the database connection succeeds.
 async function startServer() {
@@ -15,6 +19,8 @@ async function startServer() {
 
         // Start processing email jobs after the server starts.
         startEmailOutboxScheduler();
+        // Process appointment notifications only when explicitly enabled in the environment.
+        startNotificationScheduler();
     });
 
     // Handle graceful shutdown requests from the operating system.
@@ -31,6 +37,7 @@ async function startServer() {
         try {
             // Stop scheduling email jobs and wait for the active batch.
             await stopEmailOutboxScheduler();
+            await stopNotificationScheduler();
 
             // Stop accepting requests before closing the database connection.
             await new Promise((resolve, reject) => {
