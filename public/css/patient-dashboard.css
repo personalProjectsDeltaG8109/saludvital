@@ -1035,9 +1035,9 @@
     }
 
     .sv-topbar {
-        min-height: 54px;
-        height: 54px;
-        padding: 5px 12px;
+        min-height: 96px;
+        height: 96px;
+        padding: 5px 12px 42px;
         position: relative;
         display: flex;
         flex-wrap: nowrap;
@@ -1085,8 +1085,32 @@
         height: 38px;
     }
 
+    /* Keep the account name and role visible on a dedicated mobile header row. */
     .sv-user-chip {
-        display: none;
+        position: absolute;
+        bottom: 5px;
+        left: 12px;
+        display: flex;
+        gap: 7px;
+    }
+
+    .sv-user-chip .sv-avatar {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        font-size: 12px;
+    }
+
+    .sv-user-chip strong {
+        max-width: calc(100vw - 100px);
+        overflow: hidden;
+        font-size: 11px;
+        text-overflow: ellipsis;
+    }
+
+    .sv-user-chip small {
+        margin-top: 1px;
+        font-size: 10px;
     }
 
     .sv-topbar-copy {
@@ -1094,9 +1118,9 @@
     }
 
     .patient-home-page .sv-topbar {
-        min-height: 112px;
-        height: 112px;
-        padding: 5px 12px 8px;
+        min-height: 148px;
+        height: 148px;
+        padding: 5px 12px 42px;
         flex-wrap: wrap;
         align-content: flex-start;
         gap: 0;
