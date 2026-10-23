@@ -5,6 +5,7 @@ import {
     Consultation,
     Doctor,
     Patient,
+    Specialities,
 } from "../../../models/associations.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
@@ -289,27 +290,257 @@ export async function getDoctorActivePatients(userId) {
     };
 }
 
-export async function getDoctorAppointments(userId) {
+function parseAppointmentFilters(query) {
+    const readQueryValue = (key) => {
+        const value = query[key];
+        if (value === undefined) return "";
+        if (typeof value !== "string") {
+            const error = new Error("Uno de los filtros enviados no es válido.");
+            error.statusCode = 400;
+            throw error;
+        }
+        return value.trim();
+    };
+    const rawPage = readQueryValue("page");
+    const requestedPage = rawPage && /^\d+$/.test(rawPage) ? Number(rawPage) : 1;
+    const filters = {
+        search: readQueryValue("search").slice(0, 100),
+        startDate: readQueryValue("startDate"),
+        endDate: readQueryValue("endDate"),
+        specialtyId: readQueryValue("specialty"),
+        status: readQueryValue("status"),
+        page: requestedPage,
+    };
+    const validDate = (value) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+        const parsedDate = new Date(`${value}T00:00:00.000Z`);
+        return (
+            !Number.isNaN(parsedDate.getTime()) &&
+            parsedDate.toISOString().slice(0, 10) === value
+        );
+    };
+
+    if (
+        (filters.startDate && !validDate(filters.startDate)) ||
+        (filters.endDate && !validDate(filters.endDate))
+    ) {
+        const error = new Error("Selecciona un rango de fechas válido.");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+        const error = new Error("La fecha inicial no puede ser posterior a la fecha final.");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (filters.specialtyId && !/^\d+$/.test(filters.specialtyId)) {
+        const error = new Error("La especialidad seleccionada no es válida.");
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (!Number.isSafeInteger(filters.page) || filters.page < 1) filters.page = 1;
+    return filters;
+}
+
+function getBogotaDateBoundary(date, endOfDay = false) {
+    const [year, month, day] = date.split("-").map(Number);
+    return new Date(Date.UTC(year, month - 1, day + (endOfDay ? 1 : 0), 5));
+}
+
+export async function getDoctorAppointments(userId, query = {}) {
     const doctor = await getDoctorForUser(userId);
     if (!doctor) return null;
 
-    const appointments = await Appointment.findAll({
-        where: { doctor_id: doctor.id },
-        include: [
+    const filters = parseAppointmentFilters(query);
+    const where = { doctor_id: doctor.id };
+    const patientWhere = {};
+    const appointmentDate = {};
+    const limit = 6;
+
+    if (filters.startDate) {
+        appointmentDate[Op.gte] = getBogotaDateBoundary(filters.startDate);
+    }
+    if (filters.endDate) {
+        appointmentDate[Op.lt] = getBogotaDateBoundary(filters.endDate, true);
+    }
+    if (Object.keys(appointmentDate).length) where.start_at = appointmentDate;
+    if (filters.specialtyId) {
+        where.specialty_id = Number(filters.specialtyId);
+        const assignedSpecialty = await Appointment.findOne({
+            where: { doctor_id: doctor.id, specialty_id: where.specialty_id },
+            attributes: ["id"],
+        });
+        if (!assignedSpecialty) {
+            const error = new Error("La especialidad seleccionada no es válida.");
+            error.statusCode = 400;
+            throw error;
+        }
+    }
+    if (filters.status) {
+        if (filters.status === "In Progress") {
+            const error = new Error("El estado en curso no está disponible como filtro.");
+            error.statusCode = 400;
+            throw error;
+        }
+        const statusExists = await AppointmentStatus.findOne({
+            where: { name: filters.status },
+            attributes: ["id"],
+        });
+        if (!statusExists) {
+            const error = new Error("El estado seleccionado no es válido.");
+            error.statusCode = 400;
+            throw error;
+        }
+        where.status_id = statusExists.id;
+    }
+
+    if (filters.search) {
+        const searchTerm = `%${filters.search}%`;
+        const searchWords = filters.search.split(/\s+/).filter(Boolean);
+        patientWhere[Op.or] = [
+            { document_number: { [Op.like]: searchTerm } },
             {
-                model: Patient,
-                as: "patient",
-                attributes: ["id", "first_name", "last_name"],
+                [Op.and]: searchWords.map((word) => ({
+                    [Op.or]: [
+                        { first_name: { [Op.like]: `%${word}%` } },
+                        { last_name: { [Op.like]: `%${word}%` } },
+                    ],
+                })),
             },
-            { model: AppointmentStatus, as: "status", attributes: ["name"] },
-        ],
-        order: [["start_at", "DESC"]],
-        limit: 100,
-    });
+        ];
+    }
+
+    const [result, statusRows, specialtyRows, statusCounts] = await Promise.all([
+        Appointment.findAndCountAll({
+            where,
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: [
+                        "id",
+                        "first_name",
+                        "last_name",
+                        "profile_photo_url",
+                        "document_number",
+                    ],
+                    required: Boolean(filters.search),
+                    ...(filters.search ? { where: patientWhere } : {}),
+                },
+                { model: AppointmentStatus, as: "status", attributes: ["name"], required: true },
+                { model: Specialities, as: "specialty", attributes: ["name"], required: true },
+            ],
+            order: [["start_at", "ASC"]],
+            limit,
+            offset: (filters.page - 1) * limit,
+        }),
+        AppointmentStatus.findAll({ attributes: ["name"], order: [["name", "ASC"]] }),
+        Appointment.findAll({
+            where: { doctor_id: doctor.id },
+            attributes: ["specialty_id"],
+            group: ["specialty_id"],
+            raw: true,
+        }).then((rows) =>
+            Specialities.findAll({
+                where: { id: rows.map((row) => row.specialty_id) },
+                attributes: ["id", "name"],
+                order: [["name", "ASC"]],
+            }),
+        ),
+        Appointment.findAll({
+            where: { doctor_id: doctor.id },
+            attributes: [
+                "status_id",
+                [Appointment.sequelize.fn("COUNT", Appointment.sequelize.col("id")), "count"],
+            ],
+            group: ["status_id"],
+            raw: true,
+        }),
+    ]);
+
+    const countByStatusId = new Map(
+        statusCounts.map((row) => [Number(row.status_id), Number(row.count)]),
+    );
+    const counts = Object.fromEntries(
+        statusRows.map((status) => [status.name, countByStatusId.get(status.id) || 0]),
+    );
+    const totalPages = Math.max(1, Math.ceil(result.count / limit));
+    const page = Math.min(filters.page, totalPages);
+
+    // If a stale page number was requested, fetch the last valid page instead of showing an empty result.
+    const appointments =
+        page === filters.page
+            ? result.rows
+            : await Appointment.findAll({
+                  where,
+                  include: [
+                      {
+                          model: Patient,
+                          as: "patient",
+                          attributes: [
+                              "id",
+                              "first_name",
+                              "last_name",
+                              "profile_photo_url",
+                              "document_number",
+                          ],
+                          required: Boolean(filters.search),
+                          ...(filters.search ? { where: patientWhere } : {}),
+                      },
+                      {
+                          model: AppointmentStatus,
+                          as: "status",
+                          attributes: ["name"],
+                          required: true,
+                      },
+                      {
+                          model: Specialities,
+                          as: "specialty",
+                          attributes: ["name"],
+                          required: true,
+                      },
+                  ],
+                  order: [["start_at", "ASC"]],
+                  limit,
+                  offset: (page - 1) * limit,
+              });
 
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
-        appointments: appointments.map((appointment) => serializeAppointment(appointment)),
+        appointments: appointments.map((appointment) => ({
+            ...serializeAppointment(appointment, { includePatientPhoto: true }),
+            specialty: appointment.specialty?.name || "Consulta médica",
+        })),
+        appointmentFilters: { ...filters, page },
+        appointmentStatuses: statusRows
+            .filter((status) => status.name !== "In Progress")
+            .sort((first, second) => {
+                const statusOrder = { Confirmed: 0, Attended: 1, Cancelled: 2 };
+                return (statusOrder[first.name] ?? 3) - (statusOrder[second.name] ?? 3);
+            })
+            .map((status) => ({
+                name: status.name,
+                label: getAppointmentStatusLabel(status.name),
+                summaryLabel:
+                    {
+                        Confirmed: "Confirmadas",
+                        Attended: "Atendidas",
+                        Cancelled: "Canceladas",
+                    }[status.name] || getAppointmentStatusLabel(status.name),
+                count: counts[status.name] || 0,
+            })),
+        appointmentTotalCount: statusCounts.reduce((total, row) => total + Number(row.count), 0),
+        appointmentSpecialties: specialtyRows.map((specialty) => ({
+            id: specialty.id,
+            name: specialty.name,
+        })),
+        appointmentCount: result.count,
+        appointmentPage: page,
+        appointmentPageSize: limit,
+        appointmentTotalPages: totalPages,
     };
 }
