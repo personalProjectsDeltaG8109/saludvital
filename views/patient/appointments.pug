@@ -106,9 +106,15 @@ html(lang="es")
                                                 td(data-label="Médico")
                                                     .appointment-doctor-cell
                                                         if appointment.doctor && appointment.doctor.profile_photo_url
-                                                            img.appointment-doctor-photo(src=appointment.doctor.profile_photo_url, alt="Foto de " + doctorName, loading="lazy")
+                                                            img.appointment-doctor-photo(
+                                                                src=appointment.doctor.profile_photo_url,
+                                                                alt="Foto de " + doctorName,
+                                                                loading="lazy"
+                                                            )
                                                         else
-                                                            span.appointment-doctor-photo-fallback(aria-hidden="true")= doctorName.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                            span.appointment-doctor-photo-fallback(
+                                                                aria-hidden="true"
+                                                            )= doctorName.split(" ").slice(0, 2).map((part) => part[0]).join("")
                                                         span= doctorName
                                                 td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
                                                 td(data-label="Estado")

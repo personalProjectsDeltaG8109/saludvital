@@ -97,7 +97,8 @@ export async function up(queryInterface) {
                 dosage: "Dato de prueba",
                 frequency: "Dato de prueba",
                 duration: "Dato de prueba",
-                instructions: "Registro ficticio para revisar la interfaz; no usar como indicación.",
+                instructions:
+                    "Registro ficticio para revisar la interfaz; no usar como indicación.",
             },
         },
         {
@@ -118,7 +119,8 @@ export async function up(queryInterface) {
                 dosage: "Dato de prueba",
                 frequency: "Dato de prueba",
                 duration: "Dato de prueba",
-                instructions: "Registro ficticio para revisar la interfaz; no usar como indicación.",
+                instructions:
+                    "Registro ficticio para revisar la interfaz; no usar como indicación.",
             },
         },
         {
@@ -139,7 +141,8 @@ export async function up(queryInterface) {
                 dosage: "Dato de prueba",
                 frequency: "Dato de prueba",
                 duration: "Dato de prueba",
-                instructions: "Registro ficticio para revisar la interfaz; no usar como indicación.",
+                instructions:
+                    "Registro ficticio para revisar la interfaz; no usar como indicación.",
             },
         },
     ];

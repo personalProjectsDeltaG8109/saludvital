@@ -120,14 +120,19 @@ if (form) {
     function renderDoctors() {
         // Render the doctor's configured name and photo with escaped patient-facing text.
         doctorList.innerHTML = state.doctors
-            .map(
-                (doctor) => {
-                    const doctorName = doctor.display_name || "Profesional de salud";
-                    const doctorAvatar = doctor.profile_photo_url
-                        ? `<img class="booking-doctor-avatar" src="${escapeHtml(doctor.profile_photo_url)}" alt="Foto de ${escapeHtml(doctorName)}" loading="lazy">`
-                        : `<span class="booking-doctor-avatar" aria-hidden="true">${escapeHtml(doctorName.split(" ").slice(0, 2).map((part) => part[0]).join(""))}</span>`;
+            .map((doctor) => {
+                const doctorName = doctor.display_name || "Profesional de salud";
+                const doctorAvatar = doctor.profile_photo_url
+                    ? `<img class="booking-doctor-avatar" src="${escapeHtml(doctor.profile_photo_url)}" alt="Foto de ${escapeHtml(doctorName)}" loading="lazy">`
+                    : `<span class="booking-doctor-avatar" aria-hidden="true">${escapeHtml(
+                          doctorName
+                              .split(" ")
+                              .slice(0, 2)
+                              .map((part) => part[0])
+                              .join(""),
+                      )}</span>`;
 
-                    return `
+                return `
             <button class="booking-doctor-card${state.doctor?.id === doctor.id ? " is-selected" : ""}"
                 type="button" data-doctor-id="${escapeHtml(doctor.id)}">
                 ${doctorAvatar}
@@ -139,8 +144,7 @@ if (form) {
                 <span class="booking-card-indicator" aria-hidden="true">${state.doctor?.id === doctor.id ? "✓" : "›"}</span>
             </button>
         `;
-                },
-            )
+            })
             .join("");
 
         setMessage(

@@ -476,7 +476,13 @@ export async function getAvailableDoctors(specialtyId) {
 
     return Doctor.findAll({
         where: { specialty_id: specialty.id },
-        attributes: ["id", "specialty_id", "display_name", "profile_photo_url", "professional_information"],
+        attributes: [
+            "id",
+            "specialty_id",
+            "display_name",
+            "profile_photo_url",
+            "professional_information",
+        ],
         include: [
             {
                 model: User,
