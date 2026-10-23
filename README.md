@@ -115,10 +115,10 @@ Features will be delivered incrementally through planned development sprints.
 
 ## User Roles
 
-| Role          | Main responsibilities                                                |
-| ------------- | -------------------------------------------------------------------- |
-| Patient       | Manage personal information and medical appointments.                |
-| Doctor        | Manage assigned appointments and authorized clinical records.        |
+| Role | Main responsibilities |
+|---|---|
+| Patient | Manage personal information and medical appointments. |
+| Doctor | Manage assigned appointments and authorized clinical records. |
 | Administrator | Manage platform configuration, users, and administrative operations. |
 
 Access to protected resources will be enforced on the server through authentication, authorization, and validation rules.
@@ -127,20 +127,20 @@ Access to protected resources will be enforced on the server through authenticat
 
 The following technologies are the initial architectural proposal. Versions and dependencies will be selected and verified during project setup.
 
-| Technology     | Purpose                                                          |
-| -------------- | ---------------------------------------------------------------- |
-| JavaScript     | Primary programming language.                                    |
-| Node.js        | Server-side JavaScript runtime.                                  |
-| Express.js     | HTTP server, routing, and middleware.                            |
-| Pug            | Server-rendered HTML templates.                                  |
-| HTML5          | Semantic page structure.                                         |
-| Tailwind CSS   | Responsive interface styling and reusable design patterns.       |
-| MySQL          | Relational database.                                             |
-| Sequelize      | Object-relational mapping and database access.                   |
-| Jest           | Unit and integration testing.                                    |
-| Supertest      | HTTP endpoint testing.                                           |
-| Playwright     | Browser automation and end-to-end testing.                       |
-| axe-core       | Automated accessibility checks.                                  |
+| Technology | Purpose |
+|---|---|
+| JavaScript | Primary programming language. |
+| Node.js | Server-side JavaScript runtime. |
+| Express.js | HTTP server, routing, and middleware. |
+| Pug | Server-rendered HTML templates. |
+| HTML5 | Semantic page structure. |
+| Tailwind CSS | Responsive interface styling and reusable design patterns. |
+| MySQL | Relational database. |
+| Sequelize | Object-relational mapping and database access. |
+| Jest | Unit and integration testing. |
+| Supertest | HTTP endpoint testing. |
+| Playwright | Browser automation and end-to-end testing. |
+| axe-core | Automated accessibility checks. |
 | Git and GitHub | Version control, collaboration, reviews, and project management. |
 
 ### Architectural Principles
@@ -266,13 +266,13 @@ SaludVital will be designed for a broad range of users and devices.
 Target testing widths:
 
 | Device category | Reference width |
-| --------------- | --------------: |
-| Small mobile    |          320 px |
-| Standard mobile |          375 px |
-| Large mobile    |          430 px |
-| Tablet          |          768 px |
-| Laptop          |         1024 px |
-| Desktop         |         1440 px |
+|---|---:|
+| Small mobile | 320 px |
+| Standard mobile | 375 px |
+| Large mobile | 430 px |
+| Tablet | 768 px |
+| Laptop | 1024 px |
+| Desktop | 1440 px |
 
 These widths are testing references, not fixed layout restrictions.
 
@@ -314,14 +314,14 @@ Security and privacy requirements will be reviewed against the applicable regula
 
 Testing will be introduced alongside implementation, rather than postponed until the end.
 
-| Test level          | Purpose                                          | Proposed tools             |
-| ------------------- | ------------------------------------------------ | -------------------------- |
-| Unit tests          | Validate individual functions and services.      | Jest                       |
-| Integration tests   | Validate module and database interactions.       | Jest, Supertest            |
-| End-to-end tests    | Verify complete user workflows.                  | Playwright                 |
-| Responsive tests    | Check layouts across viewport sizes.             | Playwright                 |
-| Accessibility tests | Detect accessibility violations.                 | axe-core and manual checks |
-| Regression tests    | Ensure existing functionality continues working. | Automated test suite       |
+| Test level | Purpose | Proposed tools |
+|---|---|---|
+| Unit tests | Validate individual functions and services. | Jest |
+| Integration tests | Validate module and database interactions. | Jest, Supertest |
+| End-to-end tests | Verify complete user workflows. | Playwright |
+| Responsive tests | Check layouts across viewport sizes. | Playwright |
+| Accessibility tests | Detect accessibility violations. | axe-core and manual checks |
+| Regression tests | Ensure existing functionality continues working. | Automated test suite |
 
 A feature will not be considered complete until its acceptance criteria and relevant tests have been reviewed.
 
@@ -345,11 +345,11 @@ flowchart TD
 
 ### Branch Conventions
 
-| Branch      | Purpose                                                  |
-| ----------- | -------------------------------------------------------- |
-| `main`      | Production-ready code.                                   |
-| `develop`   | Integration branch for completed features.               |
-| `release/*` | Release preparation, stabilization, and verification.    |
+| Branch | Purpose |
+|---|---|
+| `main` | Production-ready code. |
+| `develop` | Integration branch for completed features. |
+| `release/*` | Release preparation, stabilization, and verification. |
 | `feature/*` | New functionality, documentation, and development tasks. |
 
 Development work must not be performed directly on `main` or `develop`.
@@ -383,134 +383,31 @@ The project will include:
 - **GitHub Projects:** the development board and progress tracking.
 - **GitHub Wiki:** technical documentation and project decisions.
 
+
 ## Getting Started
+
+> Development setup is pending. Installation instructions will be added and verified when the initial application structure and dependencies are implemented.
 
 ### Prerequisites
 
-- Node.js 24.x
-- npm (included with Node.js)
-- Git
-- MariaDB 10.4 or a compatible MySQL server
-- Visual Studio Code or another JavaScript editor
+The planned development environment includes:
 
-The project uses Sequelize 6 with the `mysql2` driver. The current local development environment uses MariaDB through Sequelize's `mysql` dialect.
+- Node.js and npm.
+- MySQL.
+- Git.
+- A code editor such as Visual Studio Code.
+
+Exact supported versions will be documented after dependency selection and compatibility testing.
 
 ### Installation
 
-Clone the repository and enter the project directory:
-
-```bash
-git clone https://github.com/personalProjectsDeltaG8109/saludvital.git
-cd saludvital
-npm install
-```
+Setup instructions will be added after the initial project configuration is implemented and tested.
 
 ### Environment Configuration
 
-Create a local `.env` file by copying `.env.example`:
+Sensitive credentials must be stored in environment variables and must never be committed to the repository.
 
-```bash
-cp .env.example .env
-```
-
-Update the database settings in `.env` to match your local database server. Never commit `.env` or put real credentials in `.env.example`.
-
-Required database variables:
-
-- `DB_HOST`: database server hostname.
-- `DB_PORT`: database server port.
-- `DB_NAME`: application database name.
-- `DB_USER`: database username.
-- `DB_PASSWORD`: database password, if configured.
-
-The application also uses `NODE_ENV`, `PORT`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. Set a secure random `JWT_SECRET` before using the application outside local development.
-
-### Development
-
-Start the development server with automatic restarts:
-
-```bash
-npm run dev
-```
-
-The default local address is `http://localhost:3000`.
-
-The health endpoint is available at `/health`.
-
-### CSS Compilation
-
-Compile Tailwind CSS locally:
-
-```bash
-npm run css:build
-```
-
-To watch for stylesheet changes during development:
-
-```bash
-npm run css:watch
-```
-
-The compiled stylesheet is written to `public/css/app.css`. The application does not load Tailwind CSS from a CDN.
-
-### Database Commands
-
-The project uses Sequelize CLI for database migrations and seeders.
-
-```bash
-npm run db:migrate
-npm run db:migrate:undo
-npm run db:seed
-npm run db:seed:undo
-```
-
-These commands operate on the database configured through the environment variables. Review migration and seeder files before executing them. No complete application schema or initial business seed data is included in this foundation feature.
-
-### Testing and Code Quality
-
-Run the automated test suite:
-
-```bash
-npm test
-```
-
-Run tests in watch mode or with coverage:
-
-```bash
-npm run test:watch
-npm run test:coverage
-```
-
-Run ESLint and check formatting:
-
-```bash
-npm run lint
-npx prettier --check .
-```
-
-Verify the database connection using the local diagnostic script:
-
-```bash
-node scripts/check-database.js
-```
-
-The database check requires a reachable database server and valid local credentials.
-
-### Initial Project Structure
-
-```text
-config/                 Application and CLI configuration
-database/migrations/    Database migration files
-database/seeders/       Database seed files
-src/models/             Application data models
-src/styles/             Tailwind CSS source
-views/                  Pug templates
-public/                 Static assets and compiled CSS
-tests/unit/             Unit tests
-tests/integration/      Integration tests
-```
-
-Additional modules, accessibility tests, end-to-end tests, and technical documentation will be added as their corresponding requirements are implemented.
+A `.env.example` file will document the required variable names without containing real credentials.
 
 ## Documentation
 
@@ -538,16 +435,18 @@ Documentation will be written in English. Explanations and learning support prov
 
 ## Roadmap
 
-| Phase    | Planned outcome                                                      |
-| -------- | -------------------------------------------------------------------- |
-| Sprint 0 | Product planning, requirements, architecture, and GitHub setup.      |
-| Sprint 1 | Project foundation and responsive design system.                     |
-| Sprint 2 | Database and authentication.                                         |
-| Sprint 3 | Patient portal and appointment booking.                              |
-| Sprint 4 | Doctor portal and clinical workflows.                                |
-| Sprint 5 | Administrative portal.                                               |
-| Sprint 6 | Notifications and WhatsApp integration.                              |
+| Phase | Planned outcome |
+|---|---|
+| Sprint 0 | Product planning, requirements, architecture, and GitHub setup. |
+| Sprint 1 | Project foundation and responsive design system. |
+| Sprint 2 | Database and authentication. |
+| Sprint 3 | Patient portal and appointment booking. |
+| Sprint 4 | Doctor portal and clinical workflows. |
+| Sprint 5 | Administrative portal. |
+| Sprint 6 | Notifications and WhatsApp integration. |
 | Sprint 7 | Quality assurance, security, accessibility, and release preparation. |
+
+
 
 ## Contributing
 
