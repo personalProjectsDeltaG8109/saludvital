@@ -447,6 +447,37 @@
     font-size: 14px;
 }
 
+/* Keep the doctor's portrait and name grouped in appointment detail dialogs. */
+.appointment-dialog-doctor {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.appointment-dialog-doctor-photo,
+.appointment-dialog-doctor-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border: 2px solid #ffffffb3;
+    border-radius: 50%;
+}
+
+.appointment-dialog-doctor-photo {
+    object-fit: cover;
+    background: #ffffff;
+}
+
+.appointment-dialog-doctor-avatar {
+    display: grid;
+    place-items: center;
+    color: #123b73;
+    background: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .appointment-dialog-close {
     width: 36px;
     height: 36px;

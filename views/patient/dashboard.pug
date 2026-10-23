@@ -131,7 +131,16 @@ html(lang="es")
                                             div
                                                 span.appointment-dialog-kicker Detalles de tu cita
                                                 h2(id="appointment-details-title-" + appointmentId)= nextAppointment.specialty.name
-                                                p= nextAppointment.doctor_label
+                                                .appointment-dialog-doctor
+                                                    if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                                                        img.appointment-dialog-doctor-photo(
+                                                            src=nextAppointment.doctor.profile_photo_url,
+                                                            alt="Foto de " + nextAppointment.doctor_label,
+                                                            loading="lazy"
+                                                        )
+                                                    else
+                                                        span.appointment-dialog-doctor-avatar(aria-hidden="true")= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                    p= nextAppointment.doctor_label
                                             button.appointment-dialog-close(
                                                 type="button",
                                                 aria-label="Cerrar detalles",

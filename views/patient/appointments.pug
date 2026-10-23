@@ -185,7 +185,16 @@ html(lang="es")
                                                                 h2(
                                                                     id=`appointment-details-title-${appointment.id}`
                                                                 )= (appointment.specialty && appointment.specialty.name) || "Consulta médica"
-                                                                p= doctorName
+                                                                .appointment-dialog-doctor
+                                                                    if appointment.doctor && appointment.doctor.profile_photo_url
+                                                                        img.appointment-dialog-doctor-photo(
+                                                                            src=appointment.doctor.profile_photo_url,
+                                                                            alt="Foto de " + doctorName,
+                                                                            loading="lazy"
+                                                                        )
+                                                                    else
+                                                                        span.appointment-dialog-doctor-avatar(aria-hidden="true")= doctorName.split(" ").slice(0, 2).map((part) => part[0]).join("")
+                                                                    p= doctorName
                                                             button.appointment-dialog-close(
                                                                 type="button",
                                                                 aria-label="Cerrar detalles",
