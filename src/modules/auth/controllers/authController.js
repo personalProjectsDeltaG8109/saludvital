@@ -115,11 +115,22 @@ export function showRegister(req, res) {
 /**
  * Render the password recovery request page.
  */
+function getRecoveryReturnDestination(source) {
+    // Allow only the two destinations supported by the recovery entry points.
+    return source === "profile"
+        ? { href: "/patient/profile", label: "Volver a mi perfil" }
+        : { href: "/login", label: "Volver a iniciar sesión" };
+}
+
 export function showForgotPassword(req, res) {
+    const source = req.query.source === "profile" ? "profile" : "login";
+
     return res.status(200).render("auth/forgot-password", {
         pageTitle: "Recuperar contraseña | SaludVital",
         error: null,
         success: null,
+        source,
+        returnDestination: getRecoveryReturnDestination(source),
     });
 }
 
@@ -128,6 +139,7 @@ export function showForgotPassword(req, res) {
  */
 export async function forgotPassword(req, res, next) {
     try {
+        const source = req.body?.source === "profile" ? "profile" : "login";
         await requestPasswordReset(req.body?.email);
 
         // Always show the same message to prevent account enumeration.
@@ -136,6 +148,8 @@ export async function forgotPassword(req, res, next) {
             error: null,
             success:
                 "Si existe una cuenta asociada a ese correo, recibirás instrucciones para recuperar tu contraseña.",
+            source,
+            returnDestination: getRecoveryReturnDestination(source),
         });
     } catch (error) {
         return next(error);
@@ -193,11 +207,20 @@ export async function resetPasswordController(req, res, next) {
             });
         }
 
+        // Clear the browser token after the reset service revokes active sessions.
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: environment.nodeEnv === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+
         return res.status(200).render("auth/reset-password", {
             pageTitle: "Contraseña actualizada | SaludVital",
             token: "",
             error: null,
-            success: "Tu contraseña fue actualizada correctamente. Ya puedes iniciar sesión.",
+            success:
+                "Tu contraseña fue actualizada y cerramos tu sesión por seguridad. Inicia sesión con tu nueva contraseña.",
         });
     } catch (error) {
         return next(error);
