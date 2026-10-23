@@ -11,7 +11,9 @@ export async function sendWhatsApp({ to }) {
         throw new Error("The Twilio WhatsApp sender is not configured. Set TWILIO_WHATSAPP_FROM.");
     }
     if (!contentSid) {
-        throw new Error("Twilio requires a WhatsApp template for this message. Set TWILIO_WHATSAPP_CONTENT_SID.");
+        throw new Error(
+            "Twilio requires a WhatsApp template for this message. Set TWILIO_WHATSAPP_CONTENT_SID.",
+        );
     }
 
     const sender = configuredSender.startsWith("whatsapp:")
@@ -22,7 +24,9 @@ export async function sendWhatsApp({ to }) {
         : recipient;
 
     if (!/^\+[1-9]\d{7,14}$/.test(whatsappRecipient)) {
-        throw new Error("The WhatsApp recipient must use international format, such as +573001234567.");
+        throw new Error(
+            "The WhatsApp recipient must use international format, such as +573001234567.",
+        );
     }
 
     const messageOptions = {
@@ -38,7 +42,11 @@ export async function sendWhatsApp({ to }) {
         } catch {
             throw new Error("TWILIO_WHATSAPP_CONTENT_VARIABLES must be valid JSON.");
         }
-        if (parsedVariables && typeof parsedVariables === "object" && Object.keys(parsedVariables).length > 0) {
+        if (
+            parsedVariables &&
+            typeof parsedVariables === "object" &&
+            Object.keys(parsedVariables).length > 0
+        ) {
             messageOptions.contentVariables = JSON.stringify(parsedVariables);
         }
     }

@@ -12,7 +12,9 @@ if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !fromAddress || !recipient) {
     process.exitCode = 1;
 } else {
     try {
-        const authorization = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString("base64");
+        const authorization = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString(
+            "base64",
+        );
         const response = await fetch("https://comms.twilio.com/v1/Emails", {
             method: "POST",
             headers: {
@@ -32,7 +34,9 @@ if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !fromAddress || !recipient) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
             const details = JSON.stringify(data) || response.statusText;
-            const requestId = response.headers.get("twilio-request-id") || response.headers.get("x-twilio-request-id");
+            const requestId =
+                response.headers.get("twilio-request-id") ||
+                response.headers.get("x-twilio-request-id");
             const code = data.code ? ` (Twilio ${data.code})` : "";
             const trace = requestId ? `; Request ID: ${requestId}` : "";
             throw new Error(`HTTP ${response.status}${code}: ${details}${trace}`);
