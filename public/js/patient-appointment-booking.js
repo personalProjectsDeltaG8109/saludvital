@@ -118,20 +118,28 @@ if (form) {
     }
 
     function renderDoctors() {
+        // Render the doctor's configured name and photo with escaped patient-facing text.
         doctorList.innerHTML = state.doctors
             .map(
-                (doctor, index) => `
+                (doctor) => {
+                    const doctorName = doctor.display_name || "Profesional de salud";
+                    const doctorAvatar = doctor.profile_photo_url
+                        ? `<img class="booking-doctor-avatar" src="${escapeHtml(doctor.profile_photo_url)}" alt="Foto de ${escapeHtml(doctorName)}" loading="lazy">`
+                        : `<span class="booking-doctor-avatar" aria-hidden="true">${escapeHtml(doctorName.split(" ").slice(0, 2).map((part) => part[0]).join(""))}</span>`;
+
+                    return `
             <button class="booking-doctor-card${state.doctor?.id === doctor.id ? " is-selected" : ""}"
                 type="button" data-doctor-id="${escapeHtml(doctor.id)}">
-                <span class="booking-doctor-avatar" aria-hidden="true">${index % 2 ? "DR" : "SV"}</span>
+                ${doctorAvatar}
                 <span class="booking-card-copy">
-                    <strong>Médico #${escapeHtml(doctor.id)}</strong>
+                    <strong>${escapeHtml(doctorName)}</strong>
                     <small>${escapeHtml(state.specialty?.name || "Profesional de SaludVital")}</small>
                     <small class="booking-doctor-note">${escapeHtml(doctor.professional_information || "Selecciona para consultar horarios")}</small>
                 </span>
                 <span class="booking-card-indicator" aria-hidden="true">${state.doctor?.id === doctor.id ? "✓" : "›"}</span>
             </button>
-        `,
+        `;
+                },
             )
             .join("");
 
@@ -230,7 +238,7 @@ if (form) {
     function renderSummary() {
         document.querySelector("#booking-summary").innerHTML = `
             <div><span>Especialidad</span><strong>${escapeHtml(state.specialty?.name || "—")}</strong></div>
-            <div><span>Médico</span><strong>${state.doctor ? `Médico #${escapeHtml(state.doctor.id)}` : "—"}</strong></div>
+            <div><span>Médico</span><strong>${escapeHtml(state.doctor?.display_name || "—")}</strong></div>
             <div><span>Fecha</span><strong>${state.date ? escapeHtml(spanishDate.format(new Date(`${state.date}T12:00:00`))) : "—"}</strong></div>
             <div><span>Hora</span><strong>${state.time ? escapeHtml(formatTime(state.time)) : "—"}</strong></div>
         `;

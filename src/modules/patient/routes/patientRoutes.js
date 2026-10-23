@@ -194,7 +194,8 @@ patientRoutes.get(
 
             if (nextAppointment) {
                 // Add patient-facing fallback labels where the schema has no clinic or doctor name.
-                nextAppointment.doctor_label = `Médico #${nextAppointment.doctor.id}`;
+                nextAppointment.doctor_label =
+                    nextAppointment.doctor.display_name || "Médico asignado";
                 nextAppointment.site_label = "Sede SaludVital";
                 nextAppointment.history = nextAppointment.history
                     .filter((event) => event.event_type === "Rescheduled")

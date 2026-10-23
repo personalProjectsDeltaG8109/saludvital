@@ -57,7 +57,7 @@ export async function getPatientClinicalHistory(userId) {
             {
                 model: Doctor,
                 as: "doctor",
-                attributes: ["id"],
+                attributes: ["id", "display_name", "profile_photo_url"],
             },
             {
                 model: Prescription,
@@ -81,9 +81,9 @@ export async function getPatientClinicalHistory(userId) {
             }`,
             specialty_label: record.appointment?.specialty?.name || "Consulta médica",
             // Identify the responsible clinician without exposing account details.
-            doctor_label: record.doctor?.id
-                ? `Médico #${record.doctor.id}`
-                : "Profesional de salud",
+            doctor_label: record.doctor?.display_name || "Profesional de salud",
+            // Return only the configured public image path for the responsible doctor.
+            doctor_photo_url: record.doctor?.profile_photo_url || null,
             diagnoses: record.diagnoses || [],
             prescriptions: record.prescriptions || [],
         };

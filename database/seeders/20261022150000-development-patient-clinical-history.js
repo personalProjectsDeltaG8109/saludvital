@@ -61,6 +61,16 @@ export async function up(queryInterface) {
         );
     }
 
+    // Attach the local fictional portrait to the development doctor profile.
+    await queryInterface.bulkUpdate(
+        "doctors",
+        {
+            profile_photo_url: "/brand/patient/doctor-test-profile.png",
+            updated_at: timestamp,
+        },
+        { id: doctor.id },
+    );
+
     // Give the development account the requested display name without changing its login.
     await queryInterface.bulkUpdate(
         "patients",

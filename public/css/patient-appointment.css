@@ -211,6 +211,8 @@
     background: linear-gradient(145deg, #e1f3ff, #c8e7fa);
     font-size: 15px;
     font-weight: 750;
+    flex: 0 0 56px;
+    object-fit: cover;
 }
 .booking-doctor-card:nth-child(2n) .booking-doctor-avatar { color: var(--booking-teal); background: linear-gradient(145deg, #e3f7f2, #ccefe6); }
 .booking-doctor-card .booking-doctor-note { color: var(--booking-blue); }
@@ -337,7 +339,7 @@ button.booking-day:not(:disabled):hover { background: #e2f3ff; }
     .booking-card-copy strong { font-size: 11px; }
     .booking-card-copy small { font-size: 9px; -webkit-line-clamp: 1; }
     .booking-doctor-card { min-height: 72px; grid-template-columns: 48px minmax(0, 1fr) 18px; padding: 7px; }
-    .booking-doctor-avatar { width: 46px; height: 46px; }
+    .booking-doctor-avatar { width: 46px; height: 46px; flex-basis: 46px; }
     .booking-date-time-grid { grid-template-columns: 1fr; gap: 9px; }
     .booking-calendar, .booking-times { padding: 10px; }
     .booking-day { font-size: 10px; }

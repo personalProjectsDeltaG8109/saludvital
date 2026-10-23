@@ -270,6 +270,22 @@
     background: #e2f2ff;
 }
 
+/* Show the responsible doctor's portrait in the consultation list. */
+.clinical-doctor-avatar {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border: 1px solid #d8e8f5;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #e2f2ff;
+}
+
+.clinical-doctor-avatar-detail {
+    width: 54px;
+    height: 54px;
+}
+
 .clinical-card-icon svg {
     width: 30px;
     height: 30px;

@@ -20,8 +20,18 @@ const Doctor = database.define(
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: false,
         },
+        // Keep the doctor's patient-facing name on the doctor profile.
+        display_name: {
+            type: DataTypes.STRING(120),
+            allowNull: true,
+        },
         professional_information: {
             type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        // Store an optional public path for the doctor's profile photo.
+        profile_photo_url: {
+            type: DataTypes.STRING(255),
             allowNull: true,
         },
     },
