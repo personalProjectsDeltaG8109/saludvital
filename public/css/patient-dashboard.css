@@ -13,6 +13,46 @@
     font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Let long patient pages use document scrolling in short or zoomed desktop viewports. */
+@media (min-width: 761px) and (max-height: 880px) {
+    .sv-dashboard.appointments-page,
+    .sv-dashboard.reschedule-page,
+    .sv-dashboard.notifications-page,
+    .sv-dashboard.clinical-history-page {
+        height: auto;
+        min-height: 100dvh;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .sv-dashboard.appointments-page .sv-layout,
+    .sv-dashboard.reschedule-page .sv-layout,
+    .sv-dashboard.notifications-page .sv-layout,
+    .sv-dashboard.clinical-history-page .sv-layout {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    .sv-dashboard.appointments-page .sv-main,
+    .sv-dashboard.reschedule-page .sv-main,
+    .sv-dashboard.notifications-page .sv-main,
+    .sv-dashboard.clinical-history-page .sv-main {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    .sv-dashboard.appointments-page .appointments-content,
+    .sv-dashboard.reschedule-page .reschedule-content,
+    .sv-dashboard.notifications-page .notifications-content,
+    .sv-dashboard.clinical-history-page .clinical-history-content {
+        min-height: 0;
+        flex: 0 0 auto;
+        overflow: visible;
+    }
+}
+
 .sv-dashboard :is(h1, h2, h3, h4, h5, h6) {
     font-family: Arial, Helvetica, sans-serif;
     font-weight: 700 !important;
