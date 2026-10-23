@@ -33,6 +33,10 @@ const Patient = database.define(
             type: DataTypes.STRING(20),
             allowNull: true,
         },
+        notification_whatsapp_phone: {
+            type: DataTypes.STRING(20),
+            allowNull: true,
+        },
         notification_email: {
             type: DataTypes.STRING(254),
             allowNull: true,

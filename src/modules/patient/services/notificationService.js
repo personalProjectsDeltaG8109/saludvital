@@ -51,13 +51,21 @@ const historyEventLabels = {
 };
 
 function validateNotificationContacts(contacts = {}) {
-    const phone = typeof contacts.phone === "string"
-        ? contacts.phone.trim().replaceAll(/[\s()-]/g, "")
+    const smsPhone = typeof contacts.smsPhone === "string"
+        ? contacts.smsPhone.trim().replaceAll(/[\s()-]/g, "")
+        : "";
+    const whatsappPhone = typeof contacts.whatsappPhone === "string"
+        ? contacts.whatsappPhone.trim().replaceAll(/[\s()-]/g, "")
         : "";
     const email = typeof contacts.email === "string" ? contacts.email.trim().toLowerCase() : "";
 
-    if (!/^\+?\d{7,15}$/.test(phone)) {
-        const error = new Error("Ingresa un número válido para recibir SMS y WhatsApp.");
+    if (!/^\+?\d{7,15}$/.test(smsPhone)) {
+        const error = new Error("Ingresa un número válido para recibir SMS.");
+        error.status = 400;
+        throw error;
+    }
+    if (!/^\+?\d{7,15}$/.test(whatsappPhone)) {
+        const error = new Error("Ingresa un número válido para recibir WhatsApp.");
         error.status = 400;
         throw error;
     }
@@ -67,7 +75,7 @@ function validateNotificationContacts(contacts = {}) {
         throw error;
     }
 
-    return { phone, email };
+    return { smsPhone, whatsappPhone, email };
 }
 
 function normalizeEventType(eventType) {
@@ -109,6 +117,7 @@ export async function getPatientNotificationSettings(userId) {
             "last_name",
             "phone",
             "notification_phone",
+            "notification_whatsapp_phone",
             "notification_email",
         ],
         include: [{ association: "user", attributes: ["email"] }],
@@ -162,7 +171,11 @@ export async function getPatientNotificationSettings(userId) {
     return {
         patient: patient.get({ plain: true }),
         notificationContacts: {
-            phone: patient.notification_phone || patient.phone,
+            smsPhone: patient.notification_phone || patient.phone,
+            whatsappPhone:
+                patient.notification_whatsapp_phone ||
+                patient.notification_phone ||
+                patient.phone,
             email: patient.notification_email || patient.user.email,
         },
         preferences,
@@ -227,7 +240,8 @@ export async function updatePatientNotificationPreferences(userId, updates, cont
         // Keep notification destinations separate from profile and login contact details.
         await patient.update(
             {
-                notification_phone: notificationContacts.phone,
+                notification_phone: notificationContacts.smsPhone,
+                notification_whatsapp_phone: notificationContacts.whatsappPhone,
                 notification_email: notificationContacts.email,
             },
             { transaction },
