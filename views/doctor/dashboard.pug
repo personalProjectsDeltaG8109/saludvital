@@ -73,6 +73,8 @@ html(lang="es")
                                             if appointment.patientPhotoUrl
                                                 span.doctor-patient-avatar(aria-hidden="true")
                                                     img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
+                                            else
+                                                span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                             span.doctor-appointment-info
                                                 strong= appointment.patientName
                                                 small= appointment.reason || "Consulta médica"
@@ -102,6 +104,8 @@ html(lang="es")
                                             if nextAppointment.patientPhotoUrl
                                                 span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")
                                                     img(src=nextAppointment.patientPhotoUrl, alt="", loading="lazy")
+                                            else
+                                                span.doctor-patient-avatar.doctor-next-avatar(aria-hidden="true")= nextAppointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                             .doctor-next-info
                                                 strong= nextAppointment.patientName
                                                 span= nextAppointment.reason || "Consulta médica"
