@@ -1,0 +1,58 @@
+//- Full-screen branding panel for desktop layouts.
+aside.relative.hidden.min-h-screen.flex-col.justify-between.overflow-hidden.bg-primary.p-10.text-white(
+    class="lg:flex xl:p-14",
+    aria-label="Información sobre SaludVital"
+)
+    .relative.z-10
+        //- Center the larger brand logo on desktop screens.
+        img.mx-auto.mb-12.h-28.w-auto.rounded-2xl.border.border-white.object-contain.shadow-lg(
+            src="/brand/logo-primary-dark.png",
+            alt="Logotipo de SaludVital",
+            width="280",
+            height="112",
+            style="border-radius: 15px; border: 1px solid rgb(255, 255, 255); box-shadow: 0 0 10px 3px #0b3b78"
+        )
+
+        //- Use a lighter teal to meet WCAG AA contrast requirements.
+        p.mb-4.text-sm.font-semibold.uppercase.tracking-wide(class="text-[#16C5BC]")
+            | Tu salud, siempre conectada
+
+        h2.max-w-md.text-4xl.font-bold.leading-tight(class="xl:text-5xl") Tu bienestar es nuestra prioridad.
+
+        p.mt-6.max-w-md.text-base.leading-7.text-blue-100
+            | Gestiona tus citas médicas y mantente en contacto con tu equipo de salud desde un solo lugar.
+
+    |
+
+    //- Display professional healthcare platform benefits.
+    .relative.z-10.mt-12.grid.gap-4
+        //- Appointment management benefit.
+        .flex.items-start.gap-4.rounded-xl.p-4.transition-colors(class="hover:bg-white/10")
+            .flex.size-11.shrink-0.items-center.justify-center.rounded-xl.text-teal
+                img(
+                    src="brand/calendar-svgrepo-com.svg",
+                    width="22",
+                    height="22",
+                    alt="",
+                    aria-hidden="true"
+                )
+
+            .min-w-0
+                p.font-semibold.tracking-tight.text-white Gestión integral de citas médicas
+                p.mt-1.text-sm.leading-6(class="text-blue-100/80") Organiza tus citas y consulta la información de tu atención médica de manera sencilla.
+
+        //- Secure healthcare information benefit.
+        //- Display the security icon from the public assets directory.
+        .flex.items-start.gap-4.rounded-xl.p-4.transition-colors(class="hover:bg-white/10")
+            .flex.size-11.shrink-0.items-center.justify-center.rounded-xl.text-teal
+                img(
+                    src="/brand/shield-svgrepo-com.svg",
+                    width="22",
+                    height="22",
+                    alt="",
+                    aria-hidden="true"
+                )
+
+            .min-w-0
+                p.font-semibold.tracking-tight.text-white Protección de tu información
+                p.mt-1.text-sm.leading-6(class="text-blue-100/80") Tu privacidad y la seguridad de tus datos son fundamentales para SaludVital.

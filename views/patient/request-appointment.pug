@@ -1,0 +1,151 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#FFFFFF")
+        title= pageTitle || "Pedir una nueva cita | SaludVital"
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/patient-appointment.css")
+    body.sv-dashboard.booking-page
+        .sv-layout
+            include partials/sidebar
+            button.booking-sidebar-backdrop(
+                type="button",
+                aria-label="Cerrar menú",
+                data-close-sidebar
+            )
+            .sv-main.booking-main
+                include partials/topbar
+                main.booking-content
+                    ol.booking-stepper(aria-label="Pasos para pedir una cita")
+                        li.is-current(data-step-indicator="1")
+                            span 1
+                            strong Especialidad
+                        li(data-step-indicator="2")
+                            span 2
+                            strong Médico
+                        li(data-step-indicator="3")
+                            span 3
+                            strong Fecha y hora
+                        li(data-step-indicator="4")
+                            span 4
+                            strong Confirmación
+
+                    form#appointment-booking-form.booking-form
+                        section.booking-panel.is-active(
+                            data-booking-step="1",
+                            aria-labelledby="specialty-heading"
+                        )
+                            .booking-panel-heading
+                                div
+                                    span.booking-section-number 1.
+                                    h2#specialty-heading Selecciona la especialidad
+                                    p Elige la especialidad que necesitas para tu cita médica.
+                                label.booking-search
+                                    svg(viewBox="0 0 24 24", aria-hidden="true")
+                                        circle(cx="11", cy="11", r="7")
+                                        path(d="m20 20-4-4")
+                                    input#specialty-search(
+                                        type="search",
+                                        placeholder="Buscar especialidad...",
+                                        autocomplete="off"
+                                    )
+                            p#specialty-message.booking-message(role="status") Cargando especialidades...
+                            #specialty-list.booking-specialty-grid
+
+                        section.booking-panel(
+                            data-booking-step="2",
+                            aria-labelledby="doctor-heading"
+                        )
+                            .booking-panel-heading.booking-doctor-heading
+                                div
+                                    span.booking-section-number 2.
+                                    h2#doctor-heading Selecciona el médico
+                                    p Elige el profesional con el que deseas agendar tu cita.
+                            p#doctor-message.booking-message(role="status") Selecciona una especialidad para ver médicos disponibles.
+                            #doctor-list.booking-doctor-grid
+
+                        section.booking-panel(
+                            data-booking-step="3",
+                            aria-labelledby="datetime-heading"
+                        )
+                            .booking-panel-heading
+                                div
+                                    span.booking-section-number 3.
+                                    h2#datetime-heading Selecciona la fecha y hora
+                                    p Elige el día y la hora que mejor se adapte a tu disponibilidad.
+                            .booking-date-time-grid
+                                .booking-calendar
+                                    .booking-calendar-heading
+                                        button(
+                                            type="button",
+                                            aria-label="Mes anterior",
+                                            data-month-shift="-1"
+                                        ) ‹
+                                        h3#calendar-month Octubre 2026
+                                        button(
+                                            type="button",
+                                            aria-label="Mes siguiente",
+                                            data-month-shift="1"
+                                        ) ›
+                                    .booking-weekdays(aria-hidden="true")
+                                        span Do
+                                        span Lu
+                                        span Ma
+                                        span Mi
+                                        span Ju
+                                        span Vi
+                                        span Sá
+                                    #calendar-days.booking-calendar-days
+                                .booking-times
+                                    h3 Horarios disponibles
+                                    p#selected-date-label Selecciona un día para consultar horarios.
+                                    p#time-message.booking-message(role="status") Primero selecciona un médico.
+                                    #time-list.booking-time-grid
+
+                        section.booking-panel.booking-confirmation(
+                            data-booking-step="4",
+                            aria-labelledby="confirm-heading"
+                        )
+                            .booking-panel-heading
+                                div
+                                    span.booking-section-number 4.
+                                    h2#confirm-heading Confirma tu cita
+                                    p Revisa los datos antes de finalizar la solicitud.
+                            #booking-summary.booking-summary
+                                p Selecciona especialidad, médico, fecha y hora para continuar.
+                            label.booking-reason-label(for="appointment-reason") Motivo de consulta
+                                span (opcional)
+                            textarea#appointment-reason(
+                                name="reason",
+                                rows="3",
+                                maxlength="500",
+                                placeholder="Cuéntanos brevemente el motivo de tu cita"
+                            )
+
+                        p#booking-result.booking-form-message(role="status", aria-live="polite")
+                        .booking-actions
+                            button.booking-back(type="button", data-booking-back, hidden) ← Atrás
+                            button.booking-next(type="button", data-booking-next)
+                                span Siguiente
+                                span(aria-hidden="true") →
+                            button.booking-submit(type="submit", hidden) Confirmar cita
+
+                    //- Native dialog keeps the success message accessible and keyboard friendly.
+                    dialog#appointment-success-dialog.booking-success-dialog(
+                        aria-labelledby="appointment-success-title",
+                        aria-describedby="appointment-success-message"
+                    )
+                        .booking-success-icon(aria-hidden="true") ✓
+                        h2#appointment-success-title ¡Cita creada con éxito!
+                        p#appointment-success-message Tu cita quedó confirmada. Puedes consultar los detalles en Mis citas.
+                        .booking-success-actions
+                            button.booking-success-close(type="button", data-close-success-dialog) Cerrar
+                            a.booking-success-link(href="/patient/appointments") Ver mis citas
+
+                include partials/bottom-nav
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-appointment-booking.js", defer)

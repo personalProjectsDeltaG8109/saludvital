@@ -1,0 +1,331 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#f2faff")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/patient-clinical-history.css")
+        script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/patient-clinical-history.js", defer)
+    body.sv-dashboard.clinical-history-page
+        .sv-layout
+            include partials/sidebar
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include partials/topbar
+                main.clinical-history-content
+                    section.clinical-history-hero(aria-labelledby="clinical-history-title")
+                        .clinical-history-hero-copy
+                            h2#clinical-history-title Historial clínico
+                            p Consulta el registro de tus atenciones médicas, diagnósticos, tratamientos y documentos.
+
+                    if previewMode
+                        p.clinical-preview-note Vista previa: los registros mostrados son ficticios y solo sirven para revisar el diseño.
+
+                    section.clinical-history-stats(aria-label="Resumen de tu historial clínico")
+                        article.clinical-stat.stat-consultations
+                            span.clinical-stat-icon(aria-hidden="true")
+                                svg(viewBox="0 0 24 24")
+                                    path(
+                                        d="M7 3h10v3h3v15H4V6h3V3Zm0 3h10V3H7v3Zm1 5h8m-8 4h8m-8 4h5"
+                                    )
+                            span.clinical-stat-copy
+                                strong= totals.consultations
+                                small Consultas realizadas
+                        article.clinical-stat.stat-diagnoses
+                            span.clinical-stat-icon(aria-hidden="true")
+                                svg(viewBox="0 0 24 24")
+                                    path(
+                                        d="M7 3v5a5 5 0 0 0 10 0V3m-13 0h6m4 0h6m-8 5v5a5 5 0 0 0 10 0v-1m-10 1a5 5 0 0 1-5 5v3"
+                                    )
+                            span.clinical-stat-copy
+                                strong= totals.diagnoses
+                                small Diagnósticos registrados
+                        article.clinical-stat.stat-treatments
+                            span.clinical-stat-icon(aria-hidden="true")
+                                svg(viewBox="0 0 24 24")
+                                    path(
+                                        d="m9 15 6-6m-8 9-2-2a4 4 0 0 1 0-6l4-4a4 4 0 0 1 6 0m2 1 2 2a4 4 0 0 1 0 6l-4 4a4 4 0 0 1-6 0"
+                                    )
+                            span.clinical-stat-copy
+                                strong= totals.treatments
+                                small Tratamientos asignados
+                        article.clinical-stat.stat-documents
+                            span.clinical-stat-icon(aria-hidden="true")
+                                svg(viewBox="0 0 24 24")
+                                    path(d="M7 3h8l5 5v13H4V3h3Zm8 0v5h5m-11 4h8m-8 4h8")
+                            span.clinical-stat-copy
+                                strong= totals.documents
+                                small Documentos médicos
+
+                    .clinical-history-layout
+                        section.clinical-list-panel(aria-labelledby="clinical-list-title")
+                            .clinical-panel-heading
+                                h2#clinical-list-title Mis consultas
+                            .clinical-list-tools
+                                label.clinical-search
+                                    span(aria-hidden="true")
+                                        svg(viewBox="0 0 24 24")
+                                            circle(cx="10.8", cy="10.8", r="6.8")
+                                            path(d="m16 16 5 5")
+                                    input(
+                                        type="search",
+                                        placeholder="Buscar por médico, especialidad o fecha...",
+                                        aria-label="Buscar en mis consultas",
+                                        data-consultation-search
+                                    )
+                                label.clinical-filter
+                                    span.sr-only Filtrar consultas
+                                    select(
+                                        aria-label="Filtrar consultas",
+                                        data-consultation-filter
+                                    )
+                                        option(value="all") Todas las consultas
+                                        option(value="diagnosis") Con diagnósticos
+                                        option(value="treatment") Con tratamientos
+
+                            if consultations.length
+                                .clinical-consultation-list(data-consultation-list)
+                                    each consultation, index in consultations
+                                        - const diagnoses = consultation.diagnoses || [];
+                                        - const prescriptions = consultation.prescriptions || [];
+                                        - const treatmentCount = prescriptions.reduce((total, prescription) => total + ((prescription.items && prescription.items.length) || 0), 0);
+                                        - const specialty = consultation.specialty_label || (consultation.appointment && consultation.appointment.specialty && consultation.appointment.specialty.name) || "Consulta médica";
+                                        button.clinical-consultation-card(
+                                            type="button",
+                                            class=index === 0 ? "is-selected" : null,
+                                            data-consultation-card,
+                                            data-consultation-id=consultation.id,
+                                            data-search-text=[specialty, consultation.doctor_label, consultation.date_label].join(" ").toLowerCase(),
+                                            data-has-diagnosis=diagnoses.length > 0,
+                                            data-has-treatment=treatmentCount > 0,
+                                            aria-pressed=index === 0 ? "true" : "false",
+                                            aria-expanded=index === 0 ? "true" : "false"
+                                        )
+                                            if consultation.doctor_photo_url
+                                                img.clinical-doctor-avatar(
+                                                    src=consultation.doctor_photo_url,
+                                                    alt="Foto de " + consultation.doctor_label,
+                                                    loading="lazy"
+                                                )
+                                            else
+                                                span.clinical-card-icon(
+                                                    class="icon-" + (index % 5),
+                                                    aria-hidden="true"
+                                                )
+                                                    if index === 1
+                                                        svg(viewBox="0 0 24 24")
+                                                            path(
+                                                                d="M9 4v5a3 3 0 0 0 6 0V4m-8 0h4m2 0h4m-5 5v5a5 5 0 0 0 5 5h1"
+                                                            )
+                                                    else if index === 2
+                                                        svg(viewBox="0 0 24 24")
+                                                            path(
+                                                                d="M20.8 8.7c0 5-8.8 11-8.8 11s-8.8-6-8.8-11a4.7 4.7 0 0 1 8.8-2.3 4.7 4.7 0 0 1 8.8 2.3Z"
+                                                            )
+                                                    else if index === 3
+                                                        svg(viewBox="0 0 24 24")
+                                                            path(
+                                                                d="M4 7a3 3 0 0 1 3-3h4v16H7a3 3 0 0 1-3-3V7Zm16 0a3 3 0 0 0-3-3h-4v16h4a3 3 0 0 0 3-3V7Z"
+                                                            )
+                                                    else
+                                                        svg(viewBox="0 0 24 24")
+                                                            path(
+                                                                d="M7 3h10v3h3v15H4V6h3V3Zm0 3h10V3H7v3Zm1 5h8m-8 4h8"
+                                                            )
+                                            span.clinical-card-copy
+                                                strong= specialty
+                                                span= consultation.doctor_label || "Profesional de salud"
+                                                small= specialty
+                                            time.clinical-card-date= consultation.date_label
+                                            span.clinical-card-arrow(aria-hidden="true") ›
+                                p.clinical-list-empty(hidden, data-consultation-empty) No encontramos consultas con ese criterio.
+                            else
+                                .clinical-empty-state
+                                    span.clinical-empty-icon(aria-hidden="true")
+                                        svg(viewBox="0 0 24 24")
+                                            path(d="M7 3h8l5 5v13H4V3h3Zm8 0v5h5m-9 4h6m-6 4h6")
+                                    strong Aún no tienes consultas registradas
+                                    p Aquí aparecerán las atenciones médicas que hayan sido completadas.
+                                    if previewAvailable
+                                        a(href="/patient/clinical-history?preview=1") Ver ejemplo con historial ficticio
+
+                        section.clinical-detail-panel(
+                            aria-label="Detalle de la consulta",
+                            data-consultation-detail
+                        )
+                            .clinical-detail-placeholder(data-clinical-detail-placeholder, hidden)
+                                strong Selecciona una consulta
+                                p El detalle de la atenciÃ³n aparecerÃ¡ aquÃ­.
+                            if consultations.length
+                                each consultation, index in consultations
+                                    - const specialty = consultation.specialty_label || (consultation.appointment && consultation.appointment.specialty && consultation.appointment.specialty.name) || "Consulta médica";
+                                    - const diagnoses = consultation.diagnoses || [];
+                                    - const prescriptions = consultation.prescriptions || [];
+                                    section.clinical-detail-record(
+                                        class=index === 0 ? "is-active" : null,
+                                        data-consultation-record,
+                                        data-record-id=consultation.id,
+                                        hidden=index !== 0
+                                    )
+                                        .clinical-detail-heading
+                                            h2(id="clinical-detail-title-" + consultation.id) Detalle de la consulta
+                                            button.clinical-print-button(
+                                                type="button",
+                                                data-print-consultation
+                                            )
+                                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                                    path(
+                                                        d="M7 8V3h10v5m-10 9H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-10-4h10v8H7v-8Zm10-6h.01"
+                                                    )
+                                                span Imprimir
+                                            button.clinical-close-detail-button(
+                                                type="button",
+                                                data-close-consultation
+                                            ) Cerrar detalle
+                                        .clinical-visit-summary
+                                            if consultation.doctor_photo_url
+                                                img.clinical-doctor-avatar.clinical-doctor-avatar-detail(
+                                                    src=consultation.doctor_photo_url,
+                                                    alt="Foto de " + consultation.doctor_label,
+                                                    loading="lazy"
+                                                )
+                                            else
+                                                span.clinical-visit-icon(aria-hidden="true")
+                                                    svg(viewBox="0 0 24 24")
+                                                        path(
+                                                            d="M7 4v4a4 4 0 0 0 8 0V4m-11 0h6m2 0h6m-7 4v4a6 6 0 0 0 6 6h1m-8-6a5 5 0 0 1-5 5v3"
+                                                        )
+                                            span.clinical-visit-copy
+                                                strong= specialty
+                                                span= consultation.doctor_label || "Profesional de salud"
+                                                small= specialty
+                                            span.clinical-visit-date
+                                                time= consultation.date_label
+                                                small= consultation.time_label
+
+                                        .clinical-detail-tabs(
+                                            role="tablist",
+                                            aria-label="Secciones del detalle clínico"
+                                        )
+                                            button.is-active(
+                                                type="button",
+                                                role="tab",
+                                                aria-selected="true",
+                                                data-detail-tab="summary"
+                                            ) Resumen
+                                            button(
+                                                type="button",
+                                                role="tab",
+                                                aria-selected="false",
+                                                data-detail-tab="diagnoses"
+                                            ) Diagnósticos
+                                            button(
+                                                type="button",
+                                                role="tab",
+                                                aria-selected="false",
+                                                data-detail-tab="treatments"
+                                            ) Tratamientos
+                                            button(
+                                                type="button",
+                                                role="tab",
+                                                aria-selected="false",
+                                                data-detail-tab="documents"
+                                            ) Documentos
+
+                                        .clinical-detail-content(
+                                            role="tabpanel",
+                                            data-detail-panel="summary"
+                                        )
+                                            article.clinical-info-block
+                                                span.clinical-info-icon(aria-hidden="true") ◷
+                                                div
+                                                    h3 Motivo de consulta
+                                                    p= consultation.symptoms || "No hay un motivo de consulta registrado."
+                                            article.clinical-info-block
+                                                span.clinical-info-icon(aria-hidden="true") ✚
+                                                div
+                                                    h3 Evaluación médica
+                                                    p= consultation.clinical_notes || consultation.patient_feeling || "No hay notas de evaluación registradas."
+                                            if consultation.vital_signs && Object.keys(consultation.vital_signs).length
+                                                article.clinical-vitals
+                                                    h3 Signos vitales
+                                                    dl
+                                                        each value, key in consultation.vital_signs
+                                                            div
+                                                                dt= key.replaceAll("_", " ")
+                                                                dd= value
+                                            if consultation.observations
+                                                article.clinical-info-block
+                                                    span.clinical-info-icon(aria-hidden="true") ▤
+                                                    div
+                                                        h3 Observaciones
+                                                        p= consultation.observations
+
+                                        .clinical-detail-content(
+                                            role="tabpanel",
+                                            data-detail-panel="diagnoses",
+                                            hidden
+                                        )
+                                            if diagnoses.length
+                                                each diagnosis in diagnoses
+                                                    article.clinical-record-item
+                                                        span.clinical-record-icon.icon-diagnosis(
+                                                            aria-hidden="true"
+                                                        ) ✚
+                                                        div
+                                                            h3= diagnosis.diagnosis
+                                                            if diagnosis.notes
+                                                                p= diagnosis.notes
+                                            else
+                                                p.clinical-tab-empty No hay diagnósticos registrados para esta consulta.
+
+                                        .clinical-detail-content(
+                                            role="tabpanel",
+                                            data-detail-panel="treatments",
+                                            hidden
+                                        )
+                                            - const treatmentItems = prescriptions.flatMap((prescription) => prescription.items || []);
+                                            if treatmentItems.length
+                                                each treatment in treatmentItems
+                                                    article.clinical-record-item
+                                                        span.clinical-record-icon.icon-treatment(
+                                                            aria-hidden="true"
+                                                        ) ◇
+                                                        div
+                                                            h3= treatment.medication_name
+                                                            p= [treatment.dosage, treatment.frequency, treatment.duration].filter(Boolean).join(" · ")
+                                                            if treatment.instructions
+                                                                small= treatment.instructions
+                                            else
+                                                p.clinical-tab-empty No hay tratamientos registrados para esta consulta.
+
+                                        .clinical-detail-content(
+                                            role="tabpanel",
+                                            data-detail-panel="documents",
+                                            hidden
+                                        )
+                                            if consultation.documents && consultation.documents.length
+                                                each document in consultation.documents
+                                                    article.clinical-record-item
+                                                        span.clinical-record-icon.icon-document(
+                                                            aria-hidden="true"
+                                                        ) ▤
+                                                        div
+                                                            h3= typeof document === "string" ? document : document.name
+                                                            p Documento de esta consulta
+                                            else
+                                                p.clinical-tab-empty Aún no hay documentos médicos disponibles para esta consulta.
+                            else
+                                .clinical-detail-placeholder
+                                    span.clinical-empty-icon(aria-hidden="true")
+                                        svg(viewBox="0 0 24 24")
+                                            path(d="M7 3h8l5 5v13H4V3h3Zm8 0v5h5m-9 4h6m-6 4h6")
+                                    strong Selecciona una consulta
+                                    p El detalle de la atención aparecerá aquí.
+
+        include partials/bottom-nav
