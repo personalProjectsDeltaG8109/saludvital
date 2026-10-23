@@ -42,14 +42,18 @@
     });
 
     // Close cancellation confirmation and feedback dialogs from their controls or backdrop.
-    document.querySelectorAll(".appointment-cancel-dialog, .appointment-feedback-dialog").forEach((dialog) => {
-        dialog.querySelectorAll("[data-close-cancel-dialog], [data-close-feedback]").forEach((button) => {
-            button.addEventListener("click", () => dialog.close());
+    document
+        .querySelectorAll(".appointment-cancel-dialog, .appointment-feedback-dialog")
+        .forEach((dialog) => {
+            dialog
+                .querySelectorAll("[data-close-cancel-dialog], [data-close-feedback]")
+                .forEach((button) => {
+                    button.addEventListener("click", () => dialog.close());
+                });
+            dialog.addEventListener("click", (event) => {
+                if (event.target === dialog) dialog.close();
+            });
         });
-        dialog.addEventListener("click", (event) => {
-            if (event.target === dialog) dialog.close();
-        });
-    });
 
     // Submit cancellation requests and reflect the saved status without leaving the page.
     document.querySelectorAll("[data-cancel-appointment]").forEach((button) => {
@@ -76,14 +80,18 @@
                 const row = document.getElementById(`appointment-${appointmentId}`);
                 if (row) {
                     row.dataset.status = "Cancelled";
-                    const statusBadge = row.querySelector("td[data-label='Estado'] .appointment-status");
+                    const statusBadge = row.querySelector(
+                        "td[data-label='Estado'] .appointment-status",
+                    );
                     if (statusBadge) {
                         statusBadge.className = "appointment-status status-cancelled";
                         statusBadge.textContent = "Cancelada";
                     }
-                    row.querySelector(".appointment-row-actions")?.querySelectorAll(
-                        ".appointment-reschedule-link, .appointment-cancel-button",
-                    ).forEach((action) => action.remove());
+                    row.querySelector(".appointment-row-actions")
+                        ?.querySelectorAll(
+                            ".appointment-reschedule-link, .appointment-cancel-button",
+                        )
+                        .forEach((action) => action.remove());
                     const detailStatus = row.querySelector(
                         ".appointment-details-dialog .appointment-dialog-status .appointment-status",
                     );
@@ -94,7 +102,8 @@
                     const historyList = row.querySelector(".appointment-history");
                     if (historyList) {
                         const historyEntry = document.createElement("li");
-                        historyEntry.textContent = "Cita cancelada; el registro y su historial se conservaron.";
+                        historyEntry.textContent =
+                            "Cita cancelada; el registro y su historial se conservaron.";
                         historyList.append(historyEntry);
                     }
                 }
