@@ -154,7 +154,18 @@ patientRoutes.get(
         try {
             const patient = await PatientModel.findOne({
                 where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                attributes: [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "phone",
+                    "document_type",
+                    "document_number",
+                    "municipality",
+                    "department",
+                    "profile_photo_url",
+                ],
+                include: [{ association: "user", attributes: ["email"] }],
             });
             // Show the five closest upcoming confirmed appointments on the dashboard.
             const upcomingAppointments = patient
@@ -192,7 +203,12 @@ patientRoutes.get(
                               where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
                               attributes: ["name"],
                           },
-                          { model: Doctor, as: "doctor", required: true, attributes: ["id"] },
+                          {
+                              model: Doctor,
+                              as: "doctor",
+                              required: true,
+                              attributes: ["id", "display_name", "profile_photo_url"],
+                          },
                           {
                               model: Specialities,
                               as: "specialty",
@@ -249,6 +265,7 @@ patientRoutes.get(
                 activeNav: "home",
                 patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
                 patientPhotoUrl: patient?.profile_photo_url || null,
+                patient: patient ? patient.get({ plain: true }) : null,
                 nextAppointment,
                 upcomingAppointments: upcomingAppointments.map((appointment) =>
                     appointment.get({ plain: true }),

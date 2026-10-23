@@ -1,5 +1,22 @@
 ﻿(() => {
     const rows = [...document.querySelectorAll("[data-appointment]")];
+    const homeProfilePhotoDialog = document.querySelector("[data-home-profile-photo]");
+
+    // Open the patient's profile photo from the dashboard profile card.
+    document.querySelectorAll("[data-open-home-profile-photo]").forEach((button) => {
+        button.addEventListener("click", () => {
+            if (homeProfilePhotoDialog instanceof HTMLDialogElement) {
+                homeProfilePhotoDialog.showModal();
+            }
+        });
+    });
+
+    homeProfilePhotoDialog?.querySelectorAll("[data-close-home-profile-photo]").forEach((button) => {
+        button.addEventListener("click", () => homeProfilePhotoDialog.close());
+    });
+    homeProfilePhotoDialog?.addEventListener("click", (event) => {
+        if (event.target === homeProfilePhotoDialog) homeProfilePhotoDialog.close();
+    });
 
     // Open appointment details on both the dashboard and appointments page.
     document.querySelectorAll("[data-open-appointment-details]").forEach((button) => {
