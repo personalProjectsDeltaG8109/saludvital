@@ -71,6 +71,7 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .doctor-panel-action:hover { text-decoration: underline; }
 .doctor-appointment-list, .doctor-patient-list { margin: 0; padding: 0 18px 16px; list-style: none; }
 .doctor-appointment-row { display: grid; min-height: 76px; grid-template-columns: 58px 38px minmax(100px, 1fr) auto 126px; align-items: center; gap: 10px; border-top: 1px solid #edf2f8; scroll-margin-top: 20px; }
+.doctor-appointment-row.without-photo { grid-template-columns: 58px minmax(100px, 1fr) auto 126px; }
 .doctor-appointment-time { display: grid; justify-items: start; gap: 1px; color: #123b73; font-size: 13px; font-weight: 700; }
 .doctor-appointment-time small { font-size: 10px; font-weight: 650; }
 .doctor-patient-avatar { display: inline-grid; width: 38px; height: 38px; flex: 0 0 auto; place-items: center; border-radius: 50%; color: #0877d8; background: #e5f3ff; font-size: 12px; font-weight: 750; }
@@ -85,19 +86,24 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .status-cancelled { color: #e84358; background: #ffe5e8; }
 .doctor-row-link { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid #cfe4fb; border-radius: 8px; color: #087cf0; background: #f5faff; font-size: 11px; font-weight: 650; text-align: center; text-decoration: none; }
 .doctor-row-link:hover { background: #eaf5ff; }
-.doctor-next-card { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 8px 20px 22px; }
-.doctor-next-date { color: #123b73; font-size: 15px; font-weight: 750; text-transform: capitalize; }
+.doctor-next-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; column-gap: 10px; row-gap: 12px; padding: 8px 18px 18px; }
+.doctor-next-date { display: grid; width: 48px; height: 48px; align-content: center; justify-items: center; gap: 1px; border-radius: 9px; color: #123b73; background: #eaf5fd; }
+.doctor-next-date strong { font-size: 19px; line-height: 1; }
+.doctor-next-date span { font-size: 10px; font-weight: 750; }
 .doctor-next-details { display: grid; gap: 11px; }
-.doctor-next-meta { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
-.doctor-next-time { color: #123b73; font-size: 14px; }
-.doctor-next-identity { display: flex; min-width: 0; align-items: center; gap: 11px; }
-.doctor-next-avatar { width: 42px; height: 42px; }
+.doctor-next-meta { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.doctor-next-time { color: #123b73; font-size: 12px; white-space: nowrap; }
+.doctor-next-meta .doctor-status { padding: 4px 7px; font-size: 9px; }
+.doctor-next-identity { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.doctor-next-avatar { width: 34px; height: 34px; }
 .doctor-next-info { display: grid; gap: 6px; min-width: 0; }
-.doctor-next-info > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.doctor-next-info > span:not(.doctor-status) { color: var(--doctor-muted); font-size: 11px; }
+.doctor-next-info > strong { overflow: hidden; color: #142f59; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.doctor-next-info > span:not(.doctor-status) { overflow: hidden; color: var(--doctor-muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .doctor-next-info .doctor-status { font-size: 10px; }
-.doctor-next-contact { display: grid; gap: 6px; padding-left: 53px; color: var(--doctor-muted); font-size: 12px; overflow-wrap: anywhere; }
-.doctor-primary-link { display: flex; min-height: 42px; grid-column: 1 / -1; align-items: center; justify-content: center; border-radius: 9px; color: #fff; background: #087cf0; font-size: 13px; font-weight: 650; text-decoration: none; }
+.doctor-next-contact { display: grid; gap: 4px; color: var(--doctor-muted); font-size: 10px; overflow-wrap: anywhere; }
+.doctor-next-contact > span { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.doctor-next-contact svg { width: 12px; height: 12px; flex: 0 0 12px; fill: none; stroke: #123b8c; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.doctor-primary-link { display: flex; min-height: 38px; grid-column: 1 / -1; align-items: center; justify-content: center; border-radius: 8px; color: #fff; background: #087cf0; font-size: 12px; font-weight: 650; text-decoration: none; }
 .doctor-primary-link:hover { background: #0669ce; }
 .doctor-empty-state { display: grid; min-height: 195px; align-content: center; justify-items: center; gap: 8px; padding: 26px; color: #234568; text-align: center; }
 .doctor-empty-icon { color: #75afe7; font-size: 30px; }
@@ -149,15 +155,15 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-panel-heading h2 { font-size: 18px; }
     .doctor-appointment-list { padding: 0 12px 10px; }
     .doctor-appointment-row { min-height: 88px; grid-template-columns: 43px 34px minmax(70px, 1fr) auto; grid-template-rows: auto auto; gap: 6px; }
+    .doctor-appointment-row.without-photo { grid-template-columns: 43px minmax(60px, 1fr) auto; }
     .doctor-patient-avatar { width: 34px; height: 34px; font-size: 10px; }
     .doctor-appointment-time { font-size: 11px; }
     .doctor-appointment-info strong { font-size: 11px; }
     .doctor-appointment-info small { font-size: 10px; }
     .doctor-status { padding: 4px 6px; font-size: 9px; }
     .doctor-row-link { grid-column: 3 / -1; justify-self: end; min-height: 30px; padding: 0 8px; font-size: 10px; }
-    .doctor-next-card { gap: 9px; padding: 7px 14px 16px; }
-    .doctor-next-date { font-size: 13px; }
-    .doctor-next-contact { padding-left: 0; font-size: 11px; }
+    .doctor-appointment-row.without-photo .doctor-row-link { grid-column: 2 / -1; }
+    .doctor-next-card { column-gap: 8px; row-gap: 9px; padding: 7px 12px 14px; }
     .doctor-page-heading { padding: 18px 18px 4px; }
     .doctor-page-heading h1 { font-size: 25px; }
     .doctor-page-heading > p:last-child { font-size: 13px; }

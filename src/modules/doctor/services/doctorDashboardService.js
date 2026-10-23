@@ -71,6 +71,20 @@ function formatBogotaDate(date) {
     }).format(date);
 }
 
+function getBogotaCalendarDate(date) {
+    const parts = new Intl.DateTimeFormat("es-CO", {
+        day: "2-digit",
+        month: "short",
+        timeZone: BOGOTA_TIME_ZONE,
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+    return {
+        day: values.day,
+        month: values.month.replace(".", "").toUpperCase(),
+    };
+}
+
 function getAge(dateOfBirth, now = new Date()) {
     if (!dateOfBirth) return null;
     const [year, month, day] = String(dateOfBirth).slice(0, 10).split("-").map(Number);
@@ -112,6 +126,7 @@ function serializeAppointment(appointment) {
         timeLabel: formatBogotaTime(appointment.start_at),
         ...getBogotaTimeParts(appointment.start_at),
         dateLabel: formatBogotaDate(appointment.start_at),
+        ...getBogotaCalendarDate(appointment.start_at),
     };
 }
 
