@@ -137,8 +137,16 @@ html(lang="es")
                             data-notification-save-status
                         )
                         .notifications-form-actions
-                            button.notifications-save-button(type="button", data-notification-save, disabled) Guardar cambios
-                            button.notifications-cancel-button(type="button", data-notification-cancel, disabled) Cancelar
+                            button.notifications-save-button(
+                                type="button",
+                                data-notification-save,
+                                disabled
+                            ) Guardar cambios
+                            button.notifications-cancel-button(
+                                type="button",
+                                data-notification-cancel,
+                                disabled
+                            ) Cancelar
                         //- Confirmation and result dialogs keep save feedback centered and accessible.
                         dialog.notifications-dialog(
                             data-notification-confirm-dialog,
@@ -149,21 +157,35 @@ html(lang="es")
                                 span.notifications-dialog-icon(aria-hidden="true") ?
                                 h2#notification-confirm-title ¿Deseas guardar estos cambios?
                                 p Revisa los canales y destinos seleccionados antes de continuar.
-                                p#notification-confirm-summary.notifications-dialog-summary(data-notification-confirm-summary)
+                                p#notification-confirm-summary.notifications-dialog-summary(
+                                    data-notification-confirm-summary
+                                )
                                 .notifications-dialog-actions
-                                    button.notifications-dialog-secondary(type="button", data-cancel-notification-save) Revisar cambios
-                                    button.notifications-dialog-primary(type="button", data-confirm-notification-save) Sí, guardar
+                                    button.notifications-dialog-secondary(
+                                        type="button",
+                                        data-cancel-notification-save
+                                    ) Revisar cambios
+                                    button.notifications-dialog-primary(
+                                        type="button",
+                                        data-confirm-notification-save
+                                    ) Sí, guardar
                         dialog.notifications-dialog(
                             data-notification-result-dialog,
                             aria-labelledby="notification-result-title",
                             aria-describedby="notification-result-message"
                         )
                             .notifications-dialog-content
-                                span.notifications-dialog-icon(data-notification-result-icon, aria-hidden="true") ✓
+                                span.notifications-dialog-icon(
+                                    data-notification-result-icon,
+                                    aria-hidden="true"
+                                ) ✓
                                 h2#notification-result-title(data-notification-result-title)
                                 p#notification-result-message(data-notification-result-message)
                                 .notifications-dialog-actions
-                                    button.notifications-dialog-primary(type="button", data-close-notification-result) Entendido
+                                    button.notifications-dialog-primary(
+                                        type="button",
+                                        data-close-notification-result
+                                    ) Entendido
                     section.notifications-card.notifications-history(
                         aria-labelledby="history-heading"
                     )

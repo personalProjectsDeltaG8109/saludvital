@@ -75,7 +75,9 @@
     function showResult(success, message) {
         resultIcon.textContent = success ? "✓" : "!";
         resultIcon.classList.toggle("is-error", !success);
-        resultTitle.textContent = success ? "Cambios guardados" : "No se pudieron guardar los cambios";
+        resultTitle.textContent = success
+            ? "Cambios guardados"
+            : "No se pudieron guardar los cambios";
         resultMessage.textContent = message;
         resultDialog.showModal();
     }
@@ -83,7 +85,10 @@
     function describePendingChanges() {
         const channelLabels = channelToggles
             .filter((toggle) => toggle.checked)
-            .map((toggle) => toggle.closest(".notifications-channel").querySelector("strong").textContent);
+            .map(
+                (toggle) =>
+                    toggle.closest(".notifications-channel").querySelector("strong").textContent,
+            );
         const contacts = getContacts();
         confirmSummary.textContent =
             "Canales activos: " +
@@ -99,7 +104,10 @@
 
     async function savePreferences() {
         if (!hasActiveChannel(preferences)) {
-            showResult(false, "Mantén al menos un canal activo para recibir avisos sobre tus citas.");
+            showResult(
+                false,
+                "Mantén al menos un canal activo para recibir avisos sobre tus citas.",
+            );
             return;
         }
 
@@ -127,7 +135,8 @@
             saveStatus.classList.remove("is-error");
             showResult(true, "Se guardaron tus canales y destinos de notificación.");
         } catch (error) {
-            saveStatus.textContent = error.message || "Ocurrió un error al guardar tus preferencias.";
+            saveStatus.textContent =
+                error.message || "Ocurrió un error al guardar tus preferencias.";
             saveStatus.classList.add("is-error");
             showResult(false, saveStatus.textContent);
         } finally {
@@ -143,7 +152,8 @@
 
             if (!hasActiveChannel(preferences)) {
                 setChannelPreference(channel, true);
-                saveStatus.textContent = "Mantén al menos un canal activo para recibir avisos sobre tus citas.";
+                saveStatus.textContent =
+                    "Mantén al menos un canal activo para recibir avisos sobre tus citas.";
                 saveStatus.classList.add("is-error");
                 render();
                 return;

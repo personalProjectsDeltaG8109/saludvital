@@ -1,9 +1,5 @@
 import database from "../../../../config/database.js";
-import {
-    Notification,
-    NotificationPreference,
-    Patient,
-} from "../../../models/associations.js";
+import { Notification, NotificationPreference, Patient } from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
 
@@ -51,12 +47,14 @@ const historyEventLabels = {
 };
 
 function validateNotificationContacts(contacts = {}) {
-    const smsPhone = typeof contacts.smsPhone === "string"
-        ? contacts.smsPhone.trim().replaceAll(/[\s()-]/g, "")
-        : "";
-    const whatsappPhone = typeof contacts.whatsappPhone === "string"
-        ? contacts.whatsappPhone.trim().replaceAll(/[\s()-]/g, "")
-        : "";
+    const smsPhone =
+        typeof contacts.smsPhone === "string"
+            ? contacts.smsPhone.trim().replaceAll(/[\s()-]/g, "")
+            : "";
+    const whatsappPhone =
+        typeof contacts.whatsappPhone === "string"
+            ? contacts.whatsappPhone.trim().replaceAll(/[\s()-]/g, "")
+            : "";
     const email = typeof contacts.email === "string" ? contacts.email.trim().toLowerCase() : "";
 
     if (!/^\+?\d{7,15}$/.test(smsPhone)) {
@@ -173,9 +171,7 @@ export async function getPatientNotificationSettings(userId) {
         notificationContacts: {
             smsPhone: patient.notification_phone || patient.phone,
             whatsappPhone:
-                patient.notification_whatsapp_phone ||
-                patient.notification_phone ||
-                patient.phone,
+                patient.notification_whatsapp_phone || patient.notification_phone || patient.phone,
             email: patient.notification_email || patient.user.email,
         },
         preferences,
@@ -217,7 +213,9 @@ export async function updatePatientNotificationPreferences(userId, updates, cont
 
         const channelState = channelStates.get(update.channel);
         if (channelState !== undefined && channelState !== update.isEnabled) {
-            const error = new Error("Selecciona los canales de notificación de forma independiente.");
+            const error = new Error(
+                "Selecciona los canales de notificación de forma independiente.",
+            );
             error.status = 400;
             throw error;
         }
@@ -231,7 +229,9 @@ export async function updatePatientNotificationPreferences(userId, updates, cont
     }
 
     if (![...channelStates.values()].some(Boolean)) {
-        const error = new Error("Mantén al menos un canal activo para recibir avisos sobre tus citas.");
+        const error = new Error(
+            "Mantén al menos un canal activo para recibir avisos sobre tus citas.",
+        );
         error.status = 400;
         throw error;
     }
