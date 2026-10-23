@@ -362,6 +362,9 @@ html(lang="es")
                                                     div
                                                         dt Correo electrónico
                                                         dd= emergencyContact.email || "Sin registrar"
+                                                    div
+                                                        dt Parentesco
+                                                        dd= emergencyContact.relationship || "Sin registrar"
                                             else
                                                 p.profile-no-emergency Aún no has agregado un contacto de emergencia.
                                         form.profile-edit-form(
