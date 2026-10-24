@@ -215,6 +215,10 @@ if (page) {
     }
 
     let searchTimer;
+    document.querySelector("[data-user-filters]")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        applySearch(searchInput.value);
+    });
     document
         .querySelector("[data-user-top-search]")
         ?.closest("form")
