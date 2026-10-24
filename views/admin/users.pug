@@ -18,7 +18,11 @@ html(lang="es")
                     span
                         strong SaludVital
                         small Panel Administrativo
-                button.admin-sidebar-collapse(type="button", aria-label="Cerrar menú", data-admin-close) ×
+                button.admin-sidebar-collapse(
+                    type="button",
+                    aria-label="Cerrar menú",
+                    data-admin-close
+                ) ×
             nav.admin-navigation(aria-label="Navegación administrativa")
                 a.admin-nav-link(href="/admin/dashboard")
                     span.admin-nav-icon(aria-hidden="true") ⌂
@@ -57,11 +61,20 @@ html(lang="es")
                     span Cerrar sesión
         .admin-main-shell
             header.admin-topbar
-                button.admin-menu-toggle(type="button", aria-label="Abrir menú", aria-expanded="false", aria-controls="admin-sidebar", data-admin-open)
+                button.admin-menu-toggle(
+                    type="button",
+                    aria-label="Abrir menú",
+                    aria-expanded="false",
+                    aria-controls="admin-sidebar",
+                    data-admin-open
+                )
                     span
                     span
                     span
-                a.admin-mobile-brand(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                a.admin-mobile-brand(
+                    href="/admin/dashboard",
+                    aria-label="SaludVital, panel administrativo"
+                )
                     img(src="/brand/logo-symbol.png", alt="")
                     span
                         strong SaludVital
@@ -69,17 +82,34 @@ html(lang="es")
                 form.admin-global-search(role="search", action="/admin/users", method="get")
                     label.sr-only(for="admin-top-search") Buscar usuarios
                     span(aria-hidden="true") ⌕
-                    input#admin-top-search(type="search", placeholder="Buscar usuarios por nombre o correo...", autocomplete="off", data-user-top-search)
+                    input#admin-top-search(
+                        type="search",
+                        placeholder="Buscar usuarios por nombre o correo...",
+                        autocomplete="off",
+                        data-user-top-search
+                    )
                 .admin-user-chip
                     span.admin-user-avatar(aria-hidden="true")
-                        svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8"
+                        )
                             circle(cx="12", cy="8", r="3.2")
                             path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
                     span
                         strong= adminName
                         small SaludVital
                     span.admin-user-chevron(aria-hidden="true") ⌄
-            main.admin-users-content(data-admin-users, data-endpoint="/api/admin/users", data-update-endpoint="/api/admin/users")
+            main.admin-users-content(
+                data-admin-users,
+                data-endpoint="/api/admin/users",
+                data-update-endpoint="/api/admin/users",
+                data-details-endpoint="/api/admin/users",
+                data-departments-endpoint="/api/admin/locations/departments",
+                data-municipalities-endpoint="/api/admin/locations/municipalities"
+            )
                 header.admin-users-heading
                     div
                         p.admin-eyebrow Gestión médica
@@ -100,7 +130,12 @@ html(lang="es")
                         label.admin-users-search
                             span(aria-hidden="true") ⌕
                             span.sr-only Buscar por nombre o correo
-                            input(type="search", placeholder="Buscar por nombre o correo...", maxlength="100", data-user-search)
+                            input(
+                                type="search",
+                                placeholder="Buscar por nombre o correo...",
+                                maxlength="100",
+                                data-user-search
+                            )
                         label.admin-users-filter
                             span Rol
                             select(data-user-role)
@@ -112,12 +147,40 @@ html(lang="es")
                                 option(value="active") Activas
                                 option(value="inactive") Inactivas
                     p.admin-users-feedback(role="status", aria-live="polite", data-user-feedback) Cargando cuentas…
-                    div.admin-user-list(data-user-list, aria-live="polite")
+                    .admin-user-list(data-user-list, aria-live="polite")
                     footer.admin-users-pagination
                         span(data-user-page-label) Página 1 de 1
                         div
                             button.admin-page-button(type="button", data-user-prev, disabled) Anterior
                             button.admin-page-button(type="button", data-user-next, disabled) Siguiente
                 p.admin-users-note Los cambios de rol y estado se registran para auditoría. Las cuentas no se eliminan.
+            .admin-user-modal-backdrop(hidden, data-user-modal)
+                section.admin-user-modal(
+                    role="dialog",
+                    aria-modal="true",
+                    aria-labelledby="admin-user-modal-title",
+                    tabindex="-1",
+                    data-user-dialog
+                )
+                    header.admin-user-modal-header
+                        div
+                            p.admin-eyebrow Administración de cuenta
+                            h2#admin-user-modal-title Editar usuario
+                        button.admin-user-modal-close(
+                            type="button",
+                            aria-label="Cerrar ventana de edición",
+                            data-user-modal-close
+                        ) ×
+                    .admin-user-modal-profile(data-user-modal-profile)
+                    p.admin-user-modal-feedback(
+                        role="alert",
+                        aria-live="assertive",
+                        data-user-modal-feedback
+                    )
+                    form(data-user-edit-form)
+                        .admin-user-edit-fields(data-user-edit-fields)
+                        footer.admin-user-modal-actions
+                            button.admin-user-cancel(type="button", data-user-modal-cancel) Cancelar
+                            button.admin-user-save(type="submit", data-user-modal-save) Guardar cambios
         script(src="/js/session-timeout.js", defer)
         script(src="/js/admin-users.js", defer)
