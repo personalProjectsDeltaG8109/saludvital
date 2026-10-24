@@ -163,7 +163,12 @@ function normalizeDraft(payload, { completing = false } = {}) {
     }
 
     const symptoms = normalizeText(payload.symptoms, "El motivo de consulta", 5000, completing);
-    const patientFeeling = normalizeText(payload.patientFeeling, "La condición del paciente", 5000);
+    const patientFeeling = normalizeText(
+        payload.patientFeeling,
+        "Cómo se siente el paciente",
+        5000,
+        completing,
+    );
     const clinicalNotes = normalizeText(
         payload.clinicalNotes,
         "La evaluación médica",
@@ -175,6 +180,25 @@ function normalizeDraft(payload, { completing = false } = {}) {
     if (vitalSigns !== null && (typeof vitalSigns !== "object" || Array.isArray(vitalSigns))) {
         throw createServiceError("Los signos vitales no son válidos.", 400);
     }
+    const requiredVitalSignKeys = [
+        "bloodPressure",
+        "heartRate",
+        "temperature",
+        "weight",
+        "height",
+    ];
+    if (
+        completing &&
+        (!vitalSigns ||
+            requiredVitalSignKeys.some(
+                (key) =>
+                    vitalSigns[key] === undefined ||
+                    vitalSigns[key] === null ||
+                    vitalSigns[key] === "",
+            ))
+    ) {
+        throw createServiceError("Completa todos los signos vitales antes de finalizar.", 400);
+    }
     const vitalRanges = {
         heartRate: [0, 300],
         temperature: [25, 45],
@@ -182,21 +206,32 @@ function normalizeDraft(payload, { completing = false } = {}) {
         height: [0, 3],
         bmi: [0, 150],
     };
-    if (
-        vitalSigns &&
-        Object.entries(vitalSigns).some(([key, value]) => {
-            if (!["bloodPressure", ...Object.keys(vitalRanges)].includes(key)) return true;
-            if (value === null || value === "") return false;
-            if (key === "bloodPressure")
-                return typeof value !== "string" || !/^\d{2,3}\/\d{2,3}$/.test(value);
-            return (
-                !Number.isFinite(Number(value)) ||
-                Number(value) < vitalRanges[key][0] ||
-                Number(value) > vitalRanges[key][1]
-            );
-        })
-    ) {
-        throw createServiceError("Revisa los valores de los signos vitales.", 400);
+    const vitalSignLabels = {
+        bloodPressure: "presión arterial (formato 120/80)",
+        heartRate: "frecuencia cardiaca (0 a 300 lpm)",
+        temperature: "temperatura (25 a 45 °C)",
+        weight: "peso (0 a 500 kg)",
+        height: "estatura en metros (0 a 3 m)",
+        bmi: "IMC (0 a 150)",
+    };
+    const invalidVitalSigns = vitalSigns
+        ? Object.entries(vitalSigns).filter(([key, value]) => {
+              if (!Object.prototype.hasOwnProperty.call(vitalSignLabels, key)) return true;
+              if (value === null || value === "") return false;
+              if (key === "bloodPressure")
+                  return typeof value !== "string" || !/^\d{2,3}\/\d{2,3}$/.test(value);
+              return (
+                  !Number.isFinite(Number(value)) ||
+                  Number(value) < vitalRanges[key][0] ||
+                  Number(value) > vitalRanges[key][1]
+              );
+          })
+        : [];
+    if (invalidVitalSigns.length) {
+        const invalidLabels = invalidVitalSigns.map(
+            ([key]) => vitalSignLabels[key] || "un signo vital no reconocido",
+        );
+        throw createServiceError(`Revisa: ${invalidLabels.join(", ")}.`, 400);
     }
 
     const diagnoses = payload.diagnoses ?? [];
@@ -211,10 +246,6 @@ function normalizeDraft(payload, { completing = false } = {}) {
             notes: normalizeText(entry.notes, "Las notas del diagnóstico", 5000),
         };
     });
-    if (completing && normalizedDiagnoses.length === 0) {
-        throw createServiceError("Agrega al menos un diagnóstico antes de finalizar.", 400);
-    }
-
     const prescriptionItems = payload.prescriptionItems ?? [];
     if (!Array.isArray(prescriptionItems) || prescriptionItems.length > 50) {
         throw createServiceError("La lista de tratamientos no es válida.", 400);
@@ -310,6 +341,7 @@ function clinicalIncludes() {
                 { model: AppointmentStatus, as: "status", attributes: ["name"] },
             ],
         },
+        { model: Doctor, as: "doctor", attributes: ["display_name", "profile_photo_url"] },
     ];
 }
 

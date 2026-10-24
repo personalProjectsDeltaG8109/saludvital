@@ -86,6 +86,8 @@ doctorRoutes.get(
                 consultation,
                 patient: consultation.appointment?.patient,
                 appointment: consultation.appointment,
+                doctorName: consultation.doctor?.display_name || "Médico",
+                doctorPhotoUrl: consultation.doctor?.profile_photo_url || null,
             });
         } catch (error) {
             if (error.statusCode) return res.status(error.statusCode).send(error.message);
