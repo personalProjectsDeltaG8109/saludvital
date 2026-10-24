@@ -24,10 +24,26 @@ html(lang="es")
 
                     section.doctor-panel.doctor-appointments-panel(aria-label="Citas del médico")
                         .doctor-appointment-summary(aria-label="Resumen de citas por estado")
-                            form.doctor-summary-filter(method="get", action=appointmentsPath, data-appointment-quick-filter)
-                                input(type="hidden", name="startDate", value=appointmentFilters.startDate)
-                                input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                input(type="hidden", name="search", value=appointmentFilters.search)
+                            form.doctor-summary-filter(
+                                method="get",
+                                action=appointmentsPath,
+                                data-appointment-quick-filter
+                            )
+                                input(
+                                    type="hidden",
+                                    name="startDate",
+                                    value=appointmentFilters.startDate
+                                )
+                                input(
+                                    type="hidden",
+                                    name="endDate",
+                                    value=appointmentFilters.endDate
+                                )
+                                input(
+                                    type="hidden",
+                                    name="search",
+                                    value=appointmentFilters.search
+                                )
                                 button.doctor-summary-item.is-total(
                                     type="submit",
                                     name="status",
@@ -39,10 +55,26 @@ html(lang="es")
                                         strong= appointmentTotalCount
                                         small Todas
                             each statusItem in appointmentStatuses
-                                form.doctor-summary-filter(method="get", action=appointmentsPath, data-appointment-quick-filter)
-                                    input(type="hidden", name="startDate", value=appointmentFilters.startDate)
-                                    input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="search", value=appointmentFilters.search)
+                                form.doctor-summary-filter(
+                                    method="get",
+                                    action=appointmentsPath,
+                                    data-appointment-quick-filter
+                                )
+                                    input(
+                                        type="hidden",
+                                        name="startDate",
+                                        value=appointmentFilters.startDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="endDate",
+                                        value=appointmentFilters.endDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="search",
+                                        value=appointmentFilters.search
+                                    )
                                     button.doctor-summary-item(
                                         type="submit",
                                         name="status",
@@ -55,19 +87,34 @@ html(lang="es")
                                             strong= statusItem.count
                                             small= statusItem.summaryLabel
 
-                        form.doctor-appointment-filters(method="get", action=appointmentsPath, data-appointment-filters)
+                        form.doctor-appointment-filters(
+                            method="get",
+                            action=appointmentsPath,
+                            data-appointment-filters
+                        )
                             label.doctor-filter-field
                                 span Fecha inicial
-                                input(type="date", name="startDate", value=appointmentFilters.startDate)
+                                input(
+                                    type="date",
+                                    name="startDate",
+                                    value=appointmentFilters.startDate
+                                )
                             label.doctor-filter-field
                                 span Fecha final
-                                input(type="date", name="endDate", value=appointmentFilters.endDate)
+                                input(
+                                    type="date",
+                                    name="endDate",
+                                    value=appointmentFilters.endDate
+                                )
                             label.doctor-filter-field.doctor-filter-status
                                 span Estado
                                 select(name="status")
                                     option(value="") Todos
                                     each statusItem in appointmentStatuses
-                                        option(value=statusItem.name, selected=appointmentFilters.status === statusItem.name)= statusItem.label
+                                        option(
+                                            value=statusItem.name,
+                                            selected=appointmentFilters.status === statusItem.name
+                                        )= statusItem.label
                             label.doctor-filter-field.doctor-filter-search
                                 span Buscar paciente
                                 input(
@@ -82,7 +129,11 @@ html(lang="es")
                             .doctor-filter-actions
                                 a.doctor-filter-reset(href=appointmentsPath) Limpiar
 
-                        p.doctor-appointment-feedback(aria-live="polite", data-appointment-live-feedback, hidden)
+                        p.doctor-appointment-feedback(
+                            aria-live="polite",
+                            data-appointment-live-feedback,
+                            hidden
+                        )
                         .doctor-appointments-table-wrap(
                             data-appointments-table,
                             hidden=appointments.length === 0
@@ -98,16 +149,26 @@ html(lang="es")
                                     each appointment in appointments
                                         tr(id=`appointment-${appointment.id}`)
                                             td(data-label="Fecha y hora")
-                                                time.doctor-appointment-date(datetime=appointment.startAt.toISOString())
+                                                time.doctor-appointment-date(
+                                                    datetime=appointment.startAt.toISOString()
+                                                )
                                                     strong= appointment.dateLabel
                                                     span= `${appointment.time} ${appointment.meridiem}`
                                             td(data-label="Paciente")
                                                 .doctor-table-patient
                                                     if appointment.patientPhotoUrl
-                                                        span.doctor-patient-avatar(aria-hidden="true")
-                                                            img(src=appointment.patientPhotoUrl, alt="", loading="lazy")
+                                                        span.doctor-patient-avatar(
+                                                            aria-hidden="true"
+                                                        )
+                                                            img(
+                                                                src=appointment.patientPhotoUrl,
+                                                                alt="",
+                                                                loading="lazy"
+                                                            )
                                                     else
-                                                        span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                                        span.doctor-patient-avatar(
+                                                            aria-hidden="true"
+                                                        )= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                                     span.doctor-appointment-info
                                                         strong= appointment.patientName
                                             td(data-label="Tipo de consulta")= appointment.reason || appointment.specialty
@@ -126,23 +187,81 @@ html(lang="es")
                             data-appointments-pagination,
                             hidden=appointmentCount <= appointmentPageSize
                         )
-                            p(data-appointments-range) Mostrando #{appointmentCount ? (appointmentPage - 1) * appointmentPageSize + 1 : 0} a #{Math.min(appointmentPage * appointmentPageSize, appointmentCount)} de #{appointmentCount} citas
+                            p(data-appointments-range) Mostrando #{ appointmentCount ? (appointmentPage - 1) * appointmentPageSize + 1 : 0 } a #{ Math.min(appointmentPage * appointmentPageSize, appointmentCount) } de #{ appointmentCount } citas
                             .doctor-pagination-controls
-                                form(method="get", action=appointmentsPath, data-appointment-page-filter)
-                                    input(type="hidden", name="startDate", value=appointmentFilters.startDate)
-                                    input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="status", value=appointmentFilters.status)
-                                    input(type="hidden", name="search", value=appointmentFilters.search)
-                                    input(type="hidden", name="page", value=appointmentPage - 1, data-previous-page)
-                                    button(type="submit", aria-label="Página anterior", disabled=appointmentPage <= 1) Anterior
-                                span(data-appointments-page-label) Página #{appointmentPage} de #{appointmentTotalPages}
-                                form(method="get", action=appointmentsPath, data-appointment-page-filter)
-                                    input(type="hidden", name="startDate", value=appointmentFilters.startDate)
-                                    input(type="hidden", name="endDate", value=appointmentFilters.endDate)
-                                    input(type="hidden", name="status", value=appointmentFilters.status)
-                                    input(type="hidden", name="search", value=appointmentFilters.search)
-                                    input(type="hidden", name="page", value=appointmentPage + 1, data-next-page)
-                                    button(type="submit", aria-label="Página siguiente", disabled=appointmentPage >= appointmentTotalPages) Siguiente
+                                form(
+                                    method="get",
+                                    action=appointmentsPath,
+                                    data-appointment-page-filter
+                                )
+                                    input(
+                                        type="hidden",
+                                        name="startDate",
+                                        value=appointmentFilters.startDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="endDate",
+                                        value=appointmentFilters.endDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="status",
+                                        value=appointmentFilters.status
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="search",
+                                        value=appointmentFilters.search
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="page",
+                                        value=appointmentPage - 1,
+                                        data-previous-page
+                                    )
+                                    button(
+                                        type="submit",
+                                        aria-label="Página anterior",
+                                        disabled=appointmentPage <= 1
+                                    ) Anterior
+                                span(data-appointments-page-label) Página #{ appointmentPage } de #{ appointmentTotalPages }
+                                form(
+                                    method="get",
+                                    action=appointmentsPath,
+                                    data-appointment-page-filter
+                                )
+                                    input(
+                                        type="hidden",
+                                        name="startDate",
+                                        value=appointmentFilters.startDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="endDate",
+                                        value=appointmentFilters.endDate
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="status",
+                                        value=appointmentFilters.status
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="search",
+                                        value=appointmentFilters.search
+                                    )
+                                    input(
+                                        type="hidden",
+                                        name="page",
+                                        value=appointmentPage + 1,
+                                        data-next-page
+                                    )
+                                    button(
+                                        type="submit",
+                                        aria-label="Página siguiente",
+                                        disabled=appointmentPage >= appointmentTotalPages
+                                    ) Siguiente
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)

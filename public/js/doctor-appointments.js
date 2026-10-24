@@ -208,7 +208,9 @@
     }
 
     document
-        .querySelectorAll("[data-appointment-filters], [data-appointment-quick-filter], [data-appointment-page-filter]")
+        .querySelectorAll(
+            "[data-appointment-filters], [data-appointment-quick-filter], [data-appointment-page-filter]",
+        )
         .forEach((form) => {
             form.addEventListener("submit", (event) => {
                 event.preventDefault();
