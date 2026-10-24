@@ -79,7 +79,7 @@ function toCount(value) {
     return Number(value) || 0;
 }
 
-function getIntegrationStatus() {
+export function getWhatsAppIntegrationStatus() {
     const senderConfigured = Boolean(process.env.TWILIO_WHATSAPP_FROM?.trim());
     const templateConfigured = Boolean(
         process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim() ||
@@ -235,7 +235,7 @@ export async function getAdminDashboardData(query = {}) {
                 : 0,
         })),
         whatsapp: {
-            integrationStatus: getIntegrationStatus(),
+            integrationStatus: getWhatsAppIntegrationStatus(),
             activeConversations,
             pendingRequests,
             failedMessagesToday: failedWhatsAppMessages,
