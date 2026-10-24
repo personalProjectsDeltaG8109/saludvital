@@ -79,7 +79,27 @@
         status.textContent = appointment.statusLabel;
         statusCell.append(status);
 
-        row.append(dateCell, patientCell, reasonCell, statusCell);
+        const actionCell = createCell("Acciones");
+        if (appointment.canStart) {
+            const startButton = document.createElement("button");
+            startButton.type = "button";
+            startButton.className =
+                "inline-flex min-h-10 items-center justify-center rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary";
+            startButton.dataset.startConsultation = "";
+            startButton.dataset.appointmentId = appointment.id;
+            startButton.dataset.patientName = appointment.patientName;
+            startButton.dataset.appointmentTime = `${appointment.dateLabel} · ${appointment.time} ${appointment.meridiem}`;
+            startButton.setAttribute("aria-label", `Iniciar consulta con ${appointment.patientName}`);
+            startButton.textContent = "Iniciar consulta";
+            actionCell.append(startButton);
+        } else if (appointment.status === "In Progress") {
+            actionCell.textContent = "Consulta en curso";
+            actionCell.classList.add("text-xs", "font-semibold", "text-teal-700");
+        } else {
+            actionCell.textContent = "—";
+        }
+
+        row.append(dateCell, patientCell, reasonCell, statusCell, actionCell);
         return row;
     }
 

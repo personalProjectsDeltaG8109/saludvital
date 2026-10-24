@@ -270,6 +270,8 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-appointments-table td[data-label="Tipo de consulta"] { grid-column: 1; grid-row: 2; }
     .doctor-appointments-table td[data-label="Estado"] { grid-column: 1 / -1; grid-row: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 3px; padding-top: 9px; border-top: 1px solid #edf2f8; }
     .doctor-appointments-table td[data-label="Estado"]:before { margin: 0; }
+    .doctor-appointments-table td[data-label="Acciones"] { grid-column: 1 / -1; grid-row: 4; display: flex; justify-content: stretch; padding-top: 8px; }
+    .doctor-appointments-table td[data-label="Acciones"] > button { width: 100%; }
     .doctor-table-patient { min-width: 0; align-items: flex-start; gap: 8px; }
     .doctor-table-patient .doctor-patient-avatar { width: 36px; height: 36px; flex: 0 0 36px; }
     .doctor-appointment-info { min-width: 0; }

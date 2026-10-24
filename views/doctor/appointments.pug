@@ -16,6 +16,7 @@ html(lang="es")
                 include ./partials/topbar.pug
                 main.doctor-content.doctor-subpage-content.doctor-appointments-page(
                     data-appointments-api-url="/api/doctor/appointments"
+                    data-start-consultation-url="/api/doctor/appointments"
                 )
                     header.doctor-page-heading.doctor-appointments-heading
                         div
@@ -145,6 +146,7 @@ html(lang="es")
                                         th(scope="col") Paciente
                                         th(scope="col") Tipo de consulta
                                         th(scope="col") Estado
+                                        th(scope="col") Acciones
                                 tbody(data-appointments-results)
                                     each appointment in appointments
                                         tr(id=`appointment-${appointment.id}`)
@@ -174,6 +176,21 @@ html(lang="es")
                                             td(data-label="Tipo de consulta")= appointment.reason || appointment.specialty
                                             td(data-label="Estado")
                                                 span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
+                                            td(data-label="Acciones")
+                                                if appointment.canStart
+                                                    button(
+                                                        type="button",
+                                                        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:cursor-not-allowed disabled:opacity-60",
+                                                        data-start-consultation,
+                                                        data-appointment-id=appointment.id,
+                                                        data-patient-name=appointment.patientName,
+                                                        data-appointment-time=`${appointment.dateLabel} · ${appointment.time} ${appointment.meridiem}`,
+                                                        aria-label=`Iniciar consulta con ${appointment.patientName}`
+                                                ) Iniciar consulta
+                                                else if appointment.status === "In Progress"
+                                                    span(class="text-xs font-semibold text-teal-700") Consulta en curso
+                                                else
+                                                    span(class="text-sm text-slate-400", aria-hidden="true") —
                         .doctor-empty-state.doctor-appointments-empty(
                             data-appointments-empty,
                             hidden=appointments.length > 0
@@ -262,7 +279,39 @@ html(lang="es")
                                         aria-label="Página siguiente",
                                         disabled=appointmentPage >= appointmentTotalPages
                                     ) Siguiente
+                        dialog#doctor-start-consultation-dialog(
+                            class="w-[min(92vw,32rem)] max-w-none overflow-hidden rounded-3xl border border-sky-100 bg-white p-0 text-slate-800 shadow-xl backdrop:bg-slate-950/40 backdrop:backdrop-blur-sm",
+                            aria-labelledby="doctor-start-consultation-title",
+                            aria-describedby="doctor-start-consultation-description",
+                            data-start-consultation-dialog
+                        )
+                            section(class="relative p-6 sm:p-8")
+                                div(class="absolute -right-12 -top-14 h-36 w-36 rounded-full bg-teal/10")
+                                header(class="relative flex items-start gap-4")
+                                    span(class="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-sky-50 text-secondary")
+                                        svg(width="25", height="25", viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8", aria-hidden="true")
+                                            path(d="M8 3v3m8-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Zm3 8h3m-3 4h6")
+                                    div(class="min-w-0")
+                                        h2#doctor-start-consultation-title(class="text-xl font-extrabold tracking-tight text-primary") ¿Iniciar consulta?
+                                        p#doctor-start-consultation-description(class="mt-1 text-sm leading-6 text-slate-600") Confirma que deseas comenzar la atención de este paciente.
+                                div(class="relative mt-6 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-4")
+                                    p(class="text-xs font-bold uppercase tracking-wider text-slate-500") Paciente
+                                    p(class="mt-1 text-base font-bold text-primary", data-start-consultation-patient)
+                                    p(class="mt-1 text-sm text-slate-600", data-start-consultation-time)
+                                p(class="mt-4 min-h-5 text-sm font-medium text-red-600", aria-live="polite", data-start-consultation-feedback)
+                                div(class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end")
+                                    button(
+                                        type="button",
+                                        class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary",
+                                        data-close-start-consultation
+                                    ) Volver
+                                    button(
+                                        type="button",
+                                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-secondary px-5 text-sm font-bold text-white shadow-md transition-colors hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:cursor-not-allowed disabled:opacity-60",
+                                        data-confirm-start-consultation
+                                    ) Iniciar consulta
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/doctor-appointments.js", defer)
+        script(src="/js/doctor-consultation-start.js", defer)
