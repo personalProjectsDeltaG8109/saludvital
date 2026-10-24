@@ -259,6 +259,12 @@ html(lang="es")
                                                             div
                                                                 dt= key.replaceAll("_", " ")
                                                                 dd= value
+                                            if consultation.recommendations
+                                                article.clinical-info-block
+                                                    span.clinical-info-icon(aria-hidden="true") âœ“
+                                                    div
+                                                        h3 Recomendaciones
+                                                        p= consultation.recommendations
                                             if consultation.observations
                                                 article.clinical-info-block
                                                     span.clinical-info-icon(aria-hidden="true") ▤
@@ -309,7 +315,17 @@ html(lang="es")
                                             data-detail-panel="documents",
                                             hidden
                                         )
-                                            if consultation.documents && consultation.documents.length
+                                            if consultation.medical_orders && consultation.medical_orders.length
+                                                article.clinical-record-item
+                                                    span.clinical-record-icon.icon-document(
+                                                        aria-hidden="true"
+                                                    ) â–¤
+                                                    div
+                                                        h3 Órdenes médicas
+                                                        ul
+                                                            each order in consultation.medical_orders
+                                                                li= order
+                                            else if consultation.documents && consultation.documents.length
                                                 each document in consultation.documents
                                                     article.clinical-record-item
                                                         span.clinical-record-icon.icon-document(

@@ -41,7 +41,8 @@
         selectedAppointmentId = button.dataset.appointmentId;
         patientLabel.textContent = button.dataset.patientName || "Paciente";
         appointmentTimeLabel.textContent = button.dataset.appointmentTime || "";
-        consultationReasonLabel.textContent = button.dataset.consultationReason || "Consulta médica";
+        consultationReasonLabel.textContent =
+            button.dataset.consultationReason || "Consulta médica";
         confirmButton.disabled = false;
         confirmButton.textContent = "Iniciar consulta";
         setFeedback("");
@@ -79,7 +80,16 @@
                 return;
             }
             if (!response.ok) {
-                throw new Error(data.message || "No fue posible iniciar la consulta. Inténtalo de nuevo.");
+                throw new Error(
+                    data.message || "No fue posible iniciar la consulta. Inténtalo de nuevo.",
+                );
+            }
+
+            if (data.consultation?.id) {
+                window.location.assign(
+                    `/doctor/consultations/${encodeURIComponent(data.consultation.id)}`,
+                );
+                return;
             }
 
             confirmButton.textContent = "Consulta iniciada";

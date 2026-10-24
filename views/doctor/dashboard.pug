@@ -116,9 +116,14 @@ html(lang="es")
                                                     aria-label=`Iniciar consulta con ${appointment.patientName}`
                                                 ) Iniciar consulta
                                             else if appointment.status === "In Progress"
-                                                span.doctor-row-link.is-inactive(aria-label=`Consulta en curso con ${appointment.patientName}`) Consulta en curso
+                                                a.doctor-row-link(
+                                                    href=`/doctor/consultations/${appointment.consultationId}`,
+                                                    aria-label=`Continuar consulta con ${appointment.patientName}`
+                                                ) Continuar consulta
                                             else if appointment.status === "Confirmed"
-                                                span.doctor-row-link.is-inactive(aria-label="Finaliza la consulta activa para iniciar otra") Consulta activa
+                                                span.doctor-row-link.is-inactive(
+                                                    aria-label="Finaliza la consulta activa para iniciar otra"
+                                                ) Consulta activa
                             else
                                 .doctor-empty-state
                                     span.doctor-empty-icon(aria-hidden="true") ▦
@@ -166,7 +171,9 @@ html(lang="es")
                                             aria-label=`Iniciar consulta con ${nextAppointment.patientName}`
                                         ) Iniciar consulta
                                     else if nextAppointment.status === "In Progress"
-                                        span.doctor-primary-link.is-inactive Consulta en curso
+                                        a.doctor-primary-link(
+                                            href=`/doctor/consultations/${nextAppointment.consultationId}`
+                                        ) Continuar consulta
                                     else if nextAppointment.status === "Confirmed"
                                         span.doctor-primary-link.is-inactive Finaliza la consulta activa
                             else

@@ -15,7 +15,7 @@ html(lang="es")
             .sv-main
                 include ./partials/topbar.pug
                 main.doctor-content.doctor-subpage-content.doctor-appointments-page(
-                    data-appointments-api-url="/api/doctor/appointments"
+                    data-appointments-api-url="/api/doctor/appointments",
                     data-start-consultation-url="/api/doctor/appointments"
                 )
                     header.doctor-page-heading.doctor-appointments-heading
@@ -178,20 +178,22 @@ html(lang="es")
                                                 span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel
                                             td(data-label="Acciones")
                                                 if appointment.canStart
-                                                    button(
+                                                    button.inline-flex.min-h-10.items-center.justify-center.gap-2.rounded-xl.bg-secondary.px-4.py-2.text-xs.font-bold.text-white.shadow-md.transition-colors(
                                                         type="button",
-                                                        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:cursor-not-allowed disabled:opacity-60",
+                                                        class="hover:bg-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary disabled:cursor-not-allowed disabled:opacity-60",
                                                         data-start-consultation,
                                                         data-appointment-id=appointment.id,
                                                         data-patient-name=appointment.patientName,
                                                         data-appointment-time=`${appointment.dateLabel} · ${appointment.time} ${appointment.meridiem}`,
                                                         data-consultation-reason=appointment.reason || "Consulta médica",
                                                         aria-label=`Iniciar consulta con ${appointment.patientName}`
-                                                ) Iniciar consulta
+                                                    ) Iniciar consulta
                                                 else if appointment.status === "In Progress"
-                                                    span(class="text-xs font-semibold text-teal-700") Consulta en curso
+                                                    a.text-xs.font-semibold.text-teal-700.underline(
+                                                        href=`/doctor/consultations/${appointment.consultationId}`
+                                                    ) Continuar consulta
                                                 else
-                                                    span(class="text-sm text-slate-400", aria-hidden="true") —
+                                                    span.text-sm.text-slate-400(aria-hidden="true") —
                         .doctor-empty-state.doctor-appointments-empty(
                             data-appointments-empty,
                             hidden=appointments.length > 0
