@@ -1,12 +1,16 @@
+- var safeDisplayName = typeof displayName === "string" && displayName.trim() ? displayName.trim() : "Usuario";
+- var safeProfilePhotoUrl = typeof profilePhotoUrl !== "undefined" ? profilePhotoUrl : null;
+- var safeRoleLabel = typeof roleLabel === "string" && roleLabel.trim() ? roleLabel.trim() : "Usuario";
+
 mixin topbarUserContent
     span.sv-avatar(aria-hidden="true")
-        if profilePhotoUrl
-            img.profile-avatar-image(src=profilePhotoUrl, alt="")
+        if safeProfilePhotoUrl
+            img.profile-avatar-image(src=safeProfilePhotoUrl, alt="")
         else
-            = displayName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+            = safeDisplayName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
     span
-        strong= displayName
-        small= roleLabel
+        strong= safeDisplayName
+        small= safeRoleLabel
 
 mixin notificationBellIcon
     svg(viewBox="0 0 24 24", aria-hidden="true")
@@ -33,7 +37,7 @@ header.sv-topbar
         span
         span
     .sv-topbar-copy
-        h1 ¡Hola, #{ displayName }!
+        h1 ¡Hola, #{ safeDisplayName }!
         p= topbarMessage
     .sv-topbar-actions
         if notificationHref

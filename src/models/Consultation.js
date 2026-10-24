@@ -48,6 +48,14 @@ const Consultation = database.define(
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        recommendations: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        medical_orders: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
         status: {
             type: DataTypes.ENUM("InProgress", "Completed", "Interrupted"),
             allowNull: false,

@@ -1,0 +1,194 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-consultation.css")
+    body.sv-dashboard.doctor-home-page.patient-home-page
+        .sv-layout
+            include ./partials/sidebar.pug
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.consultation-page(
+                    data-consultation-id=consultation.id,
+                    data-consultation-started-at=new Date(consultation.started_at).toISOString()
+                )
+                    header.consultation-heading
+                        a(href="/doctor/appointments") ← Volver a mis citas
+                        h1 Consulta médica
+                        p Registra la atención y revisa la información antes de finalizar.
+                        p.consultation-timer(
+                            aria-label="Tiempo transcurrido desde el inicio de la consulta"
+                        )
+                            span Tiempo transcurrido:
+                            strong(data-consultation-timer, role="timer", aria-live="off") 00:00:00
+                    section.consultation-patient-card(aria-label="Información de la cita")
+                        div
+                            span Paciente
+                            strong= `${patient.first_name} ${patient.last_name}`
+                            small= `${(appointment.specialty && appointment.specialty.name) || "Consulta médica"} · ${(appointment.status && appointment.status.name) || "En curso"}`
+                        div
+                            span Motivo agendado
+                            strong= appointment.reason || "No especificado"
+                    nav.consultation-progress(aria-label="Pasos de la consulta")
+                        button.is-active(type="button", data-step-indicator="0") 1. Atención
+                        button(type="button", data-step-indicator="1") 2. Diagnóstico
+                        button(type="button", data-step-indicator="2") 3. Tratamiento
+                        button(type="button", data-step-indicator="3") 4. Finalizar
+                    p.consultation-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-consultation-feedback
+                    )
+                    form.consultation-form(data-consultation-form, novalidate)
+                        section.consultation-step(data-consultation-step="0")
+                            h2 Atención
+                            label(for="consultation-symptoms") Motivo de consulta
+                            textarea#consultation-symptoms(
+                                name="symptoms",
+                                rows="3",
+                                maxlength="5000",
+                                required
+                            )
+                            label(for="consultation-feeling") ¿Cómo se siente el paciente?
+                            textarea#consultation-feeling(
+                                name="patientFeeling",
+                                rows="2",
+                                maxlength="5000"
+                            )
+                            h3 Signos vitales
+                            .consultation-vitals
+                                label Presión arterial
+                                    input(
+                                        type="text",
+                                        name="bloodPressure",
+                                        placeholder="120/80",
+                                        maxlength="20"
+                                    )
+                                label Frecuencia cardiaca (lpm)
+                                    input(
+                                        type="number",
+                                        name="heartRate",
+                                        min="0",
+                                        max="300",
+                                        step="1"
+                                    )
+                                label Temperatura (°C)
+                                    input(
+                                        type="number",
+                                        name="temperature",
+                                        min="25",
+                                        max="45",
+                                        step="0.1"
+                                    )
+                                label Peso (kg)
+                                    input(
+                                        type="number",
+                                        name="weight",
+                                        min="0",
+                                        max="500",
+                                        step="0.1"
+                                    )
+                                label Estatura (m)
+                                    input(
+                                        type="number",
+                                        name="height",
+                                        min="0",
+                                        max="3",
+                                        step="0.01"
+                                    )
+                            label(for="consultation-evaluation") Evaluación médica
+                            textarea#consultation-evaluation(
+                                name="clinicalNotes",
+                                rows="4",
+                                maxlength="10000",
+                                required
+                            )
+                            .consultation-actions
+                                button(type="button", data-save-draft) Guardar borrador
+                                button(type="button", data-next-step) Siguiente
+                        section.consultation-step(hidden, data-consultation-step="1")
+                            h2 Diagnóstico
+                            p Agrega uno o varios diagnósticos y sus observaciones opcionales.
+                            .consultation-inline-fields
+                                label(for="diagnosis-entry") Diagnóstico
+                                    input#diagnosis-entry(
+                                        type="text",
+                                        maxlength="500",
+                                        data-diagnosis-input
+                                    )
+                                label(for="diagnosis-notes-entry") Notas
+                                    input#diagnosis-notes-entry(
+                                        type="text",
+                                        maxlength="5000",
+                                        data-diagnosis-notes
+                                    )
+                                button(type="button", data-add-diagnosis) Agregar diagnóstico
+                            ul.consultation-list(
+                                data-diagnosis-list,
+                                aria-label="Diagnósticos agregados"
+                            )
+                            .consultation-actions
+                                button(type="button", data-previous-step) Anterior
+                                button(type="button", data-save-draft) Guardar borrador
+                                button(type="button", data-next-step) Siguiente
+                        section.consultation-step(hidden, data-consultation-step="2")
+                            h2 Tratamiento y órdenes
+                            h3 Medicamentos (opcional)
+                            .consultation-medication-fields
+                                label Medicamento
+                                    input(type="text", maxlength="150", data-medication-name)
+                                label Dosis
+                                    input(type="text", maxlength="100", data-medication-dosage)
+                                label Frecuencia
+                                    input(type="text", maxlength="100", data-medication-frequency)
+                                label Duración
+                                    input(type="text", maxlength="100", data-medication-duration)
+                                label Instrucciones
+                                    input(
+                                        type="text",
+                                        maxlength="5000",
+                                        data-medication-instructions
+                                    )
+                                button(type="button", data-add-medication) Agregar medicamento
+                            ul.consultation-list(
+                                data-medication-list,
+                                aria-label="Medicamentos agregados"
+                            )
+                            label(for="consultation-recommendations") Recomendaciones
+                            textarea#consultation-recommendations(
+                                name="recommendations",
+                                rows="3",
+                                maxlength="10000"
+                            )
+                            label(for="consultation-orders") Órdenes médicas opcionales (una por línea)
+                            textarea#consultation-orders(
+                                name="medicalOrders",
+                                rows="3",
+                                maxlength="10000"
+                            )
+                            .consultation-actions
+                                button(type="button", data-previous-step) Anterior
+                                button(type="button", data-save-draft) Guardar borrador
+                                button(type="button", data-next-step) Revisar resumen
+                        section.consultation-step(hidden, data-consultation-step="3")
+                            h2 Resumen de la consulta
+                            p Revisa los datos registrados antes de finalizar.
+                            dl.consultation-summary(data-consultation-summary)
+                            .consultation-actions
+                                button(type="button", data-previous-step) Anterior
+                                button(type="button", data-save-draft) Guardar borrador
+                                button.consultation-complete(
+                                    type="button",
+                                    data-complete-consultation
+                                ) Finalizar consulta
+                include ./partials/bottom-nav.pug
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/doctor-consultation.js", defer)

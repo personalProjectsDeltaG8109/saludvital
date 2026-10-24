@@ -1,0 +1,49 @@
+.consultation-page { max-width: 1120px; margin: 0 auto; padding: 1.5rem; }
+.consultation-heading { margin-bottom: 1rem; }
+.consultation-timer { display: inline-flex; align-items: center; gap: .45rem; margin: .75rem 0 0; border: 1px solid #cfe3ff; border-radius: 999px; padding: .45rem .8rem; background: #eef6ff; color: #174b91; font-size: .9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.consultation-timer strong { color: #0757bb; }
+.consultation-heading a { color: #0875ee; font-weight: 700; text-decoration: none; }
+.consultation-heading h1 { margin: .75rem 0 .25rem; color: #09285f; font-size: 1.8rem; font-weight: 800; }
+.consultation-heading p { color: #53657d; }
+.consultation-patient-card, .consultation-step { border: 1px solid #dbe6f2; border-radius: 1rem; background: #fff; box-shadow: 0 5px 20px #12345b0b; }
+.consultation-patient-card { display: flex; justify-content: space-between; gap: 1rem; padding: 1.25rem; }
+.consultation-patient-card div { display: grid; gap: .25rem; }
+.consultation-patient-card span, .consultation-patient-card small { color: #65758b; }
+.consultation-patient-card strong { color: #102d60; }
+.consultation-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: 1.25rem 0; }
+.consultation-progress button { border: 0; border-bottom: 3px solid #dce6f2; padding: .75rem .25rem; background: transparent; color: #52637b; font-weight: 700; cursor: pointer; }
+.consultation-progress button.is-active { border-color: #0875ee; color: #0757bb; }
+.consultation-step { padding: clamp(1rem, 3vw, 2rem); }
+.consultation-step h2 { color: #0c2e68; font-size: 1.35rem; font-weight: 800; }
+.consultation-step h3 { margin: 1.25rem 0 .65rem; color: #13336b; font-weight: 750; }
+.consultation-step label { display: grid; gap: .4rem; margin: .9rem 0; color: #233b62; font-size: .9rem; font-weight: 700; }
+.consultation-step .required-marker { color: #c62828; font-weight: 800; }
+.consultation-step input, .consultation-step textarea { width: 100%; border: 1px solid #cbd9e9; border-radius: .55rem; padding: .7rem .8rem; background: #fbfdff; color: #18345d; font-weight: 400; }
+.consultation-step input:focus, .consultation-step textarea:focus { outline: 3px solid #1682ff35; border-color: #0875ee; }
+.consultation-vitals, .consultation-medication-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem 1rem; }
+.consultation-inline-fields { display: grid; grid-template-columns: 2fr 2fr auto; align-items: end; gap: .75rem; }
+.consultation-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: .7rem; margin-top: 1.5rem; }
+.consultation-actions button, .consultation-inline-fields button { border: 1px solid #0875ee; border-radius: .55rem; padding: .7rem 1rem; background: white; color: #0757bb; font-weight: 750; cursor: pointer; }
+.consultation-actions button[data-next-step], .consultation-complete { background: #0875ee; color: white; }
+.consultation-actions button:disabled { opacity: .6; cursor: wait; }
+.consultation-list { display: grid; gap: .5rem; padding: 0; list-style: none; }
+.consultation-list li { display: flex; justify-content: space-between; gap: 1rem; border: 1px solid #e1eaf4; border-radius: .55rem; padding: .75rem; color: #163565; }
+.consultation-list button { border: 0; background: transparent; color: #b42318; font-weight: 700; cursor: pointer; }
+.consultation-feedback { min-height: 1.4rem; font-weight: 700; }
+.consultation-feedback.is-error { color: #b42318; }
+.consultation-feedback.is-success { color: #087a55; }
+.consultation-summary { display: grid; grid-template-columns: minmax(130px, .5fr) 2fr; gap: .7rem 1rem; }
+.consultation-summary dt { color: #183d76; font-weight: 800; }
+.consultation-summary dd { margin: 0; color: #465a74; white-space: pre-wrap; }
+@media (max-width: 700px) {
+    .consultation-page { padding: .8rem; }
+    .consultation-patient-card { flex-direction: column; }
+    .consultation-vitals, .consultation-medication-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .consultation-inline-fields { grid-template-columns: 1fr; }
+    .consultation-progress button { font-size: .72rem; }
+}
+@media (max-width: 420px) {
+    .consultation-vitals, .consultation-medication-fields { grid-template-columns: 1fr; }
+    .consultation-summary { grid-template-columns: 1fr; gap: .2rem; }
+    .consultation-summary dd { margin-bottom: .6rem; }
+}

@@ -9,7 +9,6 @@ import {
 } from "../../../models/associations.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
-const CANCELLED_STATUS = "Cancelled";
 
 function getBogotaDateParts(date) {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -181,52 +180,63 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
     const activeSince = new Date(now);
     activeSince.setUTCFullYear(activeSince.getUTCFullYear() - 1);
 
-    const [todayAppointments, nextAppointment, activePatientRows, weeklyConsultations] =
-        await Promise.all([
-            Appointment.findAll({
-                where: {
-                    doctor_id: doctor.id,
-                    start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+    const [
+        todayAppointments,
+        nextAppointment,
+        activePatientRows,
+        weeklyConsultations,
+        activeConsultation,
+    ] = await Promise.all([
+        Appointment.findAll({
+            where: {
+                doctor_id: doctor.id,
+                start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
+            },
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["id", "first_name", "last_name", "profile_photo_url"],
                 },
-                include: [
-                    {
-                        model: Patient,
-                        as: "patient",
-                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
-                    },
-                    {
-                        model: AppointmentStatus,
-                        as: "status",
-                        attributes: ["name"],
-                        required: true,
-                    },
-                ],
-                order: [["start_at", "ASC"]],
-            }),
-            Appointment.findOne({
-                where: {
-                    doctor_id: doctor.id,
-                    start_at: { [Op.gte]: now },
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    attributes: ["name"],
+                    required: true,
+                    where: { name: "Confirmed" },
                 },
-                include: [
-                    {
-                        model: Patient,
-                        as: "patient",
-                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
-                    },
-                    {
-                        model: AppointmentStatus,
-                        as: "status",
-                        attributes: ["name"],
-                        required: true,
-                        where: { name: { [Op.ne]: CANCELLED_STATUS } },
-                    },
-                ],
-                order: [["start_at", "ASC"]],
-            }),
-            getActivePatientRows(doctor.id, activeSince),
-            getCompletedConsultations(doctor.id, week.start, week.end),
-        ]);
+            ],
+            order: [["start_at", "ASC"]],
+        }),
+        Appointment.findOne({
+            where: {
+                doctor_id: doctor.id,
+                start_at: { [Op.gte]: now },
+            },
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                },
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    attributes: ["name"],
+                    required: true,
+                    where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
+                },
+            ],
+            order: [["start_at", "ASC"]],
+        }),
+        getActivePatientRows(doctor.id, activeSince),
+        getCompletedConsultations(doctor.id, week.start, week.end),
+        Consultation.findOne({
+            where: { doctor_id: doctor.id, status: "InProgress" },
+            attributes: ["id"],
+            raw: true,
+        }),
+    ]);
 
     const distinctPatients = new Map();
     for (const appointment of activePatientRows) {
@@ -243,26 +253,32 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
         ? Math.round(durations.reduce((total, duration) => total + duration, 0) / durations.length)
         : null;
 
-    // Keep cancelled appointments visible in today's list while excluding them from the count.
     const visibleAppointments = todayAppointments;
-    const countableTodayAppointments = visibleAppointments.filter(
-        (appointment) => appointment.status?.name !== CANCELLED_STATUS,
-    );
 
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
         metrics: {
-            appointmentsToday: countableTodayAppointments.length,
+            appointmentsToday: visibleAppointments.length,
             activePatients: distinctPatients.size,
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
         },
-        todayAppointments: visibleAppointments.map((appointment) =>
-            serializeAppointment(appointment, { includePatientPhoto: true }),
-        ),
+        todayAppointments: visibleAppointments.map((appointment) => ({
+            ...serializeAppointment(appointment, { includePatientPhoto: true }),
+            consultationId:
+                appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
+            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+        })),
         nextAppointment: nextAppointment
-            ? serializeAppointment(nextAppointment, { includePatientPhoto: true })
+            ? {
+                  ...serializeAppointment(nextAppointment, { includePatientPhoto: true }),
+                  consultationId:
+                      nextAppointment.status?.name === "In Progress"
+                          ? activeConsultation?.id
+                          : null,
+                  canStart: nextAppointment.status?.name === "Confirmed" && !activeConsultation,
+              }
             : null,
     };
 }
@@ -347,6 +363,11 @@ export async function getDoctorAppointments(userId, query = {}) {
     if (!doctor) return null;
 
     const filters = parseAppointmentFilters(query);
+    const activeConsultation = await Consultation.findOne({
+        where: { doctor_id: doctor.id, status: "InProgress" },
+        attributes: ["id"],
+        raw: true,
+    });
     const where = { doctor_id: doctor.id };
     const patientWhere = {};
     const appointmentDate = {};
@@ -481,7 +502,10 @@ export async function getDoctorAppointments(userId, query = {}) {
         doctorPhotoUrl: doctor.profile_photo_url,
         appointments: appointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
+            consultationId:
+                appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
             specialty: appointment.specialty?.name || "Consulta médica",
+            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
         })),
         appointmentFilters: { ...filters, page },
         appointmentStatuses: statusRows
