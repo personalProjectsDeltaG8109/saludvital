@@ -9,7 +9,6 @@ import {
 } from "../../../models/associations.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
-const CANCELLED_STATUS = "Cancelled";
 
 function getBogotaDateParts(date) {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -204,6 +203,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     as: "status",
                     attributes: ["name"],
                     required: true,
+                    where: { name: "Confirmed" },
                 },
             ],
             order: [["start_at", "ASC"]],
@@ -224,7 +224,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                     as: "status",
                     attributes: ["name"],
                     required: true,
-                    where: { name: { [Op.ne]: CANCELLED_STATUS } },
+                    where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
                 },
             ],
             order: [["start_at", "ASC"]],
@@ -253,17 +253,13 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
         ? Math.round(durations.reduce((total, duration) => total + duration, 0) / durations.length)
         : null;
 
-    // Keep cancelled appointments visible in today's list while excluding them from the count.
     const visibleAppointments = todayAppointments;
-    const countableTodayAppointments = visibleAppointments.filter(
-        (appointment) => appointment.status?.name !== CANCELLED_STATUS,
-    );
 
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
         metrics: {
-            appointmentsToday: countableTodayAppointments.length,
+            appointmentsToday: visibleAppointments.length,
             activePatients: distinctPatients.size,
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
