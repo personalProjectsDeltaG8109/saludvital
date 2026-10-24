@@ -1,6 +1,14 @@
 import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
+import {
+    getAdminDepartments,
+    getAdminMunicipalities,
+    getAdminUserDetails,
+    getAdminUsers,
+    updateAdminUser,
+    updateAdminUserProfile,
+} from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 
 // Define the routes available to administrators.
@@ -15,6 +23,75 @@ adminRoutes.get("/api/admin/dashboard", ...requireAdministrator, async (req, res
         return next(error);
     }
 });
+
+adminRoutes.get("/api/admin/users", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminUsers(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.patch("/api/admin/users/:userId", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await updateAdminUser(req.auth.userId, req.params.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.get("/api/admin/users/:userId", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminUserDetails(req.params.userId));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.patch(
+    "/api/admin/users/:userId/profile",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminUserProfile(req.auth.userId, req.params.userId, req.body),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.get(
+    "/api/admin/locations/departments",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminDepartments());
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.get(
+    "/api/admin/locations/municipalities",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminMunicipalities(req.query.departmentCode));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.get("/api/admin/whatsapp", ...requireAdministrator, async (req, res, next) => {
     try {
@@ -52,6 +129,21 @@ adminRoutes.get("/admin/dashboard", ...requireAdministrator, async (req, res, ne
             dashboard,
         });
     } catch (error) {
+        return next(error);
+    }
+});
+
+// Render the role-protected user account management page.
+adminRoutes.get("/admin/users", ...requireAdministrator, async (req, res, next) => {
+    try {
+        const userData = await getAdminUsers(req.query);
+        return res.render("admin/users", {
+            pageTitle: "Usuarios y roles | SaludVital",
+            adminName: "Administrador",
+            userData,
+        });
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).send(error.message);
         return next(error);
     }
 });
