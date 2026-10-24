@@ -94,6 +94,14 @@ html(lang="es")
                     span
                     span
                     span
+                a.admin-mobile-brand(
+                    href="/admin/dashboard",
+                    aria-label="SaludVital, panel administrativo"
+                )
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
                 form.admin-global-search(role="search", action="/admin/dashboard", method="get")
                     label.sr-only(for="admin-search") Buscar en el panel
                     span(aria-hidden="true") ⌕
@@ -106,11 +114,29 @@ html(lang="es")
                     href="#admin-notifications-title",
                     aria-label="Ver notificaciones recientes"
                 )
-                    span(aria-hidden="true") ♧
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round",
+                        aria-hidden="true"
+                    )
+                        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                        path(d="M10 21h4")
                     if dashboard.notificationAlertCount
                         b= dashboard.notificationAlertCount
                 .admin-user-chip
-                    span.admin-user-avatar(aria-hidden="true") A
+                    span.admin-user-avatar(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8"
+                        )
+                            circle(cx="12", cy="8", r="3.2")
+                            path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
                     span
                         strong= adminName
                         small SaludVital
@@ -125,11 +151,6 @@ html(lang="es")
                         p.admin-eyebrow Panel administrativo
                         h1 ¡Hola, #{ adminName }!
                         p Aquí tienes un resumen general de la operación de SaludVital.
-                    .admin-welcome-art(aria-hidden="true")
-                        span.admin-art-orbit
-                        span.admin-art-calendar ▣
-                        span.admin-art-plus +
-                        span.admin-art-stethoscope ⚕
                     aside.admin-date-card
                         p= new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(new Date(dashboard.generatedAt))
                         span.admin-date-icon(aria-hidden="true") ▣
@@ -137,19 +158,54 @@ html(lang="es")
                         small para seguir cuidando de más personas
                 section.admin-metric-grid(aria-label="Indicadores principales")
                     article.admin-metric-card.metric-users
-                        span.admin-metric-icon(aria-hidden="true") ♙
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="9", cy="8", r="3")
+                                path(
+                                    d="M3.5 20v-1a5.5 5.5 0 0 1 11 0v1M16 5.2a3 3 0 0 1 0 5.7M17 14a5 5 0 0 1 3.5 4.8V20"
+                                )
                         div
                             p Usuarios registrados
                             strong= dashboard.metrics.registeredUsers.toLocaleString("es-CO")
                             small= dashboard.metrics.activeUsers.toLocaleString("es-CO") + " activos"
                     article.admin-metric-card.metric-appointments
-                        span.admin-metric-icon(aria-hidden="true") ▣
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                rect(x="3.5", y="5", width="17", height="16", rx="2")
+                                path(d="M7.5 3v4M16.5 3v4M3.5 10h17")
+                                path(d="M8 14h2M14 14h2M8 17h2")
                         div
                             p Citas de hoy
                             strong= dashboard.metrics.appointmentsToday.toLocaleString("es-CO")
                             small= dashboard.metrics.completedAppointmentsToday.toLocaleString("es-CO") + " completadas"
                     article.admin-metric-card.metric-doctors
-                        span.admin-metric-icon(aria-hidden="true") ⚕
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(
+                                    d="M6 3v5a6 6 0 0 0 12 0V3M3 3h6M15 3h6M12 14v2a4 4 0 0 0 8 0v-1"
+                                )
+                                circle(cx="20", cy="13", r="1")
                         div
                             p Médicos activos
                             strong= dashboard.metrics.activeDoctors.toLocaleString("es-CO")
@@ -211,8 +267,8 @@ html(lang="es")
                             .admin-specialty-content
                                 .admin-donut(
                                     role="img",
-                                    aria-label="#{dashboard.metrics.appointmentsToday} citas de hoy distribuidas por especialidad",
-                                    style="background: conic-gradient(#{specialtyGradient})"
+                                    aria-label=dashboard.metrics.appointmentsToday + " citas de hoy distribuidas por especialidad",
+                                    style="background: conic-gradient(" + specialtyGradient + ")"
                                 )
                                     span
                                         strong= dashboard.metrics.appointmentsToday.toLocaleString("es-CO")
