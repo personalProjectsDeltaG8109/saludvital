@@ -9,6 +9,22 @@ import {
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
 
+doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, next) => {
+    try {
+        const appointmentsData = await getDoctorAppointments(req.auth.userId, req.query);
+        if (!appointmentsData) {
+            return res.status(404).json({ message: "No se encontró el perfil médico." });
+        }
+
+        return res.json(appointmentsData);
+    } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
+        return next(error);
+    }
+});
+
 doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) => {
     try {
         const dashboard = await getDoctorDashboardData(req.auth.userId);
@@ -33,7 +49,7 @@ doctorRoutes.get(
     ...requireDoctor,
     async (req, res, next) => {
         try {
-            const dashboard = await getDoctorAppointments(req.auth.userId);
+            const dashboard = await getDoctorAppointments(req.auth.userId, req.query);
             if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
 
             return res.render("doctor/appointments", {
@@ -43,6 +59,7 @@ doctorRoutes.get(
                         : "Mis citas | SaludVital",
                 activeNav: req.path === "/doctor/agenda" ? "agenda" : "appointments",
                 bottomNavActive: "appointments",
+                appointmentsPath: req.path,
                 ...dashboard,
             });
         } catch (error) {
