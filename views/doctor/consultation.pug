@@ -23,7 +23,9 @@ html(lang="es")
                         a(href="/doctor/appointments") ← Volver a mis citas
                         h1 Consulta médica
                         p Registra la atención y revisa la información antes de finalizar.
-                        p.consultation-timer(aria-label="Tiempo transcurrido desde el inicio de la consulta")
+                        p.consultation-timer(
+                            aria-label="Tiempo transcurrido desde el inicio de la consulta"
+                        )
                             span Tiempo transcurrido:
                             strong(data-consultation-timer, role="timer", aria-live="off") 00:00:00
                     section.consultation-patient-card(aria-label="Información de la cita")

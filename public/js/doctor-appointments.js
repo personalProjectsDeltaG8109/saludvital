@@ -89,8 +89,12 @@
             startButton.dataset.appointmentId = appointment.id;
             startButton.dataset.patientName = appointment.patientName;
             startButton.dataset.appointmentTime = `${appointment.dateLabel} · ${appointment.time} ${appointment.meridiem}`;
-            startButton.dataset.consultationReason = appointment.reason || appointment.specialty || "Consulta médica";
-            startButton.setAttribute("aria-label", `Iniciar consulta con ${appointment.patientName}`);
+            startButton.dataset.consultationReason =
+                appointment.reason || appointment.specialty || "Consulta médica";
+            startButton.setAttribute(
+                "aria-label",
+                `Iniciar consulta con ${appointment.patientName}`,
+            );
             startButton.textContent = "Iniciar consulta";
             actionCell.append(startButton);
         } else if (appointment.status === "In Progress") {

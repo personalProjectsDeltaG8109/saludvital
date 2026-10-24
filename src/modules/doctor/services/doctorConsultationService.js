@@ -180,13 +180,7 @@ function normalizeDraft(payload, { completing = false } = {}) {
     if (vitalSigns !== null && (typeof vitalSigns !== "object" || Array.isArray(vitalSigns))) {
         throw createServiceError("Los signos vitales no son válidos.", 400);
     }
-    const requiredVitalSignKeys = [
-        "bloodPressure",
-        "heartRate",
-        "temperature",
-        "weight",
-        "height",
-    ];
+    const requiredVitalSignKeys = ["bloodPressure", "heartRate", "temperature", "weight", "height"];
     if (
         completing &&
         (!vitalSigns ||
