@@ -99,10 +99,19 @@ function formatPatientListRow(patient, lastAppointmentAt) {
 async function getDoctor(userId) {
     const doctor = await Doctor.findOne({
         where: { user_id: userId },
-        attributes: ["id"],
+        attributes: ["id", "display_name", "profile_photo_url"],
     });
     if (!doctor) throw createServiceError("No se encontró el perfil médico.", 404);
     return doctor;
+}
+
+/** Return the authenticated doctor's identity for shared doctor page headers. */
+export async function getDoctorHeaderData(userId) {
+    const doctor = await getDoctor(userId);
+    return {
+        doctorName: doctor.display_name || "Médico",
+        doctorPhotoUrl: normalizeProfilePhotoUrl(doctor.profile_photo_url),
+    };
 }
 
 /** Return a paginated, unique patient list derived from the doctor's own appointments. */

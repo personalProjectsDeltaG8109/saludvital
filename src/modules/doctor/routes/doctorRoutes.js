@@ -5,6 +5,7 @@ import {
     getDoctorDashboardData,
 } from "../services/doctorDashboardService.js";
 import {
+    getDoctorHeaderData,
     getDoctorPatientDetails,
     getDoctorPatients,
     getDoctorPatientsPage,
@@ -195,11 +196,15 @@ doctorRoutes.get("/api/doctor/patients/:patientId", ...requireDoctor, async (req
 
 doctorRoutes.get("/doctor/patients", ...requireDoctor, async (req, res, next) => {
     try {
-        const patientsData = await getDoctorPatientsPage(req.auth.userId, req.query);
+        const [patientsData, doctorHeader] = await Promise.all([
+            getDoctorPatientsPage(req.auth.userId, req.query),
+            getDoctorHeaderData(req.auth.userId),
+        ]);
 
         return res.render("doctor/patients", {
             pageTitle: "Pacientes | SaludVital",
             activeNav: "patients",
+            ...doctorHeader,
             ...patientsData,
         });
     } catch (error) {

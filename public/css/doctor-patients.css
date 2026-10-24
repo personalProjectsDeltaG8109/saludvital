@@ -16,6 +16,21 @@
     padding: 0 clamp(18px, 3vw, 42px);
 }
 
+.doctor-patients-heading.doctor-appointments-heading {
+    min-height: 118px;
+    margin-bottom: 20px;
+    padding: 20px clamp(18px, 3vw, 28px);
+}
+
+.doctor-patients-heading .doctor-eyebrow {
+    margin: 0 0 3px;
+    color: #087b9b;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
 .doctor-patients-heading h1 {
     margin: 0;
     color: var(--patient-navy);
@@ -123,6 +138,13 @@
     border-radius: 17px;
     background: #fff;
     box-shadow: 0 8px 23px rgb(23 58 99 / 5%);
+}
+
+.doctor-patient-directory,
+.doctor-patient-detail {
+    border-color: #dceaf6;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgb(26 76 130 / 7%);
 }
 
 .doctor-patient-directory {
