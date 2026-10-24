@@ -1,10 +1,14 @@
 import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import {
-    getDoctorActivePatients,
     getDoctorAppointments,
     getDoctorDashboardData,
 } from "../services/doctorDashboardService.js";
+import {
+    getDoctorPatientDetails,
+    getDoctorPatients,
+    getDoctorPatientsPage,
+} from "../services/doctorPatientsService.js";
 import {
     completeDoctorConsultation,
     getDoctorConsultation,
@@ -171,15 +175,32 @@ doctorRoutes.get(
     },
 );
 
+doctorRoutes.get("/api/doctor/patients", ...requireDoctor, async (req, res, next) => {
+    try {
+        return res.json(await getDoctorPatients(req.auth.userId, req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+doctorRoutes.get("/api/doctor/patients/:patientId", ...requireDoctor, async (req, res, next) => {
+    try {
+        return res.json(await getDoctorPatientDetails(req.auth.userId, req.params.patientId));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
 doctorRoutes.get("/doctor/patients", ...requireDoctor, async (req, res, next) => {
     try {
-        const dashboard = await getDoctorActivePatients(req.auth.userId);
-        if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
+        const patientsData = await getDoctorPatientsPage(req.auth.userId, req.query);
 
         return res.render("doctor/patients", {
-            pageTitle: "Pacientes activos | SaludVital",
+            pageTitle: "Pacientes | SaludVital",
             activeNav: "patients",
-            ...dashboard,
+            ...patientsData,
         });
     } catch (error) {
         return next(error);

@@ -8,32 +8,225 @@ html(lang="es")
         link(rel="stylesheet", href="/css/app.css")
         link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-patients.css")
+    - const appointmentStatusLabels = { Confirmed: "Confirmada", "In Progress": "En curso", Attended: "Atendida", Cancelled: "Cancelada", Pending: "Pendiente" };
+    - const vitalSignLabels = { bloodPressure: "Presión arterial", heartRate: "Frecuencia cardíaca", temperature: "Temperatura", weight: "Peso", height: "Estatura", bmi: "IMC" };
     body.sv-dashboard.doctor-home-page.patient-home-page
         .sv-layout
             include ./partials/sidebar.pug
             button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
             .sv-main
                 include ./partials/topbar.pug
-                main.doctor-content.doctor-subpage-content
-                    header.doctor-page-heading
-                        p.doctor-eyebrow Seguimiento
-                        h1 Pacientes activos
-                        p Pacientes con una consulta completada contigo durante los últimos 12 meses.
-                    section.doctor-panel.doctor-list-panel(
-                        aria-label="Pacientes activos del médico"
+                main.doctor-content.doctor-subpage-content.doctor-patients-page(
+                    data-doctor-patients-page,
+                    data-list-endpoint="/api/doctor/patients",
+                    data-detail-endpoint="/api/doctor/patients",
+                    data-selected-patient-id=selectedPatientId || ""
+                )
+                    header.doctor-patients-heading
+                        div
+                            p.doctor-eyebrow Seguimiento
+                            h1 Pacientes
+                            p Busca, consulta y accede al historial clínico de tus pacientes.
+                        form.doctor-patients-search(
+                            role="search",
+                            action="/doctor/patients",
+                            method="get",
+                            data-patient-search-form
+                        )
+                            label(for="doctor-patient-search") Buscar paciente
+                            .doctor-patients-search-control
+                                span(aria-hidden="true") ⌕
+                                input#doctor-patient-search(
+                                    type="search",
+                                    name="search",
+                                    placeholder="Buscar por nombre, documento o teléfono...",
+                                    value=search,
+                                    maxlength="120",
+                                    autocomplete="off",
+                                    data-patient-search
+                                )
+                                button(type="submit") Buscar
+                    p.doctor-patients-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-patient-feedback
                     )
-                        if patients.length
-                            ul.doctor-patient-list
+                    .doctor-patients-layout
+                        section.doctor-panel.doctor-patient-directory(
+                            aria-labelledby="doctor-patient-list-title"
+                        )
+                            header.doctor-patient-directory-header
+                                h2#doctor-patient-list-title Lista de pacientes
+                                span(data-patient-count)= `${pagination.totalItems} pacientes`
+                            ul.doctor-patient-list(
+                                data-patient-list,
+                                aria-label="Pacientes asignados al médico"
+                            )
                                 each patient in patients
-                                    li.doctor-patient-row
-                                        span.doctor-patient-avatar(aria-hidden="true")= patient.name.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                        strong= patient.name
-                                        span.doctor-patient-label Paciente activo
-                        else
-                            .doctor-empty-state
-                                span.doctor-empty-icon(aria-hidden="true") ♙
-                                strong No tienes pacientes activos
-                                p Los pacientes con consultas recientes aparecerán aquí.
+                                    li
+                                        button.doctor-patient-row(
+                                            type="button",
+                                            data-patient-row,
+                                            data-patient-id=patient.id,
+                                            aria-pressed=patient.id === selectedPatientId ? "true" : "false"
+                                        )
+                                            span.doctor-patient-avatar(aria-hidden="true")
+                                                if patient.profilePhotoUrl
+                                                    img(src=patient.profilePhotoUrl, alt="")
+                                                else
+                                                    = patient.displayName.split(" ").slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase()
+                                            span.doctor-patient-row-copy
+                                                strong= patient.displayName
+                                                small= `${patient.documentType} ${patient.documentNumber}`
+                                            if patient.lastAppointmentLabel
+                                                span.doctor-patient-last-visit
+                                                    small Última cita
+                                                    time= patient.lastAppointmentLabel
+                            p.doctor-patient-list-empty(
+                                hidden=patients.length > 0,
+                                data-patient-list-empty
+                            )
+                                strong No encontramos pacientes
+                                span Ajusta la búsqueda o revisa tus citas asignadas.
+                            nav.doctor-patient-pagination(
+                                aria-label="Paginación de pacientes",
+                                data-patient-pagination
+                            )
+                                p(data-patient-range)= pagination.totalItems ? `Mostrando ${(pagination.page - 1) * pagination.pageSize + 1} a ${Math.min(pagination.page * pagination.pageSize, pagination.totalItems)} de ${pagination.totalItems}` : "Mostrando 0 pacientes"
+                                .doctor-patient-pagination-controls
+                                    button(
+                                        type="button",
+                                        data-patient-page="previous",
+                                        disabled=pagination.page <= 1
+                                    ) Anterior
+                                    span(data-patient-page-label)= `Página ${pagination.page} de ${pagination.totalPages}`
+                                    button(
+                                        type="button",
+                                        data-patient-page="next",
+                                        disabled=pagination.page >= pagination.totalPages
+                                    ) Siguiente
+                        section.doctor-panel.doctor-patient-detail(
+                            aria-label="Detalle del paciente",
+                            data-patient-detail
+                        )
+                            if details
+                                header.doctor-patient-detail-header
+                                    span.doctor-patient-avatar.doctor-patient-detail-avatar(
+                                        aria-hidden="true"
+                                    )
+                                        if details.patient.profilePhotoUrl
+                                            img(src=details.patient.profilePhotoUrl, alt="")
+                                        else
+                                            = details.patient.displayName.split(" ").slice(0, 2).map((part) => part.charAt(0)).join("").toUpperCase()
+                                    div
+                                        h2(data-detail-name)= details.patient.displayName
+                                        p(data-detail-document)= `${details.patient.documentType} ${details.patient.documentNumber}`
+                                nav.doctor-patient-tabs(
+                                    role="tablist",
+                                    aria-label="Historial clínico y citas"
+                                )
+                                    button#doctor-patient-history-tab.is-active(
+                                        type="button",
+                                        role="tab",
+                                        aria-selected="true",
+                                        aria-controls="doctor-patient-history-panel",
+                                        data-patient-tab="history"
+                                    ) Historial clínico
+                                    button#doctor-patient-appointments-tab(
+                                        type="button",
+                                        role="tab",
+                                        aria-selected="false",
+                                        aria-controls="doctor-patient-appointments-panel",
+                                        data-patient-tab="appointments"
+                                    ) Citas
+                                section#doctor-patient-history-panel.doctor-patient-tab-panel(
+                                    role="tabpanel",
+                                    aria-labelledby="doctor-patient-history-tab",
+                                    data-patient-panel="history"
+                                )
+                                    if details.clinicalHistory.length
+                                        each consultation in details.clinicalHistory
+                                            article.doctor-patient-history-card
+                                                header
+                                                    div
+                                                        h3= consultation.specialty
+                                                        p= consultation.reason || "Consulta médica"
+                                                    time= `${consultation.dateLabel} · ${consultation.timeLabel}`
+                                                if consultation.symptoms
+                                                    p
+                                                        strong Motivo de consulta:
+                                                        = ` ${consultation.symptoms}`
+                                                if consultation.patientFeeling
+                                                    p
+                                                        strong Cómo se siente:
+                                                        = ` ${consultation.patientFeeling}`
+                                                if consultation.clinicalNotes
+                                                    p
+                                                        strong Evaluación médica:
+                                                        = ` ${consultation.clinicalNotes}`
+                                                if Object.keys(consultation.vitalSigns).length
+                                                    .doctor-patient-history-section
+                                                        h4 Signos vitales
+                                                        p= Object.entries(consultation.vitalSigns).map(([key, value]) => `${vitalSignLabels[key] || key}: ${value}`).join(" · ")
+                                                if consultation.diagnoses.length
+                                                    .doctor-patient-history-section
+                                                        h4 Diagnósticos
+                                                        ul
+                                                            each diagnosis in consultation.diagnoses
+                                                                li
+                                                                    strong= diagnosis.diagnosis
+                                                                    if diagnosis.notes
+                                                                        span= ` — ${diagnosis.notes}`
+                                                if consultation.prescriptions.some((prescription) => prescription.items.length)
+                                                    .doctor-patient-history-section
+                                                        h4 Tratamientos
+                                                        ul
+                                                            each prescription in consultation.prescriptions
+                                                                each item in prescription.items
+                                                                    li= `${item.medication_name}, ${item.dosage}, ${item.frequency}, ${item.duration}${item.instructions ? ` — ${item.instructions}` : ""}`
+                                                if consultation.recommendations
+                                                    .doctor-patient-history-section
+                                                        h4 Recomendaciones
+                                                        p= consultation.recommendations
+                                                if consultation.medicalOrders.length
+                                                    .doctor-patient-history-section
+                                                        h4 Órdenes médicas
+                                                        ul
+                                                            each order in consultation.medicalOrders
+                                                                li= order
+                                    else
+                                        .doctor-patient-empty-state
+                                            strong Aún no hay historial clínico
+                                            span Las consultas finalizadas contigo aparecerán aquí.
+                                section#doctor-patient-appointments-panel.doctor-patient-tab-panel(
+                                    role="tabpanel",
+                                    aria-labelledby="doctor-patient-appointments-tab",
+                                    data-patient-panel="appointments",
+                                    hidden
+                                )
+                                    if details.appointments.length
+                                        ul.doctor-patient-appointments
+                                            each appointment in details.appointments
+                                                li
+                                                    div
+                                                        strong= appointment.specialty
+                                                        span= appointment.reason || "Consulta médica"
+                                                    .doctor-patient-appointment-meta
+                                                        time= `${appointment.dateLabel} · ${appointment.timeLabel}`
+                                                        span.doctor-status(
+                                                            class=`status-${appointment.status.toLowerCase().replace(/\s+/g, "-")}`
+                                                        )= appointmentStatusLabels[appointment.status] || appointment.status
+                                    else
+                                        .doctor-patient-empty-state
+                                            strong No hay citas para mostrar
+                                            span Las citas asignadas a tu perfil aparecerán aquí.
+                            else
+                                .doctor-patient-detail-empty(data-patient-detail-empty)
+                                    span(aria-hidden="true") ♡
+                                    strong Selecciona un paciente
+                                    p Elige un paciente de la lista para consultar su historial clínico y sus citas.
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/doctor-patients.js", defer)
