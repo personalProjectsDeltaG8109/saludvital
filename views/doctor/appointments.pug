@@ -110,7 +110,6 @@ html(lang="es")
                                                         span.doctor-patient-avatar(aria-hidden="true")= appointment.patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                                     span.doctor-appointment-info
                                                         strong= appointment.patientName
-                                                        small= appointment.specialty
                                             td(data-label="Tipo de consulta")= appointment.reason || appointment.specialty
                                             td(data-label="Estado")
                                                 span.doctor-status(class=`status-${appointment.statusKey}`)= appointment.statusLabel

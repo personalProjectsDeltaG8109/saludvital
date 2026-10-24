@@ -66,9 +66,7 @@
         patientInfo.className = "doctor-appointment-info";
         const patientName = document.createElement("strong");
         patientName.textContent = appointment.patientName;
-        const specialty = document.createElement("small");
-        specialty.textContent = appointment.specialty;
-        patientInfo.append(patientName, specialty);
+        patientInfo.append(patientName);
         patientSummary.append(avatar, patientInfo);
         patientCell.append(patientSummary);
 
