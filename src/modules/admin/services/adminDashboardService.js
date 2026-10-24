@@ -83,7 +83,7 @@ function getIntegrationStatus() {
     const senderConfigured = Boolean(process.env.TWILIO_WHATSAPP_FROM?.trim());
     const templateConfigured = Boolean(
         process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim() ||
-            process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID?.trim(),
+        process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID?.trim(),
     );
     return senderConfigured && templateConfigured ? "Configured" : "Incomplete";
 }
@@ -114,6 +114,7 @@ export async function getAdminDashboardData(query = {}) {
         pendingRequests,
         activeConversations,
         failedWhatsAppMessages,
+        failedNotificationsToday,
         activityRows,
         notificationRows,
     ] = await Promise.all([
@@ -173,6 +174,12 @@ export async function getAdminDashboardData(query = {}) {
                 created_at: { [Op.gte]: todayStart, [Op.lt]: todayEnd },
             },
         }),
+        Notification.count({
+            where: {
+                status: "Failed",
+                scheduled_at: { [Op.gte]: todayStart, [Op.lt]: todayEnd },
+            },
+        }),
         AuditLog.findAll({
             attributes: ["action", "target_type", "result", "occurred_at"],
             order: [["occurred_at", "DESC"]],
@@ -223,7 +230,9 @@ export async function getAdminDashboardData(query = {}) {
         specialties: specialtyRows.map((row) => ({
             name: row.name,
             count: toCount(row.count),
-            percentage: specialtyTotal ? Math.round((toCount(row.count) / specialtyTotal) * 100) : 0,
+            percentage: specialtyTotal
+                ? Math.round((toCount(row.count) / specialtyTotal) * 100)
+                : 0,
         })),
         whatsapp: {
             integrationStatus: getIntegrationStatus(),
@@ -242,6 +251,7 @@ export async function getAdminDashboardData(query = {}) {
             status: row.status,
             occurredAt: row.sent_at || row.scheduled_at,
         })),
+        notificationAlertCount: failedNotificationsToday,
         range: { start: week.start.toISOString(), end: week.end.toISOString() },
     };
 }
