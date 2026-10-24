@@ -160,7 +160,7 @@ html(lang="es")
                         )
                             .clinical-detail-placeholder(data-clinical-detail-placeholder, hidden)
                                 strong Selecciona una consulta
-                                p El detalle de la atenciÃ³n aparecerÃ¡ aquÃ­.
+                                p El detalle de la atención aparecerá aquí.
                             if consultations.length
                                 each consultation, index in consultations
                                     - const specialty = consultation.specialty_label || (consultation.appointment && consultation.appointment.specialty && consultation.appointment.specialty.name) || "Consulta médica";
@@ -261,7 +261,6 @@ html(lang="es")
                                                                 dd= value
                                             if consultation.recommendations
                                                 article.clinical-info-block
-                                                    span.clinical-info-icon(aria-hidden="true") âœ“
                                                     div
                                                         h3 Recomendaciones
                                                         p= consultation.recommendations
@@ -319,7 +318,7 @@ html(lang="es")
                                                 article.clinical-record-item
                                                     span.clinical-record-icon.icon-document(
                                                         aria-hidden="true"
-                                                    ) â–¤
+                                                    )
                                                     div
                                                         h3 Órdenes médicas
                                                         ul
