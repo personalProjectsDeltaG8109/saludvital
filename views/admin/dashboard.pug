@@ -3,17 +3,342 @@ html(lang="es")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
-    body.min-h-screen.bg-slate-50.flex.items-center.justify-center.p-6
-        main.w-full.max-w-lg.rounded-2xl.bg-white.p-8.shadow-lg
-            h1.mb-4.text-2xl.font-bold.text-primary Acceso de administrador
-            p.mb-2.text-slate-700 Inicio de sesión correcto.
-            p.mb-6.text-slate-600
-                | Rol verificado:
-                strong= ` ${role}`
-            form(action="/logout", method="POST")
-                button.rounded-lg.bg-primary.px-5.py-3.font-semibold.text-white(type="submit") Cerrar sesión
-
-    script(src="/js/session-timeout.js", defer)
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+    - let specialtyOffset = 0;
+    - const specialtyGradient = dashboard.specialties.map((item, index) => { const start = specialtyOffset; specialtyOffset += item.percentage; return "var(--specialty-color-" + (index % 6) + ") " + start + "% " + specialtyOffset + "%"; }).join(", ")
+    body.admin-app
+        button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
+        aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
+            .admin-brand
+                a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                button.admin-sidebar-collapse(
+                    type="button",
+                    aria-label="Cerrar menú",
+                    data-admin-close
+                ) ×
+            nav.admin-navigation(aria-label="Navegación administrativa")
+                a.admin-nav-link.is-active(href="/admin/dashboard", aria-current="page")
+                    span.admin-nav-icon(aria-hidden="true") ⌂
+                    span Dashboard
+                .admin-nav-section Gestión médica
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ♙
+                    span Usuarios y roles
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ⚕
+                    span Médicos
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ◈
+                    span Especialidades
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ▣
+                    span Citas médicas
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ◷
+                    span Horarios y disponibilidad
+                .admin-nav-section Canales y comunicación
+                a.admin-nav-link(href="/admin/whatsapp")
+                    span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                    span WhatsApp y chatbot
+                    i.admin-status-dot(aria-label="Estado del canal")
+                span.admin-nav-section.admin-nav-section-small Control y seguimiento
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ◉
+                    span Auditoría
+                span.admin-nav-link.is-unavailable(
+                    aria-disabled="true",
+                    title="Disponible próximamente"
+                )
+                    span.admin-nav-icon(aria-hidden="true") ▥
+                    span Reportes e indicadores
+            form.admin-logout(action="/logout", method="POST")
+                button.admin-nav-link(type="submit")
+                    span.admin-nav-icon(aria-hidden="true") ⇥
+                    span Cerrar sesión
+        .admin-main-shell
+            header.admin-topbar
+                button.admin-menu-toggle(
+                    type="button",
+                    aria-label="Abrir menú",
+                    aria-expanded="false",
+                    aria-controls="admin-sidebar",
+                    data-admin-open
+                )
+                    span
+                    span
+                    span
+                a.admin-mobile-brand(
+                    href="/admin/dashboard",
+                    aria-label="SaludVital, panel administrativo"
+                )
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                form.admin-global-search(role="search", action="/admin/dashboard", method="get")
+                    label.sr-only(for="admin-search") Buscar en el panel
+                    span(aria-hidden="true") ⌕
+                    input#admin-search(
+                        type="search",
+                        placeholder="Buscar personas, citas, médicos o secciones...",
+                        autocomplete="off"
+                    )
+                a.admin-notification-button(
+                    href="#admin-notifications-title",
+                    aria-label="Ver notificaciones recientes"
+                )
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round",
+                        aria-hidden="true"
+                    )
+                        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                        path(d="M10 21h4")
+                    if dashboard.notificationAlertCount
+                        b= dashboard.notificationAlertCount
+                .admin-user-chip
+                    span.admin-user-avatar(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8"
+                        )
+                            circle(cx="12", cy="8", r="3.2")
+                            path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
+                    span
+                        strong= adminName
+                        small SaludVital
+                    span.admin-user-chevron(aria-hidden="true") ⌄
+            main.admin-dashboard(
+                data-admin-dashboard,
+                data-dashboard-endpoint="/api/admin/dashboard",
+                data-weekly-appointments=JSON.stringify(dashboard.weeklyAppointments)
+            )
+                header.admin-welcome-banner
+                    .admin-welcome-copy
+                        p.admin-eyebrow Panel administrativo
+                        h1 ¡Hola, #{ adminName }!
+                        p Aquí tienes un resumen general de la operación de SaludVital.
+                    aside.admin-date-card
+                        p= new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(new Date(dashboard.generatedAt))
+                        span.admin-date-icon(aria-hidden="true") ▣
+                        strong Hoy es un buen día
+                        small para seguir cuidando de más personas
+                section.admin-metric-grid(aria-label="Indicadores principales")
+                    article.admin-metric-card.metric-users
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="9", cy="8", r="3")
+                                path(
+                                    d="M3.5 20v-1a5.5 5.5 0 0 1 11 0v1M16 5.2a3 3 0 0 1 0 5.7M17 14a5 5 0 0 1 3.5 4.8V20"
+                                )
+                        div
+                            p Usuarios registrados
+                            strong= dashboard.metrics.registeredUsers.toLocaleString("es-CO")
+                            small= dashboard.metrics.activeUsers.toLocaleString("es-CO") + " activos"
+                    article.admin-metric-card.metric-appointments
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                rect(x="3.5", y="5", width="17", height="16", rx="2")
+                                path(d="M7.5 3v4M16.5 3v4M3.5 10h17")
+                                path(d="M8 14h2M14 14h2M8 17h2")
+                        div
+                            p Citas de hoy
+                            strong= dashboard.metrics.appointmentsToday.toLocaleString("es-CO")
+                            small= dashboard.metrics.completedAppointmentsToday.toLocaleString("es-CO") + " completadas"
+                    article.admin-metric-card.metric-doctors
+                        span.admin-metric-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(
+                                    d="M6 3v5a6 6 0 0 0 12 0V3M3 3h6M15 3h6M12 14v2a4 4 0 0 0 8 0v-1"
+                                )
+                                circle(cx="20", cy="13", r="1")
+                        div
+                            p Médicos activos
+                            strong= dashboard.metrics.activeDoctors.toLocaleString("es-CO")
+                            small Perfiles habilitados
+                    article.admin-metric-card.metric-whatsapp
+                        span.admin-metric-icon(aria-hidden="true")
+                            img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                        div
+                            p Solicitudes por WhatsApp
+                            strong= dashboard.metrics.pendingWhatsAppRequests.toLocaleString("es-CO")
+                            small Solicitudes pendientes
+                .admin-analytics-grid
+                    section.admin-card.admin-weekly-card(aria-labelledby="admin-weekly-title")
+                        header.admin-card-heading
+                            div
+                                h2#admin-weekly-title Citas de la semana
+                                p Resumen de actividad diaria
+                            label.admin-select-label(for="admin-week-select") Rango
+                                select#admin-week-select(data-week-select)
+                                    option(
+                                        value="current",
+                                        selected=dashboard.selectedWeek === "current"
+                                    ) Esta semana
+                                    option(
+                                        value="previous",
+                                        selected=dashboard.selectedWeek === "previous"
+                                    ) Semana anterior
+                        ul.admin-chart-legend(aria-label="Estados de las citas")
+                            li.legend-scheduled Programadas
+                            li.legend-completed Completadas
+                            li.legend-cancelled Canceladas
+                        .admin-chart(
+                            data-week-chart,
+                            role="img",
+                            aria-label="Citas programadas, completadas y canceladas por día"
+                        )
+                        p.admin-chart-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-chart-feedback
+                        )
+                        table.admin-chart-table
+                            caption Resumen de citas por día
+                            thead
+                                tr
+                                    th Día
+                                    th Programadas
+                                    th Completadas
+                                    th Canceladas
+                            tbody(data-chart-table-body)
+                    section.admin-card.admin-specialty-card(
+                        aria-labelledby="admin-specialty-title"
+                    )
+                        header.admin-card-heading
+                            div
+                                h2#admin-specialty-title Distribución por especialidad
+                                p Citas programadas para hoy
+                        if dashboard.specialties.length
+                            .admin-specialty-content
+                                .admin-donut(
+                                    role="img",
+                                    aria-label=dashboard.metrics.appointmentsToday + " citas de hoy distribuidas por especialidad",
+                                    style="background: conic-gradient(" + specialtyGradient + ")"
+                                )
+                                    span
+                                        strong= dashboard.metrics.appointmentsToday.toLocaleString("es-CO")
+                                        small citas hoy
+                                ul.admin-specialty-legend
+                                    each specialty, index in dashboard.specialties
+                                        li(class="specialty-color-" + (index % 6))
+                                            span(title=specialty.name)= specialty.name
+                                            strong= specialty.count.toLocaleString("es-CO") + " (" + specialty.percentage + "%)"
+                        else
+                            p.admin-empty-state Aún no hay citas para mostrar por especialidad.
+                .admin-feed-grid
+                    section.admin-card.admin-feed-card(aria-labelledby="admin-activity-title")
+                        header.admin-card-heading
+                            div
+                                h2#admin-activity-title Actividad reciente
+                                p Cambios registrados en la plataforma
+                            span.admin-text-link Últimos 5
+                        if dashboard.recentActivity.length
+                            ul.admin-feed-list
+                                each activity in dashboard.recentActivity
+                                    li
+                                        span.admin-feed-icon.activity-icon(aria-hidden="true") ◌
+                                        span.admin-feed-copy
+                                            strong= activity.targetType === "Appointment" ? "Actualización en una cita" : activity.targetType === "User" ? "Actualización de un usuario" : "Actividad del sistema"
+                                            small= activity.result === "Success" ? "Acción completada" : "Acción con novedad"
+                                        time(datetime=activity.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(activity.occurredAt))
+                        else
+                            p.admin-empty-state No hay actividad reciente registrada.
+                    section.admin-card.admin-feed-card(aria-labelledby="admin-request-title")
+                        header.admin-card-heading
+                            div
+                                h2#admin-request-title Solicitudes por WhatsApp
+                                p Conversaciones de pacientes
+                            a.admin-text-link(href="/admin/whatsapp") Ver todo
+                        if dashboard.whatsapp.activeConversations || dashboard.whatsapp.pendingRequests
+                            .admin-whatsapp-summary
+                                span.admin-whatsapp-large-mark
+                                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                                div
+                                    strong= dashboard.whatsapp.activeConversations.toLocaleString("es-CO")
+                                    small conversaciones activas
+                                div
+                                    strong= dashboard.whatsapp.pendingRequests.toLocaleString("es-CO")
+                                    small solicitudes nuevas
+                                span.admin-status-pill(
+                                    class=dashboard.whatsapp.integrationStatus === "Configured" ? "is-configured" : "is-incomplete"
+                                )
+                                    = dashboard.whatsapp.integrationStatus === "Configured" ? "Configurado" : "Revisar configuración"
+                        else
+                            p.admin-empty-state No hay conversaciones o solicitudes nuevas.
+                    section.admin-card.admin-feed-card(aria-labelledby="admin-notifications-title")
+                        header.admin-card-heading
+                            div
+                                h2#admin-notifications-title Notificaciones del sistema
+                                p Estado de entregas recientes
+                            span.admin-text-link Últimos 4
+                        if dashboard.systemNotifications.length
+                            ul.admin-feed-list.admin-notification-list
+                                each notification in dashboard.systemNotifications
+                                    li
+                                        span.admin-feed-icon(
+                                            class=notification.status === "Failed" ? "notification-icon-error" : "notification-icon-success",
+                                            aria-hidden="true"
+                                        )= notification.status === "Failed" ? "!" : "✓"
+                                        span.admin-feed-copy
+                                            strong= notification.status === "Failed" ? "Notificación no entregada" : "Notificación enviada"
+                                            small= ({ AppointmentReminder: "Recordatorio de cita", AppointmentConfirmed: "Confirmación de cita", AppointmentCancelled: "Cancelación de cita" })[notification.eventType] || "Evento del sistema"
+                                        time(datetime=notification.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(notification.occurredAt))
+                        else
+                            p.admin-empty-state No hay notificaciones recientes.
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/admin-dashboard.js", defer)

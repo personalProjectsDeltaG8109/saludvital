@@ -1,0 +1,252 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-whatsapp.css")
+    body.admin-app(
+        data-whatsapp-page,
+        data-whatsapp-endpoint="/api/admin/whatsapp",
+        data-selected-tab=whatsapp.selectedTab,
+        data-current-page=whatsapp.pagination.page
+    )
+        button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
+        aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
+            .admin-brand
+                a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                button.admin-sidebar-collapse(
+                    type="button",
+                    aria-label="Cerrar menú",
+                    data-admin-close
+                ) ×
+            nav.admin-navigation(aria-label="Navegación administrativa")
+                a.admin-nav-link(href="/admin/dashboard")
+                    span.admin-nav-icon(aria-hidden="true") ⌂
+                    span Dashboard
+                .admin-nav-section Gestión médica
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ♙
+                    span Usuarios y roles
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ⚕
+                    span Médicos
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◈
+                    span Especialidades
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ▣
+                    span Citas médicas
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◷
+                    span Horarios y disponibilidad
+                .admin-nav-section Canales y comunicación
+                a.admin-nav-link.is-active(href="/admin/whatsapp", aria-current="page")
+                    span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                    span WhatsApp y chatbot
+                    i.admin-status-dot(aria-label="Estado del canal")
+                span.admin-nav-section.admin-nav-section-small Control y seguimiento
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◉
+                    span Auditoría
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ▥
+                    span Reportes e indicadores
+            form.admin-logout(action="/logout", method="POST")
+                button.admin-nav-link(type="submit")
+                    span.admin-nav-icon(aria-hidden="true") ⇥
+                    span Cerrar sesión
+        .admin-main-shell
+            header.admin-topbar
+                button.admin-menu-toggle(
+                    type="button",
+                    aria-label="Abrir menú",
+                    aria-expanded="false",
+                    aria-controls="admin-sidebar",
+                    data-admin-open
+                )
+                    span
+                    span
+                    span
+                a.admin-mobile-brand(
+                    href="/admin/dashboard",
+                    aria-label="SaludVital, panel administrativo"
+                )
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                form.admin-global-search(role="search", action="/admin/dashboard", method="get")
+                    label.sr-only(for="admin-search") Buscar en el panel
+                    span(aria-hidden="true") ⌕
+                    input#admin-search(
+                        type="search",
+                        placeholder="Buscar personas, citas, médicos o secciones...",
+                        autocomplete="off"
+                    )
+                a.admin-notification-button(
+                    href="/admin/dashboard#admin-notifications-title",
+                    aria-label="Ver dashboard y notificaciones"
+                )
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round",
+                        aria-hidden="true"
+                    )
+                        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                        path(d="M10 21h4")
+                    if whatsapp.notificationAlertCount
+                        b= whatsapp.notificationAlertCount
+                .admin-user-chip
+                    span.admin-user-avatar(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8"
+                        )
+                            circle(cx="12", cy="8", r="3.2")
+                            path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
+                    span
+                        strong Administrador
+                        small SaludVital
+                    span.admin-user-chevron(aria-hidden="true") ⌄
+            main.admin-dashboard.admin-whatsapp-page
+                header.admin-whatsapp-heading
+                    a.admin-back-link(href="/admin/dashboard", aria-label="Volver al dashboard") ←
+                    div
+                        p.admin-eyebrow Canales y comunicación
+                        h1 WhatsApp y chatbot
+                        p Supervisa el servicio, las conversaciones y las solicitudes de cita.
+                section.admin-whatsapp-status-card(aria-label="Estado del servicio de WhatsApp")
+                    span.admin-whatsapp-service-icon
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                    .admin-whatsapp-status-copy
+                        p Estado de la integración
+                        strong(
+                            class=whatsapp.summary.integrationStatus === "Configured" ? "is-configured" : "is-incomplete"
+                        )
+                            = whatsapp.summary.integrationStatus === "Configured" ? "Configuración completa" : "Revisar configuración"
+                        small Estado calculado según la configuración local del servicio.
+                    span.admin-whatsapp-service-badge(
+                        class=whatsapp.summary.integrationStatus === "Configured" ? "is-configured" : "is-incomplete"
+                    )
+                        = whatsapp.summary.integrationStatus === "Configured" ? "Configurado" : "Pendiente"
+                nav.admin-whatsapp-tabs(role="tablist", aria-label="Secciones de WhatsApp")
+                    button#admin-whatsapp-tab-summary.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "summary" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="summary"
+                    ) Resumen
+                    button#admin-whatsapp-tab-conversations.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "conversations" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="conversations"
+                    ) Conversaciones
+                    button#admin-whatsapp-tab-requests.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "requests" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="requests"
+                    ) Solicitudes de cita
+                section#admin-whatsapp-panel.admin-whatsapp-panel(
+                    role="tabpanel",
+                    aria-labelledby="admin-whatsapp-tab-" + whatsapp.selectedTab,
+                    tabindex="0",
+                    data-whatsapp-panel
+                )
+                    if whatsapp.selectedTab === "summary"
+                        .admin-whatsapp-count-grid
+                            article.admin-whatsapp-count-card
+                                span Conversaciones activas
+                                strong= whatsapp.summary.conversations.Active || 0
+                            article.admin-whatsapp-count-card
+                                span Solicitudes pendientes
+                                strong= whatsapp.summary.appointmentRequests.Pending || 0
+                            article.admin-whatsapp-count-card
+                                span Mensajes con error
+                                strong= whatsapp.summary.messages.Failed || 0
+                        section.admin-whatsapp-list-card
+                            header.admin-whatsapp-list-heading
+                                div
+                                    h2 Mensajes recientes
+                                    p Solo se muestran datos de estado; el contenido no se expone.
+                            if whatsapp.rows.length
+                                ul.admin-whatsapp-record-list
+                                    each message in whatsapp.rows
+                                        li
+                                            span.admin-message-avatar(aria-hidden="true")= message.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
+                                            span.admin-whatsapp-record-copy
+                                                strong= message.patientName
+                                                small= message.direction === "Inbound" ? "Mensaje recibido · " + message.messageType : "Mensaje enviado · " + message.messageType
+                                            span.admin-whatsapp-record-status(
+                                                class=message.processingStatus === "Failed" ? "is-error" : "is-ok"
+                                            )
+                                                = message.processingStatus === "Failed" ? "Error" : message.processingStatus === "Processed" ? "Procesado" : "En proceso"
+                                            time(datetime=message.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(message.occurredAt))
+                            else
+                                p.admin-whatsapp-empty No hay mensajes recientes.
+                    else
+                        header.admin-whatsapp-list-heading
+                            div
+                                h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : "Solicitudes de cita"
+                                p(data-whatsapp-result-count)= whatsapp.pagination.totalItems.toLocaleString("es-CO") + " registros"
+                        if whatsapp.rows.length
+                            ul.admin-whatsapp-record-list(data-whatsapp-record-list)
+                                each record in whatsapp.rows
+                                    li
+                                        span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
+                                        span.admin-whatsapp-record-copy
+                                            strong= record.patientName
+                                            if whatsapp.selectedTab === "conversations"
+                                                small= "Última actividad: " + new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt))
+                                            else
+                                                small= record.specialty || "Especialidad por definir"
+                                        if whatsapp.selectedTab === "requests"
+                                            span.admin-whatsapp-record-status(
+                                                class="is-" + record.status.toLowerCase()
+                                            )= ({ Pending: "Nueva", Confirmed: "Confirmada", Rejected: "Rechazada", Cancelled: "Cancelada", Expired: "Vencida" })[record.status] || "En revisión"
+                                        else
+                                            span.admin-whatsapp-record-status(
+                                                class=record.status === "Active" ? "is-new" : "is-closed"
+                                            )= record.status === "Active" ? "Activa" : record.status === "Blocked" ? "Bloqueada" : "Cerrada"
+                                        time(datetime=record.createdAt || record.startedAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt || record.startedAt))
+                        else
+                            p.admin-whatsapp-empty(data-whatsapp-empty) No hay registros para esta sección.
+                        .admin-whatsapp-pagination(data-whatsapp-pagination)
+                            button(
+                                type="button",
+                                data-page-previous,
+                                disabled=whatsapp.pagination.page <= 1
+                            ) Anterior
+                            span(data-page-label)= "Página " + whatsapp.pagination.page + " de " + whatsapp.pagination.totalPages
+                            button(
+                                type="button",
+                                data-page-next,
+                                disabled=whatsapp.pagination.page >= whatsapp.pagination.totalPages
+                            ) Siguiente
+                    p.admin-whatsapp-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-whatsapp-feedback
+                    )
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/admin-whatsapp.js", defer)
