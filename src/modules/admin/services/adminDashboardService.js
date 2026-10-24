@@ -81,11 +81,23 @@ function toCount(value) {
 
 export function getWhatsAppIntegrationStatus() {
     const senderConfigured = Boolean(process.env.TWILIO_WHATSAPP_FROM?.trim());
-    const templateConfigured = Boolean(
+    const credentialsConfigured = Boolean(
+        process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim(),
+    );
+    const reminderTemplateConfigured = Boolean(
         process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim() ||
         process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID?.trim(),
     );
-    return senderConfigured && templateConfigured ? "Configured" : "Incomplete";
+    const otherTemplatesConfigured = Boolean(
+        process.env.TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID?.trim() &&
+        process.env.TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID?.trim(),
+    );
+    return senderConfigured &&
+        credentialsConfigured &&
+        reminderTemplateConfigured &&
+        otherTemplatesConfigured
+        ? "Configured"
+        : "Incomplete";
 }
 
 /** Return bounded administrator dashboard data using existing persisted records. */
