@@ -11,6 +11,32 @@
     const medications = [];
     let currentStep = 0;
 
+    const requiredFieldLabels = {
+        symptoms: "Motivo de consulta",
+        patientFeeling: "Cómo se siente el paciente",
+        bloodPressure: "Presión arterial",
+        heartRate: "Frecuencia cardiaca",
+        temperature: "Temperatura",
+        weight: "Peso",
+        height: "Estatura",
+        clinicalNotes: "Evaluación médica",
+    };
+
+    // Mark the required fields in the form and expose their required state accessibly.
+    Object.keys(requiredFieldLabels).forEach((name) => {
+        const control = form.elements.namedItem(name);
+        if (!control) return;
+        control.required = true;
+        control.setAttribute("aria-required", "true");
+        const label = control.labels?.[0] || control.closest("label");
+        if (!label || label.querySelector(".required-marker")) return;
+        const marker = document.createElement("span");
+        marker.className = "required-marker";
+        marker.setAttribute("aria-hidden", "true");
+        marker.textContent = " *";
+        label.append(marker);
+    });
+
     // Read form values by name so the same payload is used for draft and completion requests.
     function field(name) {
         return form.elements.namedItem(name)?.value?.trim() || "";
@@ -251,9 +277,12 @@
         .addEventListener("click", async (event) => {
             const button = event.currentTarget;
             const payload = collectPayload();
-            if (!payload.symptoms || !payload.clinicalNotes || !payload.diagnoses.length) {
+            const missingFields = Object.entries(requiredFieldLabels)
+                .filter(([name]) => !field(name))
+                .map(([, label]) => label);
+            if (missingFields.length) {
                 return setFeedback(
-                    "Completa el motivo, la evaluación y agrega al menos un diagnóstico.",
+                    `Completa los campos obligatorios: ${missingFields.join(", ")}.`,
                     true,
                 );
             }

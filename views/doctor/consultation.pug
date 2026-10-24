@@ -6,9 +6,10 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-consultation.css")
-    body.sv-dashboard.doctor-home-page
+    body.sv-dashboard.doctor-home-page.patient-home-page
         .sv-layout
             include ./partials/sidebar.pug
             button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
