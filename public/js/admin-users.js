@@ -445,8 +445,10 @@ if (page) {
             );
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "No pudimos guardar los cambios.");
+            const editedUserId = editingUser.id;
             closeEditModal(true);
             await loadUsers();
+            document.querySelector(`[data-user-edit-id="${editedUserId}"]`)?.focus();
             setFeedback(data.message, "success");
         } catch (error) {
             setModalFeedback(error.message || "No pudimos guardar los cambios.");
@@ -557,6 +559,7 @@ if (page) {
         const editButton = document.createElement("button");
         editButton.type = "button";
         editButton.className = "admin-user-edit";
+        editButton.dataset.userEditId = String(user.id);
         editButton.setAttribute("aria-label", `Editar datos de ${user.displayName}`);
         editButton.innerHTML =
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg><span>Editar</span>';
