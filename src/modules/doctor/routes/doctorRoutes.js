@@ -5,20 +5,101 @@ import {
     getDoctorAppointments,
     getDoctorDashboardData,
 } from "../services/doctorDashboardService.js";
-import { startDoctorConsultation } from "../services/doctorConsultationService.js";
+import {
+    completeDoctorConsultation,
+    getDoctorConsultation,
+    saveDoctorConsultationDraft,
+    startDoctorConsultation,
+} from "../services/doctorConsultationService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
+
+doctorRoutes.get(
+    "/api/doctor/consultations/:consultationId",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await getDoctorConsultation(req.auth.userId, req.params.consultationId),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+doctorRoutes.put(
+    "/api/doctor/consultations/:consultationId/draft",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await saveDoctorConsultationDraft(
+                    req.auth.userId,
+                    req.params.consultationId,
+                    req.body,
+                ),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+doctorRoutes.post(
+    "/api/doctor/consultations/:consultationId/complete",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await completeDoctorConsultation(
+                    req.auth.userId,
+                    req.params.consultationId,
+                    req.body,
+                ),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+doctorRoutes.get(
+    "/doctor/consultations/:consultationId",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            const consultation = await getDoctorConsultation(
+                req.auth.userId,
+                req.params.consultationId,
+            );
+            return res.render("doctor/consultation", {
+                pageTitle: "Consulta médica | SaludVital",
+                activeNav: "appointments",
+                consultation,
+                patient: consultation.appointment?.patient,
+                appointment: consultation.appointment,
+            });
+        } catch (error) {
+            if (error.statusCode) return res.status(error.statusCode).send(error.message);
+            return next(error);
+        }
+    },
+);
 
 doctorRoutes.post(
     "/api/doctor/appointments/:appointmentId/start",
     ...requireDoctor,
     async (req, res, next) => {
         try {
-            const result = await startDoctorConsultation(
-                req.auth.userId,
-                req.params.appointmentId,
-            );
+            const result = await startDoctorConsultation(req.auth.userId, req.params.appointmentId);
             return res.status(201).json(result);
         } catch (error) {
             if (error.statusCode) {
