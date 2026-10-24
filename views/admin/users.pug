@@ -1,0 +1,123 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-users.css")
+    body.admin-app.admin-users-page
+        button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
+        aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
+            .admin-brand
+                a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                button.admin-sidebar-collapse(type="button", aria-label="Cerrar menú", data-admin-close) ×
+            nav.admin-navigation(aria-label="Navegación administrativa")
+                a.admin-nav-link(href="/admin/dashboard")
+                    span.admin-nav-icon(aria-hidden="true") ⌂
+                    span Dashboard
+                .admin-nav-section Gestión médica
+                a.admin-nav-link.is-active(href="/admin/users", aria-current="page")
+                    span.admin-nav-icon(aria-hidden="true") ♙
+                    span Usuarios y roles
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ⚕
+                    span Médicos
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◈
+                    span Especialidades
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ▣
+                    span Citas médicas
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◷
+                    span Horarios y disponibilidad
+                .admin-nav-section Canales y comunicación
+                a.admin-nav-link(href="/admin/whatsapp")
+                    span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                    span WhatsApp y chatbot
+                .admin-nav-section.admin-nav-section-small Control y seguimiento
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ◉
+                    span Auditoría
+                span.admin-nav-link.is-unavailable(aria-disabled="true")
+                    span.admin-nav-icon(aria-hidden="true") ▥
+                    span Reportes e indicadores
+            form.admin-logout(action="/logout", method="POST")
+                button.admin-nav-link(type="submit")
+                    span.admin-nav-icon(aria-hidden="true") ⇥
+                    span Cerrar sesión
+        .admin-main-shell
+            header.admin-topbar
+                button.admin-menu-toggle(type="button", aria-label="Abrir menú", aria-expanded="false", aria-controls="admin-sidebar", data-admin-open)
+                    span
+                    span
+                    span
+                a.admin-mobile-brand(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                    img(src="/brand/logo-symbol.png", alt="")
+                    span
+                        strong SaludVital
+                        small Panel Administrativo
+                form.admin-global-search(role="search", action="/admin/users", method="get")
+                    label.sr-only(for="admin-top-search") Buscar usuarios
+                    span(aria-hidden="true") ⌕
+                    input#admin-top-search(type="search", placeholder="Buscar usuarios por nombre o correo...", autocomplete="off", data-user-top-search)
+                .admin-user-chip
+                    span.admin-user-avatar(aria-hidden="true")
+                        svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8")
+                            circle(cx="12", cy="8", r="3.2")
+                            path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
+                    span
+                        strong= adminName
+                        small SaludVital
+                    span.admin-user-chevron(aria-hidden="true") ⌄
+            main.admin-users-content(data-admin-users, data-endpoint="/api/admin/users", data-update-endpoint="/api/admin/users")
+                header.admin-users-heading
+                    div
+                        p.admin-eyebrow Gestión médica
+                        h1 Usuarios y roles
+                        p Revisa las cuentas registradas y administra su acceso a SaludVital.
+                    .admin-users-total(aria-live="polite")
+                        strong(data-user-count) —
+                        span cuentas
+                section.admin-users-panel(aria-labelledby="admin-users-title")
+                    header.admin-users-panel-header
+                        div
+                            h2#admin-users-title Cuentas de usuario
+                            p Consulta y actualiza roles o estados de cuenta.
+                        span.admin-users-security
+                            span(aria-hidden="true") ◈
+                            | Acceso administrativo protegido
+                    form.admin-users-filters(data-user-filters)
+                        label.admin-users-search
+                            span(aria-hidden="true") ⌕
+                            span.sr-only Buscar por nombre o correo
+                            input(type="search", placeholder="Buscar por nombre o correo...", maxlength="100", data-user-search)
+                        label.admin-users-filter
+                            span Rol
+                            select(data-user-role)
+                                option(value="") Todos los roles
+                        label.admin-users-filter
+                            span Estado
+                            select(data-user-status)
+                                option(value="") Todos los estados
+                                option(value="active") Activas
+                                option(value="inactive") Inactivas
+                    p.admin-users-feedback(role="status", aria-live="polite", data-user-feedback) Cargando cuentas…
+                    div.admin-user-list(data-user-list, aria-live="polite")
+                    footer.admin-users-pagination
+                        span(data-user-page-label) Página 1 de 1
+                        div
+                            button.admin-page-button(type="button", data-user-prev, disabled) Anterior
+                            button.admin-page-button(type="button", data-user-next, disabled) Siguiente
+                p.admin-users-note Los cambios de rol y estado se registran para auditoría. Las cuentas no se eliminan.
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/admin-users.js", defer)
