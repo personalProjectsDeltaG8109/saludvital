@@ -347,6 +347,11 @@ export async function getDoctorAppointments(userId, query = {}) {
     if (!doctor) return null;
 
     const filters = parseAppointmentFilters(query);
+    const activeConsultation = await Consultation.findOne({
+        where: { doctor_id: doctor.id, status: "InProgress" },
+        attributes: ["id"],
+        raw: true,
+    });
     const where = { doctor_id: doctor.id };
     const patientWhere = {};
     const appointmentDate = {};
@@ -482,6 +487,7 @@ export async function getDoctorAppointments(userId, query = {}) {
         appointments: appointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
             specialty: appointment.specialty?.name || "Consulta médica",
+            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
         })),
         appointmentFilters: { ...filters, page },
         appointmentStatuses: statusRows

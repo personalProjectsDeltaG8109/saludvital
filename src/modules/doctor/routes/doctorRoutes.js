@@ -5,9 +5,29 @@ import {
     getDoctorAppointments,
     getDoctorDashboardData,
 } from "../services/doctorDashboardService.js";
+import { startDoctorConsultation } from "../services/doctorConsultationService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
+
+doctorRoutes.post(
+    "/api/doctor/appointments/:appointmentId/start",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            const result = await startDoctorConsultation(
+                req.auth.userId,
+                req.params.appointmentId,
+            );
+            return res.status(201).json(result);
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            return next(error);
+        }
+    },
+);
 
 doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, next) => {
     try {
