@@ -8,6 +8,13 @@
 .doctor-home-page .sv-main { width: calc(100% - 238px); margin-left: 238px; }
 .doctor-home-page .sv-nav-link.is-disabled { cursor: not-allowed; opacity: .62; }
 .doctor-home-page .sv-bell { border: 0; }
+.doctor-home-page dialog[data-start-consultation-dialog][open] {
+    position: fixed;
+    inset: 0;
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    overflow-y: auto;
+}
 
 /* The doctor dashboard reuses the patient portal's shared shell and navigation. */
 .doctor-content {

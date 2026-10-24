@@ -11,6 +11,25 @@
     const medications = [];
     let currentStep = 0;
 
+    // Display elapsed time from the consultation's persisted start timestamp.
+    const consultationTimer = document.querySelector("[data-consultation-timer]");
+    const consultationStartedAt = Date.parse(page.dataset.consultationStartedAt);
+    if (consultationTimer && Number.isFinite(consultationStartedAt)) {
+        const updateConsultationTimer = () => {
+            const elapsedSeconds = Math.max(
+                0,
+                Math.floor((Date.now() - consultationStartedAt) / 1000),
+            );
+            const hours = String(Math.floor(elapsedSeconds / 3600)).padStart(2, "0");
+            const minutes = String(Math.floor((elapsedSeconds % 3600) / 60)).padStart(2, "0");
+            const seconds = String(elapsedSeconds % 60).padStart(2, "0");
+            consultationTimer.textContent = `${hours}:${minutes}:${seconds}`;
+        };
+
+        updateConsultationTimer();
+        window.setInterval(updateConsultationTimer, 1000);
+    }
+
     const requiredFieldLabels = {
         symptoms: "Motivo de consulta",
         patientFeeling: "Cómo se siente el paciente",

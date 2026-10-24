@@ -1,7 +1,7 @@
 .consultation-page { max-width: 1120px; margin: 0 auto; padding: 1.5rem; }
 .consultation-heading { margin-bottom: 1rem; }
 .consultation-timer { display: inline-flex; align-items: center; gap: .45rem; margin: .75rem 0 0; border: 1px solid #cfe3ff; border-radius: 999px; padding: .45rem .8rem; background: #eef6ff; color: #174b91; font-size: .9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.consultation-timer time { color: #0757bb; }
+.consultation-timer strong { color: #0757bb; }
 .consultation-heading a { color: #0875ee; font-weight: 700; text-decoration: none; }
 .consultation-heading h1 { margin: .75rem 0 .25rem; color: #09285f; font-size: 1.8rem; font-weight: 800; }
 .consultation-heading p { color: #53657d; }

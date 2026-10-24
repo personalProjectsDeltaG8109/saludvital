@@ -15,11 +15,17 @@ html(lang="es")
             button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
             .sv-main
                 include ./partials/topbar.pug
-                main.doctor-content.consultation-page(data-consultation-id=consultation.id)
+                main.doctor-content.consultation-page(
+                    data-consultation-id=consultation.id,
+                    data-consultation-started-at=new Date(consultation.started_at).toISOString()
+                )
                     header.consultation-heading
                         a(href="/doctor/appointments") ← Volver a mis citas
                         h1 Consulta médica
                         p Registra la atención y revisa la información antes de finalizar.
+                        p.consultation-timer(aria-label="Tiempo transcurrido desde el inicio de la consulta")
+                            span Tiempo transcurrido:
+                            strong(data-consultation-timer, role="timer", aria-live="off") 00:00:00
                     section.consultation-patient-card(aria-label="Información de la cita")
                         div
                             span Paciente
