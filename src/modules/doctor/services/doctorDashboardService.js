@@ -181,8 +181,13 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
     const activeSince = new Date(now);
     activeSince.setUTCFullYear(activeSince.getUTCFullYear() - 1);
 
-    const [todayAppointments, nextAppointment, activePatientRows, weeklyConsultations] =
-        await Promise.all([
+    const [
+        todayAppointments,
+        nextAppointment,
+        activePatientRows,
+        weeklyConsultations,
+        activeConsultation,
+    ] = await Promise.all([
             Appointment.findAll({
                 where: {
                     doctor_id: doctor.id,
@@ -226,6 +231,11 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             }),
             getActivePatientRows(doctor.id, activeSince),
             getCompletedConsultations(doctor.id, week.start, week.end),
+            Consultation.findOne({
+                where: { doctor_id: doctor.id, status: "InProgress" },
+                attributes: ["id"],
+                raw: true,
+            }),
         ]);
 
     const distinctPatients = new Map();
@@ -258,11 +268,15 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
         },
-        todayAppointments: visibleAppointments.map((appointment) =>
-            serializeAppointment(appointment, { includePatientPhoto: true }),
-        ),
+        todayAppointments: visibleAppointments.map((appointment) => ({
+            ...serializeAppointment(appointment, { includePatientPhoto: true }),
+            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+        })),
         nextAppointment: nextAppointment
-            ? serializeAppointment(nextAppointment, { includePatientPhoto: true })
+            ? {
+                  ...serializeAppointment(nextAppointment, { includePatientPhoto: true }),
+                  canStart: nextAppointment.status?.name === "Confirmed" && !activeConsultation,
+              }
             : null,
     };
 }

@@ -1,19 +1,19 @@
 (() => {
     const page = document.querySelector("[data-start-consultation-url]");
-    const results = document.querySelector("[data-appointments-results]");
     const dialog = document.querySelector("[data-start-consultation-dialog]");
     const patientLabel = document.querySelector("[data-start-consultation-patient]");
     const appointmentTimeLabel = document.querySelector("[data-start-consultation-time]");
+    const consultationReasonLabel = document.querySelector("[data-start-consultation-reason]");
     const feedback = document.querySelector("[data-start-consultation-feedback]");
     const confirmButton = document.querySelector("[data-confirm-start-consultation]");
     const closeButton = document.querySelector("[data-close-start-consultation]");
 
     if (
         !page ||
-        !results ||
         !(dialog instanceof HTMLDialogElement) ||
         !patientLabel ||
         !appointmentTimeLabel ||
+        !consultationReasonLabel ||
         !feedback ||
         !confirmButton
     ) {
@@ -33,7 +33,7 @@
         feedback.classList.toggle("text-green-700", status === "success");
     }
 
-    results.addEventListener("click", (event) => {
+    document.addEventListener("click", (event) => {
         if (!(event.target instanceof Element)) return;
         const button = event.target.closest("[data-start-consultation]");
         if (!button) return;
@@ -41,6 +41,7 @@
         selectedAppointmentId = button.dataset.appointmentId;
         patientLabel.textContent = button.dataset.patientName || "Paciente";
         appointmentTimeLabel.textContent = button.dataset.appointmentTime || "";
+        consultationReasonLabel.textContent = button.dataset.consultationReason || "Consulta médica";
         confirmButton.disabled = false;
         confirmButton.textContent = "Iniciar consulta";
         setFeedback("");

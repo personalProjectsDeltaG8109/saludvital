@@ -97,8 +97,10 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .status-in-progress { color: #123b73; background: #e5faf8; }
 .status-attended { color: #168de2; background: #e0f3ff; }
 .status-cancelled { color: #123b73; background: #eef3f8; }
-.doctor-row-link { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid #d7e9fb; border-radius: 10px; color: #0875db; background: #f5faff; font-size: 11px; font-weight: 700; text-align: center; text-decoration: none; transition: background 150ms ease, border-color 150ms ease, transform 150ms ease; }
+.doctor-row-link { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid #d7e9fb; border-radius: 10px; color: #0875db; background: #f5faff; font: inherit; font-size: 11px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, transform 150ms ease; }
 .doctor-row-link:hover { transform: translateY(-1px); border-color: #b6d9fa; background: #eaf5ff; }
+.doctor-row-link.is-inactive { cursor: default; }
+.doctor-row-link.is-inactive:hover { transform: none; }
 .doctor-next { border-color: #d6e8f7; background: linear-gradient(160deg, #fff 0%, #f7fbff 100%); }
 .doctor-next-card { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; column-gap: 10px; row-gap: 12px; margin: 0 12px 12px; padding: 14px; border: 1px solid #e4eff9; border-radius: 14px; background: linear-gradient(135deg, #f8fcff 0%, #fff 72%); }
 .doctor-next-date { display: grid; width: 54px; height: 54px; align-content: center; justify-items: center; gap: 1px; border-radius: 9px; color: #123b73; background: #eaf5fd; }
@@ -114,8 +116,10 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
 .doctor-next-info > strong { overflow: hidden; color: #142f59; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
 .doctor-next-info > span:not(.doctor-status) { overflow: hidden; color: var(--doctor-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .doctor-next-info .doctor-status { font-size: 10px; }
-.doctor-primary-link { display: flex; min-height: 38px; grid-column: 1 / -1; align-items: center; justify-content: center; border-radius: 8px; color: #fff; background: #087cf0; font-size: 12px; font-weight: 650; text-decoration: none; }
+.doctor-primary-link { display: flex; min-height: 38px; grid-column: 1 / -1; align-items: center; justify-content: center; border: 0; border-radius: 8px; color: #fff; background: #087cf0; font: inherit; font-size: 12px; font-weight: 650; text-decoration: none; cursor: pointer; }
 .doctor-primary-link:hover { background: #0669ce; }
+.doctor-primary-link.is-inactive { color: #38607d; background: #e9f5ff; cursor: default; }
+.doctor-primary-link.is-inactive:hover { background: #e9f5ff; }
 .doctor-empty-state { display: grid; min-height: 195px; align-content: center; justify-items: center; gap: 8px; padding: 26px; color: #234568; text-align: center; }
 .doctor-empty-icon { color: #75afe7; font-size: 30px; }
 .doctor-empty-state strong { font-size: 14px; }
