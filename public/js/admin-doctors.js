@@ -48,6 +48,17 @@ if (doctorsPage) {
             for (const doctor of data.doctors) {
                 const article = document.createElement("article");
                 article.className = "doctor-row";
+                const avatar = document.createElement("span");
+                avatar.className = "doctor-list-avatar";
+                if (doctor.profilePhotoUrl?.startsWith("/uploads/profile-photos/")) {
+                    const image = document.createElement("img");
+                    image.src = doctor.profilePhotoUrl;
+                    image.alt = "";
+                    image.loading = "lazy";
+                    avatar.append(image);
+                } else {
+                    avatar.textContent = doctor.name.trim().charAt(0).toUpperCase();
+                }
                 const info = document.createElement("div");
                 info.className = "doctor-row-info";
                 const name = document.createElement("strong");
@@ -62,7 +73,7 @@ if (doctorsPage) {
                 const badge = document.createElement("span");
                 badge.className = `doctor-status ${doctor.isActive ? "is-active" : "is-inactive"}`;
                 badge.textContent = doctor.isActive ? "Activo" : "Inactivo";
-                article.append(info, badge);
+                article.append(avatar, info, badge);
                 list.append(article);
             }
             feedback.textContent = data.doctors.length

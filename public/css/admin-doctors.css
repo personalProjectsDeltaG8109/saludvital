@@ -107,12 +107,14 @@
 }
 .doctor-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     align-items: center;
     gap: 18px;
     padding: 16px 8px;
     border-bottom: 1px solid #edf2f7;
 }
+.doctor-list-avatar { display: grid; width: 42px; height: 42px; place-items: center; overflow: hidden; border-radius: 50%; color: #0873c9; background: #e3f2ff; font-weight: 700; }
+.doctor-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .doctor-row-info {
     display: grid;
     gap: 5px;
@@ -164,7 +166,7 @@
 }
 .doctor-form-page {
     max-width: 900px;
-    padding-top: 48px;
+    padding-top: clamp(20px, 4vw, 48px);
 }
 .doctors-back-link {
     display: inline-block;
@@ -199,6 +201,38 @@
 .doctor-form textarea {
     resize: vertical;
 }
+.doctor-photo-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e2edf7;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f8fbff, #eef7ff);
+}
+.doctor-photo-preview {
+    display: grid;
+    width: 78px;
+    height: 78px;
+    flex: 0 0 78px;
+    place-items: center;
+    overflow: hidden;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    color: #168de2;
+    background: #dceeff;
+    box-shadow: 0 2px 10px rgb(18 59 115 / 12%);
+}
+.doctor-photo-preview svg { width: 36px; height: 36px; }
+.doctor-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.doctor-photo-copy { display: grid; justify-items: start; gap: 5px; }
+.doctor-photo-copy strong { color: #123b73; }
+.doctor-photo-copy small { color: #647b9d; line-height: 1.45; }
+.doctor-form .doctor-photo-input { position: absolute; width: 1px !important; height: 1px !important; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.doctor-photo-button,
+.doctor-photo-remove { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; padding: 7px 12px; border: 1px solid #d6e4f2; border-radius: 8px; color: #0873c9; background: #fff; font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+.doctor-photo-remove { color: #647b9d; }
+.admin-mobile-notification { display: none; }
 .doctor-form-actions {
     justify-content: flex-end;
 }
@@ -230,9 +264,7 @@
     .doctors-filters label:first-child {
         grid-column: 1/-1;
     }
-    .doctor-row {
-        grid-template-columns: minmax(0, 1fr) auto;
-    }
+    .doctor-row { grid-template-columns: 40px minmax(0, 1fr) auto; }
     .doctors-stats {
         gap: 9px;
     }
@@ -241,6 +273,7 @@
     }
 }
 @media (max-width: 520px) {
+    .doctor-form-page { padding-right: 14px; padding-left: 14px; }
     .doctors-heading {
         align-items: stretch;
         flex-direction: column;
@@ -269,13 +302,9 @@
     .doctors-filters button {
         width: 100%;
     }
-    .doctor-row {
-        grid-template-columns: 1fr auto;
-        gap: 10px;
-    }
-    .doctor-row-info {
-        grid-column: 1/-1;
-    }
+    .doctor-row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; }
+    .doctor-row-info { grid-column: 2; }
+    .doctor-list-avatar { width: 36px; height: 36px; grid-row: 1; }
     .doctor-status {
         grid-column: 1/-1;
     }
@@ -284,6 +313,13 @@
     .doctor-form-section label:has(textarea) {
         grid-column: 1;
     }
+    .doctor-form { gap: 18px; padding: 17px 14px; }
+    .doctor-form-section { grid-template-columns: minmax(0, 1fr); gap: 13px; }
+    .doctor-form-section h2 { margin-bottom: 2px; }
+    .doctor-form-section label { min-width: 0; font-size: .93rem; }
+    .doctor-form-section input,
+    .doctor-form-section select,
+    .doctor-form-section textarea { font-size: 16px; }
     .doctor-form-actions {
         align-items: stretch;
         flex-direction: column-reverse;
@@ -301,6 +337,11 @@
     .doctors-pagination button {
         flex: 1;
     }
+}
+
+@media (max-width: 760px) {
+    .admin-mobile-notification { display: grid; flex: 0 0 39px; margin-left: auto; }
+    .admin-user-chip { flex: 0 0 auto; }
 }
 
 .doctor-success {

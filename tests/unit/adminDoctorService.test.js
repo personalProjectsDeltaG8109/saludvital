@@ -16,12 +16,17 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));
+jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
+    storeDoctorPhoto: jest.fn(),
+    removeDoctorPhoto: jest.fn(),
+}));
 
 const bcrypt = (await import("bcrypt")).default;
 const database = (await import("../../config/database.js")).default;
 const { Doctor, EmailOutbox, Rol, Specialities, User } =
     await import("../../src/models/associations.js");
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
+const doctorPhotoService = await import("../../src/modules/admin/services/doctorPhotoService.js");
 const { createAdminDoctor, getAdminDoctors } =
     await import("../../src/modules/admin/services/adminDoctorService.js");
 
@@ -130,6 +135,62 @@ describe("Admin doctor management service", () => {
         expect(AuditLog.create).toHaveBeenCalledWith(
             expect.objectContaining({ action: "AdminDoctorCreated" }),
             { transaction },
+        );
+    });
+
+    test("saves an optional profile photo with the new doctor", async () => {
+        const transaction = {};
+        database.transaction.mockImplementation((callback) => callback(transaction));
+        Rol.findOne.mockResolvedValue({ id: 3 });
+        Specialities.findOne.mockResolvedValue({ id: 2 });
+        User.findOne.mockResolvedValue(null);
+        bcrypt.hash.mockResolvedValue("secure-hash");
+        User.create.mockResolvedValue({ id: 7 });
+        Doctor.create.mockResolvedValue({ id: 12, display_name: "Dr. Example" });
+        User.findByPk.mockResolvedValue({ id: 1, email: "admin@example.com" });
+        EmailOutbox.create.mockResolvedValue({});
+        AuditLog.create.mockResolvedValue({});
+        doctorPhotoService.storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/doctor.png");
+
+        await createAdminDoctor(1, {
+            email: "doctor@example.com",
+            password: "InitialPass1!",
+            displayName: "Dr. Example",
+            specialtyId: 2,
+            photo: "data:image/png;base64,valid-photo-data",
+        });
+
+        expect(doctorPhotoService.storeDoctorPhoto).toHaveBeenCalledWith(
+            "data:image/png;base64,valid-photo-data",
+        );
+        expect(Doctor.create).toHaveBeenCalledWith(
+            expect.objectContaining({ profile_photo_url: "/uploads/profile-photos/doctor.png" }),
+            { transaction },
+        );
+    });
+
+    test("removes a saved photo if creating the doctor transaction fails", async () => {
+        database.transaction.mockImplementation(async (callback) => callback({}));
+        Rol.findOne.mockResolvedValue({ id: 3 });
+        Specialities.findOne.mockResolvedValue({ id: 2 });
+        User.findOne.mockResolvedValue(null);
+        User.findByPk.mockResolvedValue({ id: 1, email: "admin@example.com" });
+        bcrypt.hash.mockResolvedValue("secure-hash");
+        User.create.mockResolvedValue({ id: 7 });
+        doctorPhotoService.storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/doctor.png");
+        Doctor.create.mockRejectedValue(new Error("database failure"));
+
+        await expect(
+            createAdminDoctor(1, {
+                email: "doctor@example.com",
+                password: "InitialPass1!",
+                displayName: "Dr. Example",
+                specialtyId: 2,
+                photo: "data:image/png;base64,valid-photo-data",
+            }),
+        ).rejects.toThrow("database failure");
+        expect(doctorPhotoService.removeDoctorPhoto).toHaveBeenCalledWith(
+            "/uploads/profile-photos/doctor.png",
         );
     });
 

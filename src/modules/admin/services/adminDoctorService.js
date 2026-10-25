@@ -10,6 +10,7 @@ import {
     User,
 } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
+import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
 
 const PAGE_SIZE = 10;
 const MAX_SEARCH_LENGTH = 100;
@@ -36,6 +37,7 @@ function formatDoctor(record) {
         specialty: record.specialty?.name || null,
         isActive: record.user.is_active,
         hasSchedule: Boolean(record.availability?.length),
+        profilePhotoUrl: record.profile_photo_url || null,
     };
 }
 
@@ -166,12 +168,14 @@ function validateDoctorRegistration(payload) {
         password,
         specialtyId: parseId(payload.specialtyId, "La especialidad"),
         professionalInformation: professionalInformation || null,
+        photo: typeof payload.photo === "string" && payload.photo ? payload.photo : null,
     };
 }
 
 /** Create the doctor account and profile atomically, and queue its standard email verification. */
 export async function createAdminDoctor(actorId, payload) {
     const values = validateDoctorRegistration(payload);
+    let storedPhotoUrl = null;
 
     try {
         return await database.transaction(async (transaction) => {
@@ -201,12 +205,15 @@ export async function createAdminDoctor(actorId, payload) {
                 { transaction },
             );
 
+            if (values.photo) storedPhotoUrl = await storeDoctorPhoto(values.photo);
+
             const doctor = await Doctor.create(
                 {
                     user_id: user.id,
                     specialty_id: specialty.id,
                     display_name: values.displayName,
                     professional_information: values.professionalInformation,
+                    profile_photo_url: storedPhotoUrl,
                 },
                 { transaction },
             );
@@ -245,6 +252,7 @@ export async function createAdminDoctor(actorId, payload) {
             };
         });
     } catch (error) {
+        if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl);
         if (error.name === "SequelizeUniqueConstraintError") {
             throw serviceError("Ya existe una cuenta con ese correo electrónico.", 409);
         }
