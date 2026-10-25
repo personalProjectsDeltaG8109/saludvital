@@ -1,0 +1,65 @@
+﻿doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-doctors.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("doctors")
+        .admin-main-shell
+            +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
+            main.doctors-page(data-doctors, data-endpoint="/api/admin/doctors")
+                header.doctors-heading
+                    div
+                        p.admin-eyebrow Gestión médica
+                        h1 Médicos
+                        p Administra los profesionales médicos de SaludVital.
+                    a.doctors-primary-button(href="/admin/doctors/new") + Crear médico
+                section.doctors-stats(aria-label="Resumen de médicos")
+                    article.doctor-stat
+                        span Total de médicos
+                        strong(data-stat-total) —
+                    article.doctor-stat
+                        span Activos
+                        strong(data-stat-active) —
+                    article.doctor-stat
+                        span Con horario
+                        strong(data-stat-scheduled) —
+                    article.doctor-stat
+                        span Inactivos
+                        strong(data-stat-inactive) —
+                section.doctors-panel(aria-label="Directorio de médicos")
+                    form.doctors-filters(data-doctor-filters)
+                        label
+                            span.sr-only Buscar médicos
+                            input(
+                                type="search",
+                                maxlength="100",
+                                placeholder="Buscar por nombre o correo electrónico...",
+                                data-doctor-search
+                            )
+                        label
+                            span.sr-only Especialidad
+                            select(data-doctor-specialty)
+                                option(value="") Todas las especialidades
+                        label
+                            span.sr-only Estado de cuenta
+                            select(data-doctor-status)
+                                option(value="") Todos los estados
+                                option(value="active") Activos
+                                option(value="inactive") Inactivos
+                        button.doctors-secondary-button(type="submit") Buscar
+                    p.doctors-feedback(role="status", aria-live="polite", data-doctor-feedback) Cargando médicosâ€¦
+                    .doctors-list(data-doctor-list)
+                    footer.doctors-pagination
+                        span(data-doctor-page) Página 1
+                        div
+                            button(type="button", data-doctor-prev, disabled) Anterior
+                            button(type="button", data-doctor-next, disabled) Siguiente
+                p.doctors-note(data-doctor-error, role="alert")
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-doctors.js", defer)
