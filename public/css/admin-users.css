@@ -264,6 +264,13 @@
 .admin-user-form-field textarea { min-height: 95px; resize: vertical; }
 .admin-user-form-field input:focus, .admin-user-form-field select:focus, .admin-user-form-field textarea:focus { border-color: #62aaf4; box-shadow: 0 0 0 3px rgb(8 124 240 / 11%); }
 .admin-user-form-hint { color: var(--admin-muted); font-size: 11px; font-weight: 400; }
+.admin-user-doctor-photo-content { display: flex; align-items: center; gap: 12px; }
+.admin-user-doctor-photo-preview { display: grid; width: 68px; height: 68px; flex: 0 0 68px; place-items: center; overflow: hidden; border: 3px solid #e2eefb; border-radius: 50%; color: #087cf0; background: #e8f3ff; font-size: 23px; font-weight: 750; }
+.admin-user-doctor-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.admin-user-doctor-photo-upload, .admin-user-doctor-photo-remove { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; padding: 0 13px; border: 1px solid #d7e3f0; border-radius: 10px; color: var(--admin-blue); background: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.admin-user-doctor-photo-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.admin-user-doctor-photo-upload:focus-within, .admin-user-doctor-photo-remove:focus-visible { outline: 3px solid rgb(8 124 240 / 35%); outline-offset: 2px; }
+.admin-user-doctor-photo-remove { color: #526780; }
 .admin-user-modal-actions { position: sticky; bottom: -30px; display: flex; justify-content: flex-end; gap: 9px; margin: 18px calc(clamp(20px, 3vw, 30px) * -1) calc(clamp(20px, 3vw, 30px) * -1); padding: 14px clamp(20px, 3vw, 30px); border-top: 1px solid #e6edf5; background: rgb(255 255 255 / 97%); }
 body.has-admin-modal { overflow: hidden; }
 .admin-user-save, .admin-user-cancel { min-height: 42px; padding: 0 16px; border: 1px solid #d7e3f0; border-radius: 10px; color: var(--admin-text); background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
@@ -307,6 +314,7 @@ body.has-admin-modal { overflow: hidden; }
     .admin-user-modal-backdrop:not([hidden]) { align-items: flex-end; padding: 0; }
     .admin-user-modal { width: 100%; max-height: 94vh; padding: 18px 15px 0; border-radius: 20px 20px 0 0; }
     .admin-user-form-section { grid-template-columns: 1fr; }
+    .admin-user-doctor-photo-content { flex-wrap: wrap; }
     .admin-user-form-field.is-wide, .admin-user-form-section h3 { grid-column: 1; }
     .admin-user-modal-actions { bottom: 0; margin: 16px -15px 0; padding: 12px 15px; }
 }
