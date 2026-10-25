@@ -14,7 +14,7 @@ Implements administrator-protected access to the doctors directory and dedicated
 
 ## Verification
 
-- `node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit/adminDoctorService.test.js --runInBand`: 4 tests passed.
+- `node --experimental-vm-modules node_modules/jest/bin/jest.js tests/unit/adminDoctorService.test.js --runInBand`: 6 tests passed.
 - `npm test -- --runInBand`: 38 suites and 316 tests passed.
 - Pug compilation for the doctor, user-management, and dashboard templates passed.
 - Targeted ESLint for the service, routes, frontend scripts, and service tests passed.
