@@ -26,3 +26,11 @@ Implements administrator-protected access to the doctors directory and dedicated
 ## Dependencies and remaining work
 
 The current doctor schema supports one specialty per profile and has no doctor document or telephone fields, so the form does not invent those fields. The initial password is supplied by an administrator and stored only as a bcrypt hash. Details, editing, status changes, and broader specialty management belong to their separate user stories and must be completed on their specified branches.
+
+## Follow-up: profile photo and mobile layout
+
+- Acceptance criteria covered: administrators can add a profile photo while creating a doctor; unsupported, mismatched, and oversized images are rejected; the photo appears in the directory; the registration form and shared mobile header fit narrow screens; the doctors page continues to use the shared admin sidebar with the Users and Roles link.
+- `src/modules/admin/services/doctorPhotoService.js` validates JPEG, PNG, and WebP content, limits uploads to 2 MB, stores generated filenames under the existing public profile-photo directory, and supports cleanup if the database transaction fails.
+- `views/admin/doctor-form.pug`, `public/js/admin-doctor-form.js`, and `public/css/admin-doctors.css` add a preview, file selection/removal, and responsive form controls. `public/js/admin-doctors.js` displays the saved photo in the directory. `views/admin/partials/admin-shell.pug` adds the dashboard-style notification bell to the shared mobile header.
+- Tests: `npm.cmd test -- --runInBand` passed (39 suites, 320 tests); targeted ESLint passed; doctor Pug templates compiled; `git diff --check` passed. The local server started and protected doctor routes redirected unauthenticated requests to `/login` (HTTP 303).
+- Limitations: photo files use the same local public upload storage as existing profile photos; production environments with ephemeral disks will need durable file storage when that infrastructure is introduced.
