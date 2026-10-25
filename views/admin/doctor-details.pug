@@ -1,0 +1,87 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-doctors.css")
+    body.admin-app.admin-doctor-details-page
+        include partials/admin-shell.pug
+        +adminSidebar("doctors")
+        .admin-main-shell
+            +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
+            main.doctor-details-page
+                a.doctors-back-link(href="/admin/doctors") ← Volver a médicos
+                header.doctor-details-heading
+                    div
+                        p.admin-eyebrow Perfil profesional
+                        h1 Información del médico
+                        p Consulta los datos registrados y la configuración de horarios.
+                section.doctor-details-hero(aria-labelledby="doctor-name")
+                    .doctor-details-avatar
+                        if doctor.profilePhotoUrl && doctor.profilePhotoUrl.startsWith("/uploads/profile-photos/")
+                            img(src=doctor.profilePhotoUrl, alt="Foto de " + doctor.name)
+                        else
+                            span(aria-hidden="true")= doctor.name.trim().charAt(0).toUpperCase()
+                    .doctor-details-identity
+                        h2#doctor-name= doctor.name
+                        p= doctor.specialty ? doctor.specialty.name : "Especialidad no asignada"
+                        span.doctor-status(class=doctor.isActive ? "is-active" : "is-inactive")
+                            | #{ doctor.isActive ? "Activo" : "Inactivo" }
+                    a.doctors-secondary-button.doctor-details-manage(
+                        href="/admin/users?search=" + encodeURIComponent(doctor.email)
+                    ) Administrar cuenta y perfil
+                .doctor-details-grid
+                    section.doctor-details-card(aria-labelledby="doctor-contact-heading")
+                        h2#doctor-contact-heading Contacto y especialidad
+                        dl.doctor-details-fields
+                            div
+                                dt Correo electrónico
+                                dd= doctor.email
+                            div
+                                dt Especialidad
+                                dd= doctor.specialty ? doctor.specialty.name : "Sin especialidad"
+                            div
+                                dt Cuenta creada
+                                dd= doctor.createdAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" }).format(new Date(doctor.createdAt)) : "Sin registro"
+                            div
+                                dt Último acceso
+                                dd= doctor.lastLoginAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(doctor.lastLoginAt)) : "Sin registro"
+                    section.doctor-details-card(aria-labelledby="doctor-professional-heading")
+                        h2#doctor-professional-heading Información profesional
+                        if doctor.professionalInformation
+                            p.doctor-professional-copy= doctor.professionalInformation
+                        else
+                            p.doctor-details-empty No se registró información profesional adicional.
+                    section.doctor-details-card.doctor-schedule-card(
+                        aria-labelledby="doctor-schedule-heading"
+                    )
+                        .doctor-schedule-heading
+                            div
+                                h2#doctor-schedule-heading Horario configurado
+                                p Los horarios se consultan desde la disponibilidad registrada.
+                            span.doctor-status(class=doctor.hasSchedule ? "is-active" : "is-inactive")
+                                | #{ doctor.hasSchedule ? "Configurado" : "Sin horario activo" }
+                        if doctor.schedule.length
+                            ul.doctor-schedule-list
+                                each block in doctor.schedule
+                                    li(class=block.isActive ? null : "is-inactive")
+                                        strong= block.day
+                                        span #{ block.startTime } – #{ block.endTime }
+                                        small
+                                            | Vigente desde #{ block.validFrom }
+                                            if block.validUntil
+                                                |
+                                                | hasta #{ block.validUntil }
+                                            if !block.isActive
+                                                |
+                                                | · Inactivo
+                        else
+                            p.doctor-details-empty No hay bloques de disponibilidad registrados.
+                footer.doctor-details-footer
+                    a.doctors-secondary-button(href="/admin/doctors") Volver al directorio
+            script(src="/js/admin-doctors.js", defer)

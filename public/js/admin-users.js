@@ -20,10 +20,21 @@ if (page) {
     const editForm = document.querySelector("[data-user-edit-form]");
     const editFields = document.querySelector("[data-user-edit-fields]");
     const saveButton = document.querySelector("[data-user-modal-save]");
-    const state = { page: 1, pageSize: 10, totalPages: 1, search: "", roleId: "", status: "" };
+    const initialSearch = new URLSearchParams(window.location.search).get("search") || "";
+    const state = {
+        page: 1,
+        pageSize: 10,
+        totalPages: 1,
+        search: initialSearch,
+        roleId: "",
+        status: "",
+    };
     let focusedBeforeModal;
     let editingUser;
     let activeRequest;
+
+    searchInput.value = initialSearch;
+    if (topSearchInput) topSearchInput.value = initialSearch;
 
     function setFeedback(message, kind = "") {
         feedback.textContent = message;

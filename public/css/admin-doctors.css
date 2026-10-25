@@ -115,6 +115,10 @@
 }
 .doctor-list-avatar { display: grid; width: 42px; height: 42px; place-items: center; overflow: hidden; border-radius: 50%; color: #0873c9; background: #e3f2ff; font-weight: 700; }
 .doctor-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.doctor-row-actions { display: flex; align-items: center; gap: 10px; }
+.doctor-details-link { display: inline-flex; min-height: 40px; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #d9e5f2; border-radius: 8px; color: #0873c9; background: #f5faff; font: inherit; font-size: .9rem; font-weight: 650; text-decoration: none; }
+.doctor-details-link svg { width: 19px; height: 19px; }
+.doctor-details-link:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
 .doctor-row-info {
     display: grid;
     gap: 5px;
@@ -305,9 +309,7 @@
     .doctor-row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; }
     .doctor-row-info { grid-column: 2; }
     .doctor-list-avatar { width: 36px; height: 36px; grid-row: 1; }
-    .doctor-status {
-        grid-column: 1/-1;
-    }
+    .doctor-row-actions { grid-column: 1/-1; justify-content: flex-end; }
     .doctor-form-section,
     .doctor-form-section h2,
     .doctor-form-section label:has(textarea) {
@@ -354,6 +356,52 @@
 .doctor-success h2 {
     margin-top: 0;
     color: #16864f;
+}
+.doctor-details-page { width: min(100%, 1200px); margin: 0 auto; padding: 28px clamp(16px, 3vw, 40px) 40px; color: #123b73; }
+.doctor-details-heading { margin-bottom: 20px; }
+.doctor-details-heading h1 { margin: 5px 0; font-size: clamp(1.7rem, 3vw, 2.25rem); }
+.doctor-details-heading p:last-child { margin: 0; color: #647b9d; }
+.doctor-details-hero { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 20px; margin-bottom: 18px; padding: 22px; border: 1px solid #e5eef7; border-radius: 16px; background: linear-gradient(115deg, #fff, #f3f9ff); box-shadow: 0 8px 28px rgb(18 59 115 / 5%); }
+.doctor-details-avatar { display: grid; width: 88px; height: 88px; place-items: center; overflow: hidden; border: 4px solid #fff; border-radius: 50%; color: #0873c9; background: #dceeff; box-shadow: 0 2px 12px rgb(18 59 115 / 12%); font-size: 2rem; font-weight: 750; }
+.doctor-details-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.doctor-details-identity { display: grid; justify-items: start; gap: 7px; min-width: 0; }
+.doctor-details-identity h2 { margin: 0; color: #123b73; font-size: clamp(1.25rem, 2vw, 1.65rem); overflow-wrap: anywhere; }
+.doctor-details-identity p { margin: 0; color: #647b9d; }
+.doctor-details-manage { white-space: nowrap; }
+.doctor-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.doctor-details-card { min-width: 0; padding: 20px; border: 1px solid #e5eef7; border-radius: 14px; background: #fff; box-shadow: 0 8px 28px rgb(18 59 115 / 4%); }
+.doctor-details-card h2 { margin: 0 0 16px; color: #123b73; font-size: 1.05rem; }
+.doctor-details-fields { display: grid; gap: 14px; margin: 0; }
+.doctor-details-fields > div { display: grid; gap: 4px; min-width: 0; }
+.doctor-details-fields dt { color: #647b9d; font-size: .82rem; }
+.doctor-details-fields dd { margin: 0; overflow-wrap: anywhere; font-weight: 650; }
+.doctor-professional-copy { margin: 0; color: #455f80; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.doctor-details-empty { margin: 0; color: #647b9d; line-height: 1.55; }
+.doctor-schedule-card { grid-column: 1/-1; }
+.doctor-schedule-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.doctor-schedule-heading h2 { margin-bottom: 5px; }
+.doctor-schedule-heading p { margin: 0 0 16px; color: #647b9d; font-size: .9rem; }
+.doctor-schedule-list { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.doctor-schedule-list li { display: grid; grid-template-columns: minmax(100px, .7fr) minmax(100px, .7fr) minmax(160px, 1.2fr); align-items: center; gap: 12px; padding: 12px 14px; border-radius: 9px; background: #f6faff; }
+.doctor-schedule-list li.is-inactive { color: #647b9d; background: #f5f6f8; }
+.doctor-schedule-list small { color: #647b9d; overflow-wrap: anywhere; }
+.doctor-details-footer { display: flex; justify-content: flex-end; padding-top: 18px; }
+.doctor-details-page a:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
+@media (max-width: 640px) {
+    .doctor-details-page { padding: 20px 14px 28px; }
+    .doctor-details-hero { grid-template-columns: 64px minmax(0, 1fr); gap: 13px; padding: 16px; }
+    .doctor-details-avatar { width: 62px; height: 62px; border-width: 3px; font-size: 1.5rem; }
+    .doctor-details-identity { gap: 5px; }
+    .doctor-details-identity h2 { font-size: 1.15rem; }
+    .doctor-details-identity p { font-size: .9rem; }
+    .doctor-details-manage { grid-column: 1/-1; width: 100%; white-space: normal; }
+    .doctor-details-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .doctor-details-card { padding: 16px; }
+    .doctor-schedule-card { grid-column: auto; }
+    .doctor-schedule-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+    .doctor-schedule-list li { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; padding: 11px; }
+    .doctor-schedule-list small { grid-column: 1/-1; }
+    .doctor-details-footer .doctors-secondary-button { width: 100%; }
 }
 [hidden] {
     display: none !important;
