@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
 import {
@@ -10,12 +10,51 @@ import {
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
+import {
+    createAdminDoctor,
+    getActiveDoctorSpecialties,
+    getAdminDoctors,
+} from "../services/adminDoctorService.js";
 
 // Define the routes available to administrators.
 const adminRoutes = Router();
 
 const requireAdministrator = [authenticateToken, requireRole("Administrator")];
 
+adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminDoctors(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.post("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.status(201).json(await createAdminDoctor(req.auth.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, next) => {
+    try {
+        return res.render("admin/doctors", {
+            pageTitle: "Médicos | SaludVital",
+            adminName: "Administrador",
+        });
+    } catch (error) {
+        return next(error);
+    }
+});
+adminRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res) => {
+    return res.render("admin/doctor-form", {
+        pageTitle: "Crear médico | SaludVital",
+        adminName: "Administrador",
+        specialties: await getActiveDoctorSpecialties(),
+        formAction: "/api/admin/doctors",
+    });
+});
 adminRoutes.get("/api/admin/dashboard", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminDashboardData(req.query));

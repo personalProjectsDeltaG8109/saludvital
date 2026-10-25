@@ -1,0 +1,95 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-doctors.css")
+    body.admin-app.admin-doctor-create-page
+        include partials/admin-shell.pug
+        +adminSidebar("doctors")
+        .admin-main-shell
+            +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
+            main.doctor-form-page(data-doctor-form, data-action=formAction)
+                a.doctors-back-link(href="/admin/doctors") ← Volver a médicos
+                header.doctors-heading
+                    div
+                        p.admin-eyebrow Gestión médica
+                        h1 Crear médico
+                        p Registra el perfil profesional y configura su acceso a SaludVital.
+                    .doctor-photo-card
+                        .doctor-photo-preview(data-photo-preview)
+                            span(aria-hidden="true")
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    stroke-width="1.5"
+                                )
+                                    circle(cx="12", cy="8", r="3.5")
+                                    path(d="M4.5 21a7.5 7.5 0 0 1 15 0")
+                        .doctor-photo-copy
+                            strong Foto del médico
+                            small Se mostrará en su perfil. JPG, PNG o WebP, máximo 2 MB.
+                            label.doctor-photo-button(for="doctor-photo") Agregar foto
+                            input#doctor-photo.doctor-photo-input(
+                                type="file",
+                                accept="image/jpeg,image/png,image/webp",
+                                data-photo-input
+                            )
+                            button.doctor-photo-remove(type="button", data-photo-remove, hidden) Quitar foto
+                form.doctor-form(data-form, novalidate)
+                    section.doctor-form-section
+                        h2 Información profesional
+                        label(for="doctor-display-name") Nombre completo *
+                            input#doctor-display-name(
+                                name="displayName",
+                                required,
+                                maxlength="120",
+                                autocomplete="name"
+                            )
+                        label(for="doctor-specialty") Especialidad *
+                            select#doctor-specialty(name="specialtyId", required)
+                                option(value="") Selecciona una especialidad
+                                each specialty in specialties
+                                    option(value=specialty.id)= specialty.name
+                        label(for="doctor-professional-information") Información profesional
+                            textarea#doctor-professional-information(
+                                name="professionalInformation",
+                                rows="4",
+                                maxlength="5000"
+                            )
+                    section.doctor-form-section
+                        h2 Cuenta de acceso
+                        label(for="doctor-email") Correo electrónico *
+                            input#doctor-email(
+                                type="email",
+                                name="email",
+                                required,
+                                maxlength="100",
+                                autocomplete="email"
+                            )
+                        label(for="doctor-password") Contraseña inicial *
+                            input#doctor-password(
+                                type="password",
+                                name="password",
+                                required,
+                                minlength="10",
+                                maxlength="128",
+                                autocomplete="new-password"
+                            )
+                            small Debe tener 10 caracteres como mínimo, con mayúscula, minúsculas, número y símbolo.
+                    p.doctors-feedback(role="status", aria-live="polite", data-form-feedback)
+                    .doctor-form-actions
+                        a.doctors-secondary-button(href="/admin/doctors") Cancelar
+                        button.doctors-primary-button(type="submit") Crear médico
+                section.doctor-success(hidden, data-form-success)
+                    h2 Registro completado
+                    p(role="status", aria-live="polite", data-form-success-message)
+                    a.doctors-primary-button(href="/admin/doctors") Volver al directorio
+            script(src="/js/admin-doctors.js", defer)
+            script(src="/js/admin-doctor-form.js", defer)

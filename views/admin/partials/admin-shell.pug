@@ -1,0 +1,116 @@
+mixin adminSidebar(activePage)
+    button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
+    aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
+        .admin-brand
+            a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
+                img(src="/brand/logo-symbol.png", alt="")
+                span
+                    strong SaludVital
+                    small Panel Administrativo
+            button.admin-sidebar-collapse(
+                type="button",
+                aria-label="Cerrar menú",
+                data-admin-close
+            ) ×
+        nav.admin-navigation(aria-label="Navegación administrativa")
+            a.admin-nav-link(
+                href="/admin/dashboard",
+                class=activePage === "dashboard" ? "is-active" : null,
+                aria-current=activePage === "dashboard" ? "page" : null
+            )
+                span.admin-nav-icon(aria-hidden="true") ⌂
+                span Dashboard
+            .admin-nav-section Gestión médica
+            a.admin-nav-link(
+                href="/admin/users",
+                class=activePage === "users" ? "is-active" : null,
+                aria-current=activePage === "users" ? "page" : null
+            )
+                span.admin-nav-icon(aria-hidden="true") ♙
+                span Usuarios y roles
+            a.admin-nav-link(
+                href="/admin/doctors",
+                class=activePage === "doctors" ? "is-active" : null,
+                aria-current=activePage === "doctors" ? "page" : null
+            )
+                span.admin-nav-icon(aria-hidden="true") ⚕
+                span Médicos
+            span.admin-nav-link.is-unavailable(aria-disabled="true")
+                span.admin-nav-icon(aria-hidden="true") ◈
+                span Especialidades
+            span.admin-nav-link.is-unavailable(aria-disabled="true")
+                span.admin-nav-icon(aria-hidden="true") ▣
+                span Citas médicas
+            span.admin-nav-link.is-unavailable(aria-disabled="true")
+                span.admin-nav-icon(aria-hidden="true") ◷
+                span Horarios y disponibilidad
+            .admin-nav-section Canales y comunicación
+            a.admin-nav-link(href="/admin/whatsapp")
+                span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
+                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                span WhatsApp y chatbot
+            .admin-nav-section.admin-nav-section-small Control y seguimiento
+            span.admin-nav-link.is-unavailable(aria-disabled="true")
+                span.admin-nav-icon(aria-hidden="true") ◉
+                span Auditoría
+            span.admin-nav-link.is-unavailable(aria-disabled="true")
+                span.admin-nav-icon(aria-hidden="true") ▥
+                span Reportes e indicadores
+        form.admin-logout(action="/logout", method="POST")
+            button.admin-nav-link(type="submit")
+                span.admin-nav-icon(aria-hidden="true") ⇥
+                span Cerrar sesión
+
+mixin adminTopbar(searchAction, searchPlaceholder)
+    header.admin-topbar
+        button.admin-menu-toggle(
+            type="button",
+            aria-label="Abrir menú",
+            aria-expanded="false",
+            aria-controls="admin-sidebar",
+            data-admin-open
+        )
+            span
+            span
+            span
+        a.admin-mobile-brand(
+            href="/admin/dashboard",
+            aria-label="SaludVital, panel administrativo"
+        )
+            img(src="/brand/logo-symbol.png", alt="")
+            span
+                strong SaludVital
+                small Panel Administrativo
+        a.admin-notification-button.admin-mobile-notification(
+            href="/admin/dashboard#admin-notifications-title",
+            aria-label="Ver notificaciones recientes"
+        )
+            svg(
+                viewBox="0 0 24 24",
+                fill="none",
+                stroke="currentColor",
+                stroke-width="1.8",
+                stroke-linecap="round",
+                stroke-linejoin="round",
+                aria-hidden="true"
+            )
+                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                path(d="M10 21h4")
+        form.admin-global-search(role="search", action=searchAction, method="get")
+            label.sr-only(for="admin-top-search") Buscar en el panel administrativo
+            span(aria-hidden="true") ⌕
+            input#admin-top-search(
+                type="search",
+                placeholder=searchPlaceholder,
+                autocomplete="off",
+                data-user-top-search
+            )
+        .admin-user-chip
+            span.admin-user-avatar(aria-hidden="true")
+                svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8")
+                    circle(cx="12", cy="8", r="3.2")
+                    path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
+            span
+                strong= adminName
+                small SaludVital
+            span.admin-user-chevron(aria-hidden="true") ⌄

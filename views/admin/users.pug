@@ -10,98 +10,10 @@ html(lang="es")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-users.css")
     body.admin-app.admin-users-page
-        button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
-        aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
-            .admin-brand
-                a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
-                    img(src="/brand/logo-symbol.png", alt="")
-                    span
-                        strong SaludVital
-                        small Panel Administrativo
-                button.admin-sidebar-collapse(
-                    type="button",
-                    aria-label="Cerrar menú",
-                    data-admin-close
-                ) ×
-            nav.admin-navigation(aria-label="Navegación administrativa")
-                a.admin-nav-link(href="/admin/dashboard")
-                    span.admin-nav-icon(aria-hidden="true") ⌂
-                    span Dashboard
-                .admin-nav-section Gestión médica
-                a.admin-nav-link.is-active(href="/admin/users", aria-current="page")
-                    span.admin-nav-icon(aria-hidden="true") ♙
-                    span Usuarios y roles
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ⚕
-                    span Médicos
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◈
-                    span Especialidades
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ▣
-                    span Citas médicas
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◷
-                    span Horarios y disponibilidad
-                .admin-nav-section Canales y comunicación
-                a.admin-nav-link(href="/admin/whatsapp")
-                    span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
-                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
-                    span WhatsApp y chatbot
-                .admin-nav-section.admin-nav-section-small Control y seguimiento
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◉
-                    span Auditoría
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ▥
-                    span Reportes e indicadores
-            form.admin-logout(action="/logout", method="POST")
-                button.admin-nav-link(type="submit")
-                    span.admin-nav-icon(aria-hidden="true") ⇥
-                    span Cerrar sesión
+        include partials/admin-shell.pug
+        +adminSidebar("users")
         .admin-main-shell
-            header.admin-topbar
-                button.admin-menu-toggle(
-                    type="button",
-                    aria-label="Abrir menú",
-                    aria-expanded="false",
-                    aria-controls="admin-sidebar",
-                    data-admin-open
-                )
-                    span
-                    span
-                    span
-                a.admin-mobile-brand(
-                    href="/admin/dashboard",
-                    aria-label="SaludVital, panel administrativo"
-                )
-                    img(src="/brand/logo-symbol.png", alt="")
-                    span
-                        strong SaludVital
-                        small Panel Administrativo
-                form.admin-global-search(role="search", action="/admin/users", method="get")
-                    label.sr-only(for="admin-top-search") Buscar usuarios
-                    span(aria-hidden="true") ⌕
-                    input#admin-top-search(
-                        type="search",
-                        placeholder="Buscar usuarios por nombre o correo...",
-                        autocomplete="off",
-                        data-user-top-search
-                    )
-                .admin-user-chip
-                    span.admin-user-avatar(aria-hidden="true")
-                        svg(
-                            viewBox="0 0 24 24",
-                            fill="none",
-                            stroke="currentColor",
-                            stroke-width="1.8"
-                        )
-                            circle(cx="12", cy="8", r="3.2")
-                            path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
-                    span
-                        strong= adminName
-                        small SaludVital
-                    span.admin-user-chevron(aria-hidden="true") ⌄
+            +adminTopbar("/admin/users", "Buscar usuarios por nombre o correo...")
             main.admin-users-content(
                 data-admin-users,
                 data-endpoint="/api/admin/users",
