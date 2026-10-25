@@ -13,6 +13,7 @@ import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import {
     createAdminDoctor,
     getActiveDoctorSpecialties,
+    getAdminDoctorDetails,
     getAdminDoctors,
 } from "../services/adminDoctorService.js";
 
@@ -24,6 +25,14 @@ const requireAdministrator = [authenticateToken, requireRole("Administrator")];
 adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminDoctors(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.get("/api/admin/doctors/:doctorId", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminDoctorDetails(req.params.doctorId));
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
@@ -54,6 +63,27 @@ adminRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res)
         specialties: await getActiveDoctorSpecialties(),
         formAction: "/api/admin/doctors",
     });
+});
+adminRoutes.get("/admin/doctors/:doctorId", ...requireAdministrator, async (req, res, next) => {
+    try {
+        const doctor = await getAdminDoctorDetails(req.params.doctorId);
+        return res.render("admin/doctor-details", {
+            pageTitle: `${doctor.name} | Médicos SaludVital`,
+            adminName: "Administrador",
+            doctor,
+        });
+    } catch (error) {
+        if (error.statusCode === 404) {
+            return res.status(404).render("errors/404", {
+                pageTitle: "Médico no encontrado | SaludVital",
+                homeHref: "/admin/doctors",
+                appointmentsHref: null,
+                supportHref:
+                    "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+            });
+        }
+        return next(error);
+    }
 });
 adminRoutes.get("/api/admin/dashboard", ...requireAdministrator, async (req, res, next) => {
     try {

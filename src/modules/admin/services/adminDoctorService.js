@@ -14,6 +14,7 @@ import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
 
 const PAGE_SIZE = 10;
 const MAX_SEARCH_LENGTH = 100;
+const WEEK_DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 function serviceError(message, statusCode = 400) {
     const error = new Error(message);
@@ -115,6 +116,79 @@ export async function getAdminDoctors(query = {}) {
             totalItems: doctors.count,
             totalPages: Math.ceil(doctors.count / PAGE_SIZE),
         },
+    };
+}
+
+/** Return the read-only profile details supported by the current doctor schema. */
+export async function getAdminDoctorDetails(rawDoctorId) {
+    const doctorId = Number(rawDoctorId);
+    if (!Number.isSafeInteger(doctorId) || doctorId < 1) {
+        throw serviceError("No encontramos ese médico.", 404);
+    }
+
+    const doctor = await Doctor.findByPk(doctorId, {
+        attributes: [
+            "id",
+            "user_id",
+            "display_name",
+            "professional_information",
+            "profile_photo_url",
+            "created_at",
+        ],
+        include: [
+            {
+                model: User,
+                as: "user",
+                attributes: ["id", "email", "is_active", "created_at", "last_login_at"],
+                required: true,
+            },
+            { model: Specialities, as: "specialty", attributes: ["id", "name"] },
+        ],
+    });
+
+    if (!doctor) throw serviceError("No encontramos ese médico.", 404);
+
+    const availability = await DoctorAvailability.findAll({
+        where: { doctor_id: doctorId },
+        attributes: [
+            "id",
+            "day_of_week",
+            "start_time",
+            "end_time",
+            "valid_from",
+            "valid_until",
+            "is_active",
+        ],
+        order: [
+            ["day_of_week", "ASC"],
+            ["start_time", "ASC"],
+        ],
+    });
+    const schedule = availability.map((block) => ({
+        id: block.id,
+        day: WEEK_DAYS[block.day_of_week] || "Día sin identificar",
+        startTime: String(block.start_time).slice(0, 5),
+        endTime: String(block.end_time).slice(0, 5),
+        validFrom: block.valid_from,
+        validUntil: block.valid_until,
+        isActive: block.is_active,
+    }));
+
+    return {
+        id: doctor.id,
+        userId: doctor.user.id,
+        name: doctor.display_name || doctor.user.email,
+        email: doctor.user.email,
+        profilePhotoUrl: doctor.profile_photo_url || null,
+        professionalInformation: doctor.professional_information || null,
+        specialty: doctor.specialty
+            ? { id: doctor.specialty.id, name: doctor.specialty.name }
+            : null,
+        isActive: doctor.user.is_active,
+        createdAt: doctor.user.created_at || doctor.created_at,
+        lastLoginAt: doctor.user.last_login_at,
+        hasSchedule: schedule.some((block) => block.isActive),
+        schedule,
     };
 }
 

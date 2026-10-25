@@ -28,6 +28,20 @@ describe("SaludVital application", () => {
         expect(response.status).toBe(404);
     });
 
+    test("doctor detail pages require an authenticated administrator", async () => {
+        const response = await request(app).get("/admin/doctors/1").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("doctor detail API requires an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/doctors/1").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("GET /register renders the patient registration form", async () => {
         const response = await request(app).get("/register");
 
