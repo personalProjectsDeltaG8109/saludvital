@@ -114,6 +114,10 @@ try {
     }, statuses);
     await page.addScriptTag({ content: appointmentsScript });
     await page.getByText("María Fernanda López").first().waitFor();
+    await page
+        .getByRole("link", { name: "Ver detalles de la cita de María Fernanda López" })
+        .first()
+        .waitFor();
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },

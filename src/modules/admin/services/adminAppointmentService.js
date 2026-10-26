@@ -123,24 +123,70 @@ function createIncludes(search) {
     ];
 }
 
-function formatAppointment(appointment) {
+function formatAppointment(appointment, includePatientDocument = true) {
+    const patient = {
+        id: appointment.patient.id,
+        name: `${appointment.patient.first_name} ${appointment.patient.last_name}`.trim(),
+        photoUrl: appointment.patient.profile_photo_url || null,
+    };
+    if (includePatientDocument) {
+        patient.document = [appointment.patient.document_type, appointment.patient.document_number]
+            .filter(Boolean)
+            .join(" ");
+    }
+
     return {
         id: appointment.id,
         startAt: new Date(appointment.start_at).toISOString(),
         endAt: new Date(appointment.end_at).toISOString(),
-        patient: {
-            id: appointment.patient.id,
-            name: `${appointment.patient.first_name} ${appointment.patient.last_name}`.trim(),
-            document: [appointment.patient.document_type, appointment.patient.document_number]
-                .filter(Boolean)
-                .join(" "),
-            photoUrl: appointment.patient.profile_photo_url || null,
-        },
+        patient,
         specialty: appointment.specialty.name,
         doctor: appointment.doctor.display_name || `Médico ${appointment.doctor.id}`,
         status: appointment.status.name,
         statusLabel: STATUS_LABELS[appointment.status.name],
     };
+}
+
+/** Return the limited appointment and participant details needed by the read-only view. */
+export async function getAdminAppointmentDetails(rawAppointmentId) {
+    const appointmentId = Number(rawAppointmentId);
+    if (!Number.isSafeInteger(appointmentId) || appointmentId < 1) {
+        throw serviceError("No encontramos esa cita.", 404);
+    }
+
+    const appointment = await Appointment.findByPk(appointmentId, {
+        attributes: [
+            "id",
+            "start_at",
+            "end_at",
+            "patient_id",
+            "doctor_id",
+            "specialty_id",
+            "status_id",
+        ],
+        include: [
+            {
+                model: Patient,
+                as: "patient",
+                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                required: true,
+            },
+            {
+                model: Doctor,
+                as: "doctor",
+                attributes: ["id", "display_name", "profile_photo_url"],
+                required: true,
+            },
+            { model: Specialities, as: "specialty", attributes: ["id", "name"], required: true },
+            { model: AppointmentStatus, as: "status", attributes: ["id", "name"], required: true },
+        ],
+    });
+
+    if (!appointment?.status || !STATUS_LABELS[appointment.status.name]) {
+        throw serviceError("No encontramos esa cita.", 404);
+    }
+
+    return formatAppointment(appointment, false);
 }
 
 /** Return a paginated, privacy-conscious appointment directory for administrators. */
@@ -212,7 +258,7 @@ export async function getAdminAppointments(query = {}) {
     const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
     return {
-        appointments: result.rows.map(formatAppointment),
+        appointments: result.rows.map((appointment) => formatAppointment(appointment)),
         statuses: statusRows.map((row) => ({ value: row.name, label: STATUS_LABELS[row.name] })),
         specialties: specialties.map((row) => ({ id: row.id, name: row.name })),
         doctors: doctors.map((row) => ({

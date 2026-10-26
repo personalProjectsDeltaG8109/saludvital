@@ -1,7 +1,10 @@
 ﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
-import { getAdminAppointments } from "../services/adminAppointmentService.js";
+import {
+    getAdminAppointmentDetails,
+    getAdminAppointments,
+} from "../services/adminAppointmentService.js";
 import {
     getAdminDepartments,
     getAdminMunicipalities,
@@ -48,6 +51,21 @@ adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, 
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/appointments/:appointmentId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json({
+                appointment: await getAdminAppointmentDetails(req.params.appointmentId),
+            });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.post("/api/admin/specialties", ...requireAdministrator, async (req, res, next) => {
     try {
         const specialty = await createAdminSpecialty(req.body);
@@ -166,6 +184,31 @@ adminRoutes.get("/admin/appointments", ...requireAdministrator, (_req, res) => {
         adminName: "Administrador",
     });
 });
+adminRoutes.get(
+    "/admin/appointments/:appointmentId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const appointment = await getAdminAppointmentDetails(req.params.appointmentId);
+            return res.render("admin/appointment-details", {
+                pageTitle: `Cita #${appointment.id} | SaludVital`,
+                adminName: "Administrador",
+                appointment,
+            });
+        } catch (error) {
+            if (error.statusCode === 404) {
+                return res.status(404).render("errors/404", {
+                    pageTitle: "Cita no encontrada | SaludVital",
+                    homeHref: "/admin/dashboard",
+                    appointmentsHref: "/admin/appointments",
+                    supportHref:
+                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                });
+            }
+            return next(error);
+        }
+    },
+);
 adminRoutes.get("/admin/specialties", ...requireAdministrator, (_req, res) => {
     return res.render("admin/specialties", {
         pageTitle: "Especialidades | SaludVital",
