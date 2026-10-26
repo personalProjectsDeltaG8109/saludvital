@@ -1,0 +1,198 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-appointments.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("appointments")
+        .admin-main-shell
+            +adminTopbar(
+                "/admin/appointments",
+                "Buscar pacientes por nombre, documento o teléfono...",
+            )
+            main.admin-appointments-page(
+                data-admin-appointments,
+                data-endpoint="/api/admin/appointments"
+            )
+                header.appointments-heading
+                    span.appointments-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            rect(x="3", y="5", width="18", height="16", rx="2")
+                            path(d="M16 3v4M8 3v4M3 10h18")
+                            circle(cx="17", cy="16", r="3")
+                            path(d="m19.2 18.2 2 2")
+                    div
+                        h1 Citas médicas
+                        p Consulta y da seguimiento a las citas registradas en SaludVital.
+                section.appointment-stats(aria-label="Resumen de citas")
+                    article.appointment-stat
+                        span.appointment-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                rect(x="3", y="5", width="18", height="16", rx="2")
+                                path(d="M16 3v4M8 3v4M3 10h18")
+                        div
+                            span Total de citas
+                            strong(data-stat-total) —
+                    article.appointment-stat.is-confirmed
+                        span.appointment-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2.5",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="12", cy="12", r="9")
+                                path(d="m8 12 2.5 2.5L16 9")
+                        div
+                            span Confirmadas
+                            strong(data-stat-confirmed) —
+                    article.appointment-stat.is-progress
+                        span.appointment-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="12", cy="12", r="9")
+                                path(d="M12 7v5l3 2")
+                        div
+                            span En curso
+                            strong(data-stat-in-progress) —
+                    article.appointment-stat.is-attended
+                        span.appointment-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2.5",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="M5 12.5 9.5 17 19 7.5")
+                                path(d="M12 3a9 9 0 1 0 9 9")
+                        div
+                            span Asistidas
+                            strong(data-stat-attended) —
+                    article.appointment-stat.is-cancelled
+                        span.appointment-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="12", cy="12", r="9")
+                                path(d="m9 9 6 6m0-6-6 6")
+                        div
+                            span Canceladas
+                            strong(data-stat-cancelled) —
+                section.appointments-panel(aria-label="Listado de citas")
+                    form.appointments-filters(data-appointment-filters, role="search")
+                        label.appointment-date-filter
+                            span Fecha inicial
+                            input(type="date", data-appointment-from, aria-label="Fecha inicial")
+                        label.appointment-date-filter
+                            span Fecha final
+                            input(type="date", data-appointment-to, aria-label="Fecha final")
+                        label.appointment-select-filter
+                            span Estado
+                            select(data-appointment-status)
+                                option(value="all") Todos
+                        label.appointment-select-filter
+                            span Especialidad
+                            select(data-appointment-specialty)
+                                option(value="all") Todas
+                        label.appointment-select-filter
+                            span Médico
+                            select(data-appointment-doctor)
+                                option(value="all") Todos
+                        label.appointment-search-filter
+                            span Buscar paciente
+                            input(
+                                type="search",
+                                maxlength="100",
+                                placeholder="Nombre, documento o teléfono...",
+                                data-appointment-search
+                            )
+                        button.appointment-search-button(type="submit")
+                            span(aria-hidden="true") ⌕
+                            | Buscar
+                    nav.appointment-status-tabs(
+                        aria-label="Filtrar citas por estado",
+                        data-appointment-tabs
+                    )
+                        button.is-selected(
+                            type="button",
+                            data-status-tab="all",
+                            aria-pressed="true"
+                        ) Todas
+                    p.appointments-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-appointment-feedback
+                    ) Cargando citas...
+                    p.appointments-error(role="alert", data-appointment-error, hidden)
+                    .appointments-table-wrap
+                        table.appointments-table
+                            caption.sr-only Citas médicas registradas en SaludVital
+                            thead
+                                tr
+                                    th(scope="col") Fecha y hora
+                                    th(scope="col") Paciente
+                                    th(scope="col") Documento
+                                    th(scope="col") Especialidad
+                                    th(scope="col") Médico
+                                    th(scope="col") Estado
+                            tbody(data-appointment-list)
+                    .appointments-mobile-list(data-appointment-mobile-list)
+                    footer.appointments-pagination
+                        span(data-appointment-page-summary) Mostrando citas
+                        .appointment-pagination-controls
+                            button(
+                                type="button",
+                                aria-label="Página anterior",
+                                data-appointment-prev,
+                                disabled
+                            ) ‹
+                            span(data-appointment-page-label) 1 / 1
+                            button(
+                                type="button",
+                                aria-label="Página siguiente",
+                                data-appointment-next,
+                                disabled
+                            ) ›
+                        label.appointment-page-size
+                            span.sr-only Resultados por página
+                            select(data-appointment-page-size)
+                                option(value="10") 10 por página
+                                option(value="25") 25 por página
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-appointments.js", defer)
