@@ -108,6 +108,10 @@ if (appointmentsPage) {
         statusCell.dataset.label = "Estado";
         statusCell.append(createStatusBadge(appointment));
 
+        const actionsCell = document.createElement("td");
+        actionsCell.dataset.label = "Acciones";
+        actionsCell.append(createAppointmentDetailsLink(appointment));
+
         row.append(
             date,
             createPatientCell(appointment.patient),
@@ -115,8 +119,18 @@ if (appointmentsPage) {
             specialtyCell,
             doctorCell,
             statusCell,
+            actionsCell,
         );
         return row;
+    }
+
+    function createAppointmentDetailsLink(appointment) {
+        const link = document.createElement("a");
+        link.className = "appointment-details-link";
+        link.href = `/admin/appointments/${appointment.id}`;
+        link.setAttribute("aria-label", `Ver detalles de la cita de ${appointment.patient.name}`);
+        link.textContent = "Ver";
+        return link;
     }
 
     function createAppointmentCard(appointment) {
@@ -144,11 +158,13 @@ if (appointmentsPage) {
         details.append(patient, specialtyText, doctorText);
 
         const status = createStatusBadge(appointment);
+        const detailsLink = createAppointmentDetailsLink(appointment);
         card.append(
             date,
             createPatientCell(appointment.patient).querySelector(".appointment-patient-avatar"),
             details,
             status,
+            detailsLink,
         );
         return card;
     }
@@ -165,7 +181,7 @@ if (appointmentsPage) {
         const row = document.createElement("tr");
         row.className = "appointments-empty-row";
         const cell = document.createElement("td");
-        cell.colSpan = 6;
+        cell.colSpan = 7;
         cell.textContent = "No encontramos citas con esos criterios.";
         row.append(cell);
         list.append(row);

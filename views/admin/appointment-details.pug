@@ -1,0 +1,78 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-appointments.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("appointments")
+        .admin-main-shell
+            +adminTopbar("/admin/appointments", "Buscar citas médicas...")
+            main.admin-appointment-details-page
+                a.appointment-details-back(href="/admin/appointments")
+                    span(aria-hidden="true") ‹
+                    | Volver a citas
+                header.appointment-details-heading
+                    span.appointments-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            rect(x="3", y="5", width="18", height="16", rx="2")
+                            path(d="M16 3v4M8 3v4M3 10h18")
+                    div
+                        p.appointment-details-eyebrow Información de la cita
+                        h1 Detalle de cita
+                        p Revisa la programación y las personas asociadas.
+                section.appointment-details-summary(aria-label="Resumen de la cita")
+                    .appointment-detail-summary-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            rect(x="3", y="5", width="18", height="16", rx="2")
+                            path(d="M16 3v4M8 3v4M3 10h18")
+                    .appointment-detail-summary-copy
+                        span Cita n.º #{ appointment.id }
+                        strong= new Intl.DateTimeFormat("es-CO", { dateStyle: "full", timeZone: "America/Bogota" }).format(new Date(appointment.startAt))
+                        p #{ new Intl.DateTimeFormat("es-CO", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(appointment.startAt)) } – #{ new Intl.DateTimeFormat("es-CO", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(appointment.endAt)) }
+                    span.appointment-status-badge(
+                        class="status-" + appointment.status.toLowerCase().replaceAll(" ", "-")
+                    )= appointment.statusLabel
+                .appointment-details-grid
+                    section.appointment-details-card(aria-labelledby="appointment-patient-heading")
+                        h2#appointment-patient-heading Paciente
+                        .appointment-detail-person
+                            .appointment-details-avatar
+                                if appointment.patient.photoUrl && appointment.patient.photoUrl.startsWith("/uploads/profile-photos/")
+                                    img(src=appointment.patient.photoUrl, alt="")
+                                else
+                                    span(aria-hidden="true")= appointment.patient.name.trim().charAt(0).toLocaleUpperCase("es-CO")
+                            div
+                                strong= appointment.patient.name
+                                span Información del paciente
+                    section.appointment-details-card(aria-labelledby="appointment-care-heading")
+                        h2#appointment-care-heading Atención
+                        dl.appointment-details-fields
+                            div
+                                dt Especialidad
+                                dd= appointment.specialty
+                            div
+                                dt Médico asignado
+                                dd= appointment.doctor
+                footer.appointment-details-footer
+                    a.appointment-details-back-link(href="/admin/appointments") Volver al listado de citas
