@@ -18,14 +18,14 @@ html(lang="es")
                 .report-heading-copy
                     p.report-eyebrow Reporte administrativo
                     h1 Reporte de citas médicas
-                    p.report-generated Generado el #{generatedAt} (hora de Colombia)
+                    p.report-generated Generado el #{ generatedAt } (hora de Colombia)
             if errorMessage
                 p.report-error(role="alert")= errorMessage
             else
                 section.report-filters(aria-labelledby="report-filters-title")
-                    div.report-section-heading
+                    .report-section-heading
                         h2#report-filters-title Filtros aplicados
-                        span #{filters.length} filtro(s)
+                        span #{ filters.length } filtro(s)
                     if filters.length
                         dl.report-filter-list
                             each filter in filters
@@ -35,11 +35,11 @@ html(lang="es")
                     else
                         p.report-no-filters Sin filtros adicionales.
                 section.report-results(aria-labelledby="report-results-title")
-                    div.report-section-heading
+                    .report-section-heading
                         div
                             p.report-eyebrow Detalle del informe
                             h2#report-results-title Citas médicas
-                        span.report-result-count #{appointments.length.toLocaleString("es-CO")} registro(s)
+                        span.report-result-count #{ appointments.length.toLocaleString("es-CO") } registro(s)
                     if appointments.length
                         .report-table-wrap
                             table.report-table
@@ -58,7 +58,7 @@ html(lang="es")
                                             td= appointment.id
                                             td
                                                 span= appointment.startAtLabel
-                                                small Hasta #{appointment.endAtLabel}
+                                                small Hasta #{ appointment.endAtLabel }
                                             td= appointment.patientName
                                             td= appointment.specialty
                                             td= appointment.doctor
