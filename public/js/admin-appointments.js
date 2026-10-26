@@ -44,7 +44,6 @@ if (appointmentsPage) {
     function createPatientCell(patient) {
         const cell = document.createElement("td");
         cell.dataset.label = "Paciente";
-        cell.className = "appointment-patient-cell";
 
         const avatar = document.createElement("span");
         avatar.className = "appointment-patient-avatar";
