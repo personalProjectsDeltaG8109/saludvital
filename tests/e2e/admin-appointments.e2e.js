@@ -23,6 +23,7 @@ const pageMarkup = [
     '<label>Médico<select data-appointment-doctor><option value="all">Todos</option></select></label>',
     '<label>Buscar paciente<input type="search" data-appointment-search></label>',
     '<button type="submit">Buscar</button></form>',
+    '<button type="button" data-appointment-export>Exportar CSV</button><p data-appointment-export-feedback></p>',
     '<nav data-appointment-tabs aria-label="Filtrar citas por estado"></nav>',
     "<p data-appointment-feedback></p><p data-appointment-error hidden></p>",
     '<div class="appointments-table-wrap"><table class="appointments-table"><thead><tr><th>Fecha y hora</th><th>Paciente</th><th>Documento</th><th>Especialidad</th><th>Médico</th><th>Estado</th></tr></thead><tbody data-appointment-list></tbody></table></div>',
@@ -48,9 +49,31 @@ try {
     await page.addStyleTag({ content: appointmentsStyles });
     await page.evaluate((availableStatuses) => {
         window.appointmentRequests = [];
+        window.exportRequests = [];
         window.failAppointmentRequest = false;
         window.cancellationRequests = [];
         window.fetch = async (url, options = {}) => {
+            const parsedUrl = new URL(url, "http://localhost");
+            if (parsedUrl.pathname === "/api/admin/appointments/export") {
+                window.exportRequests.push(Object.fromEntries(parsedUrl.searchParams.entries()));
+                if (window.failExportRequest) {
+                    return {
+                        ok: false,
+                        status: 500,
+                        json: async () => ({
+                            message: "No pudimos exportar las citas. Inténtalo de nuevo.",
+                        }),
+                    };
+                }
+                if (parsedUrl.searchParams.get("search") === "export-empty") {
+                    return { ok: true, status: 204 };
+                }
+                return {
+                    ok: true,
+                    status: 200,
+                    blob: async () => new Blob(["\uFEFFNúmero de cita\r\n"], { type: "text/csv" }),
+                };
+            }
             if (options.method === "PATCH") {
                 window.cancellationRequests.push({ url, body: JSON.parse(options.body) });
                 return {
@@ -68,7 +91,10 @@ try {
                     }),
                 };
             }
-            if (params.get("search") === "no-results" || params.get("status") === "In Progress") {
+            if (
+                ["no-results", "export-empty"].includes(params.get("search")) ||
+                params.get("status") === "In Progress"
+            ) {
                 return {
                     ok: true,
                     json: async () => ({
@@ -204,6 +230,7 @@ try {
         );
     }
 
+    await page.locator("[data-appointment-status]").selectOption("Confirmed");
     await page.locator("[data-appointment-from]").fill("2026-10-20");
     await page.locator("[data-appointment-to]").fill("2026-10-27");
     await page.locator("[data-appointment-specialty]").selectOption("2");
@@ -224,6 +251,46 @@ try {
             "Appointment filters were not sent correctly: " + JSON.stringify(lastRequest),
         );
     }
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Exportar CSV" }).click();
+    const download = await downloadPromise;
+    if (download.suggestedFilename() !== "saludvital-citas.csv") {
+        throw new Error("The appointment export must download a named CSV file.");
+    }
+    const exportRequest = await page.evaluate(() => window.exportRequests.at(-1));
+    if (
+        exportRequest.from !== "2026-10-20" ||
+        exportRequest.to !== "2026-10-27" ||
+        exportRequest.specialtyId !== "2" ||
+        exportRequest.doctorId !== "3" ||
+        exportRequest.status !== "Confirmed" ||
+        exportRequest.search !== "Mar\u00eda" ||
+        exportRequest.page !== undefined
+    ) {
+        throw new Error(
+            "The appointment export did not preserve active filters: " +
+                JSON.stringify(exportRequest),
+        );
+    }
+    console.log(
+        "PASS: appointment export downloads CSV using the active filters without pagination.",
+    );
+
+    await page.locator("[data-appointment-search]").fill("export-empty");
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.getByText("No encontramos citas con esos criterios.").first().waitFor();
+    await page.getByRole("button", { name: "Exportar CSV" }).click();
+    await page.getByText("No hay citas para exportar con esos filtros.").waitFor();
+    await page.evaluate(() => {
+        window.failExportRequest = true;
+    });
+    await page.getByRole("button", { name: "Exportar CSV" }).click();
+    await page.getByText("No pudimos exportar las citas. Inténtalo de nuevo.").waitFor();
+    await page.evaluate(() => {
+        window.failExportRequest = false;
+    });
+    console.log("PASS: empty CSV exports and download errors receive clear feedback.");
 
     await page.locator("[data-status-tab='In Progress']").click();
     await page.getByText("No encontramos citas con esos criterios.").first().waitFor();

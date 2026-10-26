@@ -148,6 +148,15 @@ html(lang="es")
                         button.appointment-search-button(type="submit")
                             span(aria-hidden="true") ⌕
                             | Buscar
+                    .appointment-export-toolbar
+                        button.appointment-export-button(type="button", data-appointment-export)
+                            span(aria-hidden="true") ↓
+                            | Exportar CSV
+                    p.appointment-export-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-appointment-export-feedback
+                    )
                     nav.appointment-status-tabs(
                         aria-label="Filtrar citas por estado",
                         data-appointment-tabs
