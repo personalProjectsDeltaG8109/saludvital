@@ -368,7 +368,7 @@
 .appointment-create-submit { border-color: transparent; color: #fff; background: linear-gradient(115deg, #087cf0, #0561cf); }
 .appointment-create-submit:hover:not(:disabled) { background: #075fc3; }
 .appointment-create-submit:disabled { cursor: not-allowed; opacity: .55; }
-.appointment-create-success { width: min(calc(100% - 32px), 430px); padding: 28px; border: 0; border-radius: 17px; color: #123b73; text-align: center; box-shadow: 0 20px 70px rgb(10 39 83 / 24%); }
+.appointment-create-success { width: min(calc(100% - 32px), 430px); padding: 28px; border: 0; border-radius: 17px; color: #123b73; text-align: center; box-shadow: 0 20px 70px rgb(10 39 83 / 24%); margin: auto;}
 .appointment-create-success::backdrop { background: rgb(7 33 69 / 48%); backdrop-filter: blur(3px); }
 .appointment-create-success-icon { display: grid; width: 54px; height: 54px; place-items: center; margin: 0 auto 14px; border-radius: 50%; color: #079b62; background: #e2f8ef; font-size: 27px; }
 .appointment-create-success h2 { margin: 0 0 8px; color: #092b80; font-size: 21px; }
