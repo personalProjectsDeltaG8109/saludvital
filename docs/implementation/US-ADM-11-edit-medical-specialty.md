@@ -43,8 +43,8 @@ Issue [#129](https://github.com/personalProjectsDeltaG8109/saludvital/issues/129
 - `npm.cmd test -- --runInBand tests/integration/models.mysql.test.js` — passed, 25 tests; this verifies the MySQL model schema. No specialty data was changed by this check.
 - `npm.cmd run test:e2e` — passed, including edit form error handling, successful update flow, and no horizontal overflow at 375×812, 768×1024, and 1440×900.
 - `npm.cmd run lint` — passed.
-- `npm.cmd run format:check` — initially identified formatting in the new E2E test; it was formatted with Prettier. A final repository-wide format check is pending.
-- `git diff --check` — passed before the documentation update.
+- `npm.cmd run format:check` — passed repository-wide after formatting the new E2E test.
+- `git diff --check` — passed before the commits were created.
 
 The browser E2E test uses a mocked API response. The service update and transaction behavior are covered with unit mocks; no live specialty record was edited during verification.
 
