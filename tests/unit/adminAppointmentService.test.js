@@ -12,7 +12,12 @@ jest.unstable_mockModule("sequelize", () => ({
 }));
 
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
-    Appointment: { count: jest.fn(), findAndCountAll: jest.fn(), findByPk: jest.fn() },
+    Appointment: {
+        count: jest.fn(),
+        findAll: jest.fn(),
+        findAndCountAll: jest.fn(),
+        findByPk: jest.fn(),
+    },
     AppointmentStatus: { findAll: jest.fn() },
     Doctor: { findAll: jest.fn() },
     Patient: {},
@@ -21,7 +26,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 
 const { Appointment, AppointmentStatus, Doctor, Specialities } =
     await import("../../src/models/associations.js");
-const { getAdminAppointmentDetails, getAdminAppointments } =
+const { getAdminAppointmentDetails, getAdminAppointments, getAdminAppointmentExportRows } =
     await import("../../src/modules/admin/services/adminAppointmentService.js");
 
 const supportedStatuses = [
@@ -58,6 +63,7 @@ describe("admin appointment directory service", () => {
         jest.clearAllMocks();
         AppointmentStatus.findAll.mockResolvedValue(supportedStatuses);
         Appointment.findAndCountAll.mockResolvedValue({ rows: [createAppointment()], count: 1 });
+        Appointment.findAll.mockResolvedValue([createAppointment()]);
         Appointment.count.mockResolvedValue(1);
         Specialities.findAll.mockResolvedValue([{ id: 2, name: "Medicina General" }]);
         Doctor.findAll.mockResolvedValue([{ id: 3, display_name: "Dra. Ana Torres" }]);
@@ -145,6 +151,85 @@ describe("admin appointment directory service", () => {
                 },
             }),
         );
+    });
+
+    test("exports all matching records with safe fields and no pagination", async () => {
+        const rows = await getAdminAppointmentExportRows({
+            from: "2026-10-26",
+            to: "2026-10-27",
+            status: "Confirmed",
+            specialtyId: "2",
+            doctorId: "3",
+            search: "Mar\u00eda L\u00f3pez",
+        });
+
+        expect(rows).toEqual([
+            {
+                id: 10,
+                startAt: "2026-10-26T15:30:00.000Z",
+                endAt: "2026-10-26T16:00:00.000Z",
+                patientName: "Mar\u00eda L\u00f3pez",
+                specialty: "Medicina General",
+                doctor: "Dra. Ana Torres",
+                status: "Confirmed",
+                statusLabel: "Confirmada",
+            },
+        ]);
+        expect(Appointment.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    specialty_id: 2,
+                    doctor_id: 3,
+                    status_id: 1,
+                    start_at: {
+                        [Symbol.for("sequelize.gte")]: new Date("2026-10-26T05:00:00.000Z"),
+                        [Symbol.for("sequelize.lt")]: new Date("2026-10-28T05:00:00.000Z"),
+                    },
+                }),
+                order: [
+                    ["start_at", "DESC"],
+                    ["id", "DESC"],
+                ],
+            }),
+        );
+        expect(Appointment.findAll.mock.calls[0][0].where[Symbol.for("sequelize.or")]).toEqual(
+            expect.arrayContaining([
+                {
+                    "$patient.first_name$": {
+                        [Symbol.for("sequelize.like")]: "%María L\u00f3pez%",
+                    },
+                },
+                {
+                    "$patient.document_number$": {
+                        [Symbol.for("sequelize.like")]: "%María L\u00f3pez%",
+                    },
+                },
+                { "$patient.phone$": { [Symbol.for("sequelize.like")]: "%María L\u00f3pez%" } },
+            ]),
+        );
+        expect(Appointment.findAll.mock.calls[0][0]).not.toHaveProperty("limit");
+        expect(Appointment.findAll.mock.calls[0][0].include[0].attributes).toEqual([
+            "id",
+            "first_name",
+            "last_name",
+        ]);
+        expect(JSON.stringify(rows)).not.toContain("123456");
+        expect(JSON.stringify(rows)).not.toContain("3001234567");
+        expect(JSON.stringify(rows)).not.toContain("private clinical information");
+        expect(JSON.stringify(rows)).not.toContain("Pending");
+    });
+
+    test("returns an empty export result when no appointments match the filters", async () => {
+        Appointment.findAll.mockResolvedValue([]);
+
+        await expect(getAdminAppointmentExportRows({ search: "no-match" })).resolves.toEqual([]);
+    });
+
+    test("rejects unsupported appointment statuses in export filters", async () => {
+        await expect(getAdminAppointmentExportRows({ status: "Pending" })).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        expect(Appointment.findAll).not.toHaveBeenCalled();
     });
 
     test("returns safe details for an existing appointment", async () => {

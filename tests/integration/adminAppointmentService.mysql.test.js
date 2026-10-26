@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
 import database from "../../config/database.js";
-import { getAdminAppointments } from "../../src/modules/admin/services/adminAppointmentService.js";
+import {
+    getAdminAppointmentExportRows,
+    getAdminAppointments,
+} from "../../src/modules/admin/services/adminAppointmentService.js";
 
 await import("../../src/models/associations.js");
 
@@ -35,6 +38,29 @@ describe("Admin appointment service MySQL integration", () => {
             expect(appointment).not.toHaveProperty("reason");
             expect(appointment).not.toHaveProperty("source");
             expect(appointment.patient).not.toHaveProperty("phone");
+        }
+    });
+
+    test("queries export rows using real relationships without selecting contact or clinical fields", async () => {
+        const rows = await getAdminAppointmentExportRows({
+            from: "2026-01-01",
+            to: "2026-12-31",
+            status: "all",
+            search: "integration",
+        });
+
+        for (const appointment of rows) {
+            expect(Object.keys(appointment)).toEqual([
+                "id",
+                "startAt",
+                "endAt",
+                "patientName",
+                "specialty",
+                "doctor",
+                "status",
+                "statusLabel",
+            ]);
+            expect(appointment.status).not.toBe("Pending");
         }
     });
 });

@@ -16,7 +16,9 @@ import {
 import {
     getAdminAppointmentDetails,
     getAdminAppointments,
+    getAdminAppointmentExportRows,
 } from "../services/adminAppointmentService.js";
+import { createAppointmentCsv } from "../services/adminAppointmentCsvService.js";
 import { cancelAdminAppointment } from "../services/adminAppointmentStatusService.js";
 import {
     getAdminDepartments,
@@ -64,6 +66,25 @@ adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, 
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/appointments/export",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            res.set("Cache-Control", "no-store");
+            const appointments = await getAdminAppointmentExportRows(req.query);
+            if (appointments.length === 0) return res.status(204).end();
+
+            res.set("Content-Type", "text/csv; charset=utf-8");
+            res.set("Content-Disposition", 'attachment; filename="saludvital-citas.csv"');
+            return res.send(createAppointmentCsv(appointments));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.patch(
     "/api/admin/appointments/:appointmentId/status",
     ...requireAdministrator,

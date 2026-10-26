@@ -97,19 +97,21 @@ function buildFilters(query) {
     return { where, search };
 }
 
-function createIncludes(search) {
+function createIncludes(search, includePatientPrivateFields = true) {
     return [
         {
             model: Patient,
             as: "patient",
-            attributes: [
-                "id",
-                "first_name",
-                "last_name",
-                "document_type",
-                "document_number",
-                "profile_photo_url",
-            ],
+            attributes: includePatientPrivateFields
+                ? [
+                      "id",
+                      "first_name",
+                      "last_name",
+                      "document_type",
+                      "document_number",
+                      "profile_photo_url",
+                  ]
+                : ["id", "first_name", "last_name"],
             required: Boolean(search),
         },
         {
@@ -273,4 +275,55 @@ export async function getAdminAppointments(query = {}) {
             totalPages: Math.ceil(result.count / pageSize),
         },
     };
+}
+
+/** Return all matching appointments with only the fields needed for an export. */
+export async function getAdminAppointmentExportRows(query = {}) {
+    const status = query.status || "all";
+    if (status !== "all" && !SUPPORTED_STATUSES.includes(status)) {
+        throw serviceError("El estado seleccionado no es vÃ¡lido.");
+    }
+
+    const { where, search } = buildFilters(query);
+    const statusRows = await AppointmentStatus.findAll({
+        where: { name: { [Op.in]: SUPPORTED_STATUSES } },
+        attributes: ["id", "name"],
+        order: [["id", "ASC"]],
+    });
+    const statusIdByName = new Map(statusRows.map((row) => [row.name, row.id]));
+    const supportedStatusIds = statusRows.map((row) => row.id);
+    const exportWhere = { ...where, status_id: { [Op.in]: supportedStatusIds } };
+    if (status !== "all") {
+        const statusId = statusIdByName.get(status);
+        exportWhere.status_id = statusId ? statusId : { [Op.in]: [] };
+    }
+
+    const appointments = await Appointment.findAll({
+        where: exportWhere,
+        attributes: [
+            "id",
+            "start_at",
+            "end_at",
+            "patient_id",
+            "doctor_id",
+            "specialty_id",
+            "status_id",
+        ],
+        include: createIncludes(search, false),
+        order: [
+            ["start_at", "DESC"],
+            ["id", "DESC"],
+        ],
+    });
+
+    return appointments.map((appointment) => ({
+        id: appointment.id,
+        startAt: new Date(appointment.start_at).toISOString(),
+        endAt: new Date(appointment.end_at).toISOString(),
+        patientName: `${appointment.patient.first_name} ${appointment.patient.last_name}`.trim(),
+        specialty: appointment.specialty.name,
+        doctor: appointment.doctor.display_name || `MÃ©dico ${appointment.doctor.id}`,
+        status: appointment.status.name,
+        statusLabel: STATUS_LABELS[appointment.status.name],
+    }));
 }
