@@ -2,6 +2,9 @@ import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import {
+    Appointment,
+    AppointmentHistory,
+    AppointmentStatus,
     Doctor,
     DoctorAvailability,
     EmailOutbox,
@@ -10,10 +13,16 @@ import {
     User,
 } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
+import {
+    cancelPendingAppointmentReminders,
+    enqueueAppointmentNotifications,
+} from "../../patient/services/notificationAutomationService.js";
 import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
 
 const PAGE_SIZE = 10;
 const MAX_SEARCH_LENGTH = 100;
+const CONFIRMED_APPOINTMENT_STATUS = "Confirmed";
+const CANCELLED_APPOINTMENT_STATUS = "Cancelled";
 const WEEK_DAYS = ["", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 function serviceError(message, statusCode = 400) {
@@ -191,6 +200,175 @@ export async function getAdminDoctorDetails(rawDoctorId) {
         hasSchedule: schedule.some((block) => block.isActive),
         schedule,
     };
+}
+
+async function getUpcomingConfirmedAppointments(doctorId, transaction) {
+    const confirmedStatus = await AppointmentStatus.findOne({
+        where: { name: CONFIRMED_APPOINTMENT_STATUS },
+        transaction,
+    });
+    if (!confirmedStatus) {
+        throw serviceError("No está configurado el estado de las citas confirmadas.", 500);
+    }
+
+    return Appointment.findAll({
+        where: {
+            doctor_id: doctorId,
+            status_id: confirmedStatus.id,
+            start_at: { [Op.gt]: new Date() },
+        },
+        attributes: ["id", "status_id", "start_at", "end_at"],
+        order: [
+            ["start_at", "ASC"],
+            ["id", "ASC"],
+        ],
+        ...(transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {}),
+    });
+}
+
+/** Return the account state and upcoming appointments affected by deactivation. */
+export async function getAdminDoctorStatusImpact(rawDoctorId) {
+    const doctorId = parseId(rawDoctorId, "El médico");
+    const doctor = await Doctor.findByPk(doctorId, {
+        attributes: ["id", "user_id"],
+        include: [
+            {
+                model: User,
+                as: "user",
+                attributes: ["id", "role_id", "is_active"],
+                required: true,
+            },
+        ],
+    });
+    if (!doctor) throw serviceError("No encontramos ese médico.", 404);
+    const role = await Rol.findByPk(doctor.user.role_id, { attributes: ["name"] });
+    if (role?.name !== "Doctor") {
+        throw serviceError("La cuenta asociada ya no tiene el rol de médico.", 409);
+    }
+
+    const appointments = doctor.user.is_active
+        ? await getUpcomingConfirmedAppointments(doctorId)
+        : [];
+    return {
+        isActive: doctor.user.is_active,
+        upcomingAppointmentCount: appointments.length,
+    };
+}
+
+/** Change a doctor's account status and process affected appointments atomically. */
+export async function updateAdminDoctorStatus(actorUserId, rawDoctorId, isActive) {
+    const doctorId = parseId(rawDoctorId, "El médico");
+    const actorId = parseId(actorUserId, "El administrador");
+    if (typeof isActive !== "boolean") {
+        throw serviceError("El estado de la cuenta no es válido.", 400);
+    }
+
+    return database.transaction(async (transaction) => {
+        const doctor = await Doctor.findByPk(doctorId, {
+            attributes: ["id", "user_id"],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!doctor) throw serviceError("No encontramos ese médico.", 404);
+
+        const user = await User.findByPk(doctor.user_id, {
+            attributes: ["id", "role_id", "email", "is_active"],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!user) throw serviceError("No encontramos la cuenta del médico.", 404);
+        const role = await Rol.findByPk(user.role_id, {
+            attributes: ["name"],
+            transaction,
+        });
+        if (role?.name !== "Doctor") {
+            throw serviceError("La cuenta asociada ya no tiene el rol de médico.", 409);
+        }
+        if (user.is_active === isActive) {
+            throw serviceError(
+                `La cuenta del médico ya está ${isActive ? "activa" : "inactiva"}.`,
+                409,
+            );
+        }
+        const previousIsActive = user.is_active;
+
+        const actor = await User.findByPk(actorId, {
+            attributes: ["id", "email"],
+            transaction,
+        });
+        if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+
+        let cancelledAppointmentCount = 0;
+        if (!isActive) {
+            const cancelledStatus = await AppointmentStatus.findOne({
+                where: { name: CANCELLED_APPOINTMENT_STATUS },
+                transaction,
+            });
+            if (!cancelledStatus) {
+                throw serviceError("No está configurado el estado de citas canceladas.", 500);
+            }
+
+            const appointments = await getUpcomingConfirmedAppointments(doctorId, transaction);
+            for (const appointment of appointments) {
+                await appointment.update({ status_id: cancelledStatus.id }, { transaction });
+                await AppointmentHistory.create(
+                    {
+                        appointment_id: appointment.id,
+                        actor_user_id: actorId,
+                        actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                        event_type: "Cancelled",
+                        previous_values: {
+                            status: CONFIRMED_APPOINTMENT_STATUS,
+                            start_at: new Date(appointment.start_at).toISOString(),
+                            end_at: new Date(appointment.end_at).toISOString(),
+                        },
+                        new_values: { status: CANCELLED_APPOINTMENT_STATUS },
+                        reason: "The assigned doctor's account was deactivated by an administrator.",
+                        occurred_at: new Date(),
+                    },
+                    { transaction },
+                );
+                await cancelPendingAppointmentReminders(appointment.id, transaction);
+                await enqueueAppointmentNotifications({
+                    appointmentId: appointment.id,
+                    eventType: "appointment_cancellation",
+                    transaction,
+                });
+            }
+            cancelledAppointmentCount = appointments.length;
+        }
+
+        await user.update({ is_active: isActive }, { transaction });
+        await AuditLog.create(
+            {
+                actor_user_id: actorId,
+                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                action: isActive ? "AdminDoctorActivated" : "AdminDoctorDeactivated",
+                target_type: "Doctor",
+                target_id: String(doctor.id),
+                target_description: user.email,
+                changes: {
+                    previous: { isActive: previousIsActive },
+                    next: { isActive },
+                    cancelledAppointmentCount,
+                },
+                reason: isActive
+                    ? "Administrator reactivated doctor account."
+                    : "Administrator deactivated doctor account and cancelled upcoming confirmed appointments.",
+                result: "Success",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        return {
+            message: isActive
+                ? "La cuenta del médico se activó correctamente. Las citas canceladas no se restauraron."
+                : `La cuenta del médico se desactivó y se cancelaron ${cancelledAppointmentCount} citas futuras.`,
+            isActive,
+            cancelledAppointmentCount,
+        };
+    });
 }
 
 export async function getActiveDoctorSpecialties() {

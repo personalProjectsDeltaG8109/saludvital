@@ -16,7 +16,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { findOne: jest.fn() },
     EmailOutbox: { create: jest.fn() },
     Patient: {},
-    Rol: { findByPk: jest.fn() },
+    Rol: { findByPk: jest.fn(), findOne: jest.fn() },
     Specialities: { findOne: jest.fn() },
     User: { findByPk: jest.fn(), findOne: jest.fn() },
 }));
@@ -34,7 +34,7 @@ const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
 const { Doctor, Rol, Specialities, User } = await import("../../src/models/associations.js");
 const photoService = await import("../../src/modules/admin/services/doctorPhotoService.js");
-const { updateAdminUserProfile } =
+const { updateAdminUser, updateAdminUserProfile } =
     await import("../../src/modules/admin/services/adminUserManagementService.js");
 
 function prepareDoctorUpdate() {
@@ -62,6 +62,20 @@ function prepareDoctorUpdate() {
 
 describe("Admin doctor profile updates", () => {
     beforeEach(() => jest.resetAllMocks());
+
+    test("routes doctor status changes through the doctor workflow", async () => {
+        const transaction = { LOCK: { UPDATE: "UPDATE" } };
+        database.transaction.mockImplementation((callback) => callback(transaction));
+        Rol.findOne.mockResolvedValue({ id: 1 });
+        User.findByPk.mockResolvedValue({ id: 7, role_id: 4, is_active: true });
+        Rol.findByPk.mockResolvedValue({ id: 4, name: "Patient" });
+        Doctor.findOne.mockResolvedValue({ id: 12 });
+
+        await expect(updateAdminUser(1, 7, { isActive: false })).rejects.toMatchObject({
+            statusCode: 409,
+        });
+        expect(database.transaction).toHaveBeenCalledTimes(1);
+    });
 
     test("updates doctor details and photo transactionally and records field names", async () => {
         const { doctor, transaction } = prepareDoctorUpdate();

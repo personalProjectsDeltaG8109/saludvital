@@ -42,6 +42,23 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("doctor status impact requires an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/doctors/1/status-impact").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("doctor status changes require an authenticated administrator", async () => {
+        const response = await request(app)
+            .patch("/api/admin/doctors/1/status")
+            .send({ isActive: false })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor profile updates require an authenticated administrator", async () => {
         const response = await request(app)
             .patch("/api/admin/users/7/profile")

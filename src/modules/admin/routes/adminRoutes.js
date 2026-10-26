@@ -15,6 +15,8 @@ import {
     getActiveDoctorSpecialties,
     getAdminDoctorDetails,
     getAdminDoctors,
+    getAdminDoctorStatusImpact,
+    updateAdminDoctorStatus,
 } from "../services/adminDoctorService.js";
 
 // Define the routes available to administrators.
@@ -30,6 +32,38 @@ adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, 
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/doctors/:doctorId/status-impact",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminDoctorStatusImpact(req.params.doctorId));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.patch(
+    "/api/admin/doctors/:doctorId/status",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminDoctorStatus(
+                    req.auth.userId,
+                    req.params.doctorId,
+                    req.body?.isActive,
+                ),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.get("/api/admin/doctors/:doctorId", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminDoctorDetails(req.params.doctorId));
