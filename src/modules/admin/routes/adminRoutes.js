@@ -2,6 +2,12 @@
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
 import {
+    createAdminAppointment,
+    getAdminAppointmentBookingDoctors,
+    getAdminAppointmentBookingOptions,
+    getAdminAppointmentBookingTimes,
+} from "../services/adminAppointmentCreationService.js";
+import {
     getAdminAppointmentDetails,
     getAdminAppointments,
 } from "../services/adminAppointmentService.js";
@@ -46,6 +52,60 @@ adminRoutes.get("/api/admin/specialties", ...requireAdministrator, async (req, r
 adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminAppointments(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.get(
+    "/api/admin/appointment-booking/options",
+    ...requireAdministrator,
+    async (_req, res, next) => {
+        try {
+            return res.json(await getAdminAppointmentBookingOptions());
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.get(
+    "/api/admin/appointment-booking/doctors",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json({
+                doctors: await getAdminAppointmentBookingDoctors(req.query.specialtyId),
+            });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.get(
+    "/api/admin/appointment-booking/availability",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const times = await getAdminAppointmentBookingTimes(req.query);
+            return res.json({ times });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.post("/api/admin/appointments", ...requireAdministrator, async (req, res, next) => {
+    try {
+        const appointment = await createAdminAppointment(req.auth.userId, req.body);
+        return res.status(201).json({
+            appointmentId: appointment.id,
+            message: "La cita se creó y confirmó correctamente.",
+        });
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
@@ -181,6 +241,12 @@ adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, nex
 adminRoutes.get("/admin/appointments", ...requireAdministrator, (_req, res) => {
     return res.render("admin/appointments", {
         pageTitle: "Citas médicas | SaludVital",
+        adminName: "Administrador",
+    });
+});
+adminRoutes.get("/admin/appointments/new", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/appointment-create", {
+        pageTitle: "Nueva cita | SaludVital",
         adminName: "Administrador",
     });
 });

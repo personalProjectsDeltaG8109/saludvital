@@ -121,6 +121,28 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("appointment creation page requires an authenticated administrator", async () => {
+        const response = await request(app).get("/admin/appointments/new").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test.each([
+        ["GET", "/api/admin/appointment-booking/options"],
+        ["GET", "/api/admin/appointment-booking/doctors?specialtyId=1"],
+        [
+            "GET",
+            "/api/admin/appointment-booking/availability?patientId=1&specialtyId=1&doctorId=1&date=2026-11-04",
+        ],
+        ["POST", "/api/admin/appointments"],
+    ])("%s %s requires an authenticated administrator", async (method, url) => {
+        const response = await request(app)[method.toLowerCase()](url).send({}).redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("appointment details API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/appointments/1").redirects(0);
 
