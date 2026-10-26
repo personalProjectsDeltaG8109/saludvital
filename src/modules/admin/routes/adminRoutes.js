@@ -8,6 +8,12 @@ import {
     getAdminAppointmentBookingTimes,
 } from "../services/adminAppointmentCreationService.js";
 import {
+    getAdminAppointmentEditDoctors,
+    getAdminAppointmentEditSpecialties,
+    getAdminAppointmentForEditing,
+    updateAdminAppointment,
+} from "../services/adminAppointmentEditingService.js";
+import {
     getAdminAppointmentDetails,
     getAdminAppointments,
 } from "../services/adminAppointmentService.js";
@@ -111,6 +117,55 @@ adminRoutes.post("/api/admin/appointments", ...requireAdministrator, async (req,
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/appointment-edit/specialties",
+    ...requireAdministrator,
+    async (_req, res, next) => {
+        try {
+            return res.json({ specialties: await getAdminAppointmentEditSpecialties() });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.get(
+    "/api/admin/appointment-edit/doctors",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json({
+                doctors: await getAdminAppointmentEditDoctors(req.query.specialtyId),
+            });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.patch(
+    "/api/admin/appointments/:appointmentId/reschedule",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const appointment = await updateAdminAppointment(
+                req.auth.userId,
+                req.params.appointmentId,
+                req.body,
+            );
+            return res.json({
+                appointmentId: appointment.id,
+                message: "La cita se actualizó y reprogramó correctamente.",
+            });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.get(
     "/api/admin/appointments/:appointmentId",
     ...requireAdministrator,
@@ -250,6 +305,31 @@ adminRoutes.get("/admin/appointments/new", ...requireAdministrator, (_req, res) 
         adminName: "Administrador",
     });
 });
+adminRoutes.get(
+    "/admin/appointments/:appointmentId/edit",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const appointment = await getAdminAppointmentForEditing(req.params.appointmentId);
+            return res.render("admin/appointment-edit", {
+                pageTitle: `Editar cita #${appointment.id} | SaludVital`,
+                adminName: "Administrador",
+                appointment,
+            });
+        } catch (error) {
+            if (error.statusCode === 404) {
+                return res.status(404).render("errors/404", {
+                    pageTitle: "Cita no encontrada | SaludVital",
+                    homeHref: "/admin/dashboard",
+                    appointmentsHref: "/admin/appointments",
+                    supportHref:
+                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                });
+            }
+            return next(error);
+        }
+    },
+);
 adminRoutes.get(
     "/admin/appointments/:appointmentId",
     ...requireAdministrator,
