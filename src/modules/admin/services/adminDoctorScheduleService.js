@@ -80,6 +80,10 @@ function getCurrentBogotaDate(now) {
     return getBogotaParts(now).date;
 }
 
+function getBogotaDayStart(dateString) {
+    return new Date(`${dateString}T05:00:00.000Z`);
+}
+
 function getWeekRange(rawWeekStart, now) {
     const currentDate = getCurrentBogotaDate(now);
     let weekStart = currentDate;
@@ -228,6 +232,8 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
     }
 
     const week = getWeekRange(query.weekStart, now);
+    const exceptionWindowStart = getBogotaDayStart(getCurrentBogotaDate(now));
+    const exceptionWindowEnd = getBogotaDayStart(addCalendarDays(getCurrentBogotaDate(now), 7));
     const [doctorRecords, exceptionRecords, affectedAppointments] = await Promise.all([
         Doctor.findAll({
             attributes: ["id", "display_name", "profile_photo_url"],
@@ -267,8 +273,8 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
         }),
         DoctorScheduleException.findAll({
             where: {
-                start_at: { [Op.lt]: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) },
-                end_at: { [Op.gt]: now },
+                start_at: { [Op.lt]: exceptionWindowEnd },
+                end_at: { [Op.gt]: exceptionWindowStart },
             },
             attributes: ["id", "doctor_id", "start_at", "end_at", "exception_type", "reason"],
             include: [

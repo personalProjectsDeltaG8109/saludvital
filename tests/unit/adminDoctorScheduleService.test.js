@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Appointment: { findAll: jest.fn() },
@@ -99,6 +100,10 @@ describe("admin doctor schedule directory", () => {
         expect(models.Specialities.findAll).toHaveBeenCalledWith(
             expect.objectContaining({ where: { is_active: true } }),
         );
+        expect(models.DoctorScheduleException.findAll.mock.calls[0][0].where).toMatchObject({
+            start_at: { [Op.lt]: new Date("2026-11-02T05:00:00.000Z") },
+            end_at: { [Op.gt]: new Date("2026-10-26T05:00:00.000Z") },
+        });
     });
 
     test("counts future confirmed appointments outside schedules or overlapping unavailable exceptions", async () => {

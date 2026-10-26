@@ -10,7 +10,7 @@ Branch: `feature/us-adm-19-view-search-doctor-schedules`
 
 - Administrator authentication protects the page and schedule directory API.
 - Schedule data, exceptions, doctor accounts, specialties, and affected appointments come from the existing database models.
-- The summary reports active doctors, active doctors with availability in the selected week, exceptions in the upcoming seven days, and future confirmed appointments currently outside configured availability or overlapping an unavailable exception.
+- The summary reports active doctors, active doctors with availability in the selected week, exceptions overlapping the next seven calendar days in Bogota, and future confirmed appointments currently outside configured availability or overlapping an unavailable exception.
 - Administrators can search by doctor name or email and filter by doctor, specialty, schedule configuration, and Monday-to-Sunday week in the `America/Bogota` timezone.
 - Summary counts remain independent from doctor, specialty, and schedule-status filters; the configured-schedule count uses the selected week.
 - Loading, empty, and safe error states are present. The Spanish page uses the shared administrator sidebar and topbar and adapts to mobile, tablet, and desktop.
