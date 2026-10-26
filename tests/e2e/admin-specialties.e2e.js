@@ -25,7 +25,7 @@ const pageMarkup = `
                     <button class="specialty-search-button" type="submit">Buscar</button>
                 </form>
                 <p class="specialties-feedback" data-specialty-feedback></p>
-                <div class="specialties-table-wrap"><table class="specialties-table"><thead><tr><th>#</th><th>Especialidad</th><th>Descripción</th><th>Médicos</th><th>Estado</th></tr></thead><tbody data-specialty-list></tbody></table></div>
+                <div class="specialties-table-wrap"><table class="specialties-table"><thead><tr><th>#</th><th>Especialidad</th><th>Descripción</th><th>Médicos</th><th>Estado</th><th>Acciones</th></tr></thead><tbody data-specialty-list></tbody></table></div>
                 <footer class="specialties-pagination"><span data-specialty-page-summary></span><div class="specialty-pagination-controls"><button type="button" aria-label="Página anterior" data-specialty-prev></button><span data-specialty-page-label></span><button type="button" aria-label="Página siguiente" data-specialty-next></button></div><label class="specialty-page-size"><select data-specialty-page-size><option value="10">10</option><option value="25">25</option></select></label></footer>
             </section>
             <p data-specialty-error hidden></p>
@@ -126,6 +126,7 @@ try {
     }
 
     await page.getByRole("button", { name: "Buscar" }).click();
+    await page.getByRole("link", { name: "Editar Medicina General" }).waitFor();
     await page.locator("[data-specialty-status]").selectOption("inactive");
     await page.getByText("Neurología").waitFor();
     await page.getByText("Inactiva", { exact: true }).waitFor();
