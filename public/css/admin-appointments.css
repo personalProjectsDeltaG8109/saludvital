@@ -192,7 +192,7 @@
 .appointment-cancel-button:hover { background: #ffe7e7; }
 .appointment-cancel-button:focus-visible { outline: 3px solid rgb(198 40 40 / 24%); outline-offset: 2px; }
 .appointment-cancel-button:disabled { opacity: .6; cursor: wait; }
-.appointment-cancellation-dialog { width: min(440px, calc(100vw - 28px)); padding: 22px; border: 1px solid #dce8f4; border-radius: 16px; color: #173b72; box-shadow: 0 24px 70px rgb(10 39 79 / 24%); }
+.appointment-cancellation-dialog { width: min(440px, calc(100vw - 28px)); padding: 22px; border: 1px solid #dce8f4; border-radius: 16px; color: #173b72; box-shadow: 0 24px 70px rgb(10 39 79 / 24%); margin: auto;}
 .appointment-cancellation-dialog::backdrop { background: rgb(8 30 61 / 48%); }
 .appointment-cancellation-dialog form { display: grid; gap: 12px; }
 .appointment-cancellation-dialog h2 { margin: 0; color: #082f7c; font-size: 20px; }
