@@ -16,7 +16,7 @@ Issue #117 (Sprint 5). Administrators can activate or deactivate a doctor's acco
 
 - `npm test -- --runInBand` — 41 suites and 338 tests passed.
 - `npm run lint` and `npm run format:check` passed.
-- `npm run test:e2e` passed, including the status confirmation, cancel, deactivation, and reactivation flows at 320 px from both the directory and doctor profile.
+- `npm run test:e2e` passed, including a Playwright status UI scenario with mocked API responses for confirmation, cancellation, deactivation, and reactivation at 320 px from both the directory and doctor profile. Service behavior is covered by Jest unit tests, and route protection is covered by integration tests.
 - `npm run css:build` passed. Both changed Pug views compiled successfully, and `git diff --check` passed.
 
 ## Dependencies and remaining work
