@@ -153,11 +153,11 @@
 .specialties-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
 .specialties-table th { height: 39px; padding: 0 12px; color: #102d69; background: #edf5fc; font-size: 11px; font-weight: 700; text-align: left; }
 .specialties-table th:first-child { width: 42px; border-radius: 9px 0 0 9px; }
-.specialties-table th:nth-child(2) { width: 20%; }
-.specialties-table th:nth-child(3) { width: 30%; }
-.specialties-table th:nth-child(4) { width: 8%; }
+.specialties-table th:nth-child(2) { width: 18%; }
+.specialties-table th:nth-child(3) { width: 27%; }
+.specialties-table th:nth-child(4) { width: 7%; }
 .specialties-table th:nth-child(5) { width: 13%; }
-.specialties-table th:nth-child(6) { width: 12%; border-radius: 0 9px 9px 0; }
+.specialties-table th:nth-child(6) { width: 17%; border-radius: 0 9px 9px 0; }
 .specialties-table td { height: 47px; padding: 8px 12px; border-bottom: 1px solid #edf2f7; color: #173b72; font-size: 12px; vertical-align: middle; }
 .specialty-name-cell { display: flex; min-width: 0; align-items: center; gap: 12px; font-weight: 650; }
 .specialty-row-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #0a51ad; background: #e9f2fc; }
@@ -170,7 +170,12 @@
 .specialty-status-badge.is-inactive::before { background: #ed343d; }
 .specialty-edit-link { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 11px; border-radius: 8px; color: #075fc3; background: #eaf4ff; font-size: 11px; font-weight: 650; text-decoration: none; }
 .specialty-edit-link:hover { background: #dceeff; }
-.specialty-edit-link:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
+.specialty-edit-link:focus-visible,
+.specialty-status-action:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
+.specialty-actions-cell { white-space: nowrap; }
+.specialty-status-action { min-height: 32px; margin-left: 5px; padding: 0 9px; border: 0; border-radius: 8px; color: #a3272d; background: #fff0f0; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.specialty-status-action.is-activate { color: #08774f; background: #e2f8ef; }
+.specialty-status-action:disabled { opacity: .6; cursor: wait; }
 .specialties-empty-row td { height: 100px; color: #7185a0; text-align: center; }
 
 .specialties-pagination { display: grid; min-height: 62px; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 7px 0; color: #36577f; font-size: 11px; }
@@ -260,7 +265,8 @@
     .specialties-table td:nth-child(4) { grid-column: 1; padding-left: 47px; color: #526a90; }
     .specialties-table td:nth-child(4)::before { content: "Médicos: "; }
     .specialties-table td:nth-child(5) { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
-    .specialties-table td:nth-child(6) { display: flex; grid-column: 1 / -1; justify-content: flex-end; padding-top: 7px; }
+    .specialties-table td:nth-child(6) { display: flex; grid-column: 1 / -1; justify-content: flex-end; gap: 6px; padding-top: 7px; }
+    .specialty-status-action { min-height: 36px; margin-left: 0; padding: 0 12px; }
     .specialty-status-badge { min-width: auto; min-height: 25px; padding: 4px 8px; font-size: 10px; }
     .specialties-empty-row { display: block; }
     .specialties-empty-row td { display: block; min-height: 75px; padding: 25px 8px; }

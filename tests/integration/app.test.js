@@ -90,6 +90,16 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("specialty status endpoint requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .patch("/api/admin/specialties/1/status")
+            .send({ isActive: false })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor status impact requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/doctors/1/status-impact").redirects(0);
 
