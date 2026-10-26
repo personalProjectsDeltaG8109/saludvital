@@ -14,6 +14,8 @@
 - Added `PATCH /api/admin/appointments/:appointmentId/status` for administrator cancellation.
 - The service locks the appointment in a transaction and allows cancellation only from `Confirmed` when the appointment has not started. It records appointment history and an audit log, cancels pending reminders, and enqueues the existing cancellation notification.
 - Added a confirmation dialog with an optional reason and cancellation actions to the appointment directory. Existing doctor workflows continue to transition appointments to `In Progress` and `Attended`; doctor deactivation was not modified.
+- Kept the dialog within the appointment page and made its controls optional during JavaScript initialization, so the directory still requests and renders data if the dialog is unavailable.
+- Replaced the compressed table with appointment cards up to 1000px and grouped the actions in a separate row below the status to avoid collisions at tablet and narrow desktop widths.
 - The directory continues to expose only the supported appointment lifecycle statuses; no `Pending` status was added.
 - No schema migration or dependency was required.
 
@@ -29,7 +31,7 @@
 ## Verification
 
 - Full unit and integration suite: `npm test -- --runInBand` — 49 suites, 410 tests passed.
-- Full browser suite: `npm run test:e2e` — passed all existing E2E flows, including cancellation confirmation and responsive appointment-directory checks at mobile (375×812), tablet (768×1024), and desktop (1440×900).
+- Full browser suite: `npm run test:e2e` — passed all existing E2E flows. The appointment-directory checks cover 375, 760, 768, 900, 1000, 1001, and 1440px widths, cancellation confirmation, and loading without the optional dialog.
 - ESLint passed on changed JavaScript files.
 - Pug template compilation passed.
 - Prettier check passed for changed JavaScript files.

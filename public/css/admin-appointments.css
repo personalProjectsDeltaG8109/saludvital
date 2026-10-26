@@ -220,7 +220,7 @@
     .appointment-search-filter { grid-column: span 2; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1000px) {
     .admin-appointments-page { padding: 17px 14px 90px; }
     .appointments-heading { min-height: 54px; gap: 11px; margin-bottom: 15px; }
     .appointments-heading-icon { width: 48px; height: 48px; border-radius: 12px; }
@@ -245,15 +245,16 @@
     .appointments-table-wrap { display: none; }
     .appointments-mobile-list { display: grid; gap: 8px; }
     .appointment-mobile-card { display: grid; grid-template-columns: 58px 34px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 10px 8px; border: 1px solid #e8eff7; border-radius: 10px; background: #fff; }
-    .appointment-mobile-date { color: #385982; font-size: 10px; line-height: 1.35; }
+    .appointment-mobile-date { grid-column: 1; grid-row: 1 / span 2; color: #385982; font-size: 10px; line-height: 1.35; }
     .appointment-mobile-card .appointment-patient-avatar { width: 32px; height: 32px; }
     .appointment-mobile-details { display: grid; min-width: 0; gap: 2px; color: #4e6789; font-size: 9px; line-height: 1.3; }
     .appointment-mobile-details strong { overflow: hidden; color: #082f7c; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
     .appointment-mobile-card .appointment-status-badge { min-height: 25px; padding: 4px 7px; font-size: 9px; }
     .appointment-mobile-card .appointment-status-badge::before { width: 6px; height: 6px; }
-    .appointment-mobile-card .appointment-details-link { min-height: 29px; justify-self: end; padding: 0 10px; }
-    .appointment-mobile-card .appointment-edit-link { min-height: 29px; justify-self: end; padding: 0 8px; }
-    .appointment-mobile-card .appointment-cancel-button { min-height: 29px; justify-self: end; padding: 0 8px; }
+    .appointment-mobile-actions { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .appointment-mobile-card .appointment-details-link { min-height: 29px; padding: 0 10px; }
+    .appointment-mobile-card .appointment-edit-link { min-height: 29px; padding: 0 8px; }
+    .appointment-mobile-card .appointment-cancel-button { min-height: 29px; padding: 0 8px; }
     .appointments-empty-mobile { margin: 0; padding: 26px 10px; border: 1px solid #e8eff7; border-radius: 10px; color: #7185a0; font-size: 12px; text-align: center; }
     .appointments-pagination { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 1px 0; font-size: 10px; }
     .appointment-pagination-controls { grid-column: 2; grid-row: 1; gap: 4px; }
@@ -265,11 +266,7 @@
 
 @media (max-width: 390px) {
     .admin-appointments-page { padding-right: 10px; padding-left: 10px; }
-    .appointment-mobile-card { grid-template-columns: 52px 30px minmax(0, 1fr); }
-    .appointment-mobile-card .appointment-status-badge { grid-column: 3; justify-self: start; }
-    .appointment-mobile-card .appointment-details-link { grid-column: 3; }
-    .appointment-mobile-card .appointment-edit-link { grid-column: 3; }
-    .appointment-mobile-card .appointment-cancel-button { grid-column: 3; }
+    .appointment-mobile-card { grid-template-columns: 52px 30px minmax(0, 1fr) auto; }
 }
 
 .admin-appointment-details-page {

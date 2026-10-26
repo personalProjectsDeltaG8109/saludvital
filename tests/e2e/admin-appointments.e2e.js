@@ -152,7 +152,11 @@ try {
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
+        { label: "small tablet", width: 760, height: 1024 },
         { label: "tablet", width: 768, height: 1024 },
+        { label: "large tablet", width: 900, height: 1024 },
+        { label: "compact desktop", width: 1000, height: 900 },
+        { label: "desktop breakpoint", width: 1001, height: 900 },
         { label: "desktop", width: 1440, height: 900 },
     ]) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -160,6 +164,20 @@ try {
             documentWidth: document.documentElement.scrollWidth,
             viewportWidth: window.innerWidth,
             interfaceText: document.querySelector("[data-admin-appointments]").innerText,
+            mobileListDisplay: getComputedStyle(
+                document.querySelector("[data-appointment-mobile-list]"),
+            ).display,
+            actionsBelowStatus: (() => {
+                const card = document.querySelector(".appointment-mobile-card");
+                if (!card) return true;
+                const status = card
+                    .querySelector(".appointment-status-badge")
+                    .getBoundingClientRect();
+                const actions = card
+                    .querySelector(".appointment-mobile-actions")
+                    .getBoundingClientRect();
+                return actions.top >= status.bottom;
+            })(),
         }));
         if (layout.documentWidth > layout.viewportWidth) {
             throw new Error(
@@ -168,6 +186,12 @@ try {
         }
         if (/pendiente/i.test(layout.interfaceText)) {
             throw new Error("The appointments page must only show the supported status labels.");
+        }
+        if (viewport.width <= 1000 && layout.mobileListDisplay === "none") {
+            throw new Error("Appointment cards must replace the table below 1001px.");
+        }
+        if (viewport.width <= 1000 && !layout.actionsBelowStatus) {
+            throw new Error("Appointment actions must stay below the status on compact layouts.");
         }
         console.log(
             "PASS: appointment layout and supported statuses at " +
@@ -220,6 +244,31 @@ try {
     }
     console.log("PASS: appointment request errors have a clear error state.");
     console.log("PASS: appointment interface only exposes summary fields and supported statuses.");
+
+    const resilientPage = await browser.newPage();
+    await resilientPage.setContent(
+        pageMarkup.replace(/<dialog data-cancellation-dialog>[\s\S]*?<\/dialog>/, ""),
+    );
+    await resilientPage.evaluate((availableStatuses) => {
+        window.fetch = async () => ({
+            ok: true,
+            json: async () => ({
+                appointments: [],
+                statuses: availableStatuses,
+                specialties: [],
+                doctors: [],
+                stats: { total: 0, Confirmed: 0, "In Progress": 0, Attended: 0, Cancelled: 0 },
+                pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
+            }),
+        });
+    }, statuses);
+    await resilientPage.addScriptTag({ content: appointmentsScript });
+    await resilientPage.waitForFunction(
+        () =>
+            document.querySelector("[data-appointment-feedback]")?.textContent ===
+            "No hay citas para mostrar.",
+    );
+    console.log("PASS: the appointment list loads even when its optional dialog is unavailable.");
 } finally {
     await browser.close();
 }
