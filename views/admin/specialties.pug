@@ -1,0 +1,162 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-specialties.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("specialties")
+        .admin-main-shell
+            +adminTopbar("/admin/specialties", "Buscar especialidades médicas...")
+            main.specialties-page(data-admin-specialties, data-endpoint="/api/admin/specialties")
+                header.specialties-heading
+                    span.specialties-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            path(d="m12 3 9 5-9 5-9-5 9-5Z")
+                            path(d="m3 12 9 5 9-5")
+                            path(d="m3 16 9 5 9-5")
+                    div
+                        h1 Especialidades
+                        p Gestiona las especialidades médicas disponibles en el sistema.
+                section.specialties-stats(aria-label="Resumen de especialidades")
+                    article.specialty-stat
+                        span.specialty-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="m12 3 9 5-9 5-9-5 9-5Z")
+                                path(d="m3 12 9 5 9-5")
+                                path(d="m3 16 9 5 9-5")
+                        div
+                            span Total de especialidades
+                            strong(data-stat-total) —
+                    article.specialty-stat.is-active-stat
+                        span.specialty-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2.5",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="m5 12 4 4L19 6")
+                        div
+                            span Activas
+                            strong(data-stat-active) —
+                    article.specialty-stat.is-inactive-stat
+                        span.specialty-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="12", cy="12", r="9")
+                                path(d="M12 7v5l3 2")
+                        div
+                            span Inactivas
+                            strong(data-stat-inactive) —
+                    article.specialty-stat
+                        span.specialty-stat-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="9", cy="8", r="3")
+                                path(d="M3 20v-1a6 6 0 0 1 12 0v1")
+                                path(d="M17 11a3 3 0 1 0 0-6")
+                                path(d="M19 14a5 5 0 0 1 2 4v2")
+                        div
+                            span Médicos asignados
+                            strong(data-stat-doctors) —
+                section.specialties-panel(aria-label="Catálogo de especialidades")
+                    form.specialties-filters(data-specialty-filters, role="search")
+                        label.specialty-search-field
+                            span.sr-only Buscar por nombre de especialidad
+                            span(aria-hidden="true") ⌕
+                            input(
+                                type="search",
+                                maxlength="100",
+                                placeholder="Buscar especialidad por nombre...",
+                                autocomplete="off",
+                                data-specialty-search
+                            )
+                        label.specialty-status-filter
+                            span Estado
+                            select(data-specialty-status)
+                                option(value="all") Todos
+                                option(value="active") Activas
+                                option(value="inactive") Inactivas
+                        button.specialty-search-button(type="submit")
+                            span(aria-hidden="true") ⌕
+                            | Buscar
+                    p.specialties-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-specialty-feedback
+                    ) Cargando especialidades…
+                    .specialties-table-wrap
+                        table.specialties-table
+                            caption.sr-only Especialidades médicas registradas en SaludVital
+                            thead
+                                tr
+                                    th(scope="col") #
+                                    th(scope="col") Nombre de la especialidad
+                                    th(scope="col") Descripción
+                                    th(scope="col") Médicos
+                                    th(scope="col") Estado
+                            tbody(data-specialty-list)
+                    footer.specialties-pagination
+                        span(data-specialty-page-summary) Mostrando especialidades
+                        .specialty-pagination-controls
+                            button(
+                                type="button",
+                                aria-label="Página anterior",
+                                data-specialty-prev,
+                                disabled
+                            ) ‹
+                            span(data-specialty-page-label) 1 / 1
+                            button(
+                                type="button",
+                                aria-label="Página siguiente",
+                                data-specialty-next,
+                                disabled
+                            ) ›
+                        label.specialty-page-size
+                            span.sr-only Resultados por página
+                            select(data-specialty-page-size)
+                                option(value="10") 10 por página
+                                option(value="25") 25 por página
+                p.specialties-error(
+                    role="alert",
+                    aria-live="assertive",
+                    data-specialty-error,
+                    hidden
+                )
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-specialties.js", defer)
