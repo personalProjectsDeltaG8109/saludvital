@@ -15,6 +15,7 @@ import {
     getAdminSpecialties,
     getAdminSpecialtyForEdit,
     updateAdminSpecialty,
+    updateAdminSpecialtyStatus,
 } from "../services/adminSpecialtyService.js";
 import {
     createAdminDoctor,
@@ -56,6 +57,24 @@ adminRoutes.patch(
                 req.auth.userId,
                 req.params.specialtyId,
                 req.body,
+            );
+            return res.json({ specialty });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.patch(
+    "/api/admin/specialties/:specialtyId/status",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const specialty = await updateAdminSpecialtyStatus(
+                req.auth.userId,
+                req.params.specialtyId,
+                req.body?.isActive,
             );
             return res.json({ specialty });
         } catch (error) {

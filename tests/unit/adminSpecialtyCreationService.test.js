@@ -24,8 +24,12 @@ jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
 const { Specialities, User } = await import("../../src/models/associations.js");
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { createAdminSpecialty, getAdminSpecialtyForEdit, updateAdminSpecialty } =
-    await import("../../src/modules/admin/services/adminSpecialtyService.js");
+const {
+    createAdminSpecialty,
+    getAdminSpecialtyForEdit,
+    updateAdminSpecialty,
+    updateAdminSpecialtyStatus,
+} = await import("../../src/modules/admin/services/adminSpecialtyService.js");
 
 describe("Admin specialty creation service", () => {
     beforeEach(() => {
@@ -235,5 +239,80 @@ describe("Admin specialty creation service", () => {
             statusCode: 404,
             message: "No encontramos esa especialidad.",
         });
+    });
+
+    test("deactivates without removing existing specialty relationships and records an audit", async () => {
+        const specialty = {
+            id: 5,
+            name: "PediatrÃ­a",
+            is_active: true,
+            update: jest
+                .fn()
+                .mockImplementation(async (changes) => Object.assign(specialty, changes)),
+        };
+        Specialities.findByPk.mockResolvedValue(specialty);
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+        AuditLog.create.mockResolvedValue({ id: 23 });
+
+        await expect(updateAdminSpecialtyStatus(9, "5", false)).resolves.toEqual({
+            id: 5,
+            name: "PediatrÃ­a",
+            isActive: false,
+        });
+        expect(specialty.update).toHaveBeenCalledWith(
+            { is_active: false },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: "AdminSpecialtyDeactivated",
+                target_type: "MedicalSpecialty",
+                target_id: "5",
+                changes: {
+                    previous: { isActive: true },
+                    next: { isActive: false },
+                },
+            }),
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+    });
+
+    test("reactivates an inactive specialty", async () => {
+        const specialty = {
+            id: 6,
+            name: "NeurologÃ­a",
+            is_active: false,
+            update: jest.fn(),
+        };
+        Specialities.findByPk.mockResolvedValue(specialty);
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+
+        await expect(updateAdminSpecialtyStatus(9, 6, true)).resolves.toMatchObject({
+            id: 6,
+            isActive: true,
+        });
+        expect(specialty.update).toHaveBeenCalledWith(
+            { is_active: true },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({ action: "AdminSpecialtyActivated" }),
+            expect.any(Object),
+        );
+    });
+
+    test("rejects invalid states and repeated status changes", async () => {
+        await expect(updateAdminSpecialtyStatus(9, 5, "false")).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        const specialty = { id: 5, name: "PediatrÃ­a", is_active: false, update: jest.fn() };
+        Specialities.findByPk.mockResolvedValue(specialty);
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+
+        await expect(updateAdminSpecialtyStatus(9, 5, false)).rejects.toMatchObject({
+            statusCode: 409,
+        });
+        expect(specialty.update).not.toHaveBeenCalled();
+        expect(AuditLog.create).not.toHaveBeenCalled();
     });
 });

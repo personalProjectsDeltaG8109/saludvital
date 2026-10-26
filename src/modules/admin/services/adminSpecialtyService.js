@@ -142,6 +142,57 @@ export async function updateAdminSpecialty(actorId, rawSpecialtyId, input) {
     }
 }
 
+/** Change availability without deleting the specialty or its existing relationships. */
+export async function updateAdminSpecialtyStatus(actorId, rawSpecialtyId, isActive) {
+    const specialtyId = parseSpecialtyId(rawSpecialtyId);
+    if (typeof isActive !== "boolean") {
+        throw serviceError("El estado solicitado no es válido.");
+    }
+
+    return database.transaction(async (transaction) => {
+        const specialty = await Specialities.findByPk(specialtyId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!specialty) throw serviceError("No encontramos esa especialidad.", 404);
+
+        const actor = await User.findByPk(actorId, {
+            attributes: ["id", "email"],
+            transaction,
+        });
+        if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+
+        if (specialty.is_active === isActive) {
+            throw serviceError(`La especialidad ya está ${isActive ? "activa" : "inactiva"}.`, 409);
+        }
+
+        const previousIsActive = specialty.is_active;
+        await specialty.update({ is_active: isActive }, { transaction });
+        await AuditLog.create(
+            {
+                actor_user_id: actor.id,
+                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                action: isActive ? "AdminSpecialtyActivated" : "AdminSpecialtyDeactivated",
+                target_type: "MedicalSpecialty",
+                target_id: String(specialty.id),
+                target_description: specialty.name,
+                changes: {
+                    previous: { isActive: previousIsActive },
+                    next: { isActive },
+                },
+                reason: isActive
+                    ? "Administrator reactivated a medical specialty."
+                    : "Administrator deactivated a medical specialty.",
+                result: "Success",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        return { id: specialty.id, name: specialty.name, isActive };
+    });
+}
+
 /** Create a specialty using only fields supported by the existing catalog model. */
 export async function createAdminSpecialty(input) {
     const specialtyInput = validateSpecialtyInput(input);

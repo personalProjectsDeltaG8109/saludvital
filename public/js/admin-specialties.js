@@ -16,6 +16,7 @@ if (specialtiesPage) {
     const pageQuery = new URLSearchParams(window.location.search);
     const specialtyCreated = pageQuery.get("created") === "1";
     const specialtyUpdated = pageQuery.get("updated") === "1";
+    let specialtyStatusFeedback = "";
     if (pageQuery.has("search")) {
         search.value = pageQuery.get("search") || "";
         if (topSearch) topSearch.value = search.value;
@@ -101,6 +102,19 @@ if (specialtiesPage) {
         editLink.textContent = "Editar";
         actions.append(editLink);
 
+        const statusButton = document.createElement("button");
+        statusButton.className = `specialty-status-action${specialty.isActive ? " is-deactivate" : " is-activate"}`;
+        statusButton.type = "button";
+        statusButton.dataset.specialtyToggleStatus = specialty.isActive ? "deactivate" : "activate";
+        statusButton.dataset.specialtyId = specialty.id;
+        statusButton.dataset.specialtyName = specialty.name;
+        statusButton.setAttribute(
+            "aria-label",
+            `${specialty.isActive ? "Desactivar" : "Activar"} ${specialty.name}`,
+        );
+        statusButton.textContent = specialty.isActive ? "Desactivar" : "Activar";
+        actions.append(statusButton);
+
         row.append(number, name, description, doctorCount, state, actions);
         return row;
     }
@@ -172,13 +186,16 @@ if (specialtiesPage) {
                 data.stats.assignedDoctors;
             renderSpecialties(data.specialties);
             renderPagination(data.pagination);
-            feedback.textContent = specialtyCreated
-                ? "La especialidad se creó correctamente y aparece en el catálogo."
-                : specialtyUpdated
-                  ? "La especialidad se actualizó correctamente."
-                  : data.pagination.totalItems
-                    ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
-                    : "No hay especialidades para mostrar.";
+            feedback.textContent =
+                specialtyStatusFeedback ||
+                (specialtyCreated
+                    ? "La especialidad se creó correctamente y aparece en el catálogo."
+                    : specialtyUpdated
+                      ? "La especialidad se actualizó correctamente."
+                      : data.pagination.totalItems
+                        ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
+                        : "No hay especialidades para mostrar.");
+            specialtyStatusFeedback = "";
         } catch (error) {
             list.replaceChildren();
             feedback.textContent = "No se pudieron cargar los datos.";
@@ -195,6 +212,43 @@ if (specialtiesPage) {
             if (topSearch) topSearch.value = search.value;
             loadSpecialties();
         });
+
+    list.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-specialty-toggle-status]");
+        if (!button) return;
+
+        const shouldActivate = button.dataset.specialtyToggleStatus === "activate";
+        if (
+            !shouldActivate &&
+            !window.confirm(
+                `¿Desactivar ${button.dataset.specialtyName}? No se podrá asignar ni reservar esta especialidad. Las relaciones y citas existentes se conservarán.`,
+            )
+        ) {
+            return;
+        }
+
+        button.disabled = true;
+        try {
+            const response = await fetch(`${endpoint}/${button.dataset.specialtyId}/status`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({ isActive: shouldActivate }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos cambiar el estado.");
+
+            specialtyStatusFeedback = `La especialidad se ${shouldActivate ? "activó" : "desactivó"} correctamente.`;
+            await loadSpecialties();
+        } catch (error) {
+            feedback.textContent = "No se pudo cambiar el estado de la especialidad.";
+            errorMessage.textContent = error.message;
+            errorMessage.hidden = false;
+            button.disabled = false;
+        }
+    });
 
     topSearchForm?.addEventListener("submit", (event) => {
         event.preventDefault();

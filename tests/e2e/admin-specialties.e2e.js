@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+﻿import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 
@@ -41,8 +41,22 @@ try {
     await page.addStyleTag({ content: specialtiesStyles });
     await page.evaluate(() => {
         window.specialtyRequests = [];
+        window.specialtyStatusRequests = [];
+        window.specialtyIsActive = true;
         window.failSpecialtyRequest = false;
-        window.fetch = async (url) => {
+        window.fetch = async (url, options = {}) => {
+            if (options.method === "PATCH") {
+                const payload = JSON.parse(options.body);
+                window.specialtyStatusRequests.push(payload.isActive);
+                window.specialtyIsActive = payload.isActive;
+                return {
+                    ok: true,
+                    json: async () => ({
+                        specialty: { id: 1, name: "Medicina General", isActive: payload.isActive },
+                    }),
+                };
+            }
+
             const params = new URL(url, "http://localhost").searchParams;
             window.specialtyRequests.push({
                 search: params.get("search"),
@@ -82,14 +96,14 @@ try {
                         id: 2,
                         name: "Pediatría",
                         description: "Atención infantil.",
-                        isActive: true,
+                        isActive: window.specialtyIsActive,
                         doctorCount: 5,
                     }
                   : {
                         id: 1,
                         name: "Medicina General",
                         description: "Atención integral.",
-                        isActive: true,
+                        isActive: window.specialtyIsActive,
                         doctorCount: 8,
                     };
             return {
@@ -120,13 +134,35 @@ try {
                 `Specialties page overflows at ${viewport.label}: ${JSON.stringify(layout)}`,
             );
         }
+        await page.getByRole("button", { name: "Desactivar Medicina General" }).waitFor();
         console.log(
             `PASS: specialty layout has no horizontal overflow at ${viewport.label} (${viewport.width}x${viewport.height}).`,
         );
     }
 
+    await page.setViewportSize({ width: 375, height: 812 });
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByRole("link", { name: "Editar Medicina General" }).waitFor();
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.getByRole("button", { name: "Desactivar Medicina General" }).click();
+    await page.getByText("Activa", { exact: true }).waitFor();
+    if ((await page.evaluate(() => window.specialtyStatusRequests.length)) !== 0) {
+        throw new Error("Cancelling the confirmation must not change specialty status.");
+    }
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Desactivar Medicina General" }).click();
+    await page.getByRole("button", { name: "Activar Medicina General" }).waitFor();
+    await page.getByText("Inactiva", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Activar Medicina General" }).click();
+    await page.getByRole("button", { name: "Desactivar Medicina General" }).waitFor();
+    await page.getByText("Activa", { exact: true }).waitFor();
+    if ((await page.evaluate(() => window.specialtyStatusRequests.join(","))) !== "false,true") {
+        throw new Error("Deactivation and reactivation must send their expected statuses.");
+    }
+    console.log("PASS: explicit deactivation confirmation and specialty reactivation.");
+
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.locator("[data-specialty-status]").selectOption("inactive");
     await page.getByText("Neurología").waitFor();
     await page.getByText("Inactiva", { exact: true }).waitFor();
