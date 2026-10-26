@@ -10,6 +10,7 @@ import {
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
+import { getAdminSpecialties } from "../services/adminSpecialtyService.js";
 import {
     createAdminDoctor,
     getActiveDoctorSpecialties,
@@ -23,6 +24,15 @@ import {
 const adminRoutes = Router();
 
 const requireAdministrator = [authenticateToken, requireRole("Administrator")];
+
+adminRoutes.get("/api/admin/specialties", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminSpecialties(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
 
 adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
     try {
@@ -89,6 +99,12 @@ adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, nex
     } catch (error) {
         return next(error);
     }
+});
+adminRoutes.get("/admin/specialties", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/specialties", {
+        pageTitle: "Especialidades | SaludVital",
+        adminName: "Administrador",
+    });
 });
 adminRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res) => {
     return res.render("admin/doctor-form", {
