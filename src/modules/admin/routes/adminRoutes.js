@@ -1,6 +1,7 @@
 ﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
+import { getAdminAppointments } from "../services/adminAppointmentService.js";
 import {
     getAdminDepartments,
     getAdminMunicipalities,
@@ -34,6 +35,14 @@ const requireAdministrator = [authenticateToken, requireRole("Administrator")];
 adminRoutes.get("/api/admin/specialties", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminSpecialties(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminAppointments(req.query));
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
@@ -150,6 +159,12 @@ adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, nex
     } catch (error) {
         return next(error);
     }
+});
+adminRoutes.get("/admin/appointments", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/appointments", {
+        pageTitle: "Citas médicas | SaludVital",
+        adminName: "Administrador",
+    });
 });
 adminRoutes.get("/admin/specialties", ...requireAdministrator, (_req, res) => {
     return res.render("admin/specialties", {

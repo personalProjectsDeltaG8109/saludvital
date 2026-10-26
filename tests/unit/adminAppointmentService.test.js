@@ -1,0 +1,167 @@
+import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+
+jest.unstable_mockModule("sequelize", () => ({
+    Op: {
+        and: Symbol.for("sequelize.and"),
+        gte: Symbol.for("sequelize.gte"),
+        in: Symbol.for("sequelize.in"),
+        lt: Symbol.for("sequelize.lt"),
+        like: Symbol.for("sequelize.like"),
+        or: Symbol.for("sequelize.or"),
+    },
+}));
+
+jest.unstable_mockModule("../../src/models/associations.js", () => ({
+    Appointment: { count: jest.fn(), findAndCountAll: jest.fn() },
+    AppointmentStatus: { findAll: jest.fn() },
+    Doctor: { findAll: jest.fn() },
+    Patient: {},
+    Specialities: { findAll: jest.fn() },
+}));
+
+const { Appointment, AppointmentStatus, Doctor, Specialities } =
+    await import("../../src/models/associations.js");
+const { getAdminAppointments } =
+    await import("../../src/modules/admin/services/adminAppointmentService.js");
+
+const supportedStatuses = [
+    { id: 1, name: "Confirmed" },
+    { id: 2, name: "In Progress" },
+    { id: 3, name: "Attended" },
+    { id: 4, name: "Cancelled" },
+];
+
+function createAppointment() {
+    return {
+        id: 10,
+        start_at: new Date("2026-10-26T15:30:00.000Z"),
+        end_at: new Date("2026-10-26T16:00:00.000Z"),
+        reason: "private clinical information",
+        source: "Web",
+        patient: {
+            id: 5,
+            first_name: "María",
+            last_name: "López",
+            document_type: "CC",
+            document_number: "123456",
+            profile_photo_url: "/uploads/patient.jpg",
+            phone: "3001234567",
+        },
+        doctor: { id: 3, display_name: "Dra. Ana Torres" },
+        specialty: { id: 2, name: "Medicina General" },
+        status: { id: 1, name: "Confirmed" },
+    };
+}
+
+describe("admin appointment directory service", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        AppointmentStatus.findAll.mockResolvedValue(supportedStatuses);
+        Appointment.findAndCountAll.mockResolvedValue({ rows: [createAppointment()], count: 1 });
+        Appointment.count.mockResolvedValue(1);
+        Specialities.findAll.mockResolvedValue([{ id: 2, name: "Medicina General" }]);
+        Doctor.findAll.mockResolvedValue([{ id: 3, display_name: "Dra. Ana Torres" }]);
+    });
+
+    test("returns persisted appointment summaries, status counts, options, and pagination", async () => {
+        const result = await getAdminAppointments({ page: "2", pageSize: "25" });
+
+        expect(result.appointments[0]).toEqual({
+            id: 10,
+            startAt: "2026-10-26T15:30:00.000Z",
+            endAt: "2026-10-26T16:00:00.000Z",
+            patient: {
+                id: 5,
+                name: "María López",
+                document: "CC 123456",
+                photoUrl: "/uploads/patient.jpg",
+            },
+            specialty: "Medicina General",
+            doctor: "Dra. Ana Torres",
+            status: "Confirmed",
+            statusLabel: "Confirmada",
+        });
+        expect(JSON.stringify(result)).not.toContain("private clinical information");
+        expect(JSON.stringify(result)).not.toContain("3001234567");
+        expect(result.stats).toEqual({
+            total: 4,
+            Confirmed: 1,
+            "In Progress": 1,
+            Attended: 1,
+            Cancelled: 1,
+        });
+        expect(result.pagination).toMatchObject({ page: 2, pageSize: 25, totalItems: 1 });
+        expect(Appointment.findAndCountAll).toHaveBeenCalledWith(
+            expect.objectContaining({ limit: 25, offset: 25, distinct: true }),
+        );
+        expect(AppointmentStatus.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    name: {
+                        [Symbol.for("sequelize.in")]: supportedStatuses.map((row) => row.name),
+                    },
+                },
+            }),
+        );
+    });
+
+    test("applies Bogota date boundaries and patient name, document, and phone search", async () => {
+        await getAdminAppointments({
+            from: "2026-10-26",
+            to: "2026-10-27",
+            specialtyId: "2",
+            doctorId: "3",
+            search: "María López",
+        });
+
+        const { where } = Appointment.findAndCountAll.mock.calls[0][0];
+        expect(where.start_at).toEqual({
+            [Symbol.for("sequelize.gte")]: new Date("2026-10-26T05:00:00.000Z"),
+            [Symbol.for("sequelize.lt")]: new Date("2026-10-28T05:00:00.000Z"),
+        });
+        expect(where).toMatchObject({ specialty_id: 2, doctor_id: 3 });
+        expect(where[Symbol.for("sequelize.or")]).toEqual(
+            expect.arrayContaining([
+                {
+                    "$patient.document_number$": {
+                        [Symbol.for("sequelize.like")]: "%María López%",
+                    },
+                },
+                { "$patient.phone$": { [Symbol.for("sequelize.like")]: "%María López%" } },
+            ]),
+        );
+    });
+
+    test("filters by one of the supported appointment statuses", async () => {
+        await getAdminAppointments({ status: "Cancelled" });
+
+        expect(Appointment.findAndCountAll.mock.calls[0][0].where.status_id).toBe(4);
+        expect(AppointmentStatus.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: {
+                    name: {
+                        [Symbol.for("sequelize.in")]: supportedStatuses.map((row) => row.name),
+                    },
+                },
+            }),
+        );
+    });
+
+    test.each([
+        [{ page: "0" }, "La página tiene un valor no válido."],
+        [{ pageSize: "15" }, "El tamaño de página solicitado no es válido."],
+        [{ status: "Unsupported" }, "El estado seleccionado no es válido."],
+        [{ from: "2026-02-30" }, "La fecha inicial no es válida."],
+        [
+            { from: "2026-10-28", to: "2026-10-26" },
+            "La fecha inicial debe ser anterior a la fecha final.",
+        ],
+        [{ search: "x".repeat(101) }, "La búsqueda no puede superar los 100 caracteres."],
+    ])("rejects invalid query %o", async (query, message) => {
+        await expect(getAdminAppointments(query)).rejects.toMatchObject({
+            statusCode: 400,
+            message,
+        });
+        expect(Appointment.findAndCountAll).not.toHaveBeenCalled();
+    });
+});
