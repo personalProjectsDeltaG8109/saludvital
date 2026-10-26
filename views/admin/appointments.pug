@@ -198,5 +198,26 @@ html(lang="es")
                             select(data-appointment-page-size)
                                 option(value="10") 10 por página
                                 option(value="25") 25 por página
+                dialog.appointment-cancellation-dialog(
+                    data-cancellation-dialog,
+                    aria-labelledby="cancellation-dialog-title"
+                )
+                    form(data-cancellation-form)
+                        h2#cancellation-dialog-title Cancelar cita
+                        p(data-cancellation-description) Confirma la cancelación de esta cita.
+                        label(for="cancellation-reason") Motivo (opcional)
+                        textarea#cancellation-reason(
+                            name="reason",
+                            rows="3",
+                            maxlength="500",
+                            data-cancellation-reason
+                        )
+                        p.appointments-error(role="alert", data-cancellation-error, hidden)
+                        .appointment-cancellation-actions
+                            button.appointment-cancellation-close(
+                                type="button",
+                                data-cancellation-close
+                            ) Volver
+                            button.appointment-cancellation-submit(type="submit") Confirmar cancelación
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-appointments.js", defer)
