@@ -12,7 +12,7 @@ jest.unstable_mockModule("sequelize", () => ({
 }));
 
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
-    Appointment: { count: jest.fn(), findAndCountAll: jest.fn() },
+    Appointment: { count: jest.fn(), findAndCountAll: jest.fn(), findByPk: jest.fn() },
     AppointmentStatus: { findAll: jest.fn() },
     Doctor: { findAll: jest.fn() },
     Patient: {},
@@ -21,7 +21,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 
 const { Appointment, AppointmentStatus, Doctor, Specialities } =
     await import("../../src/models/associations.js");
-const { getAdminAppointments } =
+const { getAdminAppointmentDetails, getAdminAppointments } =
     await import("../../src/modules/admin/services/adminAppointmentService.js");
 
 const supportedStatuses = [
@@ -145,6 +145,58 @@ describe("admin appointment directory service", () => {
                 },
             }),
         );
+    });
+
+    test("returns safe details for an existing appointment", async () => {
+        Appointment.findByPk.mockResolvedValue(createAppointment());
+
+        const result = await getAdminAppointmentDetails("10");
+
+        expect(result).toEqual({
+            id: 10,
+            startAt: "2026-10-26T15:30:00.000Z",
+            endAt: "2026-10-26T16:00:00.000Z",
+            patient: { id: 5, name: "María López", photoUrl: "/uploads/patient.jpg" },
+            specialty: "Medicina General",
+            doctor: "Dra. Ana Torres",
+            status: "Confirmed",
+            statusLabel: "Confirmada",
+        });
+        expect(JSON.stringify(result)).not.toContain("123456");
+        expect(JSON.stringify(result)).not.toContain("3001234567");
+        expect(JSON.stringify(result)).not.toContain("private clinical information");
+        expect(Appointment.findByPk).toHaveBeenCalledWith(
+            10,
+            expect.objectContaining({
+                include: expect.arrayContaining([
+                    expect.objectContaining({
+                        as: "patient",
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                    }),
+                ]),
+            }),
+        );
+    });
+
+    test("returns not found for invalid, missing, or unsupported-status appointments", async () => {
+        await expect(getAdminAppointmentDetails("not-an-id")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "No encontramos esa cita.",
+        });
+        Appointment.findByPk.mockResolvedValue(null);
+        await expect(getAdminAppointmentDetails("999")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "No encontramos esa cita.",
+        });
+
+        Appointment.findByPk.mockResolvedValue({
+            ...createAppointment(),
+            status: { id: 5, name: "Unknown" },
+        });
+        await expect(getAdminAppointmentDetails("10")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "No encontramos esa cita.",
+        });
     });
 
     test.each([
