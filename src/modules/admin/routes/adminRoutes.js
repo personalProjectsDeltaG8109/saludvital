@@ -1,6 +1,7 @@
 ﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
+import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.js";
 import {
     createAdminAppointment,
     getAdminAppointmentBookingDoctors,
@@ -62,6 +63,14 @@ adminRoutes.get("/api/admin/specialties", ...requireAdministrator, async (req, r
 adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminAppointments(req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+adminRoutes.get("/api/admin/doctor-schedules", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await getAdminDoctorSchedules(req.query));
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
@@ -333,6 +342,12 @@ adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, nex
     } catch (error) {
         return next(error);
     }
+});
+adminRoutes.get("/admin/doctor-schedules", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/doctor-schedules", {
+        pageTitle: "Horarios y disponibilidad | SaludVital",
+        adminName: "Administrador",
+    });
 });
 adminRoutes.get("/admin/appointments", ...requireAdministrator, (_req, res) => {
     return res.render("admin/appointments", {
