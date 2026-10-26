@@ -1,0 +1,123 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-appointments.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("appointments")
+        .admin-main-shell
+            +adminTopbar(
+                "/admin/appointments",
+                "Buscar pacientes por nombre, documento o teléfono...",
+            )
+            main.admin-appointment-create-page(
+                data-admin-appointment-create,
+                data-options-endpoint="/api/admin/appointment-booking/options",
+                data-doctors-endpoint="/api/admin/appointment-booking/doctors",
+                data-availability-endpoint="/api/admin/appointment-booking/availability",
+                data-create-endpoint="/api/admin/appointments"
+            )
+                a.appointment-details-back(href="/admin/appointments")
+                    span(aria-hidden="true") ‹
+                    | Volver a citas
+                header.appointments-heading
+                    span.appointments-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            rect(x="3", y="5", width="18", height="16", rx="2")
+                            path(d="M16 3v4M8 3v4M3 10h18")
+                            path(d="M12 14v5m-2.5-2.5h5")
+                    div
+                        h1 Nueva cita médica
+                        p Registra una cita con pacientes y horarios disponibles.
+                form.appointment-create-form(data-appointment-create-form)
+                    p.appointment-create-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-create-feedback
+                    )
+                        | Cargando pacientes y especialidades...
+                    p.appointment-create-error(role="alert", data-create-error, hidden)
+                    .appointment-create-grid
+                        label.appointment-create-field(for="booking-patient")
+                            span Paciente
+                            select#booking-patient(
+                                name="patientId",
+                                required,
+                                data-booking-patient,
+                                disabled
+                            )
+                                option(value="") Selecciona un paciente
+                        label.appointment-create-field(for="booking-specialty")
+                            span Especialidad
+                            select#booking-specialty(
+                                name="specialtyId",
+                                required,
+                                data-booking-specialty,
+                                disabled
+                            )
+                                option(value="") Selecciona una especialidad
+                        label.appointment-create-field(for="booking-doctor")
+                            span Médico
+                            select#booking-doctor(
+                                name="doctorId",
+                                required,
+                                data-booking-doctor,
+                                disabled
+                            )
+                                option(value="") Selecciona una especialidad primero
+                        label.appointment-create-field(for="booking-date")
+                            span Fecha
+                            input#booking-date(
+                                type="date",
+                                name="date",
+                                required,
+                                data-booking-date,
+                                disabled
+                            )
+                        label.appointment-create-field(for="booking-time")
+                            span Horario disponible
+                            select#booking-time(name="time", required, data-booking-time, disabled)
+                                option(value="") Selecciona paciente, médico y fecha
+                        label.appointment-create-field.appointment-create-reason(
+                            for="booking-reason"
+                        )
+                            span Motivo de consulta
+                            span.appointment-create-optional Opcional
+                            textarea#booking-reason(
+                                name="reason",
+                                rows="4",
+                                maxlength="500",
+                                placeholder="Cuéntanos brevemente el motivo de la cita"
+                            )
+                    footer.appointment-create-actions
+                        a.appointment-create-cancel(href="/admin/appointments") Cancelar
+                        button.appointment-create-submit(
+                            type="submit",
+                            data-create-submit,
+                            disabled
+                        )
+                            | Crear cita
+                dialog.appointment-create-success(
+                    data-create-success,
+                    aria-labelledby="appointment-create-success-title"
+                )
+                    span.appointment-create-success-icon(aria-hidden="true") ✓
+                    h2#appointment-create-success-title ¡Cita creada con éxito!
+                    p(data-success-message) La cita quedó confirmada.
+                    a.appointment-create-submit(href="/admin/appointments") Volver al listado
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-appointment-create.js", defer)
