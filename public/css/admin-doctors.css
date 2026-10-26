@@ -120,6 +120,45 @@
 .doctor-details-link svg { width: 19px; height: 19px; }
 .doctor-details-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .doctor-details-link:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
+.doctor-row-status-action,
+.doctor-status-action {
+    min-height: 40px;
+    padding: 8px 11px;
+    border: 1px solid #d9e5f2;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+    font-size: .86rem;
+    font-weight: 650;
+    cursor: pointer;
+}
+.doctor-row-status-action.is-deactivation,
+.doctor-status-action.is-deactivation { color: #b33434; border-color: #f3d1d1; background: #fff8f8; }
+.doctor-row-status-action.is-activation,
+.doctor-status-action.is-activation { color: #16864f; border-color: #ccebd9; background: #f4fcf7; }
+.doctor-row-status-action:disabled,
+.doctor-status-action:disabled { cursor: wait; opacity: .6; }
+.doctor-row-status-action:focus-visible,
+.doctor-status-action:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
+.doctor-status-dialog {
+    width: min(520px, calc(100vw - 28px));
+    max-width: none;
+    padding: 0;
+    border: 1px solid #dce8f4;
+    border-radius: 18px;
+    color: #123b73;
+    background: #fff;
+    box-shadow: 0 24px 70px rgb(18 59 115 / 24%);
+    margin: auto;
+}
+.doctor-status-dialog::backdrop { background: rgb(10 32 58 / 55%); backdrop-filter: blur(3px); }
+.doctor-status-dialog-content { display: grid; gap: 14px; padding: clamp(20px, 5vw, 30px); margin: 0 auto;}
+.doctor-status-dialog h2 { margin: 0; color: #123b73; font-size: 1.3rem; }
+.doctor-status-dialog p { margin: 0; color: #526b8b; line-height: 1.65; }
+.doctor-status-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+.doctor-status-dialog-actions button { min-height: 44px; padding: 9px 15px; font: inherit; font-weight: 650; cursor: pointer; }
+.doctor-status-confirm-button { border: 0; border-radius: 9px; color: #fff; background: #b33434; }
+.doctor-status-dialog-actions button:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
 .doctor-row-info {
     display: grid;
     gap: 5px;
@@ -369,6 +408,13 @@
 .doctor-details-identity h2 { margin: 0; color: #123b73; font-size: clamp(1.25rem, 2vw, 1.65rem); overflow-wrap: anywhere; }
 .doctor-details-identity p { margin: 0; color: #647b9d; }
 .doctor-details-manage { white-space: nowrap; }
+.doctor-details-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
+.doctor-status-feedback { margin: -8px 0 16px; color: #647b9d; }
+.doctor-status-feedback:empty { display: none; }
+.doctor-status-feedback.is-success { color: #16864f; }
+.doctor-status-feedback.is-error,
+.doctors-feedback.is-error { color: #b33434; }
+.doctors-feedback.is-success { color: #16864f; }
 .doctor-details-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .doctor-details-card { min-width: 0; padding: 20px; border: 1px solid #e5eef7; border-radius: 14px; background: #fff; box-shadow: 0 8px 28px rgb(18 59 115 / 4%); }
 .doctor-details-card h2 { margin: 0 0 16px; color: #123b73; font-size: 1.05rem; }
@@ -395,7 +441,9 @@
     .doctor-details-identity { gap: 5px; }
     .doctor-details-identity h2 { font-size: 1.15rem; }
     .doctor-details-identity p { font-size: .9rem; }
-    .doctor-details-manage { grid-column: 1/-1; width: 100%; white-space: normal; }
+    .doctor-details-actions { grid-column: 1/-1; display: grid; grid-template-columns: 1fr; }
+    .doctor-details-manage,
+    .doctor-details-actions .doctor-status-action { width: 100%; white-space: normal; }
     .doctor-details-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
     .doctor-details-card { padding: 16px; }
     .doctor-schedule-card { grid-column: auto; }
@@ -403,6 +451,8 @@
     .doctor-schedule-list li { grid-template-columns: minmax(0, 1fr) auto; gap: 7px 12px; padding: 11px; }
     .doctor-schedule-list small { grid-column: 1/-1; }
     .doctor-details-footer .doctors-secondary-button { width: 100%; }
+    .doctor-status-dialog-actions { flex-direction: column-reverse; }
+    .doctor-status-dialog-actions button { width: 100%; }
 }
 [hidden] {
     display: none !important;

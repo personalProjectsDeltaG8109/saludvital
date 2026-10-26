@@ -111,6 +111,7 @@ function toUserSummary(record) {
         role: record.rol,
         isActive: record.is_active,
         profileType,
+        isDoctorProfile: Boolean(record.doctor),
         profilePhotoUrl: normalizeAdminPhotoUrl(
             record.doctor?.profile_photo_url || record.patient?.profile_photo_url,
         ),
@@ -223,6 +224,24 @@ export async function updateAdminUser(actorUserId, rawUserId, payload) {
             transaction,
         });
         if (!nextRole) throw serviceError("El rol seleccionado no existe.", 400);
+
+        if (changes.isActive !== undefined && changes.isActive !== user.is_active) {
+            const currentRole = await Rol.findByPk(user.role_id, {
+                attributes: ["name"],
+                transaction,
+            });
+            const doctorProfile = await Doctor.findOne({
+                where: { user_id: user.id },
+                attributes: ["id"],
+                transaction,
+            });
+            if (currentRole?.name === "Doctor" || doctorProfile) {
+                throw serviceError(
+                    "Cambia el estado de un médico desde el módulo de Médicos para procesar sus citas futuras.",
+                    409,
+                );
+            }
+        }
 
         const removesAdministratorAccess =
             user.role_id === administratorRole.id &&

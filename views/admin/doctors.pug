@@ -12,7 +12,12 @@ html(lang="es")
         +adminSidebar("doctors")
         .admin-main-shell
             +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
-            main.doctors-page(data-doctors, data-endpoint="/api/admin/doctors")
+            main.doctors-page(
+                data-doctors,
+                data-endpoint="/api/admin/doctors",
+                data-status-impact-endpoint="/api/admin/doctors",
+                data-status-endpoint="/api/admin/doctors"
+            )
                 header.doctors-heading
                     div
                         p.admin-eyebrow Gestión médica

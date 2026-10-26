@@ -1,11 +1,16 @@
 ﻿import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("bcrypt", () => ({ default: { hash: jest.fn() } }));
-jest.unstable_mockModule("sequelize", () => ({ Op: { or: Symbol("or"), like: Symbol("like") } }));
+jest.unstable_mockModule("sequelize", () => ({
+    Op: { gt: Symbol("gt"), or: Symbol("or"), like: Symbol("like") },
+}));
 jest.unstable_mockModule("../../config/database.js", () => ({
     default: { transaction: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
+    Appointment: { findAll: jest.fn() },
+    AppointmentHistory: { create: jest.fn() },
+    AppointmentStatus: { findOne: jest.fn() },
     Doctor: {
         findAndCountAll: jest.fn(),
         findByPk: jest.fn(),
@@ -18,6 +23,13 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Specialities: { findOne: jest.fn(), findAll: jest.fn() },
     User: { findOne: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
 }));
+jest.unstable_mockModule(
+    "../../src/modules/patient/services/notificationAutomationService.js",
+    () => ({
+        cancelPendingAppointmentReminders: jest.fn(),
+        enqueueAppointmentNotifications: jest.fn(),
+    }),
+);
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));

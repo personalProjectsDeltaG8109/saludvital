@@ -299,7 +299,7 @@ async function getActiveSpecialty(specialtyId, transaction) {
 /**
  * Retrieve an active doctor who belongs to the selected specialty.
  */
-async function getActiveDoctor(doctorId, specialtyId, transaction) {
+async function getActiveDoctor(doctorId, specialtyId, transaction, lockingRead = false) {
     const doctor = await Doctor.findOne({
         where: {
             id: doctorId,
@@ -315,6 +315,7 @@ async function getActiveDoctor(doctorId, specialtyId, transaction) {
             },
         ],
         transaction,
+        ...(lockingRead ? { lock: transaction.LOCK.UPDATE } : {}),
     });
 
     if (!doctor) {
@@ -742,7 +743,7 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
         }
 
         // Revalidate the doctor and specialty after acquiring the row lock.
-        await getActiveDoctor(doctorId, specialtyId, transaction);
+        await getActiveDoctor(doctorId, specialtyId, transaction, true);
 
         const hasAvailability = await hasDoctorAvailability(doctorId, startAt, endAt, transaction);
 
@@ -844,6 +845,30 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
     return database.transaction(async (transaction) => {
         const patient = await getPatientByUserId(userId, transaction);
+        const appointmentReference = await Appointment.findOne({
+            where: { id: appointmentId, patient_id: patient.id },
+            attributes: ["id", "doctor_id", "specialty_id"],
+            transaction,
+        });
+        if (!appointmentReference) {
+            throw new AppointmentError("No encontramos esa cita.", 404);
+        }
+
+        // Lock the doctor before the appointment to match the deactivation lock order.
+        const doctorLock = await Doctor.findByPk(appointmentReference.doctor_id, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!doctorLock) {
+            throw new AppointmentError("El médico asignado ya no está disponible.", 409);
+        }
+        await getActiveDoctor(
+            appointmentReference.doctor_id,
+            appointmentReference.specialty_id,
+            transaction,
+            true,
+        );
+
         const appointment = await Appointment.findOne({
             where: { id: appointmentId, patient_id: patient.id },
             include: [{ model: AppointmentStatus, as: "status", required: true }],
@@ -853,6 +878,12 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
         if (!appointment) {
             throw new AppointmentError("No se encontró la cita que deseas reprogramar.", 404);
+        }
+        if (appointment.doctor_id !== appointmentReference.doctor_id) {
+            throw new AppointmentError(
+                "La cita cambió de médico. Actualiza e inténtalo de nuevo.",
+                409,
+            );
         }
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
@@ -902,15 +933,6 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
                 409,
             );
         }
-        const lockedDoctor = await Doctor.findByPk(appointment.doctor_id, {
-            transaction,
-            lock: transaction.LOCK.UPDATE,
-        });
-        if (!lockedDoctor) {
-            throw new AppointmentError("El médico asignado ya no está disponible.", 409);
-        }
-
-        await getActiveDoctor(appointment.doctor_id, appointment.specialty_id, transaction);
         if (!(await hasDoctorAvailability(appointment.doctor_id, startAt, endAt, transaction))) {
             throw new AppointmentError("El médico no tiene disponibilidad en ese horario.", 409);
         }
