@@ -16,6 +16,12 @@ if (appointmentsPage) {
     const topSearch = document.querySelector("[data-user-top-search]");
     const topSearchForm = document.querySelector(".admin-global-search");
     const tabs = appointmentsPage.querySelector("[data-appointment-tabs]");
+    const cancellationDialog = appointmentsPage.querySelector("[data-cancellation-dialog]");
+    const cancellationForm = appointmentsPage.querySelector("[data-cancellation-form]");
+    const cancellationReason = appointmentsPage.querySelector("[data-cancellation-reason]");
+    const cancellationError = appointmentsPage.querySelector("[data-cancellation-error]");
+    let selectedAppointmentId = null;
+    let displayedAppointments = [];
     let currentPage = 1;
 
     function createOption(select, value, label) {
@@ -112,6 +118,7 @@ if (appointmentsPage) {
         actionsCell.append(createAppointmentDetailsLink(appointment));
         if (appointment.status === "Confirmed") {
             actionsCell.append(createAppointmentEditLink(appointment));
+            actionsCell.append(createAppointmentCancelButton(appointment));
         }
 
         row.append(
@@ -147,6 +154,16 @@ if (appointmentsPage) {
         return link;
     }
 
+    function createAppointmentCancelButton(appointment) {
+        const button = document.createElement("button");
+        button.className = "appointment-cancel-button";
+        button.type = "button";
+        button.dataset.cancelAppointment = String(appointment.id);
+        button.textContent = "Cancelar";
+        button.setAttribute("aria-label", `Cancelar la cita de ${appointment.patient.name}`);
+        return button;
+    }
+
     function createAppointmentCard(appointment) {
         const card = document.createElement("article");
         card.className = "appointment-mobile-card";
@@ -175,6 +192,8 @@ if (appointmentsPage) {
         const detailsLink = createAppointmentDetailsLink(appointment);
         const editLink =
             appointment.status === "Confirmed" ? createAppointmentEditLink(appointment) : null;
+        const cancelButton =
+            appointment.status === "Confirmed" ? createAppointmentCancelButton(appointment) : null;
         card.append(
             date,
             createPatientCell(appointment.patient).querySelector(".appointment-patient-avatar"),
@@ -183,10 +202,22 @@ if (appointmentsPage) {
             detailsLink,
         );
         if (editLink) card.append(editLink);
+        if (cancelButton) card.append(cancelButton);
         return card;
     }
 
+    function openCancellationDialog(appointmentId, patientName) {
+        selectedAppointmentId = appointmentId;
+        cancellationForm.reset();
+        cancellationError.hidden = true;
+        appointmentsPage.querySelector("[data-cancellation-description]").textContent =
+            `Confirma la cancelación de la cita de ${patientName}.`;
+        cancellationDialog.showModal();
+        cancellationReason.focus();
+    }
+
     function renderAppointments(appointments, showEmptyState = true) {
+        displayedAppointments = appointments;
         list.replaceChildren();
         mobileList.replaceChildren();
         appointments.forEach((appointment) => {
@@ -359,6 +390,49 @@ if (appointmentsPage) {
     });
     topSearch?.addEventListener("input", () => {
         search.value = topSearch.value;
+    });
+
+    appointmentsPage.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-cancel-appointment]");
+        if (!button) return;
+        const appointment = displayedAppointments.find(
+            (item) => String(item.id) === button.dataset.cancelAppointment,
+        );
+        const patientName = appointment?.patient.name || "el paciente";
+        openCancellationDialog(button.dataset.cancelAppointment, patientName);
+    });
+
+    appointmentsPage.querySelector("[data-cancellation-close]").addEventListener("click", () => {
+        cancellationDialog.close();
+    });
+
+    cancellationForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedAppointmentId) return;
+        cancellationError.hidden = true;
+        const submitButton = cancellationForm.querySelector("[type='submit']");
+        submitButton.disabled = true;
+        try {
+            const response = await fetch(
+                `/api/admin/appointments/${selectedAppointmentId}/status`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    body: JSON.stringify({ reason: cancellationReason.value }),
+                },
+            );
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "No pudimos cancelar la cita.");
+            cancellationDialog.close();
+            appointmentsPage.querySelector("[data-appointment-feedback]").textContent =
+                result.message;
+            await loadAppointments();
+        } catch (error) {
+            cancellationError.textContent = error.message;
+            cancellationError.hidden = false;
+        } finally {
+            submitButton.disabled = false;
+        }
     });
 
     loadAppointments();

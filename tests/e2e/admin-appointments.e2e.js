@@ -28,6 +28,7 @@ const pageMarkup = [
     '<div class="appointments-table-wrap"><table class="appointments-table"><thead><tr><th>Fecha y hora</th><th>Paciente</th><th>Documento</th><th>Especialidad</th><th>Médico</th><th>Estado</th></tr></thead><tbody data-appointment-list></tbody></table></div>',
     "<div data-appointment-mobile-list></div>",
     '<footer class="appointments-pagination"><span data-appointment-page-summary></span><div class="appointment-pagination-controls"><button data-appointment-prev></button><span data-appointment-page-label></span><button data-appointment-next></button></div><select data-appointment-page-size><option value="10">10</option><option value="25">25</option></select></footer>',
+    '<dialog data-cancellation-dialog><form data-cancellation-form><p data-cancellation-description></p><textarea data-cancellation-reason></textarea><p data-cancellation-error hidden></p><button type="button" data-cancellation-close>Volver</button><button type="submit">Confirmar cancelación</button></form></dialog>',
     "</section></main></body></html>",
 ].join("");
 
@@ -48,7 +49,15 @@ try {
     await page.evaluate((availableStatuses) => {
         window.appointmentRequests = [];
         window.failAppointmentRequest = false;
-        window.fetch = async (url) => {
+        window.cancellationRequests = [];
+        window.fetch = async (url, options = {}) => {
+            if (options.method === "PATCH") {
+                window.cancellationRequests.push({ url, body: JSON.parse(options.body) });
+                return {
+                    ok: true,
+                    json: async () => ({ message: "La cita se canceló correctamente." }),
+                };
+            }
             const params = new URL(url, "http://localhost").searchParams;
             window.appointmentRequests.push(Object.fromEntries(params.entries()));
             if (window.failAppointmentRequest) {
@@ -122,6 +131,24 @@ try {
         .getByRole("link", { name: "Editar y reprogramar la cita de María Fernanda López" })
         .first()
         .waitFor();
+
+    await page.locator('[data-cancel-appointment="10"]').first().click();
+    await page.getByRole("dialog").waitFor({ state: "visible" });
+    await page.locator("[data-cancellation-reason]").fill("El paciente solicita cancelar");
+    await page.locator("[data-cancellation-form] button[type=submit]").click();
+    await page.getByRole("dialog").waitFor({ state: "hidden" });
+    const cancellationRequest = await page.evaluate(() => window.cancellationRequests[0]);
+    if (
+        cancellationRequest.url !== "/api/admin/appointments/10/status" ||
+        cancellationRequest.body.reason !== "El paciente solicita cancelar"
+    ) {
+        throw new Error(
+            "Appointment cancellation did not submit the selected appointment and reason.",
+        );
+    }
+    console.log(
+        "PASS: cancellation requires a dialog confirmation and submits the optional reason.",
+    );
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },

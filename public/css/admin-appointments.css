@@ -188,6 +188,21 @@
 .appointment-edit-link { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid #c6def4; border-radius: 8px; color: #075fc3; background: #eaf5ff; font-size: 10px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .appointment-edit-link:hover { background: #dceeff; }
 .appointment-edit-link:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
+.appointment-cancel-button { min-height: 32px; padding: 0 9px; border: 1px solid #ffd0d0; border-radius: 8px; color: #c62828; background: #fff4f4; font: inherit; font-size: 10px; font-weight: 650; cursor: pointer; }
+.appointment-cancel-button:hover { background: #ffe7e7; }
+.appointment-cancel-button:focus-visible { outline: 3px solid rgb(198 40 40 / 24%); outline-offset: 2px; }
+.appointment-cancel-button:disabled { opacity: .6; cursor: wait; }
+.appointment-cancellation-dialog { width: min(440px, calc(100vw - 28px)); padding: 22px; border: 1px solid #dce8f4; border-radius: 16px; color: #173b72; box-shadow: 0 24px 70px rgb(10 39 79 / 24%); }
+.appointment-cancellation-dialog::backdrop { background: rgb(8 30 61 / 48%); }
+.appointment-cancellation-dialog form { display: grid; gap: 12px; }
+.appointment-cancellation-dialog h2 { margin: 0; color: #082f7c; font-size: 20px; }
+.appointment-cancellation-dialog p { margin: 0; font-size: 13px; line-height: 1.5; }
+.appointment-cancellation-dialog label { font-size: 12px; font-weight: 650; }
+.appointment-cancellation-dialog textarea { width: 100%; resize: vertical; padding: 10px; border: 1px solid #d4e0ee; border-radius: 9px; color: #173b72; font: inherit; font-size: 13px; }
+.appointment-cancellation-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; }
+.appointment-cancellation-actions button { min-height: 40px; padding: 0 13px; border: 1px solid #d7e3f0; border-radius: 9px; color: #31547b; background: #fff; font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.appointment-cancellation-actions .appointment-cancellation-submit { border-color: #c52f37; color: #fff; background: #d83c43; }
+.appointment-cancellation-actions button:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
 .appointments-table td[data-label="Acciones"] { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .appointments-empty-row td { height: 95px; color: #7185a0; text-align: center; }
 .appointments-mobile-list { display: none; }
@@ -238,6 +253,7 @@
     .appointment-mobile-card .appointment-status-badge::before { width: 6px; height: 6px; }
     .appointment-mobile-card .appointment-details-link { min-height: 29px; justify-self: end; padding: 0 10px; }
     .appointment-mobile-card .appointment-edit-link { min-height: 29px; justify-self: end; padding: 0 8px; }
+    .appointment-mobile-card .appointment-cancel-button { min-height: 29px; justify-self: end; padding: 0 8px; }
     .appointments-empty-mobile { margin: 0; padding: 26px 10px; border: 1px solid #e8eff7; border-radius: 10px; color: #7185a0; font-size: 12px; text-align: center; }
     .appointments-pagination { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; padding: 10px 1px 0; font-size: 10px; }
     .appointment-pagination-controls { grid-column: 2; grid-row: 1; gap: 4px; }
@@ -253,6 +269,7 @@
     .appointment-mobile-card .appointment-status-badge { grid-column: 3; justify-self: start; }
     .appointment-mobile-card .appointment-details-link { grid-column: 3; }
     .appointment-mobile-card .appointment-edit-link { grid-column: 3; }
+    .appointment-mobile-card .appointment-cancel-button { grid-column: 3; }
 }
 
 .admin-appointment-details-page {
