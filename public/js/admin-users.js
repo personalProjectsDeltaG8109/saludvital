@@ -698,7 +698,8 @@ if (page) {
             if (!window.confirm(`¿Confirmas ${action} la cuenta de ${user.displayName}?`)) return;
             void updateUser(user, { isActive: nextIsActive });
         });
-        actions.append(editButton, toggle);
+        actions.append(editButton);
+        if (user.role.name !== "Doctor" && !user.isDoctorProfile) actions.append(toggle);
         card.append(identity, roleField, profileField, lastLoginField, actions);
         return card;
     }

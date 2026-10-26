@@ -7,6 +7,82 @@ function closeSidebar() {
     document.querySelector("[data-admin-open]")?.setAttribute("aria-expanded", "false");
 }
 
+function confirmDoctorDeactivation(doctorName, upcomingAppointmentCount) {
+    return new Promise((resolve) => {
+        const dialog = document.createElement("dialog");
+        dialog.className = "doctor-status-dialog";
+        dialog.setAttribute("aria-labelledby", "doctor-status-dialog-title");
+
+        const content = document.createElement("div");
+        content.className = "doctor-status-dialog-content";
+        const title = document.createElement("h2");
+        title.id = "doctor-status-dialog-title";
+        title.textContent = "Desactivar médico";
+        const description = document.createElement("p");
+        const appointmentMessage = upcomingAppointmentCount
+            ? `${upcomingAppointmentCount} citas futuras confirmadas se cancelarán. Sus pacientes recibirán una notificación según sus preferencias.`
+            : "No hay citas futuras confirmadas que deban cancelarse.";
+        description.textContent = `La cuenta de ${doctorName} perderá acceso de inmediato. ${appointmentMessage} El historial se conservará y las citas canceladas no se restaurarán al reactivar la cuenta.`;
+
+        const actions = document.createElement("div");
+        actions.className = "doctor-status-dialog-actions";
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "doctors-secondary-button";
+        cancelButton.textContent = "Volver";
+        const confirmButton = document.createElement("button");
+        confirmButton.type = "button";
+        confirmButton.className = "doctor-status-confirm-button";
+        confirmButton.textContent = "Desactivar médico";
+        actions.append(cancelButton, confirmButton);
+        content.append(title, description, actions);
+        dialog.append(content);
+        document.body.append(dialog);
+
+        cancelButton.addEventListener("click", () => dialog.close("cancel"));
+        confirmButton.addEventListener("click", () => dialog.close("confirm"));
+        dialog.addEventListener("close", () => {
+            const confirmed = dialog.returnValue === "confirm";
+            dialog.remove();
+            resolve(confirmed);
+        });
+        dialog.showModal();
+        cancelButton.focus();
+    });
+}
+
+async function changeDoctorStatus({
+    doctorId,
+    doctorName,
+    isActive,
+    statusEndpoint,
+    impactEndpoint,
+}) {
+    if (!isActive) {
+        const impactResponse = await fetch(`${impactEndpoint}/${doctorId}/status-impact`, {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+        });
+        const impact = await impactResponse.json();
+        if (!impactResponse.ok) {
+            throw new Error(impact.message || "No pudimos verificar las citas del médico.");
+        }
+        if (!(await confirmDoctorDeactivation(doctorName, impact.upcomingAppointmentCount))) {
+            return null;
+        }
+    }
+
+    const response = await fetch(`${statusEndpoint}/${doctorId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ isActive }),
+    });
+    const data = await response.json();
+    if (!response.ok)
+        throw new Error(data.message || "No pudimos actualizar el estado del médico.");
+    return data;
+}
+
 document.querySelector("[data-admin-open]")?.addEventListener("click", () => {
     adminApp.classList.add("is-sidebar-open");
     document.querySelector("[data-admin-open]")?.setAttribute("aria-expanded", "true");
@@ -87,7 +163,37 @@ if (doctorsPage) {
                 editLink.setAttribute("aria-label", `Editar información de ${doctor.name}`);
                 editLink.innerHTML =
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg><span>Editar</span>';
-                actions.append(badge, detailsLink, editLink);
+                const statusAction = document.createElement("button");
+                statusAction.type = "button";
+                statusAction.className = `doctor-row-status-action doctor-status-action${doctor.isActive ? " is-deactivation" : " is-activation"}`;
+                statusAction.textContent = doctor.isActive ? "Desactivar" : "Activar";
+                statusAction.setAttribute(
+                    "aria-label",
+                    `${doctor.isActive ? "Desactivar" : "Activar"} a ${doctor.name}`,
+                );
+                statusAction.addEventListener("click", async () => {
+                    statusAction.disabled = true;
+                    feedback.textContent = "Actualizando el estado del médico…";
+                    try {
+                        const result = await changeDoctorStatus({
+                            doctorId: doctor.id,
+                            doctorName: doctor.name,
+                            isActive: !doctor.isActive,
+                            statusEndpoint: doctorsPage.dataset.statusEndpoint,
+                            impactEndpoint: doctorsPage.dataset.statusImpactEndpoint,
+                        });
+                        if (!result) return;
+                        await load();
+                        feedback.textContent = result.message;
+                        feedback.classList.add("is-success");
+                    } catch (error) {
+                        feedback.textContent = error.message;
+                        feedback.classList.add("is-error");
+                    } finally {
+                        statusAction.disabled = false;
+                    }
+                });
+                actions.append(badge, detailsLink, editLink, statusAction);
                 article.append(avatar, info, actions);
                 list.append(article);
             }
@@ -136,3 +242,35 @@ if (doctorsPage) {
     });
     load();
 }
+
+const doctorDetailsPage = document.querySelector("[data-doctor-details]");
+const doctorStatusAction = doctorDetailsPage?.querySelector("[data-doctor-status-action]");
+doctorStatusAction?.addEventListener("click", async () => {
+    const feedback = doctorDetailsPage.querySelector("[data-doctor-status-feedback]");
+    const statusLabel = doctorDetailsPage.querySelector("[data-doctor-status-label]");
+    const isActive = doctorStatusAction.dataset.isActive === "true";
+    doctorStatusAction.disabled = true;
+    feedback.textContent = "Actualizando el estado del médico…";
+    try {
+        const result = await changeDoctorStatus({
+            doctorId: doctorStatusAction.dataset.doctorId,
+            doctorName: doctorDetailsPage.querySelector("#doctor-name").textContent,
+            isActive: !isActive,
+            statusEndpoint: doctorDetailsPage.dataset.statusEndpoint,
+            impactEndpoint: doctorDetailsPage.dataset.statusImpactEndpoint,
+        });
+        if (!result) return;
+        doctorStatusAction.dataset.isActive = String(result.isActive);
+        doctorStatusAction.textContent = result.isActive ? "Desactivar médico" : "Activar médico";
+        statusLabel.textContent = result.isActive ? "Activo" : "Inactivo";
+        statusLabel.classList.toggle("is-active", result.isActive);
+        statusLabel.classList.toggle("is-inactive", !result.isActive);
+        feedback.textContent = result.message;
+        feedback.classList.add("is-success");
+    } catch (error) {
+        feedback.textContent = error.message;
+        feedback.classList.add("is-error");
+    } finally {
+        doctorStatusAction.disabled = false;
+    }
+});

@@ -14,7 +14,11 @@ html(lang="es")
         +adminSidebar("doctors")
         .admin-main-shell
             +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
-            main.doctor-details-page
+            main.doctor-details-page(
+                data-doctor-details,
+                data-status-impact-endpoint="/api/admin/doctors",
+                data-status-endpoint="/api/admin/doctors"
+            )
                 a.doctors-back-link(href="/admin/doctors") ← Volver a médicos
                 header.doctor-details-heading
                     div
@@ -30,11 +34,26 @@ html(lang="es")
                     .doctor-details-identity
                         h2#doctor-name= doctor.name
                         p= doctor.specialty ? doctor.specialty.name : "Especialidad no asignada"
-                        span.doctor-status(class=doctor.isActive ? "is-active" : "is-inactive")
+                        span.doctor-status(
+                            class=doctor.isActive ? "is-active" : "is-inactive",
+                            data-doctor-status-label
+                        )
                             | #{ doctor.isActive ? "Activo" : "Inactivo" }
-                    a.doctors-secondary-button.doctor-details-manage(
-                        href="/admin/users?search=" + encodeURIComponent(doctor.email) + "&edit=" + doctor.userId
-                    ) Editar médico
+                    .doctor-details-actions
+                        a.doctors-secondary-button.doctor-details-manage(
+                            href="/admin/users?search=" + encodeURIComponent(doctor.email) + "&edit=" + doctor.userId
+                        ) Editar médico
+                        button.doctors-secondary-button.doctor-status-action(
+                            type="button",
+                            data-doctor-status-action,
+                            data-doctor-id=doctor.id,
+                            data-is-active=doctor.isActive
+                        )= doctor.isActive ? "Desactivar médico" : "Activar médico"
+                p.doctor-status-feedback(
+                    role="status",
+                    aria-live="polite",
+                    data-doctor-status-feedback
+                )
                 .doctor-details-grid
                     section.doctor-details-card(aria-labelledby="doctor-contact-heading")
                         h2#doctor-contact-heading Contacto y especialidad
