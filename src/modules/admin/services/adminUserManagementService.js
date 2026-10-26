@@ -699,6 +699,12 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 delete normalizedDoctor.photo;
                 updatedPhotoUrl = normalizedDoctor.profile_photo_url;
                 changes.profile = Object.keys(normalizedDoctor);
+                if (doctor.specialty_id !== normalizedDoctor.specialty_id) {
+                    changes.specialty = {
+                        previousId: doctor.specialty_id,
+                        nextId: normalizedDoctor.specialty_id,
+                    };
+                }
                 await doctor.update(normalizedDoctor, { transaction });
             } else {
                 throw serviceError(
