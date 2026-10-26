@@ -19,15 +19,19 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
         findByPk: jest.fn(),
     },
     AppointmentStatus: { findAll: jest.fn() },
-    Doctor: { findAll: jest.fn() },
+    Doctor: { findAll: jest.fn(), findByPk: jest.fn() },
     Patient: {},
-    Specialities: { findAll: jest.fn() },
+    Specialities: { findAll: jest.fn(), findByPk: jest.fn() },
 }));
 
 const { Appointment, AppointmentStatus, Doctor, Specialities } =
     await import("../../src/models/associations.js");
-const { getAdminAppointmentDetails, getAdminAppointments, getAdminAppointmentExportRows } =
-    await import("../../src/modules/admin/services/adminAppointmentService.js");
+const {
+    getAdminAppointmentDetails,
+    getAdminAppointments,
+    getAdminAppointmentExportFilters,
+    getAdminAppointmentExportRows,
+} = await import("../../src/modules/admin/services/adminAppointmentService.js");
 
 const supportedStatuses = [
     { id: 1, name: "Confirmed" },
@@ -67,6 +71,8 @@ describe("admin appointment directory service", () => {
         Appointment.count.mockResolvedValue(1);
         Specialities.findAll.mockResolvedValue([{ id: 2, name: "Medicina General" }]);
         Doctor.findAll.mockResolvedValue([{ id: 3, display_name: "Dra. Ana Torres" }]);
+        Specialities.findByPk.mockResolvedValue({ id: 2, name: "Medicina General" });
+        Doctor.findByPk.mockResolvedValue({ id: 3, display_name: "Dra. Ana Torres" });
     });
 
     test("returns persisted appointment summaries, status counts, options, and pagination", async () => {
@@ -230,6 +236,32 @@ describe("admin appointment directory service", () => {
             statusCode: 400,
         });
         expect(Appointment.findAll).not.toHaveBeenCalled();
+    });
+
+    test("formats active export filters for the printable report", async () => {
+        const filters = await getAdminAppointmentExportFilters({
+            from: "2026-10-20",
+            to: "2026-10-27",
+            status: "Confirmed",
+            specialtyId: "2",
+            doctorId: "3",
+            search: "María",
+        });
+
+        expect(filters).toEqual([
+            { label: "Desde", value: "2026-10-20" },
+            { label: "Hasta", value: "2026-10-27" },
+            { label: "Estado", value: "Confirmada" },
+            { label: "Especialidad", value: "Medicina General" },
+            { label: "Médico", value: "Dra. Ana Torres" },
+            { label: "Paciente", value: "María" },
+        ]);
+        expect(Specialities.findByPk).toHaveBeenCalledWith(2, {
+            attributes: ["name"],
+        });
+        expect(Doctor.findByPk).toHaveBeenCalledWith(3, {
+            attributes: ["id", "display_name"],
+        });
     });
 
     test("returns safe details for an existing appointment", async () => {

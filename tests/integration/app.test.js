@@ -123,6 +123,15 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("appointment PDF report requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .get("/admin/appointments/export/pdf?status=Confirmed")
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("appointment status changes require an authenticated administrator", async () => {
         const response = await request(app)
             .patch("/api/admin/appointments/1/status")

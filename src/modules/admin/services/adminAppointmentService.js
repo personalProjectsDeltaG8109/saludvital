@@ -281,7 +281,7 @@ export async function getAdminAppointments(query = {}) {
 export async function getAdminAppointmentExportRows(query = {}) {
     const status = query.status || "all";
     if (status !== "all" && !SUPPORTED_STATUSES.includes(status)) {
-        throw serviceError("El estado seleccionado no es vÃ¡lido.");
+        throw serviceError("El estado seleccionado no es válido.");
     }
 
     const { where, search } = buildFilters(query);
@@ -322,8 +322,40 @@ export async function getAdminAppointmentExportRows(query = {}) {
         endAt: new Date(appointment.end_at).toISOString(),
         patientName: `${appointment.patient.first_name} ${appointment.patient.last_name}`.trim(),
         specialty: appointment.specialty.name,
-        doctor: appointment.doctor.display_name || `MÃ©dico ${appointment.doctor.id}`,
+        doctor: appointment.doctor.display_name || `Médico ${appointment.doctor.id}`,
         status: appointment.status.name,
         statusLabel: STATUS_LABELS[appointment.status.name],
     }));
+}
+
+/** Return readable filter names for the printable appointment report. */
+export async function getAdminAppointmentExportFilters(query = {}) {
+    const status = query.status || "all";
+    if (status !== "all" && !SUPPORTED_STATUSES.includes(status)) {
+        throw serviceError("El estado seleccionado no es válido.");
+    }
+
+    const { search } = buildFilters(query);
+    const filters = [];
+    if (query.from) filters.push({ label: "Desde", value: query.from });
+    if (query.to) filters.push({ label: "Hasta", value: query.to });
+    if (status !== "all") filters.push({ label: "Estado", value: STATUS_LABELS[status] });
+
+    if (query.specialtyId) {
+        const specialtyId = parseInteger(query.specialtyId, null, "La especialidad");
+        const specialty = await Specialities.findByPk(specialtyId, { attributes: ["name"] });
+        filters.push({ label: "Especialidad", value: specialty?.name || `ID ${specialtyId}` });
+    }
+
+    if (query.doctorId) {
+        const doctorId = parseInteger(query.doctorId, null, "El médico");
+        const doctor = await Doctor.findByPk(doctorId, { attributes: ["id", "display_name"] });
+        filters.push({
+            label: "Médico",
+            value: doctor?.display_name || `Médico ${doctorId}`,
+        });
+    }
+
+    if (search) filters.push({ label: "Paciente", value: search });
+    return filters;
 }
