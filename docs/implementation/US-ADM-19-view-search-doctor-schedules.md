@@ -1,7 +1,9 @@
 # US-ADM-19 — View and Search Doctor Schedules
 
-Issue: [#145](https://github.com/personalProjectsDeltaG8109/saludvital/issues/145)  
-Milestone: Sprint 5 - Administration  
+Issue: [#145](https://github.com/personalProjectsDeltaG8109/saludvital/issues/145)
+
+Milestone: Sprint 5 - Administration
+
 Branch: `feature/us-adm-19-view-search-doctor-schedules`
 
 ## Acceptance criteria
