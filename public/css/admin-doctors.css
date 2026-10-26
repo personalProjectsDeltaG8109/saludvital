@@ -115,9 +115,10 @@
 }
 .doctor-list-avatar { display: grid; width: 42px; height: 42px; place-items: center; overflow: hidden; border-radius: 50%; color: #0873c9; background: #e3f2ff; font-weight: 700; }
 .doctor-list-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.doctor-row-actions { display: flex; align-items: center; gap: 10px; }
-.doctor-details-link { display: inline-flex; min-height: 40px; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #d9e5f2; border-radius: 8px; color: #0873c9; background: #f5faff; font: inherit; font-size: .9rem; font-weight: 650; text-decoration: none; }
+.doctor-row-actions { display: flex; align-items: center; gap: 7px; }
+.doctor-details-link { position: relative; display: inline-grid; width: 40px; min-height: 40px; place-items: center; padding: 7px; border: 1px solid #d9e5f2; border-radius: 8px; color: #0873c9; background: #f5faff; text-decoration: none; }
 .doctor-details-link svg { width: 19px; height: 19px; }
+.doctor-details-link span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .doctor-details-link:focus-visible { outline: 3px solid #13b8b0; outline-offset: 2px; }
 .doctor-row-info {
     display: grid;

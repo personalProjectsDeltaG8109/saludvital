@@ -218,7 +218,7 @@ describe("Admin doctor management service", () => {
         Specialities.findAll.mockResolvedValue([{ id: 3, name: "Pediatrics" }]);
         await expect(getAdminDoctors()).resolves.toMatchObject({
             stats: { total: 4, active: 3, scheduled: 2, inactive: 1 },
-            doctors: [{ name: "Dr. Example", hasSchedule: false }],
+            doctors: [{ userId: 7, name: "Dr. Example", hasSchedule: false }],
         });
         expect(Doctor.count).toHaveBeenNthCalledWith(
             3,

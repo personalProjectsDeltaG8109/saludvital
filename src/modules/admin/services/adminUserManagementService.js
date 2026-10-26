@@ -15,6 +15,7 @@ import {
     getMunicipalities,
     resolveLocation,
 } from "../../auth/services/locationService.js";
+import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -569,8 +570,15 @@ function validateDoctorAdminProfile(payload) {
         throw serviceError("La información del médico no es válida.", 400);
     }
     const specialtyId = parsePositiveInteger(profile.specialtyId, "La especialidad", null);
+    if (
+        profile.photo !== undefined &&
+        profile.photo !== null &&
+        typeof profile.photo !== "string"
+    ) {
+        throw serviceError("La foto del médico no es válida.", 400);
+    }
     return {
-        display_name: normalizeProfileText(profile.displayName, "El nombre del médico", 120),
+        display_name: normalizeProfileText(profile.displayName, "El nombre del médico", 120, true),
         professional_information: normalizeProfileText(
             profile.professionalInformation,
             "La información profesional",
@@ -578,6 +586,7 @@ function validateDoctorAdminProfile(payload) {
         ),
         profile_photo_url: normalizeProfilePhotoUrl(profile.profilePhotoUrl),
         specialty_id: specialtyId,
+        photo: profile.photo || null,
     };
 }
 
@@ -590,139 +599,173 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
     }
     const email = normalizeProfileEmail(payload.email);
 
-    return database.transaction(async (transaction) => {
-        const user = await User.findByPk(userId, {
-            transaction,
-            lock: transaction.LOCK.UPDATE,
-        });
-        if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
-        const role = await Rol.findByPk(user.role_id, { attributes: ["name"], transaction });
-        const currentEmail = user.email.toLowerCase();
-        const changes = { email: currentEmail === email ? [] : ["email"] };
+    let storedPhotoUrl = null;
+    let previousPhotoUrl = null;
+    let updatedPhotoUrl = null;
 
-        const duplicateEmail = await User.findOne({
-            where: { email, id: { [Op.ne]: user.id } },
-            attributes: ["id"],
-            transaction,
-        });
-        if (duplicateEmail) throw serviceError("Ese correo electrónico ya está registrado.", 409);
-
-        let patient;
-        let doctor;
-        let normalizedPatient;
-        let normalizedDoctor;
-        if (role?.name === "Patient") {
-            patient = await Patient.findOne({
-                where: { user_id: user.id },
+    return database
+        .transaction(async (transaction) => {
+            const user = await User.findByPk(userId, {
                 transaction,
                 lock: transaction.LOCK.UPDATE,
             });
-            if (!patient) throw serviceError("No encontramos el perfil del paciente.", 404);
-            normalizedPatient = validatePatientAdminProfile(payload);
+            if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
+            const role = await Rol.findByPk(user.role_id, { attributes: ["name"], transaction });
+            const currentEmail = user.email.toLowerCase();
+            const changes = { email: currentEmail === email ? [] : ["email"] };
 
-            const duplicateDocument = await Patient.findOne({
-                where: {
-                    document_type: normalizedPatient.profile.document_type,
-                    document_number: normalizedPatient.profile.document_number,
-                    id: { [Op.ne]: patient.id },
-                },
+            const duplicateEmail = await User.findOne({
+                where: { email, id: { [Op.ne]: user.id } },
                 attributes: ["id"],
                 transaction,
             });
-            if (duplicateDocument)
-                throw serviceError("Ese documento ya está asociado a otro paciente.", 409);
+            if (duplicateEmail)
+                throw serviceError("Ese correo electrónico ya está registrado.", 409);
 
-            await patient.update(normalizedPatient.profile, { transaction });
-            changes.profile = Object.keys(normalizedPatient.profile);
-            changes.emergencyContact = ["updated"];
-            const emergencyContact = await EmergencyContact.findOne({
-                where: { patient_id: patient.id },
-                order: [["id", "ASC"]],
-                transaction,
-                lock: transaction.LOCK.UPDATE,
-            });
-            if (normalizedPatient.emergencyContact) {
-                if (emergencyContact) {
-                    await emergencyContact.update(normalizedPatient.emergencyContact, {
+            let patient;
+            let doctor;
+            let normalizedPatient;
+            let normalizedDoctor;
+            if (role?.name === "Patient") {
+                patient = await Patient.findOne({
+                    where: { user_id: user.id },
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                });
+                if (!patient) throw serviceError("No encontramos el perfil del paciente.", 404);
+                normalizedPatient = validatePatientAdminProfile(payload);
+
+                const duplicateDocument = await Patient.findOne({
+                    where: {
+                        document_type: normalizedPatient.profile.document_type,
+                        document_number: normalizedPatient.profile.document_number,
+                        id: { [Op.ne]: patient.id },
+                    },
+                    attributes: ["id"],
+                    transaction,
+                });
+                if (duplicateDocument)
+                    throw serviceError("Ese documento ya está asociado a otro paciente.", 409);
+
+                await patient.update(normalizedPatient.profile, { transaction });
+                changes.profile = Object.keys(normalizedPatient.profile);
+                changes.emergencyContact = ["updated"];
+                const emergencyContact = await EmergencyContact.findOne({
+                    where: { patient_id: patient.id },
+                    order: [["id", "ASC"]],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                });
+                if (normalizedPatient.emergencyContact) {
+                    if (emergencyContact) {
+                        await emergencyContact.update(normalizedPatient.emergencyContact, {
+                            transaction,
+                        });
+                    } else {
+                        await EmergencyContact.create(
+                            { ...normalizedPatient.emergencyContact, patient_id: patient.id },
+                            { transaction },
+                        );
+                    }
+                } else if (emergencyContact) {
+                    await EmergencyContact.destroy({
+                        where: { patient_id: patient.id },
                         transaction,
                     });
-                } else {
-                    await EmergencyContact.create(
-                        { ...normalizedPatient.emergencyContact, patient_id: patient.id },
-                        { transaction },
-                    );
+                    changes.emergencyContact = ["removed"];
                 }
-            } else if (emergencyContact) {
-                await EmergencyContact.destroy({ where: { patient_id: patient.id }, transaction });
-                changes.emergencyContact = ["removed"];
+            } else if (role?.name === "Doctor") {
+                doctor = await Doctor.findOne({
+                    where: { user_id: user.id },
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                });
+                if (!doctor) throw serviceError("No encontramos el perfil del médico.", 404);
+                normalizedDoctor = validateDoctorAdminProfile(payload);
+                const specialty = await Specialities.findOne({
+                    where: {
+                        id: normalizedDoctor.specialty_id,
+                        [Op.or]: [{ is_active: true }, { id: doctor.specialty_id }],
+                    },
+                    attributes: ["id"],
+                    transaction,
+                });
+                if (!specialty) throw serviceError("La especialidad seleccionada no existe.", 400);
+                previousPhotoUrl = doctor.profile_photo_url || null;
+                if (normalizedDoctor.photo) {
+                    storedPhotoUrl = await storeDoctorPhoto(normalizedDoctor.photo);
+                    normalizedDoctor.profile_photo_url = storedPhotoUrl;
+                }
+                delete normalizedDoctor.photo;
+                updatedPhotoUrl = normalizedDoctor.profile_photo_url;
+                changes.profile = Object.keys(normalizedDoctor);
+                await doctor.update(normalizedDoctor, { transaction });
+            } else {
+                throw serviceError(
+                    "Esta cuenta no tiene un perfil de paciente o médico editable.",
+                    409,
+                );
             }
-        } else if (role?.name === "Doctor") {
-            doctor = await Doctor.findOne({
-                where: { user_id: user.id },
-                transaction,
-                lock: transaction.LOCK.UPDATE,
-            });
-            if (!doctor) throw serviceError("No encontramos el perfil del médico.", 404);
-            normalizedDoctor = validateDoctorAdminProfile(payload);
-            const specialty = await Specialities.findByPk(normalizedDoctor.specialty_id, {
-                attributes: ["id"],
-                transaction,
-            });
-            if (!specialty) throw serviceError("La especialidad seleccionada no existe.", 400);
-            changes.profile = Object.keys(normalizedDoctor);
-            await doctor.update(normalizedDoctor, { transaction });
-        } else {
-            throw serviceError(
-                "Esta cuenta no tiene un perfil de paciente o médico editable.",
-                409,
-            );
-        }
 
-        if (changes.email.length) {
-            await user.update(
+            if (changes.email.length) {
+                await user.update(
+                    {
+                        email,
+                        email_verified_at: null,
+                        email_verification_token_hash: null,
+                        email_verification_expires_at: null,
+                    },
+                    { transaction },
+                );
+                await EmailOutbox.create(
+                    {
+                        user_id: user.id,
+                        event_type: "email_verification",
+                        status: "pending",
+                        attempts: 0,
+                        next_attempt_at: new Date(),
+                    },
+                    { transaction },
+                );
+            }
+
+            const actor = await User.findByPk(actorId, {
+                attributes: ["id", "email"],
+                transaction,
+            });
+            if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+            await AuditLog.create(
                 {
-                    email,
-                    email_verified_at: null,
-                    email_verification_token_hash: null,
-                    email_verification_expires_at: null,
+                    actor_user_id: actorId,
+                    actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                    action: "AdminUserProfileUpdated",
+                    target_type: "User",
+                    target_id: String(user.id),
+                    target_description: user.email,
+                    changes,
+                    reason: "Administrator edited a patient or doctor profile.",
+                    result: "Success",
+                    occurred_at: new Date(),
                 },
                 { transaction },
             );
-            await EmailOutbox.create(
-                {
-                    user_id: user.id,
-                    event_type: "email_verification",
-                    status: "pending",
-                    attempts: 0,
-                    next_attempt_at: new Date(),
-                },
-                { transaction },
-            );
-        }
 
-        const actor = await User.findByPk(actorId, {
-            attributes: ["id", "email"],
-            transaction,
+            return { message: "La información del usuario se actualizó correctamente." };
+        })
+        .then(async (result) => {
+            if (
+                previousPhotoUrl &&
+                previousPhotoUrl !== updatedPhotoUrl &&
+                previousPhotoUrl.startsWith("/uploads/profile-photos/")
+            ) {
+                await removeDoctorPhoto(previousPhotoUrl).catch(() => {});
+            }
+            return result;
+        })
+        .catch(async (error) => {
+            if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl).catch(() => {});
+            throw error;
         });
-        if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
-        await AuditLog.create(
-            {
-                actor_user_id: actorId,
-                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
-                action: "AdminUserProfileUpdated",
-                target_type: "User",
-                target_id: String(user.id),
-                target_description: user.email,
-                changes,
-                reason: "Administrator edited a patient or doctor profile.",
-                result: "Success",
-                occurred_at: new Date(),
-            },
-            { transaction },
-        );
-
-        return { message: "La información del usuario se actualizó correctamente." };
-    });
 }
 
 export async function getAdminDepartments() {

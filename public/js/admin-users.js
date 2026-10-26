@@ -20,7 +20,10 @@ if (page) {
     const editForm = document.querySelector("[data-user-edit-form]");
     const editFields = document.querySelector("[data-user-edit-fields]");
     const saveButton = document.querySelector("[data-user-modal-save]");
-    const initialSearch = new URLSearchParams(window.location.search).get("search") || "";
+    const initialQuery = new URLSearchParams(window.location.search);
+    const initialSearch = initialQuery.get("search") || "";
+    const requestedEditId = initialQuery.get("edit") || "";
+    let pendingEditUserId = /^\d+$/.test(requestedEditId) ? Number(requestedEditId) : null;
     const state = {
         page: 1,
         pageSize: 10,
@@ -32,6 +35,8 @@ if (page) {
     let focusedBeforeModal;
     let editingUser;
     let activeRequest;
+    let doctorPhotoDataUrl = null;
+    let doctorPhotoReadPromise = Promise.resolve();
 
     searchInput.value = initialSearch;
     if (topSearchInput) topSearchInput.value = initialSearch;
@@ -105,6 +110,101 @@ if (page) {
         if (options.placeholder) control.placeholder = options.placeholder;
         wrapper.append(control);
         return wrapper;
+    }
+
+    function doctorPhotoField(doctor) {
+        const field = document.createElement("div");
+        field.className = "admin-user-form-field admin-user-doctor-photo-field is-wide";
+
+        const heading = document.createElement("span");
+        heading.textContent = "Foto del médico";
+        const content = document.createElement("div");
+        content.className = "admin-user-doctor-photo-content";
+        const preview = document.createElement("div");
+        preview.className = "admin-user-doctor-photo-preview";
+        const photoUrl = document.createElement("input");
+        photoUrl.type = "hidden";
+        photoUrl.name = "profilePhotoUrl";
+        photoUrl.value =
+            typeof doctor.profile_photo_url === "string" &&
+            doctor.profile_photo_url.startsWith("/") &&
+            !doctor.profile_photo_url.startsWith("//")
+                ? doctor.profile_photo_url
+                : "";
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "image/jpeg,image/png,image/webp";
+        fileInput.className = "admin-user-doctor-photo-input";
+        fileInput.setAttribute("aria-label", "Seleccionar foto del médico");
+        const uploadLabel = document.createElement("label");
+        uploadLabel.className = "admin-user-doctor-photo-upload";
+        uploadLabel.textContent = "Cambiar foto";
+        uploadLabel.append(fileInput);
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "admin-user-doctor-photo-remove";
+        removeButton.textContent = "Quitar foto";
+        removeButton.hidden = !photoUrl.value;
+
+        function showPhoto(source) {
+            preview.replaceChildren();
+            if (source) {
+                const image = document.createElement("img");
+                image.src = source;
+                image.alt = `Foto de ${doctor.display_name || "médico"}`;
+                preview.append(image);
+                return;
+            }
+            const initials = document.createElement("span");
+            initials.setAttribute("aria-hidden", "true");
+            initials.textContent = (doctor.display_name || "M").trim().charAt(0).toUpperCase();
+            preview.append(initials);
+        }
+
+        showPhoto(photoUrl.value);
+        fileInput.addEventListener("change", () => {
+            const [file] = fileInput.files;
+            if (!file) return;
+            if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024) {
+                fileInput.value = "";
+                doctorPhotoDataUrl = null;
+                doctorPhotoReadPromise = Promise.resolve();
+                showPhoto(photoUrl.value);
+                setModalFeedback("Elige una foto JPG, PNG o WebP de máximo 2 MB.");
+                return;
+            }
+
+            doctorPhotoDataUrl = null;
+            doctorPhotoReadPromise = new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    doctorPhotoDataUrl = reader.result;
+                    showPhoto(doctorPhotoDataUrl);
+                    removeButton.hidden = false;
+                    setModalFeedback("");
+                    resolve();
+                });
+                reader.addEventListener("error", () =>
+                    reject(new Error("No se pudo leer la foto seleccionada.")),
+                );
+                reader.readAsDataURL(file);
+            });
+        });
+        removeButton.addEventListener("click", () => {
+            fileInput.value = "";
+            photoUrl.value = "";
+            doctorPhotoDataUrl = null;
+            doctorPhotoReadPromise = Promise.resolve();
+            showPhoto(null);
+            removeButton.hidden = true;
+        });
+
+        const hint = document.createElement("small");
+        hint.className = "admin-user-form-hint";
+        hint.textContent = "JPG, PNG o WebP. Máximo 2 MB.";
+        content.append(preview, uploadLabel, removeButton, photoUrl, hint);
+        field.append(heading, content);
+        return field;
     }
 
     function formSection(title, fields) {
@@ -325,15 +425,11 @@ if (page) {
             ]),
             formSection("Datos del médico", [
                 formField("Nombre visible", "displayName", doctor.display_name, {
+                    required: true,
                     maxLength: 120,
                     wide: true,
                 }),
-                formField(
-                    "Ruta de la foto de perfil",
-                    "profilePhotoUrl",
-                    doctor.profile_photo_url,
-                    { wide: true, maxLength: 255, placeholder: "/uploads/profile-photos/..." },
-                ),
+                doctorPhotoField({ ...doctor, profile_photo_url: user.profilePhotoUrl }),
                 formField("Especialidad", "specialtyId", String(doctor.specialty_id), {
                     required: true,
                     options: specialties.map((specialty) => ({
@@ -368,12 +464,16 @@ if (page) {
         document.body.classList.remove("has-admin-modal");
         editFields.replaceChildren();
         editingUser = null;
+        doctorPhotoDataUrl = null;
+        doctorPhotoReadPromise = Promise.resolve();
         if (focusedBeforeModal?.isConnected) focusedBeforeModal.focus();
         else searchInput.focus();
     }
 
     async function openEditModal(userId, trigger) {
         focusedBeforeModal = trigger;
+        doctorPhotoDataUrl = null;
+        doctorPhotoReadPromise = Promise.resolve();
         modal.hidden = false;
         document.body.classList.add("has-admin-modal");
         dialog.focus();
@@ -405,6 +505,14 @@ if (page) {
     async function saveEditedProfile(event) {
         event.preventDefault();
         if (!editingUser || !editForm.reportValidity()) return;
+
+        try {
+            await doctorPhotoReadPromise;
+        } catch (error) {
+            setModalFeedback(error.message || "No se pudo leer la foto seleccionada.");
+            return;
+        }
+
         const values = new FormData(editForm);
         const value = (name) => values.get(name) || "";
         const payload = { email: value("email") };
@@ -441,6 +549,7 @@ if (page) {
                 professionalInformation: value("professionalInformation"),
                 profilePhotoUrl: value("profilePhotoUrl"),
             };
+            if (doctorPhotoDataUrl) payload.doctor.photo = doctorPhotoDataUrl;
         }
 
         saveButton.disabled = true;
@@ -618,6 +727,18 @@ if (page) {
             return;
         }
         data.users.forEach((user) => list.append(createUserCard(user, data.roles)));
+
+        if (pendingEditUserId) {
+            const trigger = list.querySelector(`[data-user-edit-id="${pendingEditUserId}"]`);
+            if (trigger) {
+                const userId = pendingEditUserId;
+                pendingEditUserId = null;
+                const url = new URL(window.location.href);
+                url.searchParams.delete("edit");
+                window.history.replaceState({}, "", url);
+                void openEditModal(userId, trigger);
+            }
+        }
     }
 
     async function loadUsers() {

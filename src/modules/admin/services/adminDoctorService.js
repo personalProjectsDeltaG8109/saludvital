@@ -33,6 +33,7 @@ function parseId(value, label) {
 function formatDoctor(record) {
     return {
         id: record.id,
+        userId: record.user_id,
         name: record.display_name || record.user.email,
         email: record.user.email,
         specialty: record.specialty?.name || null,
