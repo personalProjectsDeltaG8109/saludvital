@@ -21,6 +21,7 @@ Issue [#143](https://github.com/personalProjectsDeltaG8109/saludvital/issues/143
 - Added an `Exportar CSV` control that sends the active filters and starts a browser download.
 - Added a protected `GET /admin/appointments/export/pdf` report using the same appointment query and filters as CSV. It displays the generation time in Colombia, readable filter names, and a print-optimized appointment table.
 - Added an `Exportar PDF` action that opens the report in a separate tab and launches the browser print dialog; administrators can select “Guardar como PDF”. Print CSS repeats table headings, avoids splitting rows, and requests page numbers where supported.
+- The report's print behavior is served from a same-origin JavaScript file so it complies with the Content Security Policy configured by Helmet.
 - Reused the browser's built-in print-to-PDF support. The project has no PDF-generation library, and no new dependency was added.
 - No database migration was needed.
 
@@ -33,6 +34,7 @@ Issue [#143](https://github.com/personalProjectsDeltaG8109/saludvital/issues/143
 - `views/admin/appointment-export-report.pug`
 - `public/css/admin-appointments.css`
 - `public/css/admin-appointment-report.css`
+- `public/js/admin-appointment-report.js`
 - `public/js/admin-appointments.js`
 - `tests/unit/adminAppointmentService.test.js`
 - `tests/unit/adminAppointmentCsvService.test.js`
@@ -44,12 +46,12 @@ Issue [#143](https://github.com/personalProjectsDeltaG8109/saludvital/issues/143
 
 ## Verification
 
-- Full Jest suite: `npm.cmd test -- --runInBand` — 50 suites and 420 tests passed, including the MySQL query integration suite.
+- Full Jest suite: `npm.cmd test -- --runInBand` — 50 suites and 421 tests passed, including the MySQL query integration suite.
 - Full browser suite: `npm.cmd run test:e2e` — passed, including CSV download filename and filters, PDF report filters, empty states, errors, and responsive layouts.
 - `npm.cmd run lint` passed.
 - Prettier checks passed for changed JavaScript, CSS, JSON, and Markdown files. The installed Prettier has no Pug parser; Pug rendering and report behavior were exercised in the browser test.
 - Browser CSV download verification uses a mocked response; database query behavior and CSV serialization are covered by unit tests.
-- The browser E2E also renders the printable report through Chromium's PDF renderer and checks for a valid `%PDF-` document signature. Interactive Save as PDF remains controlled by the browser's print dialog.
+- Browser E2E checks automatic and button-triggered printing, report content, filters, privacy, empty results, responsive layout, and PDF rendering through Chromium's PDF renderer. Interactive Save as PDF remains controlled by the browser's print dialog.
 
 ## Remaining work
 

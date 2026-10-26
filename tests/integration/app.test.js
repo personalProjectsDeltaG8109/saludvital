@@ -132,6 +132,14 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("the appointment report print script is served under the site's script policy", async () => {
+        const response = await request(app).get("/js/admin-appointment-report.js");
+
+        expect(response.status).toBe(200);
+        expect(response.headers["content-security-policy"]).toContain("script-src 'self'");
+        expect(response.text).toContain('printButton?.addEventListener("click", printReport)');
+    });
+
     test("appointment status changes require an authenticated administrator", async () => {
         const response = await request(app)
             .patch("/api/admin/appointments/1/status")

@@ -28,14 +28,31 @@ const reportStyles = await readFile(
     path.resolve("public/css/admin-appointment-report.css"),
     "utf8",
 );
+const reportScript = await readFile(path.resolve("public/js/admin-appointment-report.js"), "utf8");
 const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.setContent(reportHtml, { waitUntil: "load" });
     await page.addStyleTag({ content: reportStyles });
-    if (!reportHtml.includes('printButton.addEventListener("click", () => window.print())')) {
-        throw new Error("The report print control must invoke the browser print dialog.");
+    await page.evaluate(() => {
+        window.printInvocations = 0;
+        Object.defineProperty(window, "print", {
+            configurable: true,
+            value: () => {
+                window.printInvocations += 1;
+            },
+        });
+    });
+    await page.addScriptTag({ content: reportScript });
+    await page.evaluate(() => window.dispatchEvent(new Event("load")));
+    await page.waitForTimeout(300);
+    if ((await page.evaluate(() => window.printInvocations)) !== 1) {
+        throw new Error("The report must try to open the print dialog after loading.");
+    }
+    await page.getByRole("button", { name: "Imprimir o guardar como PDF" }).click();
+    if ((await page.evaluate(() => window.printInvocations)) !== 2) {
+        throw new Error("The report button must open the browser print dialog.");
     }
 
     const reportText = await page.locator("body").innerText();

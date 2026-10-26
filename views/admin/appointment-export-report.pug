@@ -72,7 +72,4 @@ html(lang="es")
                 span SaludVital · Reporte de citas
                 span Información generada con los filtros seleccionados
             button.report-print-button(type="button", data-print-report) Imprimir o guardar como PDF
-        script.
-            const printButton = document.querySelector("[data-print-report]");
-            printButton.addEventListener("click", () => window.print());
-            window.addEventListener("load", () => window.setTimeout(() => window.print(), 250));
+        script(src="/js/admin-appointment-report.js", defer)
