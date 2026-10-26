@@ -118,6 +118,10 @@ try {
         .getByRole("link", { name: "Ver detalles de la cita de María Fernanda López" })
         .first()
         .waitFor();
+    await page
+        .getByRole("link", { name: "Editar y reprogramar la cita de María Fernanda López" })
+        .first()
+        .waitFor();
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
