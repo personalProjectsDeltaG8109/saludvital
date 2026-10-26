@@ -873,9 +873,24 @@ export async function bookAppointment({
 /**
  * Move one of the authenticated patient's appointments to a new available slot.
  */
-export async function reschedulePatientAppointment({ userId, appointmentId, date, time }) {
+export async function reschedulePatientAppointment({
+    userId,
+    actorUserId,
+    actorSnapshot,
+    appointmentId,
+    doctorId,
+    specialtyId,
+    date,
+    time,
+    reason,
+}) {
     userId = validatePositiveIntegerId(userId);
+    const historyActorUserId = validatePositiveIntegerId(actorUserId ?? userId);
     appointmentId = validatePositiveIntegerId(appointmentId);
+    if (doctorId !== undefined) doctorId = validatePositiveIntegerId(doctorId);
+    if (specialtyId !== undefined) specialtyId = validatePositiveIntegerId(specialtyId);
+    const updateReason = reason !== undefined;
+    const normalizedReason = updateReason ? normalizeAppointmentReason(reason) : undefined;
     const startAt = buildDateTime(date, time);
     const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
     validateAppointmentDate(startAt, endAt, {
@@ -894,20 +909,24 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
             throw new AppointmentError("No encontramos esa cita.", 404);
         }
 
-        // Lock the doctor before the appointment to match the deactivation lock order.
-        const doctorLock = await Doctor.findByPk(appointmentReference.doctor_id, {
-            transaction,
-            lock: transaction.LOCK.UPDATE,
-        });
-        if (!doctorLock) {
-            throw new AppointmentError("El médico asignado ya no está disponible.", 409);
-        }
-        await getActiveDoctor(
-            appointmentReference.doctor_id,
-            appointmentReference.specialty_id,
-            transaction,
-            true,
+        const targetDoctorId = doctorId ?? appointmentReference.doctor_id;
+        const targetSpecialtyId = specialtyId ?? appointmentReference.specialty_id;
+        const doctorIdsToLock = [...new Set([appointmentReference.doctor_id, targetDoctorId])].sort(
+            (left, right) => left - right,
         );
+
+        // Lock doctors in a stable order before locking the appointment row.
+        for (const id of doctorIdsToLock) {
+            const doctorLock = await Doctor.findByPk(id, {
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+            if (!doctorLock) {
+                throw new AppointmentError("El médico seleccionado ya no está disponible.", 409);
+            }
+        }
+        await getActiveSpecialty(targetSpecialtyId, transaction);
+        await getActiveDoctor(targetDoctorId, targetSpecialtyId, transaction, true);
 
         const appointment = await Appointment.findOne({
             where: { id: appointmentId, patient_id: patient.id },
@@ -919,9 +938,12 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         if (!appointment) {
             throw new AppointmentError("No se encontró la cita que deseas reprogramar.", 404);
         }
-        if (appointment.doctor_id !== appointmentReference.doctor_id) {
+        if (
+            appointment.doctor_id !== appointmentReference.doctor_id ||
+            appointment.specialty_id !== appointmentReference.specialty_id
+        ) {
             throw new AppointmentError(
-                "La cita cambió de médico. Actualiza e inténtalo de nuevo.",
+                "La cita cambió de asignación. Actualiza e inténtalo de nuevo.",
                 409,
             );
         }
@@ -931,6 +953,14 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         // Reject an original appointment that has started, even if the request bypasses the UI.
         if (new Date(appointment.start_at).getTime() <= Date.now()) {
             throw new AppointmentError("Esta cita ya inició y no se puede reprogramar.", 409);
+        }
+        if (
+            new Date(appointment.start_at).getTime() === startAt.getTime() &&
+            targetDoctorId === appointment.doctor_id &&
+            targetSpecialtyId === appointment.specialty_id &&
+            (!updateReason || normalizedReason === appointment.reason)
+        ) {
+            throw new AppointmentError("No detectamos cambios para guardar.", 400);
         }
 
         // Revalidate the replacement slot after acquiring the appointment lock.
@@ -954,7 +984,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
 
         await validateDailyAppointmentLimit({
             patientId: patient.id,
-            specialtyId: appointment.specialty_id,
+            specialtyId: targetSpecialtyId,
             startAt,
             transaction,
             excludeAppointmentId: appointment.id,
@@ -973,12 +1003,10 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
                 409,
             );
         }
-        if (!(await hasDoctorAvailability(appointment.doctor_id, startAt, endAt, transaction))) {
+        if (!(await hasDoctorAvailability(targetDoctorId, startAt, endAt, transaction))) {
             throw new AppointmentError("El médico no tiene disponibilidad en ese horario.", 409);
         }
-        if (
-            await hasBlockingScheduleException(appointment.doctor_id, startAt, endAt, transaction)
-        ) {
+        if (await hasBlockingScheduleException(targetDoctorId, startAt, endAt, transaction)) {
             throw new AppointmentError(
                 "El horario seleccionado está bloqueado por el médico.",
                 409,
@@ -986,7 +1014,7 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
         }
         if (
             await hasConflictingAppointment(
-                appointment.doctor_id,
+                targetDoctorId,
                 startAt,
                 endAt,
                 transaction,
@@ -1000,16 +1028,36 @@ export async function reschedulePatientAppointment({ userId, appointmentId, date
             start_at: new Date(appointment.start_at).toISOString(),
             end_at: new Date(appointment.end_at).toISOString(),
         };
-        await appointment.update({ start_at: startAt, end_at: endAt }, { transaction });
+        const updatedValues = { start_at: startAt, end_at: endAt };
+        if (targetDoctorId !== appointment.doctor_id) {
+            previousValues.doctor_id = appointment.doctor_id;
+            updatedValues.doctor_id = targetDoctorId;
+        }
+        if (targetSpecialtyId !== appointment.specialty_id) {
+            previousValues.specialty_id = appointment.specialty_id;
+            updatedValues.specialty_id = targetSpecialtyId;
+        }
+        if (updateReason) {
+            previousValues.reason = appointment.reason;
+            updatedValues.reason = normalizedReason;
+        }
+        const newValues = {
+            ...updatedValues,
+            start_at: startAt.toISOString(),
+            end_at: endAt.toISOString(),
+        };
+        await appointment.update(updatedValues, { transaction });
         await AppointmentHistory.create(
             {
                 appointment_id: appointment.id,
-                actor_user_id: userId,
-                actor_snapshot: `Patient ${patient.id}`,
+                actor_user_id: historyActorUserId,
+                actor_snapshot: actorSnapshot || `Patient ${patient.id}`,
                 event_type: "Rescheduled",
                 previous_values: previousValues,
-                new_values: { start_at: startAt.toISOString(), end_at: endAt.toISOString() },
-                reason: "Patient rescheduled through the web portal.",
+                new_values: newValues,
+                reason: actorSnapshot
+                    ? "Administrator edited or rescheduled the appointment."
+                    : "Patient rescheduled through the web portal.",
                 occurred_at: new Date(),
             },
             { transaction },

@@ -75,4 +75,9 @@ html(lang="es")
                                 dt Médico asignado
                                 dd= appointment.doctor
                 footer.appointment-details-footer
+                    if appointment.status === "Confirmed"
+                        a.appointment-edit-link(
+                            href=`/admin/appointments/${appointment.id}/edit`,
+                            aria-label=`Editar y reprogramar la cita de ${appointment.patient.name}`
+                        ) Editar y reprogramar
                     a.appointment-details-back-link(href="/admin/appointments") Volver al listado de citas
