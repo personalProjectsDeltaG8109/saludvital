@@ -110,6 +110,9 @@ if (appointmentsPage) {
         const actionsCell = document.createElement("td");
         actionsCell.dataset.label = "Acciones";
         actionsCell.append(createAppointmentDetailsLink(appointment));
+        if (appointment.status === "Confirmed") {
+            actionsCell.append(createAppointmentEditLink(appointment));
+        }
 
         row.append(
             date,
@@ -129,6 +132,18 @@ if (appointmentsPage) {
         link.href = `/admin/appointments/${appointment.id}`;
         link.setAttribute("aria-label", `Ver detalles de la cita de ${appointment.patient.name}`);
         link.textContent = "Ver";
+        return link;
+    }
+
+    function createAppointmentEditLink(appointment) {
+        const link = document.createElement("a");
+        link.className = "appointment-edit-link";
+        link.href = `/admin/appointments/${appointment.id}/edit`;
+        link.setAttribute(
+            "aria-label",
+            `Editar y reprogramar la cita de ${appointment.patient.name}`,
+        );
+        link.textContent = "Editar";
         return link;
     }
 
@@ -158,6 +173,8 @@ if (appointmentsPage) {
 
         const status = createStatusBadge(appointment);
         const detailsLink = createAppointmentDetailsLink(appointment);
+        const editLink =
+            appointment.status === "Confirmed" ? createAppointmentEditLink(appointment) : null;
         card.append(
             date,
             createPatientCell(appointment.patient).querySelector(".appointment-patient-avatar"),
@@ -165,6 +182,7 @@ if (appointmentsPage) {
             status,
             detailsLink,
         );
+        if (editLink) card.append(editLink);
         return card;
     }
 
