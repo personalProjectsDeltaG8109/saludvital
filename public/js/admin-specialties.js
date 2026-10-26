@@ -15,6 +15,7 @@ if (specialtiesPage) {
     let currentPage = 1;
     const pageQuery = new URLSearchParams(window.location.search);
     const specialtyCreated = pageQuery.get("created") === "1";
+    const specialtyUpdated = pageQuery.get("updated") === "1";
     if (pageQuery.has("search")) {
         search.value = pageQuery.get("search") || "";
         if (topSearch) topSearch.value = search.value;
@@ -92,7 +93,15 @@ if (specialtiesPage) {
         badge.textContent = specialty.isActive ? "Activa" : "Inactiva";
         state.append(badge);
 
-        row.append(number, name, description, doctorCount, state);
+        const actions = createCell("Acciones", "specialty-actions-cell");
+        const editLink = document.createElement("a");
+        editLink.className = "specialty-edit-link";
+        editLink.href = `/admin/specialties/${specialty.id}/edit`;
+        editLink.setAttribute("aria-label", `Editar ${specialty.name}`);
+        editLink.textContent = "Editar";
+        actions.append(editLink);
+
+        row.append(number, name, description, doctorCount, state, actions);
         return row;
     }
 
@@ -103,7 +112,7 @@ if (specialtiesPage) {
             const row = document.createElement("tr");
             row.className = "specialties-empty-row";
             const cell = document.createElement("td");
-            cell.colSpan = 5;
+            cell.colSpan = 6;
             cell.textContent = "No encontramos especialidades con esos criterios.";
             row.append(cell);
             list.append(row);
@@ -165,9 +174,11 @@ if (specialtiesPage) {
             renderPagination(data.pagination);
             feedback.textContent = specialtyCreated
                 ? "La especialidad se creó correctamente y aparece en el catálogo."
-                : data.pagination.totalItems
-                  ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
-                  : "No hay especialidades para mostrar.";
+                : specialtyUpdated
+                  ? "La especialidad se actualizó correctamente."
+                  : data.pagination.totalItems
+                    ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
+                    : "No hay especialidades para mostrar.";
         } catch (error) {
             list.replaceChildren();
             feedback.textContent = "No se pudieron cargar los datos.";

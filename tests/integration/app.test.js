@@ -73,6 +73,23 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("specialty edit page requires an authenticated administrator", async () => {
+        const response = await request(app).get("/admin/specialties/1/edit").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("specialty update endpoint requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .patch("/api/admin/specialties/1")
+            .send({ name: "Medicina General", description: "Atención primaria." })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor status impact requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/doctors/1/status-impact").redirects(0);
 

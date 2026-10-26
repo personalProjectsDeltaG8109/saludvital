@@ -6,6 +6,7 @@ if (specialtyForm) {
     const submitButton = specialtyForm.querySelector("[data-specialty-submit]");
     const feedback = specialtyForm.querySelector("[data-specialty-form-feedback]");
     const errorMessage = specialtyForm.querySelector("[data-specialty-form-error]");
+    const isEditing = specialtyForm.dataset.mode === "edit";
 
     specialtyForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -16,7 +17,7 @@ if (specialtyForm) {
 
         try {
             const response = await fetch(specialtyForm.dataset.endpoint, {
-                method: "POST",
+                method: isEditing ? "PATCH" : "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
@@ -35,7 +36,10 @@ if (specialtyForm) {
             }
             if (!response.ok) throw new Error(data.message || "Revisa la información ingresada.");
 
-            const query = new URLSearchParams({ created: "1", search: data.specialty.name });
+            const query = new URLSearchParams({
+                [isEditing ? "updated" : "created"]: "1",
+                search: data.specialty.name,
+            });
             window.location.assign(`/admin/specialties?${query}`);
         } catch (error) {
             feedback.textContent = "No se guardaron los cambios.";

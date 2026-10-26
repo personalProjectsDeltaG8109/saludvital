@@ -10,7 +10,12 @@ import {
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
-import { createAdminSpecialty, getAdminSpecialties } from "../services/adminSpecialtyService.js";
+import {
+    createAdminSpecialty,
+    getAdminSpecialties,
+    getAdminSpecialtyForEdit,
+    updateAdminSpecialty,
+} from "../services/adminSpecialtyService.js";
 import {
     createAdminDoctor,
     getActiveDoctorSpecialties,
@@ -42,6 +47,24 @@ adminRoutes.post("/api/admin/specialties", ...requireAdministrator, async (req, 
         return next(error);
     }
 });
+adminRoutes.patch(
+    "/api/admin/specialties/:specialtyId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const specialty = await updateAdminSpecialty(
+                req.auth.userId,
+                req.params.specialtyId,
+                req.body,
+            );
+            return res.json({ specialty });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
     try {
@@ -121,6 +144,31 @@ adminRoutes.get("/admin/specialties/new", ...requireAdministrator, (_req, res) =
         adminName: "Administrador",
     });
 });
+adminRoutes.get(
+    "/admin/specialties/:specialtyId/edit",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const specialty = await getAdminSpecialtyForEdit(req.params.specialtyId);
+            return res.render("admin/specialty-form", {
+                pageTitle: `Editar ${specialty.name} | SaludVital`,
+                adminName: "Administrador",
+                specialty,
+            });
+        } catch (error) {
+            if (error.statusCode === 404) {
+                return res.status(404).render("errors/404", {
+                    pageTitle: "Especialidad no encontrada | SaludVital",
+                    homeHref: "/admin/specialties",
+                    appointmentsHref: null,
+                    supportHref:
+                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                });
+            }
+            return next(error);
+        }
+    },
+);
 adminRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res) => {
     return res.render("admin/doctor-form", {
         pageTitle: "Crear médico | SaludVital",
