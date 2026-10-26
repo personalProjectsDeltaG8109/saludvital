@@ -23,7 +23,7 @@ const pageMarkup = [
     '<label>Médico<select data-appointment-doctor><option value="all">Todos</option></select></label>',
     '<label>Buscar paciente<input type="search" data-appointment-search></label>',
     '<button type="submit">Buscar</button></form>',
-    '<button type="button" data-appointment-export>Exportar CSV</button><p data-appointment-export-feedback></p>',
+    '<button type="button" data-appointment-export>Exportar CSV</button><button type="button" data-appointment-pdf-export>Exportar PDF</button><p data-appointment-export-feedback></p>',
     '<nav data-appointment-tabs aria-label="Filtrar citas por estado"></nav>',
     "<p data-appointment-feedback></p><p data-appointment-error hidden></p>",
     '<div class="appointments-table-wrap"><table class="appointments-table"><thead><tr><th>Fecha y hora</th><th>Paciente</th><th>Documento</th><th>Especialidad</th><th>Médico</th><th>Estado</th></tr></thead><tbody data-appointment-list></tbody></table></div>',
@@ -50,6 +50,11 @@ try {
     await page.evaluate((availableStatuses) => {
         window.appointmentRequests = [];
         window.exportRequests = [];
+        window.pdfExportRequests = [];
+        window.open = (url) => {
+            window.pdfExportRequests.push(url);
+            return { focus() {} };
+        };
         window.failAppointmentRequest = false;
         window.cancellationRequests = [];
         window.fetch = async (url, options = {}) => {
@@ -276,6 +281,23 @@ try {
     console.log(
         "PASS: appointment export downloads CSV using the active filters without pagination.",
     );
+
+    await page.getByRole("button", { name: "Exportar PDF" }).click();
+    const pdfExportUrl = await page.evaluate(() => window.pdfExportRequests.at(-1));
+    const pdfExportRequest = new URL(pdfExportUrl, "http://localhost");
+    if (
+        pdfExportRequest.pathname !== "/admin/appointments/export/pdf" ||
+        pdfExportRequest.searchParams.get("from") !== "2026-10-20" ||
+        pdfExportRequest.searchParams.get("to") !== "2026-10-27" ||
+        pdfExportRequest.searchParams.get("specialtyId") !== "2" ||
+        pdfExportRequest.searchParams.get("doctorId") !== "3" ||
+        pdfExportRequest.searchParams.get("status") !== "Confirmed" ||
+        pdfExportRequest.searchParams.get("search") !== "María" ||
+        pdfExportRequest.searchParams.has("page")
+    ) {
+        throw new Error("The PDF report must open with the active filters.");
+    }
+    console.log("PASS: PDF report action opens the protected report with active filters.");
 
     await page.locator("[data-appointment-search]").fill("export-empty");
     await page.getByRole("button", { name: "Buscar" }).click();

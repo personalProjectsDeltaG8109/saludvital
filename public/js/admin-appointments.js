@@ -17,6 +17,7 @@ if (appointmentsPage) {
     const topSearchForm = document.querySelector(".admin-global-search");
     const tabs = appointmentsPage.querySelector("[data-appointment-tabs]");
     const exportButton = appointmentsPage.querySelector("[data-appointment-export]");
+    const pdfExportButton = appointmentsPage.querySelector("[data-appointment-pdf-export]");
     const exportFeedback = appointmentsPage.querySelector("[data-appointment-export-feedback]");
     const cancellationDialog = document.querySelector("[data-cancellation-dialog]");
     const cancellationForm = document.querySelector("[data-cancellation-form]");
@@ -434,6 +435,15 @@ if (appointmentsPage) {
         } finally {
             exportButton.disabled = false;
         }
+    });
+
+    pdfExportButton?.addEventListener("click", () => {
+        const params = createFilterParams();
+        const reportWindow = window.open(`/admin/appointments/export/pdf?${params}`, "_blank");
+        if (reportWindow) reportWindow.opener = null;
+        exportFeedback.textContent = reportWindow
+            ? "El reporte está listo. Puedes imprimirlo o guardarlo como PDF."
+            : "Permite las ventanas emergentes para abrir el reporte PDF.";
     });
 
     appointmentsPage.addEventListener("click", (event) => {
