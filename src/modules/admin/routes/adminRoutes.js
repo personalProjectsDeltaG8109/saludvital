@@ -17,6 +17,7 @@ import {
     getAdminAppointmentDetails,
     getAdminAppointments,
 } from "../services/adminAppointmentService.js";
+import { cancelAdminAppointment } from "../services/adminAppointmentStatusService.js";
 import {
     getAdminDepartments,
     getAdminMunicipalities,
@@ -63,6 +64,24 @@ adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, 
         return next(error);
     }
 });
+adminRoutes.patch(
+    "/api/admin/appointments/:appointmentId/status",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            const result = await cancelAdminAppointment(
+                req.auth.userId,
+                req.params.appointmentId,
+                req.body,
+            );
+            return res.json({ ...result, message: "La cita se canceló correctamente." });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.get(
     "/api/admin/appointment-booking/options",
     ...requireAdministrator,
