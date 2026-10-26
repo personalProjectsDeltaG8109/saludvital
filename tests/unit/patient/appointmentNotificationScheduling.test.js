@@ -107,4 +107,23 @@ describe("appointment reminder scheduling", () => {
 
         expect(enqueueAppointmentNotifications).not.toHaveBeenCalled();
     });
+
+    test("rejects new bookings when the selected specialty is inactive", async () => {
+        Specialities.findOne.mockResolvedValue(null);
+
+        await expect(
+            bookAppointment({
+                userId: 2,
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+            }),
+        ).rejects.toMatchObject({ statusCode: 404 });
+
+        expect(Specialities.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { id: 4, is_active: true }, transaction }),
+        );
+        expect(Appointment.create).not.toHaveBeenCalled();
+    });
 });
