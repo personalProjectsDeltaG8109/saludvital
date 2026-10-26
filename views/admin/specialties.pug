@@ -31,6 +31,9 @@ html(lang="es")
                     div
                         h1 Especialidades
                         p Gestiona las especialidades médicas disponibles en el sistema.
+                    a.specialties-primary-button(href="/admin/specialties/new")
+                        span(aria-hidden="true") +
+                        | Nueva especialidad
                 section.specialties-stats(aria-label="Resumen de especialidades")
                     article.specialty-stat
                         span.specialty-stat-icon(aria-hidden="true")

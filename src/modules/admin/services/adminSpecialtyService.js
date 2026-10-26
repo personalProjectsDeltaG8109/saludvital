@@ -10,6 +10,70 @@ function serviceError(message, statusCode = 400) {
     return error;
 }
 
+function validateSpecialtyInput(input = {}) {
+    if (!input || typeof input !== "object" || Array.isArray(input)) {
+        throw serviceError("Revisa los datos de la especialidad.");
+    }
+    if (typeof input.name !== "string") {
+        throw serviceError("El nombre de la especialidad es obligatorio.");
+    }
+
+    const name = input.name.trim().replace(/\s+/g, " ");
+    if (!name) throw serviceError("El nombre de la especialidad es obligatorio.");
+    if (name.length > 100) {
+        throw serviceError("El nombre no puede superar los 100 caracteres.");
+    }
+
+    if (
+        input.description !== undefined &&
+        input.description !== null &&
+        typeof input.description !== "string"
+    ) {
+        throw serviceError("La descripción debe ser texto.");
+    }
+
+    const description = typeof input.description === "string" ? input.description.trim() : "";
+    if (description.length > 255) {
+        throw serviceError("La descripción no puede superar los 255 caracteres.");
+    }
+
+    return { name, description: description || null };
+}
+
+function duplicateSpecialtyError() {
+    return serviceError("Ya existe una especialidad con ese nombre.", 409);
+}
+
+/** Create a specialty using only fields supported by the existing catalog model. */
+export async function createAdminSpecialty(input) {
+    const specialtyInput = validateSpecialtyInput(input);
+    const existingSpecialty = await Specialities.findOne({
+        where: { name: specialtyInput.name },
+        attributes: ["id"],
+    });
+
+    if (existingSpecialty) throw duplicateSpecialtyError();
+
+    try {
+        const specialty = await Specialities.create({
+            ...specialtyInput,
+            is_active: true,
+        });
+
+        return {
+            id: specialty.id,
+            name: specialty.name,
+            description: specialty.description || "",
+            isActive: specialty.is_active,
+        };
+    } catch (error) {
+        if (error.name === "SequelizeUniqueConstraintError") {
+            throw duplicateSpecialtyError();
+        }
+        throw error;
+    }
+}
+
 function parsePage(value) {
     if (value === undefined || value === null || value === "") return 1;
     const page = Number(value);

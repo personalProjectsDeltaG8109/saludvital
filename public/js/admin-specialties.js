@@ -13,6 +13,12 @@ if (specialtiesPage) {
     const adminApp = document.querySelector(".admin-app");
     const sidebar = document.querySelector("[data-admin-sidebar]");
     let currentPage = 1;
+    const pageQuery = new URLSearchParams(window.location.search);
+    const specialtyCreated = pageQuery.get("created") === "1";
+    if (pageQuery.has("search")) {
+        search.value = pageQuery.get("search") || "";
+        if (topSearch) topSearch.value = search.value;
+    }
 
     function closeSidebar() {
         adminApp.classList.remove("is-sidebar-open");
@@ -157,9 +163,11 @@ if (specialtiesPage) {
                 data.stats.assignedDoctors;
             renderSpecialties(data.specialties);
             renderPagination(data.pagination);
-            feedback.textContent = data.pagination.totalItems
-                ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
-                : "No hay especialidades para mostrar.";
+            feedback.textContent = specialtyCreated
+                ? "La especialidad se creó correctamente y aparece en el catálogo."
+                : data.pagination.totalItems
+                  ? `${data.pagination.totalItems} especialidad${data.pagination.totalItems === 1 ? "" : "es"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
+                  : "No hay especialidades para mostrar.";
         } catch (error) {
             list.replaceChildren();
             feedback.textContent = "No se pudieron cargar los datos.";
