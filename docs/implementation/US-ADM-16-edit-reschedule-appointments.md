@@ -47,6 +47,7 @@ Issue [#139](https://github.com/personalProjectsDeltaG8109/saludvital/issues/139
 - `npm.cmd run lint`: passed.
 - `npm.cmd run format:check`: passed.
 - `git diff --check`: passed.
+- The browser E2E flow stubs the API responses; it does not modify a real appointment record. Database update behavior is covered through the transactional service unit tests, and no live appointment was changed during verification.
 
 ## Dependency and integration order
 
