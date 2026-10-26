@@ -30,6 +30,26 @@
 .specialties-heading-icon svg { width: 37px; height: 37px; }
 .specialties-heading h1 { margin: 0; color: #082f7c; font-size: clamp(25px, 2.1vw, 32px); letter-spacing: -.035em; }
 .specialties-heading p { margin: 5px 0 0; color: #3f5f89; font-size: 14px; }
+.specialties-heading > div { min-width: 0; flex: 1; }
+.specialties-primary-button {
+    display: inline-flex;
+    min-height: 44px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 17px;
+    border-radius: 9px;
+    color: #fff;
+    background: linear-gradient(115deg, #087cf0, #0561cf);
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+}
+.specialties-primary-button:hover { background: #075fc3; }
+.specialties-primary-button:focus-visible,
+.specialty-form-page :focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
+.specialties-primary-button > span { font-size: 21px; font-weight: 400; line-height: 1; }
 
 .specialties-stats {
     display: grid;
@@ -158,6 +178,40 @@
 .specialty-page-size select { min-height: 36px; }
 .specialties-error { margin: 12px 0 0; padding: 12px 14px; border: 1px solid #f2c7c7; border-radius: 9px; color: #9f2329; background: #fff1f1; font-size: 13px; }
 
+.specialty-form-page { width: min(100%, 1000px); margin: 0 auto; padding: 25px clamp(16px, 2vw, 30px) 35px; color: #123b73; }
+.specialty-back-link { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 20px; color: #176fbe; font-size: 13px; font-weight: 600; text-decoration: none; }
+.specialty-back-link:hover { text-decoration: underline; }
+.specialty-back-link > span { font-size: 19px; line-height: 1; }
+.specialty-form-heading { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+.specialty-form-heading h1 { margin: 0; color: #082f7c; font-size: clamp(24px, 2vw, 30px); letter-spacing: -.03em; }
+.specialty-form-heading p { margin: 5px 0 0; color: #647b9d; font-size: 13px; }
+.specialty-form-heading .specialties-heading-icon { width: 56px; height: 56px; }
+.specialty-form-heading .specialties-heading-icon svg { width: 31px; height: 31px; }
+.specialty-form-card { display: grid; gap: 19px; padding: clamp(18px, 3vw, 30px); border: 1px solid #e6eef7; border-radius: 15px; background: #fff; box-shadow: 0 7px 22px rgb(27 72 119 / 5%); }
+.specialty-form-section-heading { padding-bottom: 14px; border-bottom: 1px solid #e9eff6; }
+.specialty-form-section-heading h2 { margin: 0; color: #123b73; font-size: 17px; }
+.specialty-form-section-heading p { margin: 5px 0 0; color: #7185a0; font-size: 12px; }
+.specialty-form-field { display: grid; gap: 7px; color: #284a75; font-size: 13px; font-weight: 650; }
+.specialty-form-field b { color: #dc3545; }
+.specialty-form-field input,
+.specialty-form-field textarea { width: 100%; min-height: 45px; padding: 11px 13px; border: 1px solid #d8e4f0; border-radius: 9px; color: #163b70; background: #fff; font: inherit; font-size: 14px; font-weight: 400; }
+.specialty-form-field textarea { min-height: 112px; resize: vertical; }
+.specialty-form-field input:focus,
+.specialty-form-field textarea:focus { border-color: #168de2; outline: 3px solid rgb(22 141 226 / 14%); }
+.specialty-form-field input[aria-invalid="true"] { border-color: #d73a43; }
+.specialty-form-field small { color: #788ba5; font-size: 11px; font-weight: 400; }
+.specialty-form-note { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 12px; border-radius: 9px; color: #08774f; background: #e8f8f0; font-size: 12px; line-height: 1.5; }
+.specialty-form-note > span { font-size: 16px; font-weight: 800; line-height: 1; }
+.specialty-form-feedback { min-height: 17px; margin: 0; color: #647b9d; font-size: 12px; }
+.specialty-form-error { margin: -10px 0 0; padding: 11px 13px; border: 1px solid #f2c7c7; border-radius: 9px; color: #9f2329; background: #fff1f1; font-size: 13px; }
+.specialty-form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 5px; }
+.specialty-form-cancel,
+.specialty-form-submit { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 0 17px; border: 1px solid #d8e4f0; border-radius: 9px; color: #34577e; background: #fff; font: inherit; font-size: 13px; font-weight: 650; text-decoration: none; cursor: pointer; }
+.specialty-form-submit { gap: 7px; border-color: transparent; color: #fff; background: linear-gradient(115deg, #087cf0, #0561cf); }
+.specialty-form-submit:hover { background: #075fc3; }
+.specialty-form-submit:disabled { opacity: .65; cursor: wait; }
+.specialty-form-submit > span { font-size: 20px; font-weight: 400; }
+
 @media (max-width: 1000px) {
     .specialties-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .specialties-table th:nth-child(3) { width: 30%; }
@@ -166,6 +220,9 @@
 @media (max-width: 760px) {
     .specialties-page { padding: 18px 14px 25px; }
     .specialties-heading { gap: 12px; margin-bottom: 15px; }
+    .specialties-heading { flex-wrap: wrap; }
+    .specialties-heading > div { flex: 1; }
+    .specialties-primary-button { width: 100%; }
     .specialties-heading-icon { width: 48px; height: 48px; border-radius: 12px; }
     .specialties-heading-icon svg { width: 29px; height: 29px; }
     .specialties-heading h1 { font-size: 23px; }
@@ -208,10 +265,20 @@
     .specialty-page-size { grid-column: 2; grid-row: 2; }
     .specialty-page-size select { min-height: 32px; font-size: 10px; }
     .specialties-pagination > span { grid-column: 1; grid-row: 1 / span 2; }
+    .specialty-form-page { padding: 18px 14px 25px; }
+    .specialty-form-heading { align-items: flex-start; gap: 11px; }
+    .specialty-form-heading .specialties-heading-icon { width: 47px; height: 47px; }
+    .specialty-form-heading h1 { font-size: 22px; }
+    .specialty-form-heading p { font-size: 12px; line-height: 1.4; }
+    .specialty-form-card { gap: 16px; padding: 17px 14px; border-radius: 13px; }
+    .specialty-form-actions { flex-direction: column-reverse; }
+    .specialty-form-cancel,
+    .specialty-form-submit { width: 100%; }
 }
 
 @media (max-width: 390px) {
     .specialties-page { padding-right: 10px; padding-left: 10px; }
+    .specialty-form-page { padding-right: 10px; padding-left: 10px; }
     .specialty-stat { gap: 7px; padding: 9px; }
     .specialty-stat > div > span { font-size: 9px; }
     .specialties-pagination { grid-template-columns: 1fr; }

@@ -1,0 +1,85 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-specialties.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("specialties")
+        .admin-main-shell
+            +adminTopbar("/admin/specialties", "Buscar especialidades médicas...")
+            main.specialty-form-page
+                a.specialty-back-link(href="/admin/specialties")
+                    span(aria-hidden="true") ←
+                    | Volver a especialidades
+                header.specialty-form-heading
+                    span.specialties-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            path(d="m12 3 9 5-9 5-9-5 9-5Z")
+                            path(d="m3 12 9 5 9-5")
+                            path(d="m3 16 9 5 9-5")
+                    div
+                        h1 Nueva especialidad
+                        p Agrega una especialidad al catálogo médico de SaludVital.
+                form.specialty-form-card(
+                    data-specialty-create-form,
+                    data-endpoint="/api/admin/specialties"
+                )
+                    .specialty-form-section-heading
+                        h2 Información de la especialidad
+                        p Los campos con asterisco son obligatorios.
+                    label.specialty-form-field(for="specialty-name")
+                        span Nombre de la especialidad
+                            b(aria-hidden="true") *
+                        input#specialty-name(
+                            type="text",
+                            name="name",
+                            maxlength="100",
+                            required,
+                            autocomplete="off",
+                            aria-describedby="specialty-name-help"
+                        )
+                        small#specialty-name-help Máximo 100 caracteres.
+                    label.specialty-form-field(for="specialty-description")
+                        span Descripción
+                        textarea#specialty-description(
+                            name="description",
+                            rows="4",
+                            maxlength="255",
+                            aria-describedby="specialty-description-help"
+                        )
+                        small#specialty-description-help Opcional, máximo 255 caracteres.
+                    p.specialty-form-note
+                        span(aria-hidden="true") ✓
+                        | La especialidad se creará activa y estará disponible para asignarla a médicos.
+                    p.specialty-form-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-specialty-form-feedback
+                    )
+                    p.specialty-form-error(
+                        role="alert",
+                        aria-live="assertive",
+                        data-specialty-form-error,
+                        hidden
+                    )
+                    footer.specialty-form-actions
+                        a.specialty-form-cancel(href="/admin/specialties") Cancelar
+                        button.specialty-form-submit(type="submit", data-specialty-submit)
+                            span(aria-hidden="true") +
+                            | Crear especialidad
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-specialty-form.js", defer)
