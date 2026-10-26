@@ -111,6 +111,7 @@ describe("Admin doctor profile updates", () => {
                 action: "AdminUserProfileUpdated",
                 changes: expect.objectContaining({
                     profile: expect.arrayContaining(["profile_photo_url"]),
+                    specialty: { previousId: 3, nextId: 5 },
                 }),
             }),
             { transaction },
@@ -166,6 +167,12 @@ describe("Admin doctor profile updates", () => {
             "/uploads/profile-photos/old.jpg",
         );
         expect(photoService.storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                changes: expect.not.objectContaining({ specialty: expect.anything() }),
+            }),
+            expect.any(Object),
+        );
     });
 
     test("does not assign an inactive specialty that is not already assigned", async () => {
