@@ -1,5 +1,7 @@
 import { Op } from "sequelize";
-import { Doctor, Specialities } from "../../../models/associations.js";
+import database from "../../../../config/database.js";
+import { Doctor, Specialities, User } from "../../../models/associations.js";
+import AuditLog from "../../../models/AuditLog.js";
 
 const PAGE_SIZE_OPTIONS = [10, 25];
 const MAX_SEARCH_LENGTH = 100;
@@ -42,6 +44,102 @@ function validateSpecialtyInput(input = {}) {
 
 function duplicateSpecialtyError() {
     return serviceError("Ya existe una especialidad con ese nombre.", 409);
+}
+
+function parseSpecialtyId(value) {
+    const specialtyId = Number(value);
+    if (!Number.isSafeInteger(specialtyId) || specialtyId < 1) {
+        throw serviceError("La especialidad solicitada no es válida.", 404);
+    }
+    return specialtyId;
+}
+
+/** Return only the existing specialty fields used by its edit form. */
+export async function getAdminSpecialtyForEdit(rawSpecialtyId) {
+    const specialtyId = parseSpecialtyId(rawSpecialtyId);
+    const specialty = await Specialities.findByPk(specialtyId, {
+        attributes: ["id", "name", "description", "is_active"],
+    });
+
+    if (!specialty) throw serviceError("No encontramos esa especialidad.", 404);
+
+    return {
+        id: specialty.id,
+        name: specialty.name,
+        description: specialty.description || "",
+        isActive: specialty.is_active,
+    };
+}
+
+/** Update specialty details and audit the changes without touching doctor relationships. */
+export async function updateAdminSpecialty(actorId, rawSpecialtyId, input) {
+    const specialtyId = parseSpecialtyId(rawSpecialtyId);
+    const specialtyInput = validateSpecialtyInput(input);
+
+    try {
+        return await database.transaction(async (transaction) => {
+            const specialty = await Specialities.findByPk(specialtyId, {
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+            if (!specialty) throw serviceError("No encontramos esa especialidad.", 404);
+
+            const duplicate = await Specialities.findOne({
+                where: { name: specialtyInput.name, id: { [Op.ne]: specialtyId } },
+                attributes: ["id"],
+                transaction,
+            });
+            if (duplicate) throw duplicateSpecialtyError();
+
+            const actor = await User.findByPk(actorId, {
+                attributes: ["id", "email"],
+                transaction,
+            });
+            if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+
+            const changes = {};
+            if (specialty.name !== specialtyInput.name) {
+                changes.name = { previous: specialty.name, next: specialtyInput.name };
+            }
+            if ((specialty.description || null) !== specialtyInput.description) {
+                changes.description = {
+                    previous: specialty.description || null,
+                    next: specialtyInput.description,
+                };
+            }
+
+            if (Object.keys(changes).length) {
+                await specialty.update(specialtyInput, { transaction });
+                await AuditLog.create(
+                    {
+                        actor_user_id: actor.id,
+                        actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                        action: "AdminSpecialtyUpdated",
+                        target_type: "MedicalSpecialty",
+                        target_id: String(specialty.id),
+                        target_description: specialtyInput.name,
+                        changes,
+                        reason: "Administrator edited a medical specialty.",
+                        result: "Success",
+                        occurred_at: new Date(),
+                    },
+                    { transaction },
+                );
+            }
+
+            return {
+                id: specialty.id,
+                name: specialtyInput.name,
+                description: specialtyInput.description || "",
+                isActive: specialty.is_active,
+            };
+        });
+    } catch (error) {
+        if (error.name === "SequelizeUniqueConstraintError") {
+            throw duplicateSpecialtyError();
+        }
+        throw error;
+    }
 }
 
 /** Create a specialty using only fields supported by the existing catalog model. */

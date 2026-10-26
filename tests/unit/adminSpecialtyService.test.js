@@ -1,14 +1,21 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("sequelize", () => ({
-    Op: { like: Symbol.for("sequelize.like") },
+    Op: { like: Symbol.for("sequelize.like"), ne: Symbol.for("sequelize.ne") },
+}));
+jest.unstable_mockModule("../../config/database.js", () => ({
+    default: { transaction: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { count: jest.fn() },
+    User: { findByPk: jest.fn() },
     Specialities: {
         findAndCountAll: jest.fn(),
         count: jest.fn(),
     },
+}));
+jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
 }));
 
 const { Doctor, Specialities } = await import("../../src/models/associations.js");

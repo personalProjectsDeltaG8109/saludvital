@@ -10,6 +10,7 @@ html(lang="es")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-specialties.css")
     body.admin-app
+        - const isEditingSpecialty = typeof specialty !== "undefined" && specialty !== null;
         include partials/admin-shell.pug
         +adminSidebar("specialties")
         .admin-main-shell
@@ -32,14 +33,16 @@ html(lang="es")
                             path(d="m3 12 9 5 9-5")
                             path(d="m3 16 9 5 9-5")
                     div
-                        h1 Nueva especialidad
-                        p Agrega una especialidad al catálogo médico de SaludVital.
+                        h1= isEditingSpecialty ? "Editar especialidad" : "Nueva especialidad"
+                        p= isEditingSpecialty ? "Actualiza los datos de esta especialidad médica." : "Agrega una especialidad al catálogo médico de SaludVital."
                 form.specialty-form-card(
                     data-specialty-create-form,
-                    data-endpoint="/api/admin/specialties"
+                    data-mode=isEditingSpecialty ? "edit" : "create",
+                    data-specialty-id=isEditingSpecialty ? specialty.id : null,
+                    data-endpoint=isEditingSpecialty ? `/api/admin/specialties/${specialty.id}` : "/api/admin/specialties"
                 )
                     .specialty-form-section-heading
-                        h2 Información de la especialidad
+                        h2= isEditingSpecialty ? "Editar información" : "Información de la especialidad"
                         p Los campos con asterisco son obligatorios.
                     label.specialty-form-field(for="specialty-name")
                         span Nombre de la especialidad
@@ -49,6 +52,7 @@ html(lang="es")
                             name="name",
                             maxlength="100",
                             required,
+                            value=isEditingSpecialty ? specialty.name : "",
                             autocomplete="off",
                             aria-describedby="specialty-name-help"
                         )
@@ -60,11 +64,14 @@ html(lang="es")
                             rows="4",
                             maxlength="255",
                             aria-describedby="specialty-description-help"
-                        )
+                        )= isEditingSpecialty ? specialty.description : ""
                         small#specialty-description-help Opcional, máximo 255 caracteres.
                     p.specialty-form-note
                         span(aria-hidden="true") ✓
-                        | La especialidad se creará activa y estará disponible para asignarla a médicos.
+                        if isEditingSpecialty
+                            | Los médicos asociados y el estado actual de la especialidad se conservarán.
+                        else
+                            | La especialidad se creará activa y estará disponible para asignarla a médicos.
                     p.specialty-form-feedback(
                         role="status",
                         aria-live="polite",
@@ -79,7 +86,10 @@ html(lang="es")
                     footer.specialty-form-actions
                         a.specialty-form-cancel(href="/admin/specialties") Cancelar
                         button.specialty-form-submit(type="submit", data-specialty-submit)
-                            span(aria-hidden="true") +
-                            | Crear especialidad
+                            if isEditingSpecialty
+                                | Guardar cambios
+                            else
+                                span(aria-hidden="true") +
+                                | Crear especialidad
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-specialty-form.js", defer)
