@@ -16,6 +16,9 @@ if (appointmentsPage) {
     const topSearch = document.querySelector("[data-user-top-search]");
     const topSearchForm = document.querySelector(".admin-global-search");
     const tabs = appointmentsPage.querySelector("[data-appointment-tabs]");
+    const exportButton = appointmentsPage.querySelector("[data-appointment-export]");
+    const pdfExportButton = appointmentsPage.querySelector("[data-appointment-pdf-export]");
+    const exportFeedback = appointmentsPage.querySelector("[data-appointment-export-feedback]");
     const cancellationDialog = document.querySelector("[data-cancellation-dialog]");
     const cancellationForm = document.querySelector("[data-cancellation-form]");
     const cancellationReason = document.querySelector("[data-cancellation-reason]");
@@ -29,6 +32,17 @@ if (appointmentsPage) {
         option.value = value;
         option.textContent = label;
         select.append(option);
+    }
+
+    function createFilterParams() {
+        const params = new URLSearchParams();
+        if (fromDate.value) params.set("from", fromDate.value);
+        if (toDate.value) params.set("to", toDate.value);
+        if (status.value !== "all") params.set("status", status.value);
+        if (specialty.value !== "all") params.set("specialtyId", specialty.value);
+        if (doctor.value !== "all") params.set("doctorId", doctor.value);
+        if (search.value.trim()) params.set("search", search.value.trim());
+        return params;
     }
 
     function formatDateTime(value, options) {
@@ -316,16 +330,9 @@ if (appointmentsPage) {
     async function loadAppointments() {
         feedback.textContent = "Cargando citas...";
         errorMessage.hidden = true;
-        const params = new URLSearchParams({
-            page: String(currentPage),
-            pageSize: pageSize.value,
-            status: status.value,
-        });
-        if (fromDate.value) params.set("from", fromDate.value);
-        if (toDate.value) params.set("to", toDate.value);
-        if (specialty.value !== "all") params.set("specialtyId", specialty.value);
-        if (doctor.value !== "all") params.set("doctorId", doctor.value);
-        if (search.value.trim()) params.set("search", search.value.trim());
+        const params = createFilterParams();
+        params.set("page", String(currentPage));
+        params.set("pageSize", pageSize.value);
 
         try {
             const response = await fetch(`${endpoint}?${params}`, {
@@ -393,6 +400,50 @@ if (appointmentsPage) {
     });
     topSearch?.addEventListener("input", () => {
         search.value = topSearch.value;
+    });
+
+    exportButton?.addEventListener("click", async () => {
+        exportButton.disabled = true;
+        exportFeedback.textContent = "Preparando archivo CSV...";
+        try {
+            const params = createFilterParams();
+            const response = await fetch(`/api/admin/appointments/export?${params}`, {
+                headers: { Accept: "text/csv" },
+                cache: "no-store",
+            });
+            if (response.status === 204) {
+                exportFeedback.textContent = "No hay citas para exportar con esos filtros.";
+                return;
+            }
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({}));
+                exportFeedback.textContent = error.message || "No pudimos exportar las citas.";
+                return;
+            }
+
+            const downloadUrl = URL.createObjectURL(await response.blob());
+            const downloadLink = document.createElement("a");
+            downloadLink.href = downloadUrl;
+            downloadLink.download = "saludvital-citas.csv";
+            document.body.append(downloadLink);
+            downloadLink.click();
+            downloadLink.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+            exportFeedback.textContent = "La descarga CSV comenzó.";
+        } catch {
+            exportFeedback.textContent = "No pudimos exportar las citas. Inténtalo de nuevo.";
+        } finally {
+            exportButton.disabled = false;
+        }
+    });
+
+    pdfExportButton?.addEventListener("click", () => {
+        const params = createFilterParams();
+        const reportWindow = window.open(`/admin/appointments/export/pdf?${params}`, "_blank");
+        if (reportWindow) reportWindow.opener = null;
+        exportFeedback.textContent = reportWindow
+            ? "El reporte está listo. Puedes imprimirlo o guardarlo como PDF."
+            : "Permite las ventanas emergentes para abrir el reporte PDF.";
     });
 
     appointmentsPage.addEventListener("click", (event) => {

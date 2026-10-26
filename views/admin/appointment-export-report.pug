@@ -1,0 +1,75 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#123b73")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/admin-appointment-report.css")
+    body.appointment-report-body
+        main.appointment-report
+            header.report-heading
+                .report-brand
+                    img(src="/brand/logo-symbol.png", alt="")
+                    div
+                        strong SaludVital
+                        span Panel Administrativo
+                .report-heading-copy
+                    p.report-eyebrow Reporte administrativo
+                    h1 Reporte de citas médicas
+                    p.report-generated Generado el #{ generatedAt } (hora de Colombia)
+            if errorMessage
+                p.report-error(role="alert")= errorMessage
+            else
+                section.report-filters(aria-labelledby="report-filters-title")
+                    .report-section-heading
+                        h2#report-filters-title Filtros aplicados
+                        span #{ filters.length } filtro(s)
+                    if filters.length
+                        dl.report-filter-list
+                            each filter in filters
+                                div
+                                    dt= filter.label
+                                    dd= filter.value
+                    else
+                        p.report-no-filters Sin filtros adicionales.
+                section.report-results(aria-labelledby="report-results-title")
+                    .report-section-heading
+                        div
+                            p.report-eyebrow Detalle del informe
+                            h2#report-results-title Citas médicas
+                        span.report-result-count #{ appointments.length.toLocaleString("es-CO") } registro(s)
+                    if appointments.length
+                        .report-table-wrap
+                            table.report-table
+                                caption.sr-only Registro de citas médicas filtradas
+                                thead
+                                    tr
+                                        th(scope="col") N.º cita
+                                        th(scope="col") Fecha y hora
+                                        th(scope="col") Paciente
+                                        th(scope="col") Especialidad
+                                        th(scope="col") Médico
+                                        th(scope="col") Estado
+                                tbody
+                                    each appointment in appointments
+                                        tr
+                                            td= appointment.id
+                                            td
+                                                span= appointment.startAtLabel
+                                                small Hasta #{ appointment.endAtLabel }
+                                            td= appointment.patientName
+                                            td= appointment.specialty
+                                            td= appointment.doctor
+                                            td
+                                                span.report-status(
+                                                    class=appointment.status === "Cancelled" ? "report-status--cancelled" : ""
+                                                )= appointment.statusLabel
+                    else
+                        p.report-empty No hay citas para los filtros seleccionados.
+            footer.report-footer
+                span SaludVital · Reporte de citas
+                span Información generada con los filtros seleccionados
+            button.report-print-button(type="button", data-print-report) Imprimir o guardar como PDF
+        script(src="/js/admin-appointment-report.js", defer)

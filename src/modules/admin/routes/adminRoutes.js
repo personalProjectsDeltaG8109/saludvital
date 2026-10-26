@@ -16,7 +16,10 @@ import {
 import {
     getAdminAppointmentDetails,
     getAdminAppointments,
+    getAdminAppointmentExportFilters,
+    getAdminAppointmentExportRows,
 } from "../services/adminAppointmentService.js";
+import { createAppointmentCsv } from "../services/adminAppointmentCsvService.js";
 import { cancelAdminAppointment } from "../services/adminAppointmentStatusService.js";
 import {
     getAdminDepartments,
@@ -64,6 +67,25 @@ adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, 
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/appointments/export",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            res.set("Cache-Control", "no-store");
+            const appointments = await getAdminAppointmentExportRows(req.query);
+            if (appointments.length === 0) return res.status(204).end();
+
+            res.set("Content-Type", "text/csv; charset=utf-8");
+            res.set("Content-Disposition", 'attachment; filename="saludvital-citas.csv"');
+            return res.send(createAppointmentCsv(appointments));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.patch(
     "/api/admin/appointments/:appointmentId/status",
     ...requireAdministrator,
@@ -318,6 +340,51 @@ adminRoutes.get("/admin/appointments", ...requireAdministrator, (_req, res) => {
         adminName: "Administrador",
     });
 });
+adminRoutes.get(
+    "/admin/appointments/export/pdf",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        const generatedAt = new Intl.DateTimeFormat("es-CO", {
+            dateStyle: "full",
+            timeStyle: "short",
+            timeZone: "America/Bogota",
+        }).format(new Date());
+
+        try {
+            const [rows, filters] = await Promise.all([
+                getAdminAppointmentExportRows(req.query),
+                getAdminAppointmentExportFilters(req.query),
+            ]);
+            const dateTimeFormat = new Intl.DateTimeFormat("es-CO", {
+                dateStyle: "medium",
+                timeStyle: "short",
+                timeZone: "America/Bogota",
+            });
+            const appointments = rows.map((appointment) => ({
+                ...appointment,
+                startAtLabel: dateTimeFormat.format(new Date(appointment.startAt)),
+                endAtLabel: dateTimeFormat.format(new Date(appointment.endAt)),
+            }));
+
+            return res.render("admin/appointment-export-report", {
+                pageTitle: "Reporte de citas médicas | SaludVital",
+                generatedAt,
+                filters,
+                appointments,
+                errorMessage: null,
+            });
+        } catch (error) {
+            if (!error.statusCode) return next(error);
+            return res.status(error.statusCode).render("admin/appointment-export-report", {
+                pageTitle: "No fue posible generar el reporte | SaludVital",
+                generatedAt,
+                filters: [],
+                appointments: [],
+                errorMessage: error.message,
+            });
+        }
+    },
+);
 adminRoutes.get("/admin/appointments/new", ...requireAdministrator, (_req, res) => {
     return res.render("admin/appointment-create", {
         pageTitle: "Nueva cita | SaludVital",

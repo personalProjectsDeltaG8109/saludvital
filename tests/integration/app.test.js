@@ -114,6 +114,32 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("appointment CSV export requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .get("/api/admin/appointments/export?status=Confirmed")
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("appointment PDF report requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .get("/admin/appointments/export/pdf?status=Confirmed")
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("the appointment report print script is served under the site's script policy", async () => {
+        const response = await request(app).get("/js/admin-appointment-report.js");
+
+        expect(response.status).toBe(200);
+        expect(response.headers["content-security-policy"]).toContain("script-src 'self'");
+        expect(response.text).toContain('printButton?.addEventListener("click", printReport)');
+    });
+
     test("appointment status changes require an authenticated administrator", async () => {
         const response = await request(app)
             .patch("/api/admin/appointments/1/status")
