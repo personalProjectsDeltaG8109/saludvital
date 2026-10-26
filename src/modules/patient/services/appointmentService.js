@@ -216,6 +216,28 @@ async function getPatientByUserId(userId, transaction) {
     return patient;
 }
 
+async function getPatientById(patientId, transaction) {
+    const patient = await Patient.findByPk(patientId, {
+        transaction,
+        ...(transaction ? { lock: transaction.LOCK.UPDATE } : {}),
+        include: [
+            {
+                model: User,
+                as: "user",
+                required: true,
+                where: { is_active: true },
+                attributes: ["id", "is_active"],
+            },
+        ],
+    });
+
+    if (!patient) {
+        throw new AppointmentError("El paciente seleccionado no está disponible.", 404);
+    }
+
+    return patient;
+}
+
 /**
  * Ensure a patient has no more than one appointment per specialty and two per day.
  */
@@ -698,18 +720,36 @@ export async function getReschedulableAppointments(userId) {
 }
 
 /**
- * Create a patient appointment and its audit history atomically.
+ * Create an appointment and its audit history atomically.
  */
-export async function bookAppointment({ userId, specialtyId, doctorId, date, time, reason }) {
+export async function bookAppointment({
+    userId,
+    patientId,
+    actorUserId,
+    actorSnapshot,
+    source = "Web",
+    specialtyId,
+    doctorId,
+    date,
+    time,
+    reason,
+}) {
     // Validate identifiers before starting the booking transaction.
-    userId = validatePositiveIntegerId(userId);
+    if (patientId === undefined || patientId === null) {
+        userId = validatePositiveIntegerId(userId);
+    } else {
+        patientId = validatePositiveIntegerId(patientId);
+    }
+    const historyActorUserId = validatePositiveIntegerId(actorUserId ?? userId);
     specialtyId = validatePositiveIntegerId(specialtyId);
     doctorId = validatePositiveIntegerId(doctorId);
     // Validate the optional reason before opening the transaction.
     const normalizedReason = normalizeAppointmentReason(reason);
 
     return database.transaction(async (transaction) => {
-        const patient = await getPatientByUserId(userId, transaction);
+        const patient = patientId
+            ? await getPatientById(patientId, transaction)
+            : await getPatientByUserId(userId, transaction);
 
         await getActiveSpecialty(specialtyId, transaction);
         await getActiveDoctor(doctorId, specialtyId, transaction);
@@ -790,7 +830,7 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
                 start_at: startAt,
                 end_at: endAt,
                 reason: normalizedReason,
-                source: "Web",
+                source,
             },
             { transaction },
         );
@@ -798,8 +838,8 @@ export async function bookAppointment({ userId, specialtyId, doctorId, date, tim
         await AppointmentHistory.create(
             {
                 appointment_id: appointment.id,
-                actor_user_id: userId,
-                actor_snapshot: `Patient ${patient.id}`,
+                actor_user_id: historyActorUserId,
+                actor_snapshot: actorSnapshot || `Patient ${patient.id}`,
                 event_type: "Created",
                 previous_values: null,
                 new_values: {

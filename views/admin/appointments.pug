@@ -38,6 +38,9 @@ html(lang="es")
                     div
                         h1 Citas médicas
                         p Consulta y da seguimiento a las citas registradas en SaludVital.
+                    a.appointment-create-link(href="/admin/appointments/new")
+                        span(aria-hidden="true") +
+                        | Nueva cita
                 section.appointment-stats(aria-label="Resumen de citas")
                     article.appointment-stat
                         span.appointment-stat-icon(aria-hidden="true")

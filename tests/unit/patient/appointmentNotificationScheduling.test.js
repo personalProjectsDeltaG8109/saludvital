@@ -108,6 +108,89 @@ describe("appointment reminder scheduling", () => {
         expect(enqueueAppointmentNotifications).not.toHaveBeenCalled();
     });
 
+    test("creates an administrator booking against the selected active patient", async () => {
+        Patient.findByPk.mockResolvedValue({ id: 12, user_id: 22 });
+
+        await bookAppointment({
+            patientId: 12,
+            actorUserId: 5,
+            actorSnapshot: "Administrator 5",
+            source: "Admin",
+            specialtyId: 4,
+            doctorId: 7,
+            date: "2026-11-02",
+            time: "10:30",
+        });
+
+        expect(Patient.findByPk).toHaveBeenCalledWith(
+            12,
+            expect.objectContaining({
+                transaction,
+                include: [
+                    expect.objectContaining({
+                        where: { is_active: true },
+                    }),
+                ],
+            }),
+        );
+        expect(Appointment.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                patient_id: 12,
+                status_id: 1,
+                source: "Admin",
+            }),
+            { transaction },
+        );
+        expect(AppointmentHistory.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actor_user_id: 5,
+                actor_snapshot: "Administrator 5",
+            }),
+            { transaction },
+        );
+    });
+
+    test("rejects invalid administrator booking fields before creating an appointment", async () => {
+        await expect(
+            bookAppointment({
+                patientId: 12,
+                actorUserId: 5,
+                actorSnapshot: "Administrator 5",
+                specialtyId: "3.5",
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        await expect(
+            bookAppointment({
+                patientId: 12,
+                actorUserId: 5,
+                actorSnapshot: "Administrator 5",
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-02-30",
+                time: "10:30",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        await expect(
+            bookAppointment({
+                patientId: 12,
+                actorUserId: 5,
+                actorSnapshot: "Administrator 5",
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+                reason: "x".repeat(501),
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        expect(Appointment.create).not.toHaveBeenCalled();
+    });
+
     test("rejects new bookings when the selected specialty is inactive", async () => {
         Specialities.findOne.mockResolvedValue(null);
 
