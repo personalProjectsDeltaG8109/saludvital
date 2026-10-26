@@ -42,7 +42,11 @@ mixin adminSidebar(activePage)
             )
                 span.admin-nav-icon(aria-hidden="true") ◈
                 span Especialidades
-            span.admin-nav-link.is-unavailable(aria-disabled="true")
+            a.admin-nav-link(
+                href="/admin/appointments",
+                class=activePage === "appointments" ? "is-active" : null,
+                aria-current=activePage === "appointments" ? "page" : null
+            )
                 span.admin-nav-icon(aria-hidden="true") ▣
                 span Citas médicas
             span.admin-nav-link.is-unavailable(aria-disabled="true")
