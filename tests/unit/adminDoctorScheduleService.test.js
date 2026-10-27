@@ -12,7 +12,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 }));
 
 const models = await import("../../src/models/associations.js");
-const { getAdminDoctorSchedules } =
+const { getAdminAffectedAppointments, getAdminDoctorSchedules } =
     await import("../../src/modules/admin/services/adminDoctorScheduleService.js");
 
 const NOW = new Date("2026-10-26T12:00:00.000Z");
@@ -161,6 +161,96 @@ describe("admin doctor schedule directory", () => {
         expect(models.Appointment.findAll).toHaveBeenCalledWith(
             expect.objectContaining({ where: expect.objectContaining({ status_id: 2 }) }),
         );
+    });
+
+    test("lists distinct affected appointments with exception context and safe fields", async () => {
+        configureDefaults();
+        models.Appointment.findAll.mockResolvedValue([
+            {
+                id: 103,
+                doctor_id: 3,
+                start_at: "2026-10-31T13:30:00.000Z",
+                end_at: "2026-10-31T14:00:00.000Z",
+                doctor: { id: 3, display_name: "Dr. Luis Morales" },
+            },
+            {
+                id: 102,
+                doctor_id: 2,
+                start_at: "2026-10-31T14:30:00.000Z",
+                end_at: "2026-10-31T15:00:00.000Z",
+                doctor: { id: 2, display_name: "Dra. Ana Torres" },
+            },
+            {
+                id: 102,
+                doctor_id: 2,
+                start_at: "2026-10-31T14:30:00.000Z",
+                end_at: "2026-10-31T15:00:00.000Z",
+                doctor: { id: 2, display_name: "Dra. Ana Torres" },
+            },
+        ]);
+        models.DoctorAvailability.findAll.mockResolvedValue([
+            {
+                doctor_id: 2,
+                day_of_week: 6,
+                start_time: "09:00:00",
+                end_time: "11:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+            },
+        ]);
+        models.DoctorScheduleException.findAll.mockResolvedValue([
+            {
+                id: 91,
+                doctor_id: 2,
+                exception_type: "Unavailable",
+                reason: "Permiso personal",
+                start_at: "2026-10-31T14:00:00.000Z",
+                end_at: "2026-10-31T15:30:00.000Z",
+            },
+        ]);
+
+        const firstPage = await getAdminAffectedAppointments({ page: "1", pageSize: "1" }, NOW);
+        const secondPage = await getAdminAffectedAppointments({ page: "2", pageSize: "1" }, NOW);
+
+        expect(firstPage).toMatchObject({ totalItems: 2, page: 1, pageSize: 1, totalPages: 2 });
+        expect(firstPage.appointments[0]).toMatchObject({
+            id: 103,
+            reference: "Cita #103",
+            doctorName: "Dr. Luis Morales",
+            status: "Confirmed",
+            statusLabel: "Confirmada",
+            reason: "El horario activo no cubre este intervalo.",
+            exception: null,
+            detailsHref: "/admin/appointments/103",
+        });
+        expect(secondPage.appointments).toHaveLength(1);
+        expect(secondPage.appointments[0]).toMatchObject({
+            id: 102,
+            reason: "Permiso personal",
+            exception: {
+                reason: "Permiso personal",
+                startDate: "2026-10-31",
+                endDate: "2026-10-31",
+            },
+        });
+        expect(JSON.stringify(secondPage)).not.toMatch(/patient|email|clinical/i);
+        expect(models.DoctorScheduleException.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    exception_type: "Unavailable",
+                    is_active: true,
+                }),
+            }),
+        );
+    });
+
+    test("validates affected appointment pagination", async () => {
+        await expect(getAdminAffectedAppointments({ page: "0" }, NOW)).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        await expect(getAdminAffectedAppointments({ pageSize: "26" }, NOW)).rejects.toMatchObject({
+            statusCode: 400,
+        });
     });
 
     test("rejects invalid search values and weeks that do not start on Monday", async () => {
