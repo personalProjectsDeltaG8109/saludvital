@@ -84,6 +84,24 @@ function parseTextFilter(value, label) {
     return value.trim();
 }
 
+function parsePage(value) {
+    if (value === undefined || value === "") return 1;
+    if (typeof value !== "string" || !/^\d+$/.test(value)) {
+        throw createAuditError("La página solicitada no es válida.");
+    }
+
+    const page = Number(value);
+    if (
+        !Number.isSafeInteger(page) ||
+        page < 1 ||
+        page > Math.floor(Number.MAX_SAFE_INTEGER / PAGE_SIZE)
+    ) {
+        throw createAuditError("La página solicitada no es válida.");
+    }
+
+    return page;
+}
+
 function getActorLabel(record) {
     if (!record.actor_user_id) return "Sistema";
 
@@ -152,6 +170,16 @@ export async function getAdminAuditLogs(query = {}) {
 
     const action = parseTextFilter(query.action, "La acción");
     const module = parseTextFilter(query.module, "El módulo");
+    const page = parsePage(query.page);
+    const filters = await getFilterOptions();
+
+    if (action && !filters.actions.some((option) => option.value === action)) {
+        throw createAuditError("La acción seleccionada no es válida.");
+    }
+    if (module && !filters.modules.some((option) => option.value === module)) {
+        throw createAuditError("El módulo seleccionado no es válido.");
+    }
+
     const where = {};
     if (action) where.action = action;
     if (module) where.target_type = module;
@@ -162,8 +190,8 @@ export async function getAdminAuditLogs(query = {}) {
         if (endDate) where.occurred_at[Op.lt] = getBogotaBoundary(endDate, true);
     }
 
-    const [records, totalItems, filters] = await Promise.all([
-        AuditLog.findAll({
+    const findPage = (requestedPage) =>
+        AuditLog.findAndCountAll({
             attributes: [
                 "id",
                 "actor_user_id",
@@ -179,14 +207,30 @@ export async function getAdminAuditLogs(query = {}) {
                 ["id", "DESC"],
             ],
             limit: PAGE_SIZE,
-        }),
-        AuditLog.count({ where }),
-        getFilterOptions(),
-    ]);
+            offset: (requestedPage - 1) * PAGE_SIZE,
+        });
+
+    let currentPage = page;
+    let result = await findPage(currentPage);
+    const totalItems = Number(result.count);
+    const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+
+    if (totalPages === 0) {
+        currentPage = 1;
+    } else if (currentPage > totalPages) {
+        currentPage = totalPages;
+        result = await findPage(currentPage);
+    }
 
     return {
-        records: records.map(formatAuditRecord),
+        records: result.rows.map(formatAuditRecord),
         totalItems,
         filters,
+        pagination: {
+            page: currentPage,
+            pageSize: PAGE_SIZE,
+            totalItems,
+            totalPages,
+        },
     };
 }

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
-    default: { findAll: jest.fn(), count: jest.fn() },
+    default: { findAll: jest.fn(), findAndCountAll: jest.fn() },
 }));
 
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
@@ -11,8 +11,13 @@ const { getAdminAuditLogs } = await import("../../src/modules/admin/services/adm
 describe("administrator audit log directory", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        AuditLog.findAll.mockResolvedValue([]);
         AuditLog.findAll
-            .mockResolvedValueOnce([
+            .mockResolvedValueOnce([{ action: "AdminAppointmentCancelled" }])
+            .mockResolvedValueOnce([{ target_type: "Appointment" }]);
+        AuditLog.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [
                 {
                     id: 7,
                     actor_user_id: 12,
@@ -25,10 +30,8 @@ describe("administrator audit log directory", () => {
                     changes: { clinicalHistory: "private data" },
                     occurred_at: new Date("2026-10-20T15:30:00.000Z"),
                 },
-            ])
-            .mockResolvedValueOnce([{ action: "AdminAppointmentCancelled" }])
-            .mockResolvedValueOnce([{ target_type: "Appointment" }]);
-        AuditLog.count.mockResolvedValue(1);
+            ],
+        });
     });
 
     test("returns persisted records using safe labels and excludes sensitive event fields", async () => {
@@ -54,11 +57,14 @@ describe("administrator audit log directory", () => {
             /private@example|patient@example|clinicalHistory|Private reason/i,
         );
         expect(AuditLog.findAll.mock.calls[0][0].attributes).not.toContain("changes");
-        expect(AuditLog.findAll.mock.calls[0][0].order).toEqual([
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].attributes).not.toContain("changes");
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].order).toEqual([
             ["occurred_at", "DESC"],
             ["id", "DESC"],
         ]);
-        expect(AuditLog.findAll.mock.calls[0][0].limit).toBe(10);
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].limit).toBe(10);
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].offset).toBe(0);
+        expect(result.pagination).toEqual({ page: 1, pageSize: 10, totalItems: 1, totalPages: 1 });
     });
 
     test("filters by local date range, action, and module", async () => {
@@ -69,7 +75,7 @@ describe("administrator audit log directory", () => {
             module: "Appointment",
         });
 
-        expect(AuditLog.findAll.mock.calls[0][0].where).toEqual({
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].where).toEqual({
             action: "AdminAppointmentCancelled",
             target_type: "Appointment",
             occurred_at: {
@@ -90,6 +96,43 @@ describe("administrator audit log directory", () => {
 
     test("rejects oversized filter values", async () => {
         await expect(getAdminAuditLogs({ action: "x".repeat(61) })).rejects.toMatchObject({
+            statusCode: 400,
+        });
+    });
+
+    test("requests the selected page from the database and returns pagination totals", async () => {
+        AuditLog.findAndCountAll.mockResolvedValue({ count: 26, rows: [] });
+
+        const result = await getAdminAuditLogs({ page: "3" });
+
+        expect(AuditLog.findAndCountAll).toHaveBeenCalledWith(
+            expect.objectContaining({ limit: 10, offset: 20 }),
+        );
+        expect(result.pagination).toEqual({ page: 3, pageSize: 10, totalItems: 26, totalPages: 3 });
+    });
+
+    test("moves an out-of-range page to the last available page", async () => {
+        AuditLog.findAndCountAll
+            .mockResolvedValueOnce({ count: 26, rows: [] })
+            .mockResolvedValueOnce({ count: 26, rows: [] });
+
+        const result = await getAdminAuditLogs({ page: "9" });
+
+        expect(AuditLog.findAndCountAll.mock.calls.map(([options]) => options.offset)).toEqual([
+            80, 20,
+        ]);
+        expect(result.pagination.page).toBe(3);
+    });
+
+    test("rejects unsupported filter values and invalid page numbers", async () => {
+        await expect(getAdminAuditLogs({ action: "UnknownAction" })).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        await expect(getAdminAuditLogs({ module: "UnknownModule" })).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        await expect(getAdminAuditLogs({ page: "0" })).rejects.toMatchObject({ statusCode: 400 });
+        await expect(getAdminAuditLogs({ page: "1.5" })).rejects.toMatchObject({
             statusCode: 400,
         });
     });

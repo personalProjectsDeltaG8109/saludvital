@@ -73,6 +73,11 @@ html(lang="es")
                     ul.admin-audit-cards(data-audit-card-list, aria-live="polite")
                     footer.admin-audit-footer
                         p(data-audit-count, aria-live="polite")
+                        nav.admin-audit-pagination(
+                            aria-label="Paginación de auditoría",
+                            data-audit-pagination,
+                            hidden
+                        )
 
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-audit.js", defer)
