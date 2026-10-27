@@ -8,7 +8,10 @@ const pageStyles = await readFile(path.resolve("public/css/admin-doctor-schedule
 
 const markup = `
     <!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body class="admin-app">
-        <header class="admin-topbar"><form class="admin-global-search"><input data-user-top-search></form></header>
+        <aside class="admin-sidebar" id="schedule-sidebar" data-admin-sidebar><a href="/admin/doctor-schedules">Horarios</a><button type="button" data-admin-close>Cerrar</button></aside>
+        <button type="button" class="admin-sidebar-backdrop" data-admin-close aria-label="Cerrar menú"></button>
+        <div class="admin-main-shell">
+        <header class="admin-topbar"><button class="admin-menu-toggle" type="button" data-admin-open aria-expanded="false" aria-controls="schedule-sidebar"><span></span><span></span><span></span></button><form class="admin-global-search"><input data-user-top-search></form></header>
         <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules" data-affected-appointments-endpoint="/api/admin/doctor-schedules/affected-appointments">
             <header class="schedule-heading"><div class="schedule-heading-icon">◷</div><div><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios médicos.</p></div></header>
             <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong><strong data-stat-affected>—</strong></section>
@@ -22,8 +25,8 @@ const markup = `
             </form>
             <div class="schedule-content">
                 <section class="schedule-panel"><h2>Horario semanal</h2><p data-schedule-week-label></p><p data-schedule-feedback></p><p data-schedule-error hidden></p>
-                    <section data-weekly-view hidden><h3 data-weekly-doctor-name></h3><p data-weekly-date-range></p><button type="button" data-weekly-clear>Ver todos los médicos</button><p data-weekly-feedback hidden></p><p data-weekly-error hidden></p>
-                        <div data-weekly-content hidden><div data-weekly-grid></div><dd data-weekly-specialty></dd><dd data-weekly-duration></dd><dd data-weekly-working-days></dd><dd data-weekly-working-hours></dd></div><p data-weekly-empty hidden></p>
+                    <section class="weekly-selected-view" data-weekly-view hidden><h3 data-weekly-doctor-name></h3><p data-weekly-date-range></p><button type="button" data-weekly-clear>Ver todos los médicos</button><p data-weekly-feedback hidden></p><p data-weekly-error hidden></p>
+                        <div class="weekly-view-layout" data-weekly-content hidden><section class="weekly-calendar-card"><div class="weekly-grid" data-weekly-grid></div></section><aside class="weekly-information-panel"><dd data-weekly-specialty></dd><dd data-weekly-duration></dd><dd data-weekly-working-days></dd><dd data-weekly-working-hours></dd></aside></div><p data-weekly-empty hidden></p>
                     </section>
                     <div data-schedule-doctor-list></div><p data-schedule-empty hidden>No hay médicos que coincidan con los filtros seleccionados.</p>
                 </section>
@@ -35,7 +38,7 @@ const markup = `
                     <nav class="schedule-affected-pagination" data-affected-pagination hidden><button type="button" data-affected-previous>Anterior</button><span data-affected-page></span><button type="button" data-affected-next>Siguiente</button></nav>
                 </aside>
             </div>
-        </main>
+        </main></div>
     </body></html>`;
 
 const browser = await chromium.launch({ headless: true });
@@ -239,6 +242,26 @@ try {
     await page.locator("[data-schedule-doctor-list]").getByText("Dra. Ana Torres").waitFor();
     await page.getByRole("heading", { name: "Permiso personal" }).waitFor();
     await page.getByText("Cita #201").waitFor();
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(200);
+    await page.locator("[data-admin-open]").click();
+    if (
+        !(await page
+            .locator("body.admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open")))
+    ) {
+        throw new Error("The mobile menu should open the administrative sidebar.");
+    }
+    await page.locator("[data-admin-close]").first().click();
+    if (
+        await page
+            .locator("body.admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open"))
+    ) {
+        throw new Error("The mobile menu should close the administrative sidebar.");
+    }
+    await page.waitForTimeout(200);
+    await page.setViewportSize({ width: 1440, height: 900 });
     if ((await page.locator("[data-affected-count]").textContent()) !== "6 citas afectadas") {
         throw new Error("The affected appointment list count must match the summary count.");
     }
@@ -278,7 +301,7 @@ try {
     }
     await page.getByRole("button", { name: "Ver horario semanal" }).click();
     await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
-    await page.getByText("Cita #12").waitFor();
+    await page.locator(".weekly-grid-body").getByText("Cita #12").waitFor();
     const blockedPeriod = await page.locator(".weekly-event.is-blocked").textContent();
     if (!blockedPeriod.includes("No disponible") || !blockedPeriod.includes("Permiso")) {
         throw new Error("The weekly view must show unavailable exception reasons.");
@@ -306,19 +329,23 @@ try {
     console.log("PASS: weekly view shows persisted schedule states and doctor information.");
 
     await page.setViewportSize({ width: 375, height: 812 });
-    const mobileTimelineHeights = await page
-        .locator(".weekly-day-timeline")
+    await page.waitForTimeout(200);
+    const mobileDayHeights = await page
+        .locator(".weekly-mobile-day")
         .evaluateAll((elements) =>
             elements.map((element) => element.getBoundingClientRect().height),
         );
-    if (Math.max(...mobileTimelineHeights) > 160) {
-        throw new Error("Mobile weekly schedule days should use compact event rows.");
+    if (Math.max(...mobileDayHeights) > 200) {
+        throw new Error("Mobile weekly schedule days should use compact event cards.");
     }
-    if (!(await tuesdayColumn.locator(".weekly-event-time").first().isVisible())) {
+    const mobileTuesday = page.locator(".weekly-mobile-day").nth(1);
+    if (!(await mobileTuesday.locator(".weekly-mobile-event small").first().isVisible())) {
         throw new Error("Mobile schedule rows must show their time range.");
     }
     if (
-        !(await blockedVacation.locator(".weekly-event-time").textContent()).includes("Todo el día")
+        !(
+            await mobileTuesday.locator(".weekly-mobile-event.is-blocked small").textContent()
+        ).includes("Todo el día")
     ) {
         throw new Error("A full-day mobile exception should be labeled as such.");
     }

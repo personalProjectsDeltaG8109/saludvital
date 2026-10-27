@@ -2,6 +2,27 @@
     const page = document.querySelector("[data-doctor-schedules]");
     if (!page) return;
 
+    const adminApp = document.querySelector(".admin-app");
+    const adminSidebar = document.querySelector("[data-admin-sidebar]");
+    const adminMenuButton = document.querySelector("[data-admin-open]");
+
+    function closeAdminSidebar() {
+        adminApp?.classList.remove("is-sidebar-open");
+        adminMenuButton?.setAttribute("aria-expanded", "false");
+    }
+
+    adminMenuButton?.addEventListener("click", () => {
+        adminApp?.classList.add("is-sidebar-open");
+        adminMenuButton.setAttribute("aria-expanded", "true");
+        adminSidebar?.querySelector('a[href="/admin/doctor-schedules"]')?.focus();
+    });
+    document.querySelectorAll("[data-admin-close]").forEach((button) => {
+        button.addEventListener("click", closeAdminSidebar);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeAdminSidebar();
+    });
+
     const endpoint = page.dataset.endpoint;
     const exceptionsEndpoint = page.dataset.exceptionsEndpoint;
     const affectedAppointmentsEndpoint = page.dataset.affectedAppointmentsEndpoint;
@@ -514,7 +535,30 @@
             })
             .join("");
 
-        return `${header}<div class="weekly-grid-body">${axis}<div class="weekly-day-columns">${columns}</div></div>`;
+        const mobileDays = data.days
+            .map((day) => {
+                const events = day.events
+                    .map((event) => {
+                        const title = event.type === "appointment" ? event.reference : event.label;
+                        const description =
+                            event.type === "appointment"
+                                ? event.statusLabel
+                                : event.reason || title;
+                        const timeRange =
+                            event.startTime === "00:00" && event.endTime === "24:00"
+                                ? "Todo el día"
+                                : `${formatTime(event.startTime)}–${formatTime(event.endTime)}`;
+                        return `<li class="weekly-mobile-event is-${escapeAttribute(event.type)}"><strong>${escapeAttribute(title)}</strong><span>${escapeAttribute(description)}</span><small>${escapeAttribute(timeRange)}</small></li>`;
+                    })
+                    .join("");
+                const content = events
+                    ? `<ul class="weekly-mobile-events">${events}</ul>`
+                    : '<p class="weekly-mobile-empty">Sin bloques, citas ni excepciones registradas.</p>';
+                return `<section class="weekly-mobile-day"><h5>${escapeAttribute(day.dayLabel)} · ${formatDayDate(day.date)}</h5>${content}</section>`;
+            })
+            .join("");
+
+        return `${header}<div class="weekly-grid-body">${axis}<div class="weekly-day-columns">${columns}</div></div><div class="weekly-mobile-grid">${mobileDays}</div>`;
     }
 
     function renderWorkingInformation(data) {
