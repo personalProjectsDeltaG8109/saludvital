@@ -383,6 +383,7 @@ async function hasDoctorAvailability(doctorId, startAt, endAt, transaction) {
     const additionalAvailability = await DoctorScheduleException.findOne({
         where: {
             doctor_id: doctorId,
+            is_active: true,
             exception_type: "AdditionalAvailability",
             start_at: { [Op.lte]: startAt },
             end_at: { [Op.gte]: endAt },
@@ -400,6 +401,7 @@ async function hasBlockingScheduleException(doctorId, startAt, endAt, transactio
     const exception = await DoctorScheduleException.findOne({
         where: {
             doctor_id: doctorId,
+            is_active: true,
             exception_type: "Unavailable",
             start_at: { [Op.lt]: endAt },
             end_at: { [Op.gt]: startAt },
@@ -586,6 +588,7 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
         DoctorScheduleException.findAll({
             where: {
                 doctor_id: doctorId,
+                is_active: true,
                 exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
                 start_at: { [Op.lt]: dateEnd },
                 end_at: { [Op.gt]: dateStart },

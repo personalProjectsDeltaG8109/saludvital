@@ -3,6 +3,12 @@ import { authenticateToken, requireRole } from "../../../middleware/authenticate
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
 import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.js";
 import { getAdminDoctorWeeklySchedule } from "../services/adminDoctorWeeklyScheduleService.js";
+import {
+    createAdminDoctorScheduleException,
+    getAdminDoctorScheduleExceptions,
+    updateAdminDoctorScheduleException,
+    updateAdminDoctorScheduleExceptionStatus,
+} from "../services/adminDoctorScheduleExceptionService.js";
 import { configureAdminDoctorSchedule } from "../services/adminDoctorScheduleConfigurationService.js";
 import {
     deleteAdminDoctorSchedule,
@@ -57,6 +63,100 @@ import {
 const adminRoutes = Router();
 
 const requireAdministrator = [authenticateToken, requireRole("Administrator")];
+
+adminRoutes.get(
+    "/api/admin/doctor-schedule-exceptions",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminDoctorScheduleExceptions(req.query));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+adminRoutes.post(
+    "/api/admin/doctor-schedule-exceptions",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res
+                .status(201)
+                .json(await createAdminDoctorScheduleException(req.auth.userId, req.body));
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    ...(error.requiresConfirmation
+                        ? {
+                              requiresConfirmation: true,
+                              affectedAppointments: error.affectedAppointments,
+                          }
+                        : {}),
+                });
+            }
+            return next(error);
+        }
+    },
+);
+adminRoutes.patch(
+    "/api/admin/doctor-schedule-exceptions/:exceptionId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminDoctorScheduleException(
+                    req.auth.userId,
+                    req.params.exceptionId,
+                    req.body,
+                ),
+            );
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    ...(error.requiresConfirmation
+                        ? {
+                              requiresConfirmation: true,
+                              affectedAppointments: error.affectedAppointments,
+                          }
+                        : {}),
+                });
+            }
+            return next(error);
+        }
+    },
+);
+adminRoutes.patch(
+    "/api/admin/doctor-schedule-exceptions/:exceptionId/status",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminDoctorScheduleExceptionStatus(
+                    req.auth.userId,
+                    req.params.exceptionId,
+                    req.body,
+                ),
+            );
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    ...(error.requiresConfirmation
+                        ? {
+                              requiresConfirmation: true,
+                              affectedAppointments: error.affectedAppointments,
+                          }
+                        : {}),
+                });
+            }
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.get("/api/admin/specialties", ...requireAdministrator, async (req, res, next) => {
     try {

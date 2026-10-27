@@ -100,12 +100,19 @@ try {
                                 dayLabel: "Martes",
                                 events: [
                                     {
+                                        id: 2,
+                                        type: "available",
+                                        label: "Disponible",
+                                        startTime: "07:00",
+                                        endTime: "12:00",
+                                    },
+                                    {
                                         id: 3,
                                         type: "blocked",
                                         label: "No disponible",
                                         reason: "Permiso",
-                                        startTime: "12:00",
-                                        endTime: "13:00",
+                                        startTime: "00:00",
+                                        endTime: "24:00",
                                     },
                                 ],
                             },
@@ -196,6 +203,18 @@ try {
     if (!blockedPeriod.includes("No disponible") || !blockedPeriod.includes("Permiso")) {
         throw new Error("The weekly view must show unavailable exception reasons.");
     }
+    const tuesdayColumn = page.locator(".weekly-day-column").nth(1);
+    const blockedVacation = tuesdayColumn.locator(".weekly-event.is-blocked");
+    const availableInterval = tuesdayColumn.locator(".weekly-event.is-available");
+    if (!(await blockedVacation.getAttribute("style")).includes("width: 94%")) {
+        throw new Error("Unavailable exceptions must cover the full day column.");
+    }
+    if (
+        Number(await blockedVacation.evaluate((element) => getComputedStyle(element).zIndex)) <=
+        Number(await availableInterval.evaluate((element) => getComputedStyle(element).zIndex))
+    ) {
+        throw new Error("Unavailable exceptions must visually cover regular availability.");
+    }
     if (
         (await page.locator("[data-weekly-duration]").textContent()) !==
         "30 minutos · duración del sistema"
@@ -205,6 +224,24 @@ try {
         );
     }
     console.log("PASS: weekly view shows persisted schedule states and doctor information.");
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    const mobileTimelineHeights = await page
+        .locator(".weekly-day-timeline")
+        .evaluateAll((elements) =>
+            elements.map((element) => element.getBoundingClientRect().height),
+        );
+    if (Math.max(...mobileTimelineHeights) > 160) {
+        throw new Error("Mobile weekly schedule days should use compact event rows.");
+    }
+    if (!(await tuesdayColumn.locator(".weekly-event-time").first().isVisible())) {
+        throw new Error("Mobile schedule rows must show their time range.");
+    }
+    if (
+        !(await blockedVacation.locator(".weekly-event-time").textContent()).includes("Todo el día")
+    ) {
+        throw new Error("A full-day mobile exception should be labeled as such.");
+    }
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },

@@ -284,6 +284,25 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("schedule exception management endpoints require an authenticated administrator", async () => {
+        const requests = [
+            request(app).get("/api/admin/doctor-schedule-exceptions"),
+            request(app).post("/api/admin/doctor-schedule-exceptions").send({ doctorId: 1 }),
+            request(app)
+                .patch("/api/admin/doctor-schedule-exceptions/1")
+                .send({ reason: "Permiso" }),
+            request(app)
+                .patch("/api/admin/doctor-schedule-exceptions/1/status")
+                .send({ isActive: false }),
+        ];
+
+        for (const pendingRequest of requests) {
+            const response = await pendingRequest.redirects(0);
+            expect(response.status).toBe(303);
+            expect(response.headers.location).toBe("/login");
+        }
+    });
+
     test("GET /register renders the patient registration form", async () => {
         const response = await request(app).get("/register");
 

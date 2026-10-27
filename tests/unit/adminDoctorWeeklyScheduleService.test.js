@@ -34,6 +34,7 @@ function setDefaults() {
     models.DoctorScheduleException.findAll.mockResolvedValue([
         {
             id: 41,
+            is_active: true,
             exception_type: "Unavailable",
             reason: "Permiso personal",
             start_at: new Date("2026-10-27T17:00:00.000Z"),
@@ -41,6 +42,7 @@ function setDefaults() {
         },
         {
             id: 42,
+            is_active: true,
             exception_type: "AdditionalAvailability",
             reason: "Jornada extendida",
             start_at: new Date("2026-10-30T13:00:00.000Z"),
@@ -134,6 +136,7 @@ describe("admin weekly doctor schedule service", () => {
             expect.objectContaining({
                 where: expect.objectContaining({
                     doctor_id: 7,
+                    is_active: true,
                     exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
                 }),
             }),
@@ -148,6 +151,69 @@ describe("admin weekly doctor schedule service", () => {
                     }),
                 ],
             }),
+        );
+    });
+
+    test("marks every covered calendar day as blocked for a multi-day unavailable exception", async () => {
+        models.DoctorAvailability.findAll.mockResolvedValue([
+            {
+                id: 81,
+                day_of_week: 5,
+                start_time: "07:00:00",
+                end_time: "12:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+            },
+            {
+                id: 82,
+                day_of_week: 6,
+                start_time: "07:00:00",
+                end_time: "12:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+            },
+        ]);
+        models.DoctorScheduleException.findAll.mockResolvedValue([
+            {
+                id: 99,
+                is_active: true,
+                exception_type: "Unavailable",
+                reason: "Vacaciones",
+                start_at: new Date("2026-12-24T22:00:00.000Z"),
+                end_at: new Date("2026-12-31T22:00:00.000Z"),
+            },
+        ]);
+        models.Appointment.findAll.mockResolvedValue([]);
+
+        const result = await getAdminDoctorWeeklySchedule(7, "2026-12-21");
+
+        for (const dayIndex of [4, 5]) {
+            expect(result.days[dayIndex].events).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        type: "blocked",
+                        reason: "Vacaciones",
+                        startTime: "00:00",
+                        endTime: "24:00",
+                    }),
+                    expect.objectContaining({
+                        type: "available",
+                        startTime: "07:00",
+                        endTime: "12:00",
+                    }),
+                ]),
+            );
+        }
+        expect(result.days[6].events).toContainEqual(
+            expect.objectContaining({
+                type: "blocked",
+                reason: "Vacaciones",
+                startTime: "00:00",
+                endTime: "24:00",
+            }),
+        );
+        expect(result.days[6].events).not.toContainEqual(
+            expect.objectContaining({ type: "available" }),
         );
     });
 

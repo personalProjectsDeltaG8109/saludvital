@@ -257,6 +257,7 @@ export async function getDoctorScheduleContext(
         DoctorScheduleException.findAll({
             where: {
                 doctor_id: schedule.doctorId,
+                is_active: true,
                 exception_type: "Unavailable",
                 end_at: { [Op.gt]: new Date() },
             },
