@@ -142,6 +142,11 @@ html(lang="es")
                                         div
                                             dt Horario de atención
                                             dd(data-weekly-working-hours) —
+                                    section.weekly-editable-schedules(
+                                        aria-labelledby="weekly-editable-title"
+                                    )
+                                        h5#weekly-editable-title Horarios configurados
+                                        ul(data-weekly-editable-blocks)
                             ul.weekly-legend(aria-label="Estados de horario")
                                 li.is-available Disponible
                                 li.is-additional-availability Disponibilidad adicional
@@ -168,7 +173,7 @@ html(lang="es")
                     header.schedule-config-heading
                         div
                             p.admin-eyebrow Configuración de disponibilidad
-                            h2#schedule-config-title Configurar horario
+                            h2#schedule-config-title(data-config-title) Configurar horario
                             p(data-config-doctor-label) Selecciona un médico activo para continuar.
                         button.schedule-config-close(
                             type="button",

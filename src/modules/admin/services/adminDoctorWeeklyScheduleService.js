@@ -263,6 +263,21 @@ export async function getAdminDoctorWeeklySchedule(rawDoctorId, rawWeekStart) {
         week: { start: week.start, end: week.end },
         appointmentDurationMinutes: APPOINTMENT_SLOT_MINUTES,
         workingDays,
+        availabilityBlocks: availability
+            .filter((block) =>
+                dates.some(
+                    (date, index) => block.day_of_week === index + 1 && isValidForDate(block, date),
+                ),
+            )
+            .map((block) => ({
+                id: block.id,
+                dayOfWeek: block.day_of_week,
+                dayLabel: WEEKDAY_LABELS[block.day_of_week - 1],
+                startTime: formatTime(block.start_time),
+                endTime: formatTime(block.end_time),
+                validFrom: String(block.valid_from).slice(0, 10),
+                validUntil: block.valid_until ? String(block.valid_until).slice(0, 10) : null,
+            })),
         days,
     };
 }

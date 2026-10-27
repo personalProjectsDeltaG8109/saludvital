@@ -51,7 +51,7 @@ function minutesSinceMidnight(value) {
     return hours * 60 + minutes;
 }
 
-function normalizeSchedule(input) {
+export function normalizeDoctorSchedule(input) {
     const doctorId = parseDoctorId(input?.doctorId);
     const validFrom = parseDate(input?.validFrom, "de inicio", true);
     const validUntil = parseDate(input?.validUntil, "de finalización");
@@ -187,8 +187,6 @@ function formatImpactAppointment(appointment, exceptions) {
     );
     return {
         id: appointment.id,
-        startAt: appointment.start_at,
-        endAt: appointment.end_at,
         date: localStart.date,
         startTime: localStart.time,
         endTime: localEnd.time,
@@ -197,7 +195,12 @@ function formatImpactAppointment(appointment, exceptions) {
     };
 }
 
-async function getDoctorScheduleContext(schedule, transaction) {
+export async function getDoctorScheduleContext(
+    schedule,
+    transaction,
+    excludeAvailabilityId = null,
+    previousAvailability = null,
+) {
     const doctor = await Doctor.findByPk(schedule.doctorId, {
         attributes: ["id"],
         include: [
@@ -215,7 +218,11 @@ async function getDoctorScheduleContext(schedule, transaction) {
     if (!doctor) throw serviceError("El médico no existe o no está activo.", 404);
 
     const existingBlocks = await DoctorAvailability.findAll({
-        where: { doctor_id: schedule.doctorId, is_active: true },
+        where: {
+            doctor_id: schedule.doctorId,
+            is_active: true,
+            ...(excludeAvailabilityId ? { id: { [Op.ne]: excludeAvailabilityId } } : {}),
+        },
         attributes: ["day_of_week", "start_time", "end_time", "valid_from", "valid_until"],
         transaction,
     });
@@ -265,11 +272,32 @@ async function getDoctorScheduleContext(schedule, transaction) {
             validUntil: schedule.validUntil,
         })),
     ];
+    const previousBlocks = previousAvailability
+        ? [
+              ...existingBlocks.map((block) => ({
+                  day_of_week: block.day_of_week,
+                  start_time: block.start_time,
+                  end_time: block.end_time,
+                  valid_from: block.valid_from,
+                  valid_until: block.valid_until,
+              })),
+              {
+                  day_of_week: previousAvailability.day_of_week,
+                  start_time: previousAvailability.start_time,
+                  end_time: previousAvailability.end_time,
+                  valid_from: previousAvailability.valid_from,
+                  valid_until: previousAvailability.valid_until,
+              },
+          ]
+        : null;
     const impactedAppointments = appointments
         .filter(
             (appointment) =>
-                !scheduleCovers(appointment, resultingBlocks) ||
-                overlapsException(appointment, exceptions),
+                overlapsException(appointment, exceptions) ||
+                (previousBlocks
+                    ? scheduleCovers(appointment, previousBlocks) &&
+                      !scheduleCovers(appointment, resultingBlocks)
+                    : !scheduleCovers(appointment, resultingBlocks)),
         )
         .map((appointment) => formatImpactAppointment(appointment, exceptions));
 
@@ -278,7 +306,7 @@ async function getDoctorScheduleContext(schedule, transaction) {
 
 /** Create weekly availability blocks without changing existing appointments. */
 export async function configureAdminDoctorSchedule(input) {
-    const schedule = normalizeSchedule(input);
+    const schedule = normalizeDoctorSchedule(input);
     return database.transaction(async (transaction) => {
         const { impactedAppointments } = await getDoctorScheduleContext(schedule, transaction);
         if (impactedAppointments.length > 0 && input.confirmImpact !== true) {
