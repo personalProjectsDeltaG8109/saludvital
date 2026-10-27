@@ -9,7 +9,7 @@ const pageStyles = await readFile(path.resolve("public/css/admin-doctor-schedule
 const markup = `
     <body class="admin-app">
         <header class="admin-topbar"><form class="admin-global-search"><input data-user-top-search></form></header>
-        <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules">
+        <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules">
             <header class="schedule-heading"><div class="schedule-heading-icon">◷</div><div><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios médicos.</p></div></header>
             <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong><strong data-stat-affected>—</strong></section>
             <form class="schedule-filters" data-schedule-filters>
@@ -21,7 +21,12 @@ const markup = `
                 <button class="schedule-search-button" type="submit">Buscar</button>
             </form>
             <div class="schedule-content">
-                <section class="schedule-panel"><h2>Horario semanal</h2><p data-schedule-week-label></p><p data-schedule-feedback></p><p data-schedule-error hidden></p><div data-schedule-doctor-list></div><p data-schedule-empty hidden>No hay médicos que coincidan con los filtros seleccionados.</p></section>
+                <section class="schedule-panel"><h2>Horario semanal</h2><p data-schedule-week-label></p><p data-schedule-feedback></p><p data-schedule-error hidden></p>
+                    <section data-weekly-view hidden><h3 data-weekly-doctor-name></h3><p data-weekly-date-range></p><button type="button" data-weekly-clear>Ver todos los médicos</button><p data-weekly-feedback hidden></p><p data-weekly-error hidden></p>
+                        <div data-weekly-content hidden><div data-weekly-grid></div><dd data-weekly-specialty></dd><dd data-weekly-duration></dd><dd data-weekly-working-days></dd><dd data-weekly-working-hours></dd></div><p data-weekly-empty hidden></p>
+                    </section>
+                    <div data-schedule-doctor-list></div><p data-schedule-empty hidden>No hay médicos que coincidan con los filtros seleccionados.</p>
+                </section>
                 <aside class="schedule-panel"><h2>Próximas excepciones</h2><p data-schedule-exceptions-empty hidden>No hay excepciones próximas.</p><ul data-schedule-exceptions></ul></aside>
             </div>
         </main>
@@ -31,14 +36,93 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    page.setDefaultTimeout(5000);
+    page.on("pageerror", (error) => console.error("BROWSER ERROR:", error.message));
     await page.setContent(markup);
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: pageStyles });
     await page.evaluate(() => {
         window.scheduleRequests = [];
+        window.weeklyRequests = [];
         window.scheduleMode = "success";
         window.fetch = async (url) => {
-            const params = new URL(url, "http://localhost").searchParams;
+            const requestUrl = new URL(url, "http://localhost");
+            if (requestUrl.pathname.endsWith("/week")) {
+                window.weeklyRequests.push({
+                    doctorId: requestUrl.pathname.split("/").at(-2),
+                    weekStart: requestUrl.searchParams.get("weekStart"),
+                });
+                if (window.scheduleMode === "error")
+                    return {
+                        ok: false,
+                        json: async () => ({ message: "No pudimos cargar la semana del médico." }),
+                    };
+                const weeklyStart = requestUrl.searchParams.get("weekStart");
+                const weeklyEnd = new Date(`${weeklyStart}T00:00:00Z`);
+                weeklyEnd.setUTCDate(weeklyEnd.getUTCDate() + 6);
+                return {
+                    ok: true,
+                    json: async () => ({
+                        doctor: { id: 1, name: "Dra. Ana Torres", specialty: "Medicina General" },
+                        week: { start: weeklyStart, end: weeklyEnd.toISOString().slice(0, 10) },
+                        appointmentDurationMinutes: 30,
+                        workingDays: [
+                            {
+                                date: "2026-10-26",
+                                dayLabel: "Lunes",
+                                intervals: [{ startTime: "08:00", endTime: "12:00" }],
+                            },
+                        ],
+                        days: [
+                            {
+                                date: "2026-10-26",
+                                dayLabel: "Lunes",
+                                events: [
+                                    {
+                                        id: 1,
+                                        type: "available",
+                                        label: "Disponible",
+                                        startTime: "08:00",
+                                        endTime: "12:00",
+                                    },
+                                    {
+                                        id: 12,
+                                        type: "appointment",
+                                        reference: "Cita #12",
+                                        statusLabel: "Confirmada",
+                                        startTime: "09:00",
+                                        endTime: "09:30",
+                                    },
+                                ],
+                            },
+                            {
+                                date: "2026-10-27",
+                                dayLabel: "Martes",
+                                events: [
+                                    {
+                                        id: 3,
+                                        type: "blocked",
+                                        label: "No disponible",
+                                        reason: "Permiso",
+                                        startTime: "12:00",
+                                        endTime: "13:00",
+                                    },
+                                ],
+                            },
+                            ...["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map(
+                                (dayLabel, index) => ({
+                                    date: new Date(Date.UTC(2026, 9, 28 + index))
+                                        .toISOString()
+                                        .slice(0, 10),
+                                    dayLabel,
+                                    events: [],
+                                }),
+                            ),
+                        ],
+                    }),
+                };
+            }
+            const params = requestUrl.searchParams;
             window.scheduleRequests.push(Object.fromEntries(params));
             if (window.scheduleMode === "error") {
                 return {
@@ -47,6 +131,13 @@ try {
                 };
             }
             const payload = structuredClone(window.scheduleResponse);
+            const selectedWeekStart = params.get("weekStart") || "2026-10-26";
+            const selectedWeekEnd = new Date(`${selectedWeekStart}T00:00:00Z`);
+            selectedWeekEnd.setUTCDate(selectedWeekEnd.getUTCDate() + 6);
+            payload.week = {
+                start: selectedWeekStart,
+                end: selectedWeekEnd.toISOString().slice(0, 10),
+            };
             if (params.get("search") === "sin-resultados") payload.doctors = [];
             if (params.get("doctorId") === "")
                 payload.doctorOptions.push({
@@ -92,11 +183,28 @@ try {
         };
     });
     await page.addScriptTag({ content: pageScript });
+    await page.waitForTimeout(1000);
     await page.locator("[data-schedule-doctor-list]").getByText("Dra. Ana Torres").waitFor();
     await page.getByText("Permiso personal").waitFor();
     if ((await page.locator("[data-stat-active-doctors]").textContent()) !== "18") {
         throw new Error("The schedule page must render summary data from the API.");
     }
+    await page.getByRole("button", { name: "Ver horario semanal" }).click();
+    await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
+    await page.getByText("Cita #12").waitFor();
+    const blockedPeriod = await page.locator(".weekly-event.is-blocked").textContent();
+    if (!blockedPeriod.includes("No disponible") || !blockedPeriod.includes("Permiso")) {
+        throw new Error("The weekly view must show unavailable exception reasons.");
+    }
+    if (
+        (await page.locator("[data-weekly-duration]").textContent()) !==
+        "30 minutos · duración del sistema"
+    ) {
+        throw new Error(
+            "The weekly panel should describe the shared 30-minute duration as system-defined.",
+        );
+    }
+    console.log("PASS: weekly view shows persisted schedule states and doctor information.");
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
@@ -119,6 +227,11 @@ try {
     }
 
     await page.setViewportSize({ width: 375, height: 812 });
+    await page.locator("[data-week-next]").click();
+    const navigatedWeek = await page.evaluate(() => window.weeklyRequests.at(-1).weekStart);
+    if (navigatedWeek !== "2026-11-02")
+        throw new Error("Week navigation must request the following Monday.");
+    await page.locator("[data-weekly-clear]").click();
     await page.locator("[data-schedule-search]").fill("Dra. Ana");
     await page.getByRole("button", { name: "Buscar" }).click();
     const appliedSearch = await page.evaluate(() => window.scheduleRequests.at(-1).search);

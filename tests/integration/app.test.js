@@ -114,6 +114,15 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("weekly doctor schedule endpoint requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .get("/api/admin/doctor-schedules/7/week?weekStart=2026-10-26")
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("administrator appointments page requires an authenticated administrator", async () => {
         const response = await request(app).get("/admin/appointments").redirects(0);
 
