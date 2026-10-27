@@ -443,8 +443,8 @@
         const isAppointment = event.type === "appointment";
         const className = `weekly-event is-${event.type}`;
         const lane = Math.min(event.lane, 2);
-        const isAvailability = ["available", "additionalAvailability"].includes(event.type);
-        const laneStyle = isAvailability
+        const isWideEvent = ["available", "additionalAvailability", "blocked"].includes(event.type);
+        const laneStyle = isWideEvent
             ? "left: 3%; width: 94%;"
             : `left: ${3 + lane * 31}%; width: 29%;`;
         const isEditable = event.type === "available" && event.scheduleId;

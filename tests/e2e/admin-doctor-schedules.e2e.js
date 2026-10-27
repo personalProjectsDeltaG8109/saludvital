@@ -100,12 +100,19 @@ try {
                                 dayLabel: "Martes",
                                 events: [
                                     {
+                                        id: 2,
+                                        type: "available",
+                                        label: "Disponible",
+                                        startTime: "07:00",
+                                        endTime: "12:00",
+                                    },
+                                    {
                                         id: 3,
                                         type: "blocked",
                                         label: "No disponible",
                                         reason: "Permiso",
-                                        startTime: "12:00",
-                                        endTime: "13:00",
+                                        startTime: "00:00",
+                                        endTime: "24:00",
                                     },
                                 ],
                             },
@@ -195,6 +202,18 @@ try {
     const blockedPeriod = await page.locator(".weekly-event.is-blocked").textContent();
     if (!blockedPeriod.includes("No disponible") || !blockedPeriod.includes("Permiso")) {
         throw new Error("The weekly view must show unavailable exception reasons.");
+    }
+    const tuesdayColumn = page.locator(".weekly-day-column").nth(1);
+    const blockedVacation = tuesdayColumn.locator(".weekly-event.is-blocked");
+    const availableInterval = tuesdayColumn.locator(".weekly-event.is-available");
+    if (!(await blockedVacation.getAttribute("style")).includes("width: 94%")) {
+        throw new Error("Unavailable exceptions must cover the full day column.");
+    }
+    if (
+        Number(await blockedVacation.evaluate((element) => getComputedStyle(element).zIndex)) <=
+        Number(await availableInterval.evaluate((element) => getComputedStyle(element).zIndex))
+    ) {
+        throw new Error("Unavailable exceptions must visually cover regular availability.");
     }
     if (
         (await page.locator("[data-weekly-duration]").textContent()) !==

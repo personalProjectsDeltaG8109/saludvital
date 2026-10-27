@@ -78,7 +78,11 @@ function getBogotaParts(value) {
         minute: "2-digit",
         hourCycle: "h23",
     }).formatToParts(new Date(value));
-    return Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+    const values = Object.fromEntries(parts.map(({ type, value: partValue }) => [type, partValue]));
+    return {
+        ...values,
+        date: `${values.year}-${values.month}-${values.day}`,
+    };
 }
 
 function getWeekDates(weekStart) {
