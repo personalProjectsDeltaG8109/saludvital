@@ -16,7 +16,8 @@ html(lang="es")
                 data-doctor-schedules,
                 data-endpoint="/api/admin/doctor-schedules",
                 data-weekly-endpoint="/api/admin/doctor-schedules",
-                data-exceptions-endpoint="/api/admin/doctor-schedule-exceptions"
+                data-exceptions-endpoint="/api/admin/doctor-schedule-exceptions",
+                data-affected-appointments-endpoint="/api/admin/doctor-schedules/affected-appointments"
             )
                 p.schedule-config-page-feedback(
                     role="status",
@@ -166,6 +167,21 @@ html(lang="es")
                             button.schedule-exceptions-manage(type="button", data-exceptions-open) Administrar
                         p.schedule-exceptions-empty(data-schedule-exceptions-empty, hidden) No hay excepciones próximas.
                         ul.schedule-exceptions-list(data-schedule-exceptions)
+                    aside.schedule-panel.schedule-affected-panel(
+                        aria-labelledby="affected-appointments-title"
+                    )
+                        header.schedule-panel-heading
+                            div
+                                h2#affected-appointments-title Citas afectadas por cambios
+                                p(data-affected-count) Citas confirmadas que requieren revisión.
+                        p.schedule-feedback(data-affected-loading, role="status") Cargando citas afectadas...
+                        p.schedule-error(data-affected-error, role="alert", hidden)
+                        p.schedule-empty(data-affected-empty, hidden) No hay citas confirmadas afectadas por los horarios o excepciones actuales.
+                        ul.schedule-affected-list(data-affected-list, aria-live="polite")
+                        nav.schedule-affected-pagination(data-affected-pagination, aria-label="Paginación de citas afectadas", hidden)
+                            button(type="button", data-affected-previous, disabled) Anterior
+                            span(data-affected-page)
+                            button(type="button", data-affected-next) Siguiente
                 p.schedule-footnote Los horarios se muestran según la disponibilidad configurada. Cada cita utiliza la duración establecida por el sistema.
             dialog.schedule-config-dialog(
                 data-schedule-config-dialog,
