@@ -1,0 +1,109 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-doctor-schedules.css")
+    body.admin-app
+        include partials/admin-shell.pug
+        +adminSidebar("schedules")
+        .admin-main-shell
+            +adminTopbar("/admin/doctor-schedules", "Buscar médicos por nombre o correo...")
+            main.doctor-schedules-page(
+                data-doctor-schedules,
+                data-endpoint="/api/admin/doctor-schedules"
+            )
+                header.schedule-heading
+                    .schedule-heading-icon(aria-hidden="true")
+                        span ◷
+                    div
+                        p.admin-eyebrow Gestión médica
+                        h1 Horarios y disponibilidad
+                        p Gestiona los horarios de atención de los médicos y su disponibilidad.
+                section.schedule-stats(aria-label="Resumen de horarios")
+                    article.schedule-stat
+                        span Médicos activos
+                        strong(data-stat-active-doctors) —
+                    article.schedule-stat.is-configured
+                        span Con horario configurado
+                        strong(data-stat-configured) —
+                    article.schedule-stat.is-exceptions
+                        span Excepciones próximas
+                        strong(data-stat-exceptions) —
+                        small Próximos 7 días
+                    article.schedule-stat.is-affected
+                        span Citas afectadas
+                        strong(data-stat-affected) —
+                        small(data-stat-affected-caption) Requieren revisión
+                section.schedule-filters-panel(aria-label="Filtros de horarios")
+                    form.schedule-filters(data-schedule-filters)
+                        label.schedule-search
+                            span Buscar médico
+                            input(
+                                type="search",
+                                maxlength="100",
+                                placeholder="Nombre o correo electrónico",
+                                data-schedule-search
+                            )
+                        label
+                            span Médico
+                            select(data-schedule-doctor)
+                                option(value="") Todos los médicos
+                        label
+                            span Especialidad
+                            select(data-schedule-specialty)
+                                option(value="") Todas las especialidades
+                        label
+                            span Estado del horario
+                            select(data-schedule-status)
+                                option(value="all") Todos
+                                option(value="configured") Con horario
+                                option(value="unconfigured") Sin horario
+                        label.schedule-week
+                            span Semana (lunes)
+                            .schedule-week-control
+                                button(
+                                    type="button",
+                                    aria-label="Semana anterior",
+                                    data-week-previous
+                                ) ‹
+                                input(
+                                    type="date",
+                                    data-schedule-week,
+                                    aria-label="Seleccionar lunes de la semana"
+                                )
+                                button(
+                                    type="button",
+                                    aria-label="Semana siguiente",
+                                    data-week-next
+                                ) ›
+                        button.schedule-search-button(type="submit") Buscar
+                .schedule-content
+                    section.schedule-panel(aria-labelledby="weekly-schedule-title")
+                        header.schedule-panel-heading
+                            div
+                                h2#weekly-schedule-title Horario semanal
+                                p(data-schedule-week-label) Consulta los horarios registrados para la semana seleccionada.
+                        p.schedule-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-schedule-feedback
+                        ) Cargando horarios…
+                        p.schedule-error(role="alert", data-schedule-error, hidden)
+                        .schedule-doctor-list(data-schedule-doctor-list)
+                        p.schedule-empty(data-schedule-empty, hidden) No hay médicos que coincidan con los filtros seleccionados.
+                    aside.schedule-panel.schedule-exceptions-panel(
+                        aria-labelledby="upcoming-exceptions-title"
+                    )
+                        header.schedule-panel-heading
+                            div
+                                h2#upcoming-exceptions-title Próximas excepciones
+                                p Excepciones registradas para los próximos 7 días.
+                        p.schedule-exceptions-empty(data-schedule-exceptions-empty, hidden) No hay excepciones próximas.
+                        ul.schedule-exceptions-list(data-schedule-exceptions)
+                p.schedule-footnote Los horarios se muestran según la disponibilidad configurada. Cada cita utiliza la duración establecida por el sistema.
+            script(src="/js/admin-dashboard.js", defer)
+            script(src="/js/admin-doctor-schedules.js", defer)

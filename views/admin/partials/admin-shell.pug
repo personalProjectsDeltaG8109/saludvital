@@ -49,7 +49,11 @@ mixin adminSidebar(activePage)
             )
                 span.admin-nav-icon(aria-hidden="true") ▣
                 span Citas médicas
-            span.admin-nav-link.is-unavailable(aria-disabled="true")
+            a.admin-nav-link(
+                href="/admin/doctor-schedules",
+                class=activePage === "schedules" ? "is-active" : null,
+                aria-current=activePage === "schedules" ? "page" : null
+            )
                 span.admin-nav-icon(aria-hidden="true") ◷
                 span Horarios y disponibilidad
             .admin-nav-section Canales y comunicación
