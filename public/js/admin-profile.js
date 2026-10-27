@@ -49,6 +49,8 @@
             profile.displayName || "Nombre no registrado";
         page.querySelector("[data-profile-identity-email]").textContent = profile.email;
         page.querySelector("[data-profile-initials]").textContent = profile.initials;
+        page.querySelector("[data-profile-avatar]").dataset.profileAvatarInitials =
+            profile.initials;
         displayNameInput.value = profile.displayName || "";
         displayNameInput.defaultValue = displayNameInput.value;
         emailInput.value = profile.email;

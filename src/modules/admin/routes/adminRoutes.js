@@ -47,6 +47,10 @@ import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import {
+    removeAdminProfilePhoto,
+    updateAdminProfilePhoto,
+} from "../services/adminProfilePhotoService.js";
+import {
     createAdminSpecialty,
     getAdminSpecialties,
     getAdminSpecialtyForEdit,
@@ -880,6 +884,26 @@ adminRoutes.get("/admin/profile", ...requireAdministrator, async (req, res, next
 adminRoutes.patch("/api/admin/profile", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await updateAdminProfilePersonalInformation(req.auth.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.post("/api/admin/profile/photo", ...requireAdministrator, async (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(await updateAdminProfilePhoto(req.auth.userId, req.body?.photo));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.delete("/api/admin/profile/photo", ...requireAdministrator, async (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        return res.json(await removeAdminProfilePhoto(req.auth.userId));
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);

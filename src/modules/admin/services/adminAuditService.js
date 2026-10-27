@@ -36,6 +36,8 @@ const ACTION_LABELS = {
     AdminSpecialtyUpdated: "Actualización de especialidad",
     AdminUserAccountUpdated: "Actualización de cuenta",
     AdminUserProfileUpdated: "Actualización de perfil",
+    AdminUserProfilePhotoUpdated: "Actualización de foto de perfil",
+    AdminUserProfilePhotoRemoved: "Eliminación de foto de perfil",
     UserPasswordReset: "Restablecimiento de contraseña",
 };
 
@@ -61,6 +63,8 @@ const EVENT_DESCRIPTIONS = {
     AdminSpecialtyUpdated: "Se actualizó una especialidad",
     AdminUserAccountUpdated: "Se actualizaron los permisos o el estado de una cuenta",
     AdminUserProfileUpdated: "Se actualizó un perfil de usuario",
+    AdminUserProfilePhotoUpdated: "Se actualizó la foto de perfil de un administrador",
+    AdminUserProfilePhotoRemoved: "Se eliminó la foto de perfil de un administrador",
     UserPasswordReset: "Se restableció la contraseña de una cuenta",
 };
 

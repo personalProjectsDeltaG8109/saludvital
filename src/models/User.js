@@ -31,6 +31,10 @@ const User = database.define(
             type: DataTypes.STRING(20),
             allowNull: true,
         },
+        profile_photo_url: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
         password_hash: {
             type: DataTypes.STRING(255),
             allowNull: false,
