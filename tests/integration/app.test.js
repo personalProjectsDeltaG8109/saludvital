@@ -344,4 +344,18 @@ describe("SaludVital application", () => {
         expect(response.headers["referrer-policy"]).toBe("no-referrer");
         expect(response.headers["cache-control"]).toContain("no-store");
     });
+
+    test("audit page requires an authenticated administrator", async () => {
+        const response = await request(app).get("/admin/audit").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("audit log endpoint requires an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/audit-logs").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
 });

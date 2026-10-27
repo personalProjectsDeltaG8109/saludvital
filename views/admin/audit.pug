@@ -1,0 +1,78 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-audit.css")
+    body.admin-app.admin-audit-page
+        include partials/admin-shell.pug
+        +adminSidebar("audit")
+        .admin-main-shell
+            +adminTopbar("/admin/audit", "Buscar personas, citas, médicos o secciones...")
+            main.admin-audit-content(data-admin-audit, data-endpoint="/api/admin/audit-logs")
+                header.admin-audit-heading
+                    .admin-audit-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            path(d="M12 3 20 6v5c0 5.1-3.3 8.3-8 10-4.7-1.7-8-4.9-8-10V6l8-3Z")
+                            path(d="m9 12 2 2 4-4")
+                    div
+                        p.admin-eyebrow Control y seguimiento
+                        h1 Auditoría
+                        p Consulta el registro de acciones realizadas en el sistema.
+
+                section.admin-audit-filter-panel(aria-label="Filtros de auditoría")
+                    details.admin-audit-filters(open)
+                        summary Filtros
+                        .admin-audit-filter-grid
+                            label
+                                span Fecha desde
+                                input(type="date", data-audit-start)
+                            label
+                                span Fecha hasta
+                                input(type="date", data-audit-end)
+                            label
+                                span Acción
+                                select(data-audit-action)
+                                    option(value="") Todas
+                            label
+                                span Módulo
+                                select(data-audit-module)
+                                    option(value="") Todos
+
+                p.admin-audit-status(role="status", aria-live="polite", data-audit-loading) Cargando registros de auditoría...
+                p.admin-audit-error(role="alert", aria-live="assertive", data-audit-error, hidden)
+                p.admin-audit-empty(data-audit-empty, hidden) No hay registros que coincidan con los filtros seleccionados.
+
+                section.admin-audit-results(
+                    aria-label="Registros de auditoría",
+                    data-audit-results,
+                    hidden
+                )
+                    .admin-audit-table-wrap
+                        table.admin-audit-table
+                            thead
+                                tr
+                                    th(scope="col") Fecha y hora
+                                    th(scope="col") Usuario
+                                    th(scope="col") Módulo
+                                    th(scope="col") Acción
+                                    th(scope="col") Detalle
+                            tbody(data-audit-table-body)
+                    ul.admin-audit-cards(data-audit-card-list, aria-live="polite")
+                    footer.admin-audit-footer
+                        p(data-audit-count, aria-live="polite")
+
+        script(src="/js/admin-dashboard.js", defer)
+        script(src="/js/admin-audit.js", defer)
