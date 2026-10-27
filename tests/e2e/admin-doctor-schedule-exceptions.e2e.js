@@ -34,6 +34,7 @@ try {
         window.exceptions = [];
         window.impactAcknowledgements = [];
         window.appointmentChanges = 0;
+        window.cancelledAppointments = 0;
         window.fetch = async (url, options = {}) => {
             const requestUrl = new URL(url, "http://localhost");
             if (requestUrl.pathname === "/api/admin/doctor-schedules") {
@@ -78,8 +79,22 @@ try {
 
             const body = JSON.parse(options.body);
             const isStatusRequest = requestUrl.pathname.endsWith("/status");
+            const exceptionId = isStatusRequest
+                ? Number(requestUrl.pathname.split("/").at(-2))
+                : null;
+            const currentException = window.exceptions.find(
+                (exception) => exception.id === exceptionId,
+            );
+            const autoCancel =
+                isStatusRequest &&
+                !body.isActive &&
+                currentException?.type === "AdditionalAvailability";
             const attemptKey = `${options.method}:${requestUrl.pathname}:${JSON.stringify(body)}`;
-            if (!body.confirmImpact && !window.impactAcknowledgements.includes(attemptKey)) {
+            if (
+                !autoCancel &&
+                !body.confirmImpact &&
+                !window.impactAcknowledgements.includes(attemptKey)
+            ) {
                 window.impactAcknowledgements.push(attemptKey);
                 return new Response(
                     JSON.stringify({
@@ -97,7 +112,7 @@ try {
             }
 
             if (isStatusRequest) {
-                const exceptionId = Number(requestUrl.pathname.split("/").at(-2));
+                if (autoCancel) window.cancelledAppointments += 1;
                 window.exceptions = window.exceptions.map((exception) =>
                     exception.id === exceptionId
                         ? { ...exception, isActive: body.isActive }
@@ -105,7 +120,7 @@ try {
                 );
             } else if (options.method === "POST") {
                 window.exceptions.push({
-                    id: 15,
+                    id: body.type === "AdditionalAvailability" ? 16 : 15,
                     doctorId: 7,
                     doctorName: "Dra. Ana Torres",
                     startAt: "2030-10-28T13:00:00.000Z",
@@ -129,7 +144,11 @@ try {
                     message: isStatusRequest
                         ? "La excepción se actualizó correctamente."
                         : "La excepción se guardó correctamente.",
-                    affectedAppointmentsReviewed: 1,
+                    affectedAppointmentsReviewed: autoCancel ? 0 : 1,
+                    cancelledAppointmentsCount: autoCancel ? 1 : 0,
+                    cancellationDetails: autoCancel
+                        ? "Se canceló 1 cita. Notificaciones encoladas: 1."
+                        : null,
                 }),
                 { headers: { "Content-Type": "application/json" } },
             );
@@ -186,8 +205,26 @@ try {
     await page.locator("[data-exception-status]").selectOption("active");
     await page.locator("[data-exception-list] [data-toggle-exception]").waitFor();
 
+    await page.locator("[data-exception-create]").click();
+    await page.locator("[data-exception-form]:visible").waitFor();
+    await page.locator("[data-exception-doctor]").selectOption("7");
+    await page.locator("[data-exception-type]").selectOption("AdditionalAvailability");
+    await page.locator("[data-exception-start]").fill("2030-11-01T07:00");
+    await page.locator("[data-exception-end]").fill("2030-11-01T07:30");
+    await page.locator("[data-exception-reason]").fill("Jornada adicional");
+    await page.locator("[data-exception-submit]").click();
+    await page.locator("[data-exception-impact]:visible").waitFor();
+    await page.locator("[data-exception-impact-confirm]").click();
+    await page.locator("[data-exception-list]").getByText("Jornada adicional").waitFor();
+    await page.locator("[data-exception-list] [data-toggle-exception]").last().click();
+    await page
+        .locator("[data-exception-feedback]")
+        .getByText("Notificaciones encoladas: 1.")
+        .waitFor();
+
     const appointmentChanges = await page.evaluate(() => window.appointmentChanges);
     assert.equal(appointmentChanges, 0);
+    assert.equal(await page.evaluate(() => window.cancelledAppointments), 1);
     for (const viewport of [
         { width: 375, height: 812 },
         { width: 768, height: 1024 },

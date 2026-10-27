@@ -20,10 +20,19 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));
+jest.unstable_mockModule(
+    "../../src/modules/admin/services/adminDoctorScheduleConfigurationService.js",
+    () => ({
+        cancelImpactedAppointments: jest.fn(),
+        formatScheduleCancellationDetails: jest.fn(),
+    }),
+);
 
 const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
+const scheduleConfiguration =
+    await import("../../src/modules/admin/services/adminDoctorScheduleConfigurationService.js");
 const {
     createAdminDoctorScheduleException,
     getAdminDoctorScheduleExceptions,
@@ -70,6 +79,11 @@ function setDefaults() {
     }));
     models.Doctor.findAll.mockResolvedValue([{ id: 7, display_name: "Dra. Ana Torres" }]);
     AuditLog.create.mockResolvedValue({ id: 80 });
+    scheduleConfiguration.cancelImpactedAppointments.mockResolvedValue({
+        cancelledCount: 0,
+        queuedNotificationCount: 0,
+    });
+    scheduleConfiguration.formatScheduleCancellationDetails.mockReturnValue(null);
 }
 
 describe("admin doctor schedule exception service", () => {
@@ -183,6 +197,90 @@ describe("admin doctor schedule exception service", () => {
             expect.objectContaining({ action: "AdminDoctorScheduleExceptionDeactivated" }),
             { transaction },
         );
+        expect(database.transaction).toHaveBeenCalled();
+    });
+
+    test("cancels and queues notices for confirmed appointments when additional availability is deactivated", async () => {
+        const record = createRecord({ exception_type: "AdditionalAvailability" });
+        const appointment = {
+            id: 93,
+            doctor_id: 7,
+            start_at: new Date("2030-10-28T14:00:00.000Z"),
+            end_at: new Date("2030-10-28T14:30:00.000Z"),
+            update: jest.fn(),
+        };
+        models.DoctorScheduleException.findByPk.mockResolvedValue(record);
+        models.Appointment.findAll.mockResolvedValue([appointment]);
+        scheduleConfiguration.cancelImpactedAppointments.mockResolvedValue({
+            cancelledCount: 1,
+            queuedNotificationCount: 2,
+        });
+        scheduleConfiguration.formatScheduleCancellationDetails.mockReturnValue(
+            "Se canceló 1 cita. Notificaciones encoladas: 2.",
+        );
+
+        const result = await updateAdminDoctorScheduleExceptionStatus(12, 21, {
+            isActive: false,
+        });
+
+        expect(scheduleConfiguration.cancelImpactedAppointments).toHaveBeenCalledWith(
+            { id: 12, email: "admin@saludvital.co" },
+            [appointment],
+            transaction,
+        );
+        expect(result).toMatchObject({
+            cancelledAppointmentsCount: 1,
+            queuedNotificationCount: 2,
+            cancellationDetails: "Se canceló 1 cita. Notificaciones encoladas: 2.",
+        });
+        expect(record.update).toHaveBeenCalledWith(
+            { is_active: false },
+            { transaction, validate: true },
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({ action: "AdminDoctorScheduleExceptionDeactivated" }),
+            { transaction },
+        );
+    });
+
+    test("does not automatically cancel appointments when an Unavailable exception is deactivated", async () => {
+        const record = createRecord({ exception_type: "Unavailable" });
+        models.DoctorScheduleException.findByPk.mockResolvedValue(record);
+        models.Appointment.findAll.mockResolvedValue([
+            {
+                id: 94,
+                doctor_id: 7,
+                start_at: new Date("2030-10-28T14:00:00.000Z"),
+                end_at: new Date("2030-10-28T14:30:00.000Z"),
+            },
+        ]);
+
+        await expect(
+            updateAdminDoctorScheduleExceptionStatus(12, 21, { isActive: false }),
+        ).rejects.toMatchObject({ requiresConfirmation: true });
+        expect(scheduleConfiguration.cancelImpactedAppointments).not.toHaveBeenCalled();
+        expect(record.update).not.toHaveBeenCalled();
+    });
+
+    test("propagates cancellation failures so the exception transaction can roll back", async () => {
+        const record = createRecord({ exception_type: "AdditionalAvailability" });
+        models.DoctorScheduleException.findByPk.mockResolvedValue(record);
+        models.Appointment.findAll.mockResolvedValue([
+            {
+                id: 95,
+                doctor_id: 7,
+                start_at: new Date("2030-10-28T14:00:00.000Z"),
+                end_at: new Date("2030-10-28T14:30:00.000Z"),
+                update: jest.fn(),
+            },
+        ]);
+        scheduleConfiguration.cancelImpactedAppointments.mockRejectedValue(
+            new Error("notification queue unavailable"),
+        );
+
+        await expect(
+            updateAdminDoctorScheduleExceptionStatus(12, 21, { isActive: false }),
+        ).rejects.toThrow("notification queue unavailable");
         expect(database.transaction).toHaveBeenCalled();
     });
 

@@ -726,6 +726,16 @@
         exceptionError.focus();
     }
 
+    function formatExceptionFeedback(data) {
+        const messages = [data.message, data.cancellationDetails];
+        if (data.affectedAppointmentsReviewed) {
+            messages.push(
+                `${data.affectedAppointmentsReviewed} citas confirmadas quedaron sin cambios y requieren revisión.`,
+            );
+        }
+        return messages.filter(Boolean).join(" ");
+    }
+
     async function loadExceptionManager() {
         exceptionError.hidden = true;
         exceptionFeedback.hidden = true;
@@ -834,9 +844,7 @@
             exceptionImpact.hidden = true;
             await loadExceptionManager();
             await loadSchedules();
-            exceptionFeedback.textContent = data.affectedAppointmentsReviewed
-                ? `${data.message} ${data.affectedAppointmentsReviewed} citas confirmadas quedaron sin cambios y requieren revisión.`
-                : data.message;
+            exceptionFeedback.textContent = formatExceptionFeedback(data);
             exceptionFeedback.hidden = false;
         } catch (error) {
             showExceptionError(error.message || "No pudimos guardar la excepción.");
@@ -868,9 +876,7 @@
         exceptionImpact.hidden = true;
         await loadExceptionManager();
         await loadSchedules();
-        exceptionFeedback.textContent = data.affectedAppointmentsReviewed
-            ? `${data.message} ${data.affectedAppointmentsReviewed} citas confirmadas quedaron sin cambios y requieren revisión.`
-            : data.message;
+        exceptionFeedback.textContent = formatExceptionFeedback(data);
         exceptionFeedback.hidden = false;
     }
 
