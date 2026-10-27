@@ -44,6 +44,7 @@ import {
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
+import { getAdminProfile } from "../services/adminProfileService.js";
 import {
     createAdminSpecialty,
     getAdminSpecialties,
@@ -857,6 +858,20 @@ adminRoutes.get("/admin/dashboard", ...requireAdministrator, async (req, res, ne
             dashboard,
         });
     } catch (error) {
+        return next(error);
+    }
+});
+
+adminRoutes.get("/admin/profile", ...requireAdministrator, async (req, res, next) => {
+    try {
+        const profile = await getAdminProfile(req.auth.userId);
+        return res.render("admin/profile", {
+            pageTitle: "Mi perfil | SaludVital",
+            adminName: profile.displayName || "Administrador",
+            profile,
+        });
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).send(error.message);
         return next(error);
     }
 });

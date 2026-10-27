@@ -1,0 +1,97 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-profile.css")
+    body.admin-app.admin-profile-page
+        include partials/admin-shell.pug
+        +adminSidebar("profile")
+        .admin-main-shell
+            +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
+            main.admin-profile-content
+                header.admin-profile-heading
+                    .admin-profile-heading-icon(aria-hidden="true")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round",
+                            stroke-linejoin="round"
+                        )
+                            circle(cx="12", cy="8", r="3.5")
+                            path(d="M5 21v-1.5a7 7 0 0 1 14 0V21")
+                    div
+                        p.admin-eyebrow Perfil de cuenta
+                        h1 Mi perfil
+                        p Gestiona y consulta la información asociada a tu cuenta.
+
+                section.admin-profile-hero(aria-labelledby="admin-profile-name")
+                    .admin-profile-avatar(aria-hidden="true")
+                        if profile.profilePhotoUrl
+                            img(src=profile.profilePhotoUrl, alt="")
+                        else
+                            span= profile.initials
+                    .admin-profile-identity
+                        h2#admin-profile-name= profile.displayName || "Nombre no registrado"
+                        p= profile.email
+                        span.admin-profile-role= profile.role === "Administrator" ? "Administrador" : profile.role
+
+                nav.admin-profile-tabs(aria-label="Secciones del perfil")
+                    a(href="#personal-information") Información personal
+                    a(href="#security-information") Seguridad
+                    a(href="#profile-preferences") Preferencias
+
+                .admin-profile-grid
+                    section#personal-information.admin-profile-card(
+                        aria-labelledby="personal-information-title"
+                    )
+                        h2#personal-information-title Datos personales
+                        dl.admin-profile-fields
+                            .admin-profile-field
+                                dt Nombre completo
+                                dd= profile.displayName || "Nombre no registrado"
+                            .admin-profile-field
+                                dt Correo electrónico
+                                dd= profile.email
+                            .admin-profile-field
+                                dt Rol
+                                dd= profile.role === "Administrator" ? "Administrador" : profile.role
+                            .admin-profile-field
+                                dt Estado de la cuenta
+                                dd
+                                    span.admin-profile-status(
+                                        class=profile.isActive ? "is-active" : "is-inactive"
+                                    )
+                                        = profile.isActive ? "Activa" : "Inactiva"
+
+                    section.admin-profile-card(aria-labelledby="additional-information-title")
+                        h2#additional-information-title Información adicional
+                        dl.admin-profile-fields
+                            .admin-profile-field
+                                dt Fecha de registro
+                                dd= profile.createdAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeZone: "America/Bogota" }).format(new Date(profile.createdAt)) : "Sin información registrada"
+                            .admin-profile-field
+                                dt Último acceso
+                                dd= profile.lastLoginAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.lastLoginAt)) : "Sin información registrada"
+
+                section#security-information.admin-profile-note(
+                    aria-labelledby="security-information-title"
+                )
+                    h2#security-information-title Seguridad
+                    p La administración de contraseña continúa disponible mediante el proceso seguro de recuperación de cuenta.
+                    a(href="/forgot-password") Ir a recuperación de contraseña
+
+                section#profile-preferences.admin-profile-note(
+                    aria-labelledby="profile-preferences-title"
+                )
+                    h2#profile-preferences-title Preferencias
+                    p Esta cuenta no tiene preferencias de perfil configuradas.
+
+        script(src="/js/admin-dashboard.js", defer)

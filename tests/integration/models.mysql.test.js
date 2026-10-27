@@ -39,6 +39,7 @@ describe("MySQL model integration", () => {
                 "id",
                 "role_id",
                 "email",
+                "display_name",
                 "password_hash",
                 "is_active",
                 "last_login_at",

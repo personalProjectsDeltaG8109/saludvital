@@ -23,6 +23,10 @@ const User = database.define(
                 isEmail: true,
             },
         },
+        display_name: {
+            type: DataTypes.STRING(120),
+            allowNull: true,
+        },
         password_hash: {
             type: DataTypes.STRING(255),
             allowNull: false,
