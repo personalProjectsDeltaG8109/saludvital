@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import { Appointment } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
 
 const PAGE_SIZE = 10;
@@ -51,6 +52,7 @@ const EVENT_DESCRIPTIONS = {
 
 const CHANGE_LABELS = {
     cancelledAppointmentCount: "Citas canceladas",
+    cancellationCause: "Motivo de cancelación",
     dayOfWeek: "Día de la semana",
     doctorId: "Identificador del médico",
     endAt: "Fecha y hora de finalización",
@@ -198,6 +200,13 @@ function formatChangeValue(key, value) {
     if (key === "status") {
         return { Confirmed: "Confirmada", Cancelled: "Cancelada" }[value] || null;
     }
+    if (key === "cancellationCause") {
+        return (
+            {
+                AdditionalAvailabilityDeactivated: "Se desactivó la disponibilidad adicional",
+            }[value] || null
+        );
+    }
     if (key === "type") {
         return (
             {
@@ -279,6 +288,31 @@ export async function getAdminAuditEvent(rawId) {
     }
 
     const summary = formatAuditRecord(record);
+    const isAdditionalAvailabilityCancellation =
+        record.action === "AdminAppointmentCancelled" &&
+        record.changes?.cancellationCause === "AdditionalAvailabilityDeactivated";
+    if (isAdditionalAvailabilityCancellation) {
+        const targetId = getSafeTargetId(record.target_id);
+        const appointment = targetId
+            ? await Appointment.findByPk(Number(targetId), {
+                  attributes: ["id"],
+                  include: [
+                      {
+                          association: "patient",
+                          attributes: ["first_name", "last_name"],
+                          required: false,
+                      },
+                  ],
+              })
+            : null;
+        const patientName = [appointment?.patient?.first_name, appointment?.patient?.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+        const patientDescription = patientName ? ` del paciente ${patientName}` : "";
+        const appointmentReference = targetId ? ` #${targetId}` : "";
+        summary.description = `La cita${appointmentReference}${patientDescription} se canceló porque el administrador #${record.actor_user_id} desactivó la disponibilidad adicional.`;
+    }
     return {
         ...summary,
         targetType: MODULE_LABELS[record.target_type] || "Otros",

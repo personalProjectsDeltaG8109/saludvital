@@ -11,6 +11,7 @@ Branch: `feature/us-adm-27-view-audit-event-details`
 - Added the administrator-protected `GET /api/admin/audit-logs/:auditLogId` endpoint using the existing audit model and service. Event IDs are validated; invalid IDs return a Spanish 400 response, and missing records return a safe 404 response.
 - Added a “Ver detalle” action to desktop rows and mobile cards. It opens an accessible dialog with loading and error states and displays the stored timestamp, responsible-user role and ID when available, module, action, safe description, numeric target ID, and persisted result.
 - Included before-and-after values only through an allowlist of recognized fields and safe value formats. Free-text reasons, actor snapshots, target descriptions, credentials, clinical data, unknown fields, and nonnumeric target identifiers are omitted.
+- For appointment cancellation events explicitly marked as caused by deactivating additional availability, the detail view resolves only the patient's first and last name from the linked appointment and explains that the administrator deactivated that availability. The stored cancellation-cause code is shown in the safe change list.
 - Reused existing administrator authorization and the current audit page. No audit event recording, schema migration, or dependency changes were made.
 
 ## Files
@@ -32,3 +33,4 @@ Branch: `feature/us-adm-27-view-audit-event-details`
 
 - Only recognized, allowlisted before-and-after fields are displayed. Existing audit values outside that safe set remain hidden.
 - Event details are read-only. No event history or audit recording behavior was changed.
+- The current user model does not store an administrator's display name; the detail uses the existing safe label `Administrador #<id>` rather than exposing the account email.

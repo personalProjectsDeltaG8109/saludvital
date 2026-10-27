@@ -4,8 +4,12 @@ import { Op } from "sequelize";
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { findAll: jest.fn(), findAndCountAll: jest.fn(), findByPk: jest.fn() },
 }));
+jest.unstable_mockModule("../../src/models/associations.js", () => ({
+    Appointment: { findByPk: jest.fn() },
+}));
 
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
+const { Appointment } = await import("../../src/models/associations.js");
 const { getAdminAuditEvent, getAdminAuditLogs } =
     await import("../../src/modules/admin/services/adminAuditService.js");
 
@@ -212,5 +216,51 @@ describe("administrator audit log directory", () => {
             statusCode: 404,
             message: "No encontramos el evento de auditoría solicitado.",
         });
+    });
+
+    test("describes schedule-triggered cancellations with the persisted patient and administrator IDs", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 22,
+            actor_user_id: 12,
+            actor_snapshot: "Administrator private@example.co",
+            action: "AdminAppointmentCancelled",
+            target_type: "Appointment",
+            target_id: "456",
+            result: "Success",
+            occurred_at: new Date("2026-10-20T15:30:00.000Z"),
+            changes: {
+                previous: { status: "Confirmed" },
+                next: { status: "Cancelled" },
+                cancellationCause: "AdditionalAvailabilityDeactivated",
+                password: "must not appear",
+            },
+            reason: "private reason",
+        });
+        Appointment.findByPk.mockResolvedValue({
+            patient: { first_name: "Laura", last_name: "Méndez" },
+        });
+
+        const result = await getAdminAuditEvent("22");
+
+        expect(result.description).toBe(
+            "La cita #456 del paciente Laura Méndez se canceló porque el administrador #12 desactivó la disponibilidad adicional.",
+        );
+        expect(result.changes.recorded).toContainEqual({
+            label: "Motivo de cancelación",
+            value: "Se desactivó la disponibilidad adicional",
+        });
+        expect(Appointment.findByPk).toHaveBeenCalledWith(
+            456,
+            expect.objectContaining({
+                attributes: ["id"],
+                include: [
+                    expect.objectContaining({
+                        association: "patient",
+                        attributes: ["first_name", "last_name"],
+                    }),
+                ],
+            }),
+        );
+        expect(JSON.stringify(result)).not.toMatch(/private@example|password|private reason/i);
     });
 });
