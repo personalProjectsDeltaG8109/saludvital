@@ -2,8 +2,6 @@ import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
-    Appointment: { findAll: jest.fn() },
-    AppointmentStatus: { findOne: jest.fn() },
     Doctor: { findAll: jest.fn() },
     DoctorAvailability: { findAll: jest.fn() },
     DoctorScheduleException: { findAll: jest.fn() },
@@ -32,8 +30,6 @@ function createDoctor(id, overrides = {}) {
 function configureDefaults(doctors = []) {
     models.Doctor.findAll.mockResolvedValue(doctors);
     models.DoctorScheduleException.findAll.mockResolvedValue([]);
-    models.AppointmentStatus.findOne.mockResolvedValue({ id: 2 });
-    models.Appointment.findAll.mockResolvedValue([]);
     models.DoctorAvailability.findAll.mockResolvedValue([]);
     models.Specialities.findAll.mockResolvedValue([{ id: 4, name: "Medicina General" }]);
 }
@@ -87,7 +83,6 @@ describe("admin doctor schedule directory", () => {
             activeDoctors: 2,
             configuredSchedules: 1,
             upcomingExceptions: 1,
-            affectedAppointments: 0,
         });
         expect(result.doctors).toHaveLength(1);
         expect(result.doctors[0]).toMatchObject({
@@ -105,62 +100,6 @@ describe("admin doctor schedule directory", () => {
             start_at: { [Op.lt]: new Date("2026-11-02T05:00:00.000Z") },
             end_at: { [Op.gt]: new Date("2026-10-26T05:00:00.000Z") },
         });
-    });
-
-    test("counts future confirmed appointments outside schedules or overlapping unavailable exceptions", async () => {
-        configureDefaults();
-        models.Appointment.findAll.mockResolvedValue([
-            {
-                id: 1,
-                doctor_id: 1,
-                start_at: "2026-10-31T14:30:00.000Z",
-                end_at: "2026-10-31T15:00:00.000Z",
-            },
-            {
-                id: 2,
-                doctor_id: 2,
-                start_at: "2026-10-31T14:30:00.000Z",
-                end_at: "2026-10-31T15:00:00.000Z",
-            },
-            {
-                id: 3,
-                doctor_id: 3,
-                start_at: "2026-10-31T14:30:00.000Z",
-                end_at: "2026-10-31T15:00:00.000Z",
-            },
-        ]);
-        models.DoctorAvailability.findAll.mockResolvedValue([
-            {
-                doctor_id: 2,
-                day_of_week: 6,
-                start_time: "09:00:00",
-                end_time: "12:00:00",
-                valid_from: "2026-01-01",
-                valid_until: null,
-            },
-            {
-                doctor_id: 3,
-                day_of_week: 6,
-                start_time: "09:00:00",
-                end_time: "12:00:00",
-                valid_from: "2026-01-01",
-                valid_until: null,
-            },
-        ]);
-        models.DoctorScheduleException.findAll.mockResolvedValueOnce([]).mockResolvedValueOnce([
-            {
-                doctor_id: 3,
-                start_at: "2026-10-31T14:45:00.000Z",
-                end_at: "2026-10-31T15:15:00.000Z",
-            },
-        ]);
-
-        const result = await getAdminDoctorSchedules({}, NOW);
-
-        expect(result.summary.affectedAppointments).toBe(2);
-        expect(models.Appointment.findAll).toHaveBeenCalledWith(
-            expect.objectContaining({ where: expect.objectContaining({ status_id: 2 }) }),
-        );
     });
 
     test("rejects invalid search values and weeks that do not start on Monday", async () => {

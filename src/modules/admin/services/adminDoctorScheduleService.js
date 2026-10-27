@@ -1,7 +1,5 @@
 import { Op } from "sequelize";
 import {
-    Appointment,
-    AppointmentStatus,
     Doctor,
     DoctorAvailability,
     DoctorScheduleException,
@@ -138,86 +136,6 @@ function matchesSearch(doctor, search) {
     );
 }
 
-function scheduleCoversAppointment(appointment, availabilityBlocks) {
-    const start = getBogotaParts(appointment.start_at);
-    const end = getBogotaParts(appointment.end_at);
-    if (start.date !== end.date) return false;
-
-    return availabilityBlocks.some((block) => {
-        const validFrom = String(block.valid_from).slice(0, 10);
-        const validUntil = block.valid_until ? String(block.valid_until).slice(0, 10) : null;
-        return (
-            block.day_of_week === start.dayOfWeek &&
-            validFrom <= start.date &&
-            (!validUntil || validUntil >= start.date) &&
-            formatTime(block.start_time) <= start.time &&
-            formatTime(block.end_time) >= end.time
-        );
-    });
-}
-
-async function countAffectedAppointments(now) {
-    const confirmedStatus = await AppointmentStatus.findOne({
-        where: { name: "Confirmed" },
-        attributes: ["id"],
-    });
-    if (!confirmedStatus) return 0;
-
-    const [appointments, availabilityBlocks, unavailableExceptions] = await Promise.all([
-        Appointment.findAll({
-            where: {
-                status_id: confirmedStatus.id,
-                start_at: { [Op.gte]: now },
-            },
-            attributes: ["id", "doctor_id", "start_at", "end_at"],
-        }),
-        DoctorAvailability.findAll({
-            where: { is_active: true },
-            attributes: [
-                "doctor_id",
-                "day_of_week",
-                "start_time",
-                "end_time",
-                "valid_from",
-                "valid_until",
-            ],
-        }),
-        DoctorScheduleException.findAll({
-            where: {
-                exception_type: "Unavailable",
-                is_active: true,
-                end_at: { [Op.gt]: now },
-            },
-            attributes: ["doctor_id", "start_at", "end_at"],
-        }),
-    ]);
-
-    const blocksByDoctor = new Map();
-    for (const block of availabilityBlocks) {
-        const doctorBlocks = blocksByDoctor.get(block.doctor_id) || [];
-        doctorBlocks.push(block);
-        blocksByDoctor.set(block.doctor_id, doctorBlocks);
-    }
-
-    const unavailableByDoctor = new Map();
-    for (const exception of unavailableExceptions) {
-        const doctorExceptions = unavailableByDoctor.get(exception.doctor_id) || [];
-        doctorExceptions.push(exception);
-        unavailableByDoctor.set(exception.doctor_id, doctorExceptions);
-    }
-
-    return appointments.filter((appointment) => {
-        const blocks = blocksByDoctor.get(appointment.doctor_id) || [];
-        const exceptions = unavailableByDoctor.get(appointment.doctor_id) || [];
-        const overlapsUnavailablePeriod = exceptions.some(
-            (exception) =>
-                new Date(exception.start_at) < new Date(appointment.end_at) &&
-                new Date(exception.end_at) > new Date(appointment.start_at),
-        );
-        return overlapsUnavailablePeriod || !scheduleCoversAppointment(appointment, blocks);
-    }).length;
-}
-
 /** Return the doctor schedule directory, filters, and real summary counts. */
 export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
     const search = typeof query.search === "string" ? query.search.trim() : "";
@@ -235,7 +153,7 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
     const week = getWeekRange(query.weekStart, now);
     const exceptionWindowStart = getBogotaDayStart(getCurrentBogotaDate(now));
     const exceptionWindowEnd = getBogotaDayStart(addCalendarDays(getCurrentBogotaDate(now), 7));
-    const [doctorRecords, exceptionRecords, affectedAppointments] = await Promise.all([
+    const [doctorRecords, exceptionRecords] = await Promise.all([
         Doctor.findAll({
             attributes: ["id", "display_name", "profile_photo_url"],
             include: [
@@ -297,7 +215,6 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
             ],
             order: [["start_at", "ASC"]],
         }),
-        countAffectedAppointments(now),
     ]);
 
     const doctors = doctorRecords.map((record) => {
@@ -331,7 +248,6 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
             activeDoctors: activeDoctors.length,
             configuredSchedules: activeDoctors.filter((doctor) => doctor.hasSchedule).length,
             upcomingExceptions: exceptionRecords.length,
-            affectedAppointments,
         },
         doctors: filters,
         doctorOptions: doctors.map(({ id, name, email, isActive }) => ({
