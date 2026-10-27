@@ -8,7 +8,9 @@ const pageStyles = await readFile(path.resolve("public/css/admin-audit.css"), "u
 
 const markup = `
     <!doctype html><html lang="es"><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-    <body class="admin-app"><aside class="admin-sidebar" data-admin-sidebar></aside>
+    <body class="admin-app"><button type="button" class="admin-menu-toggle" data-admin-open aria-label="Abrir menú" aria-expanded="false" aria-controls="admin-sidebar">☰</button>
+        <button type="button" class="admin-sidebar-backdrop" data-admin-close aria-label="Cerrar menú"></button>
+        <aside id="admin-sidebar" class="admin-sidebar" data-admin-sidebar><button type="button" class="admin-sidebar-collapse" data-admin-close aria-label="Cerrar menú">×</button><a href="/admin/audit">Auditoría</a></aside>
         <div class="admin-main-shell"><header class="admin-topbar"></header>
             <main class="admin-audit-content" data-admin-audit data-endpoint="/api/admin/audit-logs">
                 <header class="admin-audit-heading"><div class="admin-audit-heading-icon">✓</div><div><h1>Auditoría</h1><p>Consulta el registro de acciones realizadas en el sistema.</p></div></header>
@@ -44,11 +46,12 @@ try {
                     json: async () => ({
                         id: 1,
                         occurredAt: "2026-10-20T15:30:00.000Z",
-                        actor: "Administrador #12",
+                        actor: "Administrador: admin@saludvital.com",
                         module: "Usuarios y roles",
                         action: "Actualización de cuenta",
                         description: "Se actualizaron los permisos de una cuenta.",
                         targetType: "Usuarios y roles",
+                        targetDescription: "Cuenta de usuario",
                         targetId: "21",
                         result: "Correcto",
                         changes: {
@@ -95,7 +98,7 @@ try {
                         {
                             id: 1,
                             occurredAt: "2026-10-20T15:30:00.000Z",
-                            actor: "Administrador #12",
+                            actor: "Administrador: admin@saludvital.com",
                             module: "Citas médicas",
                             action: "Cancelación de cita",
                             description: "Texto <img src=x onerror=alert(1)> seguro",
@@ -106,6 +109,59 @@ try {
         };
     });
     await page.addScriptTag({ content: pageScript });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    if (
+        !(await page
+            .locator(".admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open")))
+    ) {
+        throw new Error("The mobile audit menu button must open the sidebar.");
+    }
+    if (
+        (await page.getByRole("button", { name: "Abrir menú" }).getAttribute("aria-expanded")) !==
+        "true"
+    ) {
+        throw new Error("The mobile audit menu button must expose its expanded state.");
+    }
+    await page.waitForFunction(() => {
+        const sidebar = document.querySelector("[data-admin-sidebar]");
+        return Math.abs(new DOMMatrix(getComputedStyle(sidebar).transform).m41) <= 1;
+    });
+    const sidebarOffset = await page
+        .locator("[data-admin-sidebar]")
+        .evaluate((sidebar) => new DOMMatrix(getComputedStyle(sidebar).transform).m41);
+    if (Math.abs(sidebarOffset) > 1) {
+        throw new Error("The mobile audit sidebar must slide into view when opened.");
+    }
+    await page.locator(".admin-sidebar-collapse").click();
+    if (
+        await page
+            .locator(".admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open"))
+    ) {
+        throw new Error("The mobile audit close control must close the sidebar.");
+    }
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.locator(".admin-sidebar-backdrop").click({ position: { x: 360, y: 400 } });
+    if (
+        await page
+            .locator(".admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open"))
+    ) {
+        throw new Error("The mobile audit backdrop must close the sidebar.");
+    }
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.keyboard.press("Escape");
+    if (
+        await page
+            .locator(".admin-app")
+            .evaluate((element) => element.classList.contains("is-sidebar-open"))
+    ) {
+        throw new Error("Escape must close the mobile audit sidebar.");
+    }
+    console.log("PASS: mobile audit menu opens, closes, and responds to Escape.");
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page
         .locator(".admin-audit-table tbody")
         .getByText("Texto <img src=x onerror=alert(1)> seguro")
@@ -114,8 +170,20 @@ try {
 
     await page.getByRole("button", { name: "Ver detalle del evento #1" }).click();
     await page.getByText("Se actualizaron los permisos de una cuenta.").waitFor();
-    if ((await page.locator("dialog").getByText("Administrador #12").count()) !== 1) {
+    await page.getByText("Cuenta de usuario", { exact: true }).waitFor();
+    if (
+        (await page.locator("dialog").getByText("Administrador: admin@saludvital.com").count()) !==
+        1
+    ) {
         throw new Error("The event detail view must display the persisted responsible user.");
+    }
+    if (
+        await page
+            .locator("dialog")
+            .getByText(/Usuarios y roles #21/)
+            .count()
+    ) {
+        throw new Error("The event detail view must identify related records without numeric IDs.");
     }
     await page.locator("[data-audit-detail-close]").click();
     if (await page.getByRole("button", { name: "Buscar" }).count())

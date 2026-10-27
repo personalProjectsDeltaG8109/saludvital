@@ -449,7 +449,7 @@ adminRoutes.get(
 );
 adminRoutes.post("/api/admin/specialties", ...requireAdministrator, async (req, res, next) => {
     try {
-        const specialty = await createAdminSpecialty(req.body);
+        const specialty = await createAdminSpecialty(req.auth.userId, req.body);
         return res.status(201).json({ specialty });
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });

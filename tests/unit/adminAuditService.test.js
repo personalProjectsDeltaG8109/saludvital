@@ -5,11 +5,16 @@ jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { findAll: jest.fn(), findAndCountAll: jest.fn(), findByPk: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
-    Appointment: { findByPk: jest.fn() },
+    Appointment: { findAll: jest.fn(), findByPk: jest.fn() },
+    Doctor: { findAll: jest.fn(), findByPk: jest.fn() },
+    Rol: { findAll: jest.fn() },
+    Specialities: { findAll: jest.fn(), findByPk: jest.fn() },
+    User: { findByPk: jest.fn() },
 }));
 
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { Appointment } = await import("../../src/models/associations.js");
+const { Appointment, Doctor, Rol, Specialities, User } =
+    await import("../../src/models/associations.js");
 const { getAdminAuditEvent, getAdminAuditLogs } =
     await import("../../src/modules/admin/services/adminAuditService.js");
 
@@ -38,9 +43,25 @@ describe("administrator audit log directory", () => {
             ],
         });
         AuditLog.findByPk.mockResolvedValue(null);
+        Appointment.findAll.mockResolvedValue([]);
+        Appointment.findByPk.mockResolvedValue(null);
+        Doctor.findAll.mockResolvedValue([]);
+        Doctor.findByPk.mockResolvedValue(null);
+        Rol.findAll.mockResolvedValue([]);
+        Specialities.findAll.mockResolvedValue([]);
+        Specialities.findByPk.mockResolvedValue(null);
+        User.findByPk.mockResolvedValue(null);
     });
 
     test("returns persisted records using safe labels and excludes sensitive event fields", async () => {
+        Appointment.findAll.mockResolvedValue([
+            {
+                id: 456,
+                patient: { first_name: "Laura", last_name: "Méndez" },
+                doctor: { display_name: "Carlos Ramírez" },
+                specialty: { name: "Cardiología" },
+            },
+        ]);
         const result = await getAdminAuditLogs();
 
         expect(result).toMatchObject({
@@ -48,10 +69,11 @@ describe("administrator audit log directory", () => {
             records: [
                 {
                     id: 7,
-                    actor: "Administrador #12",
+                    actor: "Administrador: private@example.co",
                     module: "Citas médicas",
                     action: "Cancelación de cita",
-                    description: "Se canceló una cita #456.",
+                    description:
+                        "Se canceló una cita · Cita: Laura Méndez · Carlos Ramírez · Cardiología.",
                 },
             ],
             filters: {
@@ -60,7 +82,7 @@ describe("administrator audit log directory", () => {
             },
         });
         expect(JSON.stringify(result)).not.toMatch(
-            /private@example|patient@example|clinicalHistory|Private reason/i,
+            /patient@example|clinicalHistory|Private reason/i,
         );
         expect(AuditLog.findAll.mock.calls[0][0].attributes).not.toContain("changes");
         expect(AuditLog.findAndCountAll.mock.calls[0][0].attributes).not.toContain("changes");
@@ -70,6 +92,17 @@ describe("administrator audit log directory", () => {
         ]);
         expect(AuditLog.findAndCountAll.mock.calls[0][0].limit).toBe(10);
         expect(AuditLog.findAndCountAll.mock.calls[0][0].offset).toBe(0);
+        expect(AuditLog.findAndCountAll.mock.calls[0][0].include).toEqual(expect.any(Array));
+        expect(Appointment.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                attributes: ["id", "patient_id", "doctor_id", "specialty_id"],
+                include: expect.arrayContaining([
+                    expect.objectContaining({ association: "patient" }),
+                    expect.objectContaining({ association: "doctor" }),
+                    expect.objectContaining({ association: "specialty" }),
+                ]),
+            }),
+        );
         expect(result.pagination).toEqual({ page: 1, pageSize: 10, totalItems: 1, totalPages: 1 });
     });
 
@@ -172,13 +205,21 @@ describe("administrator audit log directory", () => {
                 },
                 clinicalHistory: "private clinical data",
             },
+            actor: {
+                email: "admin@example.co",
+                rol: { name: "Administrator" },
+            },
         });
+        Rol.findAll.mockResolvedValue([
+            { id: 2, name: "Patient" },
+            { id: 3, name: "Doctor" },
+        ]);
 
         const result = await getAdminAuditEvent("21");
 
         expect(result).toMatchObject({
             id: 21,
-            actor: "Administrador #12",
+            actor: "Administrador: admin@example.co",
             module: "Usuarios y roles",
             action: "Actualización de cuenta",
             targetType: "Usuarios y roles",
@@ -186,13 +227,13 @@ describe("administrator audit log directory", () => {
             result: "Correcto",
             changes: {
                 before: [
-                    { label: "Identificador del rol", value: "2" },
+                    { label: "Rol", value: "Paciente" },
                     { label: "Estado activo", value: "Sí" },
                     { label: "Día de la semana", value: "Miércoles" },
                     { label: "Vigente desde", value: "2026-10-19" },
                 ],
                 after: [
-                    { label: "Identificador del rol", value: "3" },
+                    { label: "Rol", value: "Médico" },
                     { label: "Estado activo", value: "No" },
                     { label: "Día de la semana", value: "Jueves" },
                     { label: "Vigente desde", value: "2026-10-20" },
@@ -201,7 +242,7 @@ describe("administrator audit log directory", () => {
             },
         });
         expect(JSON.stringify(result)).not.toMatch(
-            /private@example|patient@example|Private explanation|secret|clinicalHistory|private clinical/i,
+            /patient@example|Private explanation|secret|clinicalHistory|private clinical/i,
         );
         expect(AuditLog.findByPk).toHaveBeenCalledWith(
             21,
@@ -218,7 +259,7 @@ describe("administrator audit log directory", () => {
         });
     });
 
-    test("describes schedule-triggered cancellations with the persisted patient and administrator IDs", async () => {
+    test("describes schedule-triggered cancellations with patient, doctor, specialty and actor names", async () => {
         AuditLog.findByPk.mockResolvedValue({
             id: 22,
             actor_user_id: 12,
@@ -237,14 +278,18 @@ describe("administrator audit log directory", () => {
             reason: "private reason",
         });
         Appointment.findByPk.mockResolvedValue({
+            id: 456,
             patient: { first_name: "Laura", last_name: "Méndez" },
+            doctor: { display_name: "Carlos Ramírez" },
+            specialty: { name: "Cardiología" },
         });
 
         const result = await getAdminAuditEvent("22");
 
         expect(result.description).toBe(
-            "La cita #456 del paciente Laura Méndez se canceló porque el administrador #12 desactivó la disponibilidad adicional.",
+            "Cita: Laura Méndez · Carlos Ramírez · Cardiología se canceló porque Administrador: private@example.co desactivó la disponibilidad adicional.",
         );
+        expect(result.targetDescription).toBe("Cita: Laura Méndez · Carlos Ramírez · Cardiología");
         expect(result.changes.recorded).toContainEqual({
             label: "Motivo de cancelación",
             value: "Se desactivó la disponibilidad adicional",
@@ -252,15 +297,74 @@ describe("administrator audit log directory", () => {
         expect(Appointment.findByPk).toHaveBeenCalledWith(
             456,
             expect.objectContaining({
-                attributes: ["id"],
-                include: [
-                    expect.objectContaining({
-                        association: "patient",
-                        attributes: ["first_name", "last_name"],
-                    }),
-                ],
+                attributes: ["id", "patient_id", "doctor_id", "specialty_id"],
+                include: expect.arrayContaining([
+                    expect.objectContaining({ association: "patient" }),
+                    expect.objectContaining({ association: "doctor" }),
+                    expect.objectContaining({ association: "specialty" }),
+                ]),
             }),
         );
-        expect(JSON.stringify(result)).not.toMatch(/private@example|password|private reason/i);
+        expect(JSON.stringify(result)).not.toMatch(/password|private reason/i);
+    });
+
+    test("shows doctor and specialty names instead of their numeric identifiers", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 23,
+            actor_user_id: null,
+            action: "AdminAppointmentRescheduled",
+            target_type: "DoctorAvailability",
+            target_id: "55",
+            result: "Success",
+            occurred_at: new Date("2026-10-20T15:30:00.000Z"),
+            changes: {
+                previous: { doctorId: 8, specialtyId: 3 },
+                next: { doctorId: 9, specialtyId: 4 },
+            },
+        });
+        Doctor.findAll.mockResolvedValue([
+            { id: 8, display_name: "Carlos Ramírez" },
+            { id: 9, display_name: "Ana Torres" },
+        ]);
+        Specialities.findAll.mockResolvedValue([
+            { id: 3, name: "Cardiología" },
+            { id: 4, name: "Pediatría" },
+        ]);
+
+        const result = await getAdminAuditEvent("23");
+
+        expect(result.changes.before).toEqual([
+            { label: "Médico", value: "Carlos Ramírez" },
+            { label: "Especialidad", value: "Cardiología" },
+        ]);
+        expect(result.changes.after).toEqual([
+            { label: "Médico", value: "Ana Torres" },
+            { label: "Especialidad", value: "Pediatría" },
+        ]);
+        expect(JSON.stringify(result.changes)).not.toMatch(/\b(?:8|9|3|4)\b/);
+    });
+
+    test("identifies an acting doctor by profile name without displaying the account ID", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 24,
+            actor_user_id: 82,
+            actor_snapshot: "Doctor 82",
+            action: "AdminDoctorScheduleUpdated",
+            target_type: "DoctorAvailability",
+            target_id: "91",
+            result: "Success",
+            occurred_at: new Date("2026-10-20T15:30:00.000Z"),
+            changes: null,
+            actor: {
+                rol: { name: "Doctor" },
+                doctor: { display_name: "Carlos Ramírez" },
+            },
+        });
+
+        const result = await getAdminAuditEvent("24");
+
+        expect(result.actor).toBe("Médico: Carlos Ramírez");
+        expect(result.targetDescription).toBe("Horario médico");
+        expect(JSON.stringify(result)).not.toContain("82");
     });
 });

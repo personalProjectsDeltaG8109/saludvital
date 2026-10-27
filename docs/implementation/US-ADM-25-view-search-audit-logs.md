@@ -11,8 +11,9 @@ Branch: `feature/us-adm-25-view-search-audit-logs`
 - Added an administrator-only audit page and API using the existing `AuditLog` model and `audit_logs` table.
 - Added date, action, and module filters that apply when a control changes; the page has no filter Search button.
 - The API returns the ten most recent matching records and the total matching count. Pagination controls are left to US-ADM-26.
-- The response excludes actor snapshots, target descriptions, reasons, and raw change JSON. It identifies an available actor by role and internal user ID, and builds event summaries from mapped actions and target IDs.
+- The response excludes actor snapshots, reasons, and raw change JSON. It identifies responsible actors by their available patient or doctor profile name; administrator accounts use email as a fallback because the user model has no administrator name field. Appointment summaries include patient, doctor, and specialty names when linked records are available. Numeric record and actor IDs are not shown in the interface.
 - Reused the shared administrator sidebar, topbar, authentication middleware, and database schema. No dependencies or migrations were added.
+- Connected the shared mobile menu controls on the audit page; the sidebar opens, closes from its controls or backdrop, and responds to Escape.
 - The responsive page uses a desktop table and mobile cards with loading, empty, and error states.
 
 ## Files
@@ -35,3 +36,7 @@ Branch: `feature/us-adm-25-view-search-audit-logs`
 - Only the ten most recent matching records are displayed in this story; backend pagination and navigation are deferred to US-ADM-26.
 - Unknown action or target types use generic Spanish labels until a mapping is added.
 - No audit event detail screen or new audit recording coverage was added.
+
+## Story alignment
+
+US-ADM-25 should state that audit rows display the responsible person's profile name when available and a safe account identifier when the model has no name. Appointment summaries should use linked patient, doctor, and specialty names instead of numeric IDs. This clarifies the existing requirements to identify the responsible user and show a safe event description.

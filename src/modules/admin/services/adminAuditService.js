@@ -1,5 +1,5 @@
 import { Op } from "sequelize";
-import { Appointment } from "../../../models/associations.js";
+import { Appointment, Doctor, Rol, Specialities, User } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
 
 const PAGE_SIZE = 10;
@@ -15,7 +15,12 @@ const MODULE_LABELS = {
 };
 
 const ACTION_LABELS = {
+    AdminAppointmentCreated: "Creación de cita",
     AdminAppointmentCancelled: "Cancelación de cita",
+    AdminAppointmentRescheduled: "Reprogramación de cita",
+    AppointmentCancelled: "Cancelación de cita",
+    AppointmentCreated: "Creación de cita",
+    AppointmentRescheduled: "Reprogramación de cita",
     AdminDoctorActivated: "Activación de médico",
     AdminDoctorCreated: "Registro de médico",
     AdminDoctorDeactivated: "Desactivación de médico",
@@ -26,6 +31,7 @@ const ACTION_LABELS = {
     AdminDoctorScheduleExceptionUpdated: "Actualización de excepción",
     AdminDoctorScheduleUpdated: "Actualización de horario",
     AdminSpecialtyActivated: "Activación de especialidad",
+    AdminSpecialtyCreated: "Creación de especialidad",
     AdminSpecialtyDeactivated: "Desactivación de especialidad",
     AdminSpecialtyUpdated: "Actualización de especialidad",
     AdminUserAccountUpdated: "Actualización de cuenta",
@@ -33,7 +39,12 @@ const ACTION_LABELS = {
 };
 
 const EVENT_DESCRIPTIONS = {
+    AdminAppointmentCreated: "Se creó una cita",
     AdminAppointmentCancelled: "Se canceló una cita",
+    AdminAppointmentRescheduled: "Se reprogramó una cita",
+    AppointmentCancelled: "Se canceló una cita",
+    AppointmentCreated: "Se creó una cita",
+    AppointmentRescheduled: "Se reprogramó una cita",
     AdminDoctorActivated: "Se activó un médico",
     AdminDoctorCreated: "Se registró un médico",
     AdminDoctorDeactivated: "Se desactivó un médico",
@@ -44,6 +55,7 @@ const EVENT_DESCRIPTIONS = {
     AdminDoctorScheduleExceptionUpdated: "Se actualizó una excepción de horario",
     AdminDoctorScheduleUpdated: "Se actualizó un horario médico",
     AdminSpecialtyActivated: "Se activó una especialidad",
+    AdminSpecialtyCreated: "Se creó una especialidad",
     AdminSpecialtyDeactivated: "Se desactivó una especialidad",
     AdminSpecialtyUpdated: "Se actualizó una especialidad",
     AdminUserAccountUpdated: "Se actualizaron los permisos o el estado de una cuenta",
@@ -54,16 +66,16 @@ const CHANGE_LABELS = {
     cancelledAppointmentCount: "Citas canceladas",
     cancellationCause: "Motivo de cancelación",
     dayOfWeek: "Día de la semana",
-    doctorId: "Identificador del médico",
+    doctorId: "Médico",
     endAt: "Fecha y hora de finalización",
     endTime: "Hora de finalización",
     isActive: "Estado activo",
     next: "Nuevo valor",
     previous: "Valor anterior",
-    roleId: "Identificador del rol",
+    roleId: "Rol",
     startAt: "Fecha y hora de inicio",
     startTime: "Hora de inicio",
-    specialtyId: "Identificador de especialidad",
+    specialtyId: "Especialidad",
     startDate: "Fecha inicial",
     status: "Estado",
     type: "Tipo",
@@ -73,6 +85,11 @@ const CHANGE_LABELS = {
 
 const SAFE_CHANGE_KEYS = new Set(Object.keys(CHANGE_LABELS));
 const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const ROLE_LABELS = {
+    Administrator: "Administrador",
+    Doctor: "Médico",
+    Patient: "Paciente",
+};
 
 function createAuditError(message) {
     const error = new Error(message);
@@ -127,10 +144,28 @@ function parsePage(value) {
     return page;
 }
 
-function getActorLabel(record) {
+const AUDIT_ACTOR_INCLUDE = {
+    association: "actor",
+    attributes: ["id", "email"],
+    required: false,
+    include: [
+        { association: "rol", attributes: ["name"], required: false },
+        { association: "patient", attributes: ["first_name", "last_name"], required: false },
+        { association: "doctor", attributes: ["display_name"], required: false },
+    ],
+};
+
+const APPOINTMENT_CONTEXT_ATTRIBUTES = ["id", "patient_id", "doctor_id", "specialty_id"];
+const APPOINTMENT_CONTEXT_INCLUDE = [
+    { association: "patient", attributes: ["first_name", "last_name"], required: false },
+    { association: "doctor", attributes: ["display_name"], required: false },
+    { association: "specialty", attributes: ["name"], required: false },
+];
+
+function getActorLabel(record, actor = null) {
     if (!record.actor_user_id) return "Sistema";
 
-    const actorType = record.actor_snapshot?.split(" ")[0];
+    const actorType = actor?.rol?.name || record.actor_snapshot?.split(" ")[0];
     const actorLabels = {
         Administrator: "Administrador",
         Doctor: "Médico",
@@ -138,23 +173,36 @@ function getActorLabel(record) {
         System: "Sistema",
     };
     const label = actorLabels[actorType] || "Usuario";
-    return `${label} #${record.actor_user_id}`;
+    const profileName =
+        actor?.doctor?.display_name ||
+        [actor?.patient?.first_name, actor?.patient?.last_name].filter(Boolean).join(" ").trim();
+    if (profileName) return `${label}: ${profileName}`;
+
+    const accountName = actor?.email || record.actor_snapshot?.split(" ").slice(1).join(" ");
+    if (actorType === "Administrator" && accountName?.includes("@")) {
+        return `${label}: ${accountName}`;
+    }
+
+    return label;
 }
 
-function getSafeDescription(record) {
+function getAppointmentLabel(appointment) {
+    if (!appointment) return null;
+    const patientName = [appointment.patient?.first_name, appointment.patient?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const doctorName = appointment.doctor?.display_name;
+    const specialtyName = appointment.specialty?.name;
+    const details = [patientName, doctorName, specialtyName].filter(Boolean);
+    return details.length ? `Cita: ${details.join(" · ")}` : "Cita";
+}
+
+function getSafeDescription(record, appointment = null) {
     const description = EVENT_DESCRIPTIONS[record.action] || "Se registró una acción del sistema";
-    const targetId = getSafeTargetId(record.target_id);
-    if (!targetId) return `${description}.`;
-
-    if (record.target_type === "Appointment") {
-        return `${description} #${targetId}.`;
-    }
-
-    if (record.target_type === "User") {
-        return `${description} #${targetId}.`;
-    }
-
-    return `${description} (registro #${targetId}).`;
+    const appointmentLabel =
+        record.target_type === "Appointment" && getAppointmentLabel(appointment);
+    return appointmentLabel ? `${description} · ${appointmentLabel}.` : `${description}.`;
 }
 
 function getSafeTargetId(value) {
@@ -163,14 +211,14 @@ function getSafeTargetId(value) {
     return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
 }
 
-function formatAuditRecord(record) {
+function formatAuditRecord(record, appointment = null) {
     return {
         id: record.id,
         occurredAt: record.occurred_at,
-        actor: getActorLabel(record),
+        actor: getActorLabel(record, record.actor),
         module: MODULE_LABELS[record.target_type] || "Otros",
         action: ACTION_LABELS[record.action] || "Actividad",
-        description: getSafeDescription(record),
+        description: getSafeDescription(record, appointment),
     };
 }
 
@@ -187,7 +235,48 @@ function parseAuditId(value) {
     return id;
 }
 
-function formatChangeValue(key, value) {
+function getChangeIdentifiers(changes, key) {
+    if (!changes || typeof changes !== "object" || Array.isArray(changes)) return [];
+    return [
+        ...new Set(
+            Object.values(changes)
+                .filter((group) => group && typeof group === "object" && !Array.isArray(group))
+                .map((group) => group[key])
+                .concat(changes[key])
+                .map((value) => String(value ?? ""))
+                .filter((value) => /^\d+$/.test(value) && Number(value) > 0),
+        ),
+    ];
+}
+
+async function loadNamesById(model, ids, nameAttribute) {
+    if (!ids.length) return {};
+    const records = await model.findAll({
+        where: { id: { [Op.in]: ids.map(Number) } },
+        attributes: ["id", nameAttribute],
+    });
+    return Object.fromEntries(records.map((record) => [String(record.id), record[nameAttribute]]));
+}
+
+async function getChangeNameMaps(changes) {
+    const doctorIds = getChangeIdentifiers(changes, "doctorId");
+    const specialtyIds = getChangeIdentifiers(changes, "specialtyId");
+    const roleIds = getChangeIdentifiers(changes, "roleId");
+    const [doctors, specialties, roles] = await Promise.all([
+        loadNamesById(Doctor, doctorIds, "display_name"),
+        loadNamesById(Specialities, specialtyIds, "name"),
+        loadNamesById(Rol, roleIds, "name"),
+    ]);
+    const translatedRoles = Object.fromEntries(
+        Object.entries(roles).map(([id, name]) => [id, ROLE_LABELS[name] || name]),
+    );
+    return { doctorId: doctors, specialtyId: specialties, roleId: translatedRoles };
+}
+
+function formatChangeValue(key, value, nameMaps) {
+    if (["doctorId", "specialtyId", "roleId"].includes(key)) {
+        return nameMaps[key][String(value)] || "No disponible";
+    }
     if (key === "dayOfWeek") {
         return Number.isInteger(value) && value >= 1 && value <= 7
             ? WEEKDAY_LABELS[value - 1]
@@ -236,35 +325,78 @@ function formatChangeValue(key, value) {
     return null;
 }
 
-function formatChangeGroup(values) {
+function formatChangeGroup(values, nameMaps) {
     if (!values || typeof values !== "object" || Array.isArray(values)) return [];
 
     return Object.entries(values).flatMap(([key, value]) => {
         if (!SAFE_CHANGE_KEYS.has(key)) return [];
-        const formattedValue = formatChangeValue(key, value);
+        const formattedValue = formatChangeValue(key, value, nameMaps);
         if (formattedValue === null) return [];
         return [{ label: CHANGE_LABELS[key], value: formattedValue }];
     });
 }
 
-function getSafeChanges(changes) {
+async function getSafeChanges(changes) {
     if (!changes || typeof changes !== "object" || Array.isArray(changes)) return null;
+    const nameMaps = await getChangeNameMaps(changes);
 
-    const before = formatChangeGroup(changes.before ?? changes.previous);
-    const after = formatChangeGroup(changes.after ?? changes.next);
+    const before = formatChangeGroup(changes.before ?? changes.previous, nameMaps);
+    const after = formatChangeGroup(changes.after ?? changes.next, nameMaps);
     const recorded = formatChangeGroup(
         Object.fromEntries(
             Object.entries(changes).filter(
                 ([key]) => !["before", "after", "previous", "next", "added"].includes(key),
             ),
         ),
+        nameMaps,
     );
 
     if (!before.length && !after.length && !recorded.length) return null;
     return { before, after, recorded };
 }
 
-/** Return one persisted audit event with a strict allowlist for change values. */
+async function loadAppointmentContext(record) {
+    const appointmentId = getSafeTargetId(record.target_id);
+    if (record.target_type !== "Appointment" || !appointmentId) return null;
+    return Appointment.findByPk(Number(appointmentId), {
+        attributes: APPOINTMENT_CONTEXT_ATTRIBUTES,
+        include: APPOINTMENT_CONTEXT_INCLUDE,
+    });
+}
+
+async function getTargetDescription(record, appointment, changes) {
+    if (record.target_type === "Appointment") return getAppointmentLabel(appointment) || "Cita";
+    const targetId = getSafeTargetId(record.target_id);
+
+    if (record.target_type === "Doctor" && targetId) {
+        const doctor = await Doctor.findByPk(Number(targetId), {
+            attributes: ["id", "display_name"],
+        });
+        return doctor?.display_name || "Médico";
+    }
+    if (record.target_type === "MedicalSpecialty" && targetId) {
+        const specialty = await Specialities.findByPk(Number(targetId), {
+            attributes: ["id", "name"],
+        });
+        return specialty?.name || "Especialidad";
+    }
+    if (["DoctorAvailability", "DoctorScheduleException"].includes(record.target_type)) {
+        const doctorName = [changes?.before, changes?.after, changes?.recorded]
+            .flatMap((group) => group || [])
+            .find((change) => change.label === "Médico")?.value;
+        return doctorName ? `Horario de ${doctorName}` : "Horario médico";
+    }
+    if (record.target_type === "User" && targetId) {
+        const user = await User.findByPk(Number(targetId), {
+            attributes: ["id", "email"],
+            include: AUDIT_ACTOR_INCLUDE.include,
+        });
+        return user ? getActorLabel({ actor_user_id: user.id }, user) : "Cuenta de usuario";
+    }
+    return MODULE_LABELS[record.target_type] || "Registro relacionado";
+}
+
+/** Return one persisted audit event with safe names for available related records. */
 export async function getAdminAuditEvent(rawId) {
     const id = parseAuditId(rawId);
     const record = await AuditLog.findByPk(id, {
@@ -279,6 +411,7 @@ export async function getAdminAuditEvent(rawId) {
             "result",
             "occurred_at",
         ],
+        include: [AUDIT_ACTOR_INCLUDE],
     });
 
     if (!record) {
@@ -287,38 +420,26 @@ export async function getAdminAuditEvent(rawId) {
         throw error;
     }
 
-    const summary = formatAuditRecord(record);
+    const appointment = await loadAppointmentContext(record);
+    const summary = formatAuditRecord(record, appointment);
+    const changes = await getSafeChanges(record.changes);
     const isAdditionalAvailabilityCancellation =
         record.action === "AdminAppointmentCancelled" &&
         record.changes?.cancellationCause === "AdditionalAvailabilityDeactivated";
     if (isAdditionalAvailabilityCancellation) {
-        const targetId = getSafeTargetId(record.target_id);
-        const appointment = targetId
-            ? await Appointment.findByPk(Number(targetId), {
-                  attributes: ["id"],
-                  include: [
-                      {
-                          association: "patient",
-                          attributes: ["first_name", "last_name"],
-                          required: false,
-                      },
-                  ],
-              })
-            : null;
-        const patientName = [appointment?.patient?.first_name, appointment?.patient?.last_name]
-            .filter(Boolean)
-            .join(" ")
-            .trim();
-        const patientDescription = patientName ? ` del paciente ${patientName}` : "";
-        const appointmentReference = targetId ? ` #${targetId}` : "";
-        summary.description = `La cita${appointmentReference}${patientDescription} se canceló porque el administrador #${record.actor_user_id} desactivó la disponibilidad adicional.`;
+        const appointmentLabel = getAppointmentLabel(appointment);
+        summary.description = appointmentLabel
+            ? `${appointmentLabel} se canceló porque ${summary.actor} desactivó la disponibilidad adicional.`
+            : `Se canceló una cita porque ${summary.actor} desactivó la disponibilidad adicional.`;
     }
+    const targetDescription = await getTargetDescription(record, appointment, changes);
     return {
         ...summary,
         targetType: MODULE_LABELS[record.target_type] || "Otros",
         targetId: getSafeTargetId(record.target_id),
+        targetDescription,
         result: { Success: "Correcto", Failure: "Fallido" }[record.result] || null,
-        changes: getSafeChanges(record.changes),
+        changes,
     };
 }
 
@@ -338,6 +459,25 @@ async function getFilterOptions() {
             label: MODULE_LABELS[targetType] || "Otros",
         })),
     };
+}
+
+async function loadAppointmentContexts(records) {
+    const appointmentIds = [
+        ...new Set(
+            records
+                .filter((record) => record.target_type === "Appointment")
+                .map((record) => getSafeTargetId(record.target_id))
+                .filter(Boolean),
+        ),
+    ];
+    if (!appointmentIds.length) return new Map();
+
+    const appointments = await Appointment.findAll({
+        where: { id: { [Op.in]: appointmentIds.map(Number) } },
+        attributes: APPOINTMENT_CONTEXT_ATTRIBUTES,
+        include: APPOINTMENT_CONTEXT_INCLUDE,
+    });
+    return new Map(appointments.map((appointment) => [String(appointment.id), appointment]));
 }
 
 /** Return recent audit records and safe filter options for the administrator page. */
@@ -386,6 +526,7 @@ export async function getAdminAuditLogs(query = {}) {
                 ["occurred_at", "DESC"],
                 ["id", "DESC"],
             ],
+            include: [AUDIT_ACTOR_INCLUDE],
             limit: PAGE_SIZE,
             offset: (requestedPage - 1) * PAGE_SIZE,
         });
@@ -402,8 +543,12 @@ export async function getAdminAuditLogs(query = {}) {
         result = await findPage(currentPage);
     }
 
+    const appointmentContexts = await loadAppointmentContexts(result.rows);
+
     return {
-        records: result.rows.map(formatAuditRecord),
+        records: result.rows.map((record) =>
+            formatAuditRecord(record, appointmentContexts.get(String(record.target_id))),
+        ),
         totalItems,
         filters,
         pagination: {

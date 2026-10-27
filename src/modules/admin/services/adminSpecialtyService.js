@@ -193,28 +193,53 @@ export async function updateAdminSpecialtyStatus(actorId, rawSpecialtyId, isActi
     });
 }
 
-/** Create a specialty using only fields supported by the existing catalog model. */
-export async function createAdminSpecialty(input) {
+/** Create a specialty and persist its audit event in the same transaction. */
+export async function createAdminSpecialty(actorId, input) {
     const specialtyInput = validateSpecialtyInput(input);
-    const existingSpecialty = await Specialities.findOne({
-        where: { name: specialtyInput.name },
-        attributes: ["id"],
-    });
-
-    if (existingSpecialty) throw duplicateSpecialtyError();
+    if (!actorId) throw serviceError("No se encontró la sesión del administrador.", 401);
 
     try {
-        const specialty = await Specialities.create({
-            ...specialtyInput,
-            is_active: true,
-        });
+        return await database.transaction(async (transaction) => {
+            const existingSpecialty = await Specialities.findOne({
+                where: { name: specialtyInput.name },
+                attributes: ["id"],
+                transaction,
+            });
+            if (existingSpecialty) throw duplicateSpecialtyError();
 
-        return {
-            id: specialty.id,
-            name: specialty.name,
-            description: specialty.description || "",
-            isActive: specialty.is_active,
-        };
+            const actor = await User.findByPk(actorId, {
+                attributes: ["id"],
+                transaction,
+            });
+            if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+
+            const specialty = await Specialities.create(
+                { ...specialtyInput, is_active: true },
+                { transaction },
+            );
+            await AuditLog.create(
+                {
+                    actor_user_id: actor.id,
+                    actor_snapshot: `Administrator ${actor.id}`,
+                    action: "AdminSpecialtyCreated",
+                    target_type: "MedicalSpecialty",
+                    target_id: String(specialty.id),
+                    target_description: specialty.name,
+                    changes: { next: { name: specialty.name } },
+                    reason: "Administrator created a medical specialty.",
+                    result: "Success",
+                    occurred_at: new Date(),
+                },
+                { transaction },
+            );
+
+            return {
+                id: specialty.id,
+                name: specialty.name,
+                description: specialty.description || "",
+                isActive: specialty.is_active,
+            };
+        });
     } catch (error) {
         if (error.name === "SequelizeUniqueConstraintError") {
             throw duplicateSpecialtyError();

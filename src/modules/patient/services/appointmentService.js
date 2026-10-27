@@ -9,6 +9,7 @@ import {
     Specialities,
     User,
 } from "../../../models/associations.js";
+import AuditLog from "../../../models/AuditLog.js";
 import database from "../../../../config/database.js";
 import { Op } from "sequelize";
 import { AppointmentError } from "../errors/appointmentError.js";
@@ -857,6 +858,30 @@ export async function bookAppointment({
             { transaction },
         );
 
+        await AuditLog.create(
+            {
+                actor_user_id: historyActorUserId,
+                actor_snapshot: actorSnapshot || `Patient ${patient.id}`,
+                action: source === "Admin" ? "AdminAppointmentCreated" : "AppointmentCreated",
+                target_type: "Appointment",
+                target_id: String(appointment.id),
+                target_description: `Appointment ${appointment.id}`,
+                changes: {
+                    next: {
+                        status: CONFIRMED_STATUS,
+                        startAt: startAt.toISOString(),
+                        endAt: endAt.toISOString(),
+                        doctorId,
+                        specialtyId,
+                    },
+                },
+                reason: "Appointment created.",
+                result: "Success",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
         const reminderAt = new Date(startAt.getTime() - 24 * 60 * 60 * 1000);
         if (reminderAt > new Date()) {
             await enqueueAppointmentNotifications({
@@ -1064,6 +1089,37 @@ export async function reschedulePatientAppointment({
             { transaction },
         );
 
+        await AuditLog.create(
+            {
+                actor_user_id: historyActorUserId,
+                actor_snapshot: actorSnapshot || `Patient ${patient.id}`,
+                action: actorSnapshot ? "AdminAppointmentRescheduled" : "AppointmentRescheduled",
+                target_type: "Appointment",
+                target_id: String(appointment.id),
+                target_description: `Appointment ${appointment.id}`,
+                changes: {
+                    previous: {
+                        status: CONFIRMED_STATUS,
+                        startAt: previousValues.start_at,
+                        endAt: previousValues.end_at,
+                        doctorId: appointment.doctor_id,
+                        specialtyId: appointment.specialty_id,
+                    },
+                    next: {
+                        status: CONFIRMED_STATUS,
+                        startAt: startAt.toISOString(),
+                        endAt: endAt.toISOString(),
+                        doctorId: targetDoctorId,
+                        specialtyId: targetSpecialtyId,
+                    },
+                },
+                reason: "Appointment rescheduled.",
+                result: "Success",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
         await cancelPendingAppointmentReminders(appointment.id, transaction);
         await enqueueAppointmentNotifications({
             appointmentId: appointment.id,
@@ -1143,6 +1199,29 @@ export async function cancelPatientAppointment({ userId, appointmentId }) {
                 previous_values: previousValues,
                 new_values: { status: CANCELLED_STATUS },
                 reason: "Patient cancelled through the web portal.",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        await AuditLog.create(
+            {
+                actor_user_id: userId,
+                actor_snapshot: `Patient ${patient.id}`,
+                action: "AppointmentCancelled",
+                target_type: "Appointment",
+                target_id: String(appointment.id),
+                target_description: `Appointment ${appointment.id}`,
+                changes: {
+                    previous: {
+                        status: CONFIRMED_STATUS,
+                        startAt: previousValues.start_at,
+                        endAt: previousValues.end_at,
+                    },
+                    next: { status: CANCELLED_STATUS },
+                },
+                reason: "Patient cancelled an appointment.",
+                result: "Success",
                 occurred_at: new Date(),
             },
             { transaction },
