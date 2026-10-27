@@ -71,15 +71,18 @@ function normalizeSchedule(input) {
         }
         const startTime = parseTime(block?.startTime, "de inicio");
         const endTime = parseTime(block?.endTime, "de finalización");
-        const duration = minutesSinceMidnight(endTime) - minutesSinceMidnight(startTime);
+        const startMinutes = minutesSinceMidnight(startTime);
+        const endMinutes = minutesSinceMidnight(endTime);
+        const duration = endMinutes - startMinutes;
         if (
             startTime < BUSINESS_START ||
             endTime > BUSINESS_END ||
             duration < APPOINTMENT_MINUTES ||
-            duration % APPOINTMENT_MINUTES !== 0
+            startMinutes % APPOINTMENT_MINUTES !== 0 ||
+            endMinutes % APPOINTMENT_MINUTES !== 0
         ) {
             throw serviceError(
-                "Los horarios deben estar entre 7:00 a. m. y 7:00 p. m., durar al menos 30 minutos y ajustarse a intervalos de 30 minutos.",
+                "Los horarios deben estar entre 7:00 a. m. y 7:00 p. m. y alinearse con intervalos de 30 minutos.",
             );
         }
         return { dayOfWeek, startTime, endTime };

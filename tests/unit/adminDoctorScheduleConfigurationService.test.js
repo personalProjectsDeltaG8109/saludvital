@@ -80,6 +80,11 @@ describe("admin doctor schedule configuration service", () => {
         ).rejects.toMatchObject({ statusCode: 400 });
         await expect(
             configureAdminDoctorSchedule(
+                makeInput({ blocks: [{ dayOfWeek: 1, startTime: "08:15", endTime: "09:15" }] }),
+            ),
+        ).rejects.toThrow("intervalos de 30 minutos");
+        await expect(
+            configureAdminDoctorSchedule(
                 makeInput({
                     blocks: [
                         { dayOfWeek: 1, startTime: "08:00", endTime: "10:00" },
