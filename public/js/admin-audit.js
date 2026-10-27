@@ -15,7 +15,16 @@
     const cardList = page.querySelector("[data-audit-card-list]");
     const countLabel = page.querySelector("[data-audit-count]");
     const pagination = page.querySelector("[data-audit-pagination]");
+    const detailDialog = page.querySelector("[data-audit-detail-dialog]");
+    const detailClose = page.querySelector("[data-audit-detail-close]");
+    const detailLoading = page.querySelector("[data-audit-detail-loading]");
+    const detailError = page.querySelector("[data-audit-detail-error]");
+    const detailContent = page.querySelector("[data-audit-detail-content]");
+    const detailFields = page.querySelector("[data-audit-detail-fields]");
+    const changeSection = page.querySelector("[data-audit-change-section]");
+    const changeGroups = page.querySelector("[data-audit-change-groups]");
     let requestNumber = 0;
+    let detailRequestNumber = 0;
     let filterOptionsLoaded = false;
     let currentPage = 1;
 
@@ -103,7 +112,10 @@
             const descriptionCell = document.createElement("td");
             descriptionCell.textContent = record.description;
 
-            row.append(dateCell, actorCell, moduleCell, actionCell, descriptionCell);
+            const detailCell = document.createElement("td");
+            detailCell.append(createDetailButton(record.id));
+
+            row.append(dateCell, actorCell, moduleCell, actionCell, descriptionCell, detailCell);
             tableBody.append(row);
         }
     }
@@ -135,8 +147,127 @@
             time.dateTime = record.occurredAt;
             time.textContent = formatDateTime(record.occurredAt).timeLabel;
 
-            card.append(icon, main, time);
+            const detailButton = createDetailButton(record.id);
+            detailButton.classList.add("admin-audit-card-detail");
+            card.append(icon, main, time, detailButton);
             cardList.append(card);
+        }
+    }
+
+    function createDetailButton(eventId) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "admin-audit-detail-button";
+        button.textContent = "Ver detalle";
+        button.setAttribute("aria-label", `Ver detalle del evento #${eventId}`);
+        button.addEventListener("click", () => openAuditDetail(eventId));
+        return button;
+    }
+
+    function appendDefinitionList(list, entries) {
+        list.replaceChildren();
+        for (const [label, value] of entries) {
+            if (value === null || value === undefined || value === "") continue;
+            const term = document.createElement("dt");
+            term.textContent = label;
+            const description = document.createElement("dd");
+            description.textContent = value;
+            list.append(term, description);
+        }
+    }
+
+    function formatChangeDisplayValue(value) {
+        if (typeof value !== "string") return value;
+        if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+            const { dateLabel, timeLabel } = formatDateTime(value);
+            return `${dateLabel}, ${timeLabel}`;
+        }
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            return new Intl.DateTimeFormat("es-CO", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                timeZone: "UTC",
+            }).format(new Date(`${value}T00:00:00.000Z`));
+        }
+        return value;
+    }
+
+    function renderChangeGroups(changes) {
+        changeGroups.replaceChildren();
+        changeGroups.className = "admin-audit-change-groups";
+        if (!changes) {
+            changeSection.hidden = true;
+            return;
+        }
+
+        const labels = [
+            ["before", "Antes"],
+            ["after", "Después"],
+            ["recorded", "Otros datos registrados"],
+        ];
+        for (const [key, label] of labels) {
+            const values = changes[key] || [];
+            if (!values.length) continue;
+
+            const group = document.createElement("div");
+            group.className = "admin-audit-change-group";
+            const heading = document.createElement("h4");
+            heading.textContent = label;
+            const list = document.createElement("dl");
+            appendDefinitionList(
+                list,
+                values.map(({ label: fieldLabel, value }) => [
+                    fieldLabel,
+                    formatChangeDisplayValue(value),
+                ]),
+            );
+            group.append(heading, list);
+            changeGroups.append(group);
+        }
+
+        changeSection.hidden = changeGroups.childElementCount === 0;
+    }
+
+    async function openAuditDetail(eventId) {
+        const detailRequest = ++detailRequestNumber;
+        detailLoading.hidden = false;
+        detailError.hidden = true;
+        detailContent.hidden = true;
+        detailFields.replaceChildren();
+        changeGroups.replaceChildren();
+        changeSection.hidden = true;
+        if (!detailDialog.open) detailDialog.showModal();
+
+        try {
+            const response = await fetch(`${endpoint}/${encodeURIComponent(eventId)}`, {
+                headers: { Accept: "application/json" },
+            });
+            const data = await response.json();
+            if (detailRequest !== detailRequestNumber) return;
+            if (!response.ok) throw new Error(data.message || "No pudimos cargar el evento.");
+
+            const { dateLabel, timeLabel } = formatDateTime(data.occurredAt);
+            appendDefinitionList(detailFields, [
+                ["Fecha y hora", `${dateLabel}, ${timeLabel}`],
+                ["Usuario responsable", data.actor],
+                ["Módulo", data.module],
+                ["Acción", data.action],
+                ["Descripción", data.description],
+                [
+                    "Registro asociado",
+                    data.targetId ? `${data.targetType} #${data.targetId}` : null,
+                ],
+                ["Resultado", data.result],
+            ]);
+            renderChangeGroups(data.changes);
+            detailLoading.hidden = true;
+            detailContent.hidden = false;
+        } catch (error) {
+            if (detailRequest !== detailRequestNumber) return;
+            detailLoading.hidden = true;
+            detailError.textContent = error.message || "No pudimos cargar el evento.";
+            detailError.hidden = false;
         }
     }
 
@@ -265,6 +396,8 @@
             loadAuditLogs();
         });
     });
+
+    detailClose.addEventListener("click", () => detailDialog.close());
 
     loadAuditLogs();
 })();

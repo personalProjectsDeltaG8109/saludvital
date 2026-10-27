@@ -2,11 +2,12 @@ import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
-    default: { findAll: jest.fn(), findAndCountAll: jest.fn() },
+    default: { findAll: jest.fn(), findAndCountAll: jest.fn(), findByPk: jest.fn() },
 }));
 
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { getAdminAuditLogs } = await import("../../src/modules/admin/services/adminAuditService.js");
+const { getAdminAuditEvent, getAdminAuditLogs } =
+    await import("../../src/modules/admin/services/adminAuditService.js");
 
 describe("administrator audit log directory", () => {
     beforeEach(() => {
@@ -32,6 +33,7 @@ describe("administrator audit log directory", () => {
                 },
             ],
         });
+        AuditLog.findByPk.mockResolvedValue(null);
     });
 
     test("returns persisted records using safe labels and excludes sensitive event fields", async () => {
@@ -134,6 +136,81 @@ describe("administrator audit log directory", () => {
         await expect(getAdminAuditLogs({ page: "0" })).rejects.toMatchObject({ statusCode: 400 });
         await expect(getAdminAuditLogs({ page: "1.5" })).rejects.toMatchObject({
             statusCode: 400,
+        });
+    });
+
+    test("returns persisted event details while allowing only safe recorded changes", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 21,
+            actor_user_id: 12,
+            actor_snapshot: "Administrator private@example.co",
+            action: "AdminUserAccountUpdated",
+            target_type: "User",
+            target_id: "456",
+            target_description: "patient@example.co",
+            reason: "Private explanation",
+            result: "Success",
+            occurred_at: new Date("2026-10-20T15:30:00.000Z"),
+            changes: {
+                previous: {
+                    roleId: 2,
+                    isActive: true,
+                    dayOfWeek: 3,
+                    validFrom: "2026-10-19",
+                    password: "secret",
+                },
+                next: {
+                    roleId: 3,
+                    isActive: false,
+                    dayOfWeek: 4,
+                    validFrom: "2026-10-20",
+                    email: "patient@example.co",
+                },
+                clinicalHistory: "private clinical data",
+            },
+        });
+
+        const result = await getAdminAuditEvent("21");
+
+        expect(result).toMatchObject({
+            id: 21,
+            actor: "Administrador #12",
+            module: "Usuarios y roles",
+            action: "Actualización de cuenta",
+            targetType: "Usuarios y roles",
+            targetId: "456",
+            result: "Correcto",
+            changes: {
+                before: [
+                    { label: "Identificador del rol", value: "2" },
+                    { label: "Estado activo", value: "Sí" },
+                    { label: "Día de la semana", value: "Miércoles" },
+                    { label: "Vigente desde", value: "2026-10-19" },
+                ],
+                after: [
+                    { label: "Identificador del rol", value: "3" },
+                    { label: "Estado activo", value: "No" },
+                    { label: "Día de la semana", value: "Jueves" },
+                    { label: "Vigente desde", value: "2026-10-20" },
+                ],
+                recorded: [],
+            },
+        });
+        expect(JSON.stringify(result)).not.toMatch(
+            /private@example|patient@example|Private explanation|secret|clinicalHistory|private clinical/i,
+        );
+        expect(AuditLog.findByPk).toHaveBeenCalledWith(
+            21,
+            expect.objectContaining({ attributes: expect.arrayContaining(["changes", "result"]) }),
+        );
+    });
+
+    test("rejects malformed identifiers and reports missing events as not found", async () => {
+        await expect(getAdminAuditEvent("0")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(getAdminAuditEvent("1abc")).rejects.toMatchObject({ statusCode: 400 });
+        await expect(getAdminAuditEvent("999")).rejects.toMatchObject({
+            statusCode: 404,
+            message: "No encontramos el evento de auditoría solicitado.",
         });
     });
 });

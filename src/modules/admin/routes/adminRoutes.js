@@ -1,7 +1,7 @@
 ﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
-import { getAdminAuditLogs } from "../services/adminAuditService.js";
+import { getAdminAuditEvent, getAdminAuditLogs } from "../services/adminAuditService.js";
 import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.js";
 import { getAdminDoctorWeeklySchedule } from "../services/adminDoctorWeeklyScheduleService.js";
 import {
@@ -175,6 +175,19 @@ adminRoutes.get("/api/admin/audit-logs", ...requireAdministrator, async (req, re
         return next(error);
     }
 });
+adminRoutes.get(
+    "/api/admin/audit-logs/:auditLogId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminAuditEvent(req.params.auditLogId));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 adminRoutes.get("/api/admin/appointments", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminAppointments(req.query));
