@@ -7,15 +7,29 @@ jest.unstable_mockModule("../../config/database.js", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Appointment: { findAll: jest.fn() },
+    AppointmentHistory: { create: jest.fn() },
     AppointmentStatus: { findOne: jest.fn() },
     Doctor: { findByPk: jest.fn() },
     DoctorAvailability: { findAll: jest.fn(), bulkCreate: jest.fn() },
     DoctorScheduleException: { findAll: jest.fn() },
-    User: {},
+    User: { findByPk: jest.fn() },
 }));
+jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
+}));
+jest.unstable_mockModule(
+    "../../src/modules/patient/services/notificationAutomationService.js",
+    () => ({
+        cancelPendingAppointmentReminders: jest.fn(),
+        enqueueAppointmentNotifications: jest.fn(async () => [{ id: 1 }]),
+    }),
+);
 
 const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
+const AuditLog = (await import("../../src/models/AuditLog.js")).default;
+const notifications =
+    await import("../../src/modules/patient/services/notificationAutomationService.js");
 const { configureAdminDoctorSchedule } =
     await import("../../src/modules/admin/services/adminDoctorScheduleConfigurationService.js");
 
@@ -32,12 +46,19 @@ function makeInput(overrides = {}) {
 function setDefaults() {
     models.Doctor.findByPk.mockResolvedValue({ id: 7 });
     models.DoctorAvailability.findAll.mockResolvedValue([]);
-    models.AppointmentStatus.findOne.mockResolvedValue({ id: 2 });
+    models.AppointmentStatus.findOne.mockImplementation(({ where }) =>
+        Promise.resolve(where.name === "Confirmed" ? { id: 2 } : { id: 3 }),
+    );
     models.Appointment.findAll.mockResolvedValue([]);
     models.DoctorScheduleException.findAll.mockResolvedValue([]);
     models.DoctorAvailability.bulkCreate.mockImplementation(async (records) =>
         records.map((record, index) => ({ id: index + 1, ...record })),
     );
+    models.User.findByPk.mockResolvedValue({ id: 12, email: "admin@saludvital.co" });
+    models.AppointmentHistory.create.mockResolvedValue({ id: 1 });
+    AuditLog.create.mockResolvedValue({ id: 1 });
+    notifications.cancelPendingAppointmentReminders.mockResolvedValue(undefined);
+    notifications.enqueueAppointmentNotifications.mockResolvedValue([{ id: 1 }]);
 }
 
 describe("admin doctor schedule configuration service", () => {
@@ -70,6 +91,26 @@ describe("admin doctor schedule configuration service", () => {
             endTime: "12:00",
         });
         expect(models.Appointment.update).toBeUndefined();
+    });
+
+    test("allows a one-hour break between two working intervals on the same day", async () => {
+        const result = await configureAdminDoctorSchedule(
+            makeInput({
+                blocks: [
+                    { dayOfWeek: 1, startTime: "07:00", endTime: "12:00" },
+                    { dayOfWeek: 1, startTime: "13:00", endTime: "17:00" },
+                ],
+            }),
+        );
+
+        expect(models.DoctorAvailability.bulkCreate).toHaveBeenCalledWith(
+            [
+                expect.objectContaining({ start_time: "07:00", end_time: "12:00" }),
+                expect.objectContaining({ start_time: "13:00", end_time: "17:00" }),
+            ],
+            expect.objectContaining({ transaction, validate: true }),
+        );
+        expect(result.availability).toHaveLength(2);
     });
 
     test("rejects invalid ranges and overlapping blocks in the submitted form", async () => {
@@ -112,14 +153,14 @@ describe("admin doctor schedule configuration service", () => {
         expect(models.DoctorAvailability.bulkCreate).not.toHaveBeenCalled();
     });
 
-    test("requires explicit confirmation and keeps affected confirmed appointments unchanged", async () => {
-        models.Appointment.findAll.mockResolvedValue([
-            {
-                id: 45,
-                start_at: new Date("2026-10-28T14:00:00.000Z"),
-                end_at: new Date("2026-10-28T14:30:00.000Z"),
-            },
-        ]);
+    test("requires confirmation, then cancels and notifies affected confirmed appointments", async () => {
+        const affectedAppointment = {
+            id: 45,
+            start_at: new Date("2026-10-28T14:00:00.000Z"),
+            end_at: new Date("2026-10-28T14:30:00.000Z"),
+            update: jest.fn(),
+        };
+        models.Appointment.findAll.mockResolvedValue([affectedAppointment]);
 
         await expect(configureAdminDoctorSchedule(makeInput())).rejects.toMatchObject({
             statusCode: 409,
@@ -133,11 +174,31 @@ describe("admin doctor schedule configuration service", () => {
             ],
         });
         expect(models.DoctorAvailability.bulkCreate).not.toHaveBeenCalled();
+        expect(affectedAppointment.update).not.toHaveBeenCalled();
 
-        const result = await configureAdminDoctorSchedule(makeInput({ confirmImpact: true }));
+        const result = await configureAdminDoctorSchedule(makeInput({ confirmImpact: true }), 12);
         expect(result.confirmedAppointmentsReviewed).toBe(1);
+        expect(result.cancelledAppointments).toBe(1);
+        expect(result.queuedNotifications).toBe(1);
         expect(models.DoctorAvailability.bulkCreate).toHaveBeenCalledTimes(1);
-        expect(models.Appointment.update).toBeUndefined();
+        expect(affectedAppointment.update).toHaveBeenCalledWith({ status_id: 3 }, { transaction });
+        expect(models.AppointmentHistory.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                appointment_id: 45,
+                event_type: "Cancelled",
+                new_values: { status: "Cancelled" },
+            }),
+            { transaction },
+        );
+        expect(notifications.cancelPendingAppointmentReminders).toHaveBeenCalledWith(
+            45,
+            transaction,
+        );
+        expect(notifications.enqueueAppointmentNotifications).toHaveBeenCalledWith({
+            appointmentId: 45,
+            eventType: "appointment_cancellation",
+            transaction,
+        });
     });
 
     test("includes appointments overlapping stored Unavailable exceptions in confirmation", async () => {

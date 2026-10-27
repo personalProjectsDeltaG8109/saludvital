@@ -56,7 +56,13 @@ try {
                     );
                 }
                 return new Response(
-                    JSON.stringify({ message: "El horario se configuró correctamente." }),
+                    JSON.stringify({
+                        message: "El horario se configuró correctamente.",
+                        cancelledAppointments: 1,
+                        queuedNotifications: 1,
+                        cancellationDetails:
+                            "Se canceló 1 cita afectada. Notificaciones encoladas: 1.",
+                    }),
                     { status: 201, headers: { "Content-Type": "application/json" } },
                 );
             }
@@ -133,17 +139,24 @@ try {
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-config-impact]:visible").waitFor();
     assert.match(await page.locator("[data-config-impact-list]").textContent(), /Cita #81/);
-    assert.match(await page.locator("[data-config-submit]").textContent(), /sin cambiar las citas/);
+    assert.match(
+        await page.locator("[data-config-submit]").textContent(),
+        /cancelar citas y notificar/,
+    );
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-schedule-config-dialog]").waitFor({ state: "hidden" });
     await page.locator("[data-config-page-feedback]:visible").waitFor();
+    assert.match(
+        await page.locator("[data-config-page-feedback]").textContent(),
+        /Se canceló 1 cita/,
+    );
     const attempts = await page.evaluate(() => window.configurationAttempts);
     assert.equal(attempts.length, 2);
     assert.equal(attempts[0].confirmImpact, false);
     assert.equal(attempts[1].confirmImpact, true);
     assert.equal(attempts[1].blocks[0].dayOfWeek, 1);
     console.log(
-        "PASS: configuration requires an explicit review before keeping affected appointments unchanged.",
+        "PASS: configuration requires explicit impact confirmation before cancelling affected appointments and notifying patients.",
     );
 
     for (const viewport of [

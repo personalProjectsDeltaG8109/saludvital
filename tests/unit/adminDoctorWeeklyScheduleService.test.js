@@ -93,6 +93,10 @@ describe("admin weekly doctor schedule service", () => {
         expect(result.days[0].events).toEqual([
             {
                 id: 21,
+                scheduleId: 21,
+                dayOfWeek: 1,
+                validFrom: "2026-01-01",
+                validUntil: null,
                 type: "available",
                 label: "Disponible",
                 startTime: "08:00",

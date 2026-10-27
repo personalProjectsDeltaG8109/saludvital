@@ -10,14 +10,15 @@
     const statusSelect = page.querySelector("[data-schedule-status]");
     const weekInput = page.querySelector("[data-schedule-week]");
     const configureOpenButton = page.querySelector("[data-configure-open]");
-    const configureDialog = page.querySelector("[data-schedule-config-dialog]");
-    const configureForm = page.querySelector("[data-schedule-config-form]");
-    const configureDoctorSelect = page.querySelector("[data-config-doctor]");
-    const configureError = page.querySelector("[data-config-error]");
-    const configureSuccess = page.querySelector("[data-config-success]");
-    const configureImpact = page.querySelector("[data-config-impact]");
-    const configureImpactList = page.querySelector("[data-config-impact-list]");
-    const configureSubmitButton = page.querySelector("[data-config-submit]");
+    const configureDialog = document.querySelector("[data-schedule-config-dialog]");
+    const configureForm = document.querySelector("[data-schedule-config-form]");
+    const configureDoctorSelect = document.querySelector("[data-config-doctor]");
+    const configureError = document.querySelector("[data-config-error]");
+    const configureSuccess = document.querySelector("[data-config-success]");
+    const configureImpact = document.querySelector("[data-config-impact]");
+    const configureImpactList = document.querySelector("[data-config-impact-list]");
+    const configureSubmitButton = document.querySelector("[data-config-submit]");
+    const configureDeleteButton = document.querySelector("[data-config-delete]");
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
@@ -124,6 +125,7 @@
         configureImpactList.replaceChildren();
         configureSubmitButton.dataset.confirmImpact = "false";
         configureSubmitButton.textContent = "Guardar horario";
+        if (configureDeleteButton) configureDeleteButton.hidden = true;
     }
 
     function openConfigurationDialog(mode, schedule = null) {
@@ -138,9 +140,9 @@
             day: "2-digit",
         }).formatToParts(new Date());
         const today = Object.fromEntries(todayParts.map(({ type, value }) => [type, value]));
-        page.querySelector("[data-config-valid-from]").value =
+        configureForm.querySelector("[data-config-valid-from]").value =
             schedule?.validFrom || `${today.year}-${today.month}-${today.day}`;
-        page.querySelector("[data-config-valid-until]").value = schedule?.validUntil || "";
+        configureForm.querySelector("[data-config-valid-until]").value = schedule?.validUntil || "";
         configureDoctorSelect.value = String(schedule?.doctorId || doctorSelect.value || "");
 
         configureForm.querySelectorAll("[data-config-day]").forEach((dayElement) => {
@@ -163,10 +165,11 @@
             dayElement.querySelector("[data-interval-end]").value = schedule.endTime;
         }
 
-        page.querySelector("[data-config-title]").textContent = schedule
+        configureForm.querySelector("[data-config-title]").textContent = schedule
             ? "Editar horario"
             : "Configurar horario";
         configureSubmitButton.textContent = schedule ? "Guardar cambios" : "Guardar horario";
+        if (configureDeleteButton) configureDeleteButton.hidden = !schedule;
         configureDialog.showModal();
         configureDoctorSelect.focus();
     }
@@ -240,7 +243,10 @@
         }
         configureImpact.hidden = false;
         configureSubmitButton.dataset.confirmImpact = "true";
-        configureSubmitButton.textContent = "Confirmar y guardar sin cambiar las citas";
+        configureSubmitButton.textContent =
+            configureForm.dataset.mode === "delete"
+                ? "Confirmar eliminación, cancelar citas y notificar"
+                : "Confirmar cambio, cancelar citas y notificar";
         configureSubmitButton.focus();
     }
 
@@ -262,8 +268,8 @@
         });
         return {
             doctorId: configureDoctorSelect.value,
-            validFrom: page.querySelector("[data-config-valid-from]").value,
-            validUntil: page.querySelector("[data-config-valid-until]").value || null,
+            validFrom: configureForm.querySelector("[data-config-valid-from]").value,
+            validUntil: configureForm.querySelector("[data-config-valid-until]").value || null,
             blocks,
             confirmImpact: configureSubmitButton.dataset.confirmImpact === "true",
         };
@@ -275,14 +281,23 @@
         configureSuccess.hidden = true;
         configureSubmitButton.disabled = true;
         const isConfirmingImpact = configureSubmitButton.dataset.confirmImpact === "true";
-        configureSubmitButton.textContent = isConfirmingImpact ? "Confirmando…" : "Revisando…";
+        const isDeleting = configureForm.dataset.mode === "delete";
+        configureSubmitButton.textContent = isConfirmingImpact
+            ? "Confirmando…"
+            : isDeleting
+              ? "Eliminando…"
+              : "Revisando…";
         try {
             const isEditing = configureForm.dataset.mode === "edit";
             const scheduleId = configureForm.dataset.scheduleId;
-            const response = await fetch(isEditing ? `${endpoint}/${scheduleId}` : endpoint, {
-                method: isEditing ? "PATCH" : "POST",
+            const requestUrl = isDeleting || isEditing ? `${endpoint}/${scheduleId}` : endpoint;
+            const requestBody = isDeleting
+                ? { confirmImpact: configureSubmitButton.dataset.confirmImpact === "true" }
+                : collectConfiguration();
+            const response = await fetch(requestUrl, {
+                method: isDeleting ? "DELETE" : isEditing ? "PATCH" : "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify(collectConfiguration()),
+                body: JSON.stringify(requestBody),
             });
             const data = await response.json();
             if (response.status === 409 && data.requiresConfirmation) {
@@ -292,7 +307,9 @@
             if (!response.ok) throw new Error(data.message || "No pudimos guardar el horario.");
 
             configureDialog.close();
-            configPageFeedback.textContent = data.message;
+            configPageFeedback.textContent = [data.message, data.cancellationDetails]
+                .filter(Boolean)
+                .join(" ");
             configPageFeedback.hidden = false;
             doctorSelect.value = String(data.doctorId);
             await loadSchedules();
@@ -306,7 +323,11 @@
             configureSubmitButton.disabled = false;
             if (configureSubmitButton.dataset.confirmImpact !== "true") {
                 configureSubmitButton.textContent =
-                    configureForm.dataset.mode === "edit" ? "Guardar cambios" : "Guardar horario";
+                    configureForm.dataset.mode === "edit"
+                        ? "Guardar cambios"
+                        : configureForm.dataset.mode === "delete"
+                          ? "Eliminar intervalo"
+                          : "Guardar horario";
             }
         }
     }
@@ -403,7 +424,11 @@
         const laneStyle = isAvailability
             ? "left: 3%; width: 94%;"
             : `left: ${3 + lane * 31}%; width: 29%;`;
-        return `<div class="${className}" style="top:${top}px;height:${duration}px;${laneStyle}" aria-label="${escapeAttribute(label)}, ${formatTime(event.startTime)} a ${formatTime(event.endTime)}">
+        const isEditable = event.type === "available" && event.scheduleId;
+        const editAttributes = isEditable
+            ? ` role="button" tabindex="0" data-edit-schedule="${event.scheduleId}" data-doctor-id="${event.doctorId}" data-day-of-week="${event.dayOfWeek}" data-start-time="${escapeAttribute(event.startTime)}" data-end-time="${escapeAttribute(event.endTime)}" data-valid-from="${escapeAttribute(event.validFrom)}" data-valid-until="${escapeAttribute(event.validUntil || "")}" aria-label="Editar horario disponible de ${escapeAttribute(formatTime(event.startTime))} a ${escapeAttribute(formatTime(event.endTime))}" title="Editar horario"`
+            : ` aria-label="${escapeAttribute(label)}, ${formatTime(event.startTime)} a ${formatTime(event.endTime)}"`;
+        return `<div class="${className}${isEditable ? " is-editable" : ""}" style="top:${top}px;height:${duration}px;${laneStyle}"${editAttributes}>
             <strong>${escapeAttribute(isAppointment ? event.reference : event.label)}</strong>
             <span>${escapeAttribute(isAppointment ? event.statusLabel : event.reason || `${formatTime(event.startTime)}–${formatTime(event.endTime)}`)}</span>
         </div>`;
@@ -432,9 +457,9 @@
         const axis = `<div class="weekly-time-axis" style="height:${timelineHeight}px">${hourLabels.join("")}</div>`;
         const columns = data.days
             .map((day) => {
-                const availability = day.events.filter((event) =>
-                    ["available", "additionalAvailability"].includes(event.type),
-                );
+                const availability = day.events
+                    .filter((event) => ["available", "additionalAvailability"].includes(event.type))
+                    .map((event) => ({ ...event, doctorId: data.doctor.id }));
                 const timedEvents = assignEventLanes(
                     day.events.filter((event) => event.type !== "available"),
                 );
@@ -594,19 +619,6 @@
                     loadSchedules();
                 });
             });
-            doctorList.querySelectorAll("[data-edit-schedule]").forEach((button) => {
-                button.addEventListener("click", () => {
-                    openConfigurationDialog("edit", {
-                        id: button.dataset.editSchedule,
-                        doctorId: button.dataset.doctorId,
-                        dayOfWeek: Number(button.dataset.dayOfWeek),
-                        startTime: button.dataset.startTime,
-                        endTime: button.dataset.endTime,
-                        validFrom: button.dataset.validFrom,
-                        validUntil: button.dataset.validUntil,
-                    });
-                });
-            });
             if (doctorSelect.value) await loadWeeklySchedule(doctorSelect.value);
         } catch (error) {
             feedback.hidden = true;
@@ -616,6 +628,26 @@
             exceptionsEmpty.hidden = false;
         }
     }
+
+    page.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-edit-schedule]");
+        if (!button || !page.contains(button)) return;
+        openScheduleEditor({
+            id: button.dataset.editSchedule,
+            doctorId: button.dataset.doctorId,
+            dayOfWeek: Number(button.dataset.dayOfWeek),
+            startTime: button.dataset.startTime,
+            endTime: button.dataset.endTime,
+            validFrom: button.dataset.validFrom,
+            validUntil: button.dataset.validUntil,
+        });
+    });
+    page.addEventListener("keydown", (event) => {
+        if (!event.target.matches("[data-edit-schedule][role='button']")) return;
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        event.target.click();
+    });
 
     function moveWeek(amount) {
         if (!weekInput.value) return;
@@ -656,10 +688,15 @@
         openConfigurationDialog("create");
     });
 
-    page.querySelectorAll("[data-config-close]").forEach((button) => {
+    configureDialog.querySelectorAll("[data-config-close]").forEach((button) => {
         button.addEventListener("click", () => configureDialog.close());
     });
     configureForm?.addEventListener("submit", submitConfiguration);
+    configureDeleteButton?.addEventListener("click", async () => {
+        if (!window.confirm("¿Quieres eliminar este intervalo de atención?")) return;
+        configureForm.dataset.mode = "delete";
+        configureSubmitButton.click();
+    });
     configureForm?.querySelectorAll("[data-day-enabled]").forEach((checkbox) => {
         checkbox.addEventListener("change", () => {
             setEnabledDay(checkbox.closest("[data-config-day]"), checkbox.checked);

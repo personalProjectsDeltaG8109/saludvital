@@ -103,6 +103,10 @@ function isValidForDate(block, date) {
 function formatAvailability(block) {
     return {
         id: block.id,
+        scheduleId: block.id,
+        dayOfWeek: block.day_of_week,
+        validFrom: String(block.valid_from).slice(0, 10),
+        validUntil: block.valid_until ? String(block.valid_until).slice(0, 10) : null,
         type: "available",
         label: "Disponible",
         startTime: formatTime(block.start_time),

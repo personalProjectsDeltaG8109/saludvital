@@ -7,20 +7,30 @@ jest.unstable_mockModule("../../config/database.js", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Appointment: { findAll: jest.fn() },
+    AppointmentHistory: { create: jest.fn() },
     AppointmentStatus: { findOne: jest.fn() },
     Doctor: { findByPk: jest.fn() },
-    DoctorAvailability: { findAll: jest.fn(), findByPk: jest.fn() },
+    DoctorAvailability: { bulkCreate: jest.fn(), findAll: jest.fn(), findByPk: jest.fn() },
     DoctorScheduleException: { findAll: jest.fn() },
     User: { findByPk: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));
+jest.unstable_mockModule(
+    "../../src/modules/patient/services/notificationAutomationService.js",
+    () => ({
+        cancelPendingAppointmentReminders: jest.fn(),
+        enqueueAppointmentNotifications: jest.fn(async () => [{ id: 1 }]),
+    }),
+);
 
 const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { updateAdminDoctorSchedule } =
+const notifications =
+    await import("../../src/modules/patient/services/notificationAutomationService.js");
+const { deleteAdminDoctorSchedule, updateAdminDoctorSchedule } =
     await import("../../src/modules/admin/services/adminDoctorScheduleEditingService.js");
 let currentSchedule;
 
@@ -55,12 +65,20 @@ function setDefaults() {
     currentSchedule = createCurrentSchedule();
     models.DoctorAvailability.findByPk.mockResolvedValue(currentSchedule);
     models.DoctorAvailability.findAll.mockResolvedValue([]);
+    models.DoctorAvailability.bulkCreate.mockImplementation(async (records) =>
+        records.map((record, index) => ({ id: 41 + index, ...record })),
+    );
     models.Doctor.findByPk.mockResolvedValue({ id: 7 });
     models.User.findByPk.mockResolvedValue({ id: 12, email: "admin@saludvital.co" });
-    models.AppointmentStatus.findOne.mockResolvedValue({ id: 2 });
+    models.AppointmentStatus.findOne.mockImplementation(({ where }) =>
+        Promise.resolve(where.name === "Confirmed" ? { id: 2 } : { id: 3 }),
+    );
     models.Appointment.findAll.mockResolvedValue([]);
     models.DoctorScheduleException.findAll.mockResolvedValue([]);
     AuditLog.create.mockResolvedValue({ id: 99 });
+    models.AppointmentHistory.create.mockResolvedValue({ id: 100 });
+    notifications.cancelPendingAppointmentReminders.mockResolvedValue(undefined);
+    notifications.enqueueAppointmentNotifications.mockResolvedValue([{ id: 1 }]);
 }
 
 describe("admin doctor schedule editing service", () => {
@@ -94,6 +112,7 @@ describe("admin doctor schedule editing service", () => {
                 changes: {
                     before: expect.objectContaining({ startTime: "08:00" }),
                     after: expect.objectContaining({ startTime: "09:30" }),
+                    added: [],
                 },
                 result: "Success",
             }),
@@ -109,6 +128,7 @@ describe("admin doctor schedule editing service", () => {
                 id: 81,
                 start_at: new Date("2030-10-28T14:00:00.000Z"),
                 end_at: new Date("2030-10-28T14:30:00.000Z"),
+                update: jest.fn(),
             },
         ]);
 
@@ -122,6 +142,13 @@ describe("admin doctor schedule editing service", () => {
 
         const result = await updateAdminDoctorSchedule(12, 31, makeInput({ confirmImpact: true }));
         expect(result.confirmedAppointmentsReviewed).toBe(1);
+        expect(result.cancelledAppointments).toBe(1);
+        expect(result.queuedNotifications).toBe(1);
+        expect(notifications.enqueueAppointmentNotifications).toHaveBeenCalledWith({
+            appointmentId: 81,
+            eventType: "appointment_cancellation",
+            transaction,
+        });
     });
 
     test("does not label appointments that were already outside the schedule as newly affected", async () => {
@@ -198,20 +225,96 @@ describe("admin doctor schedule editing service", () => {
         expect(models.Doctor.findByPk).not.toHaveBeenCalled();
     });
 
-    test("accepts one existing interval at a time", async () => {
-        await expect(
-            updateAdminDoctorSchedule(
-                12,
-                31,
-                makeInput({
-                    blocks: [
-                        { dayOfWeek: 1, startTime: "09:30", endTime: "11:00" },
-                        { dayOfWeek: 1, startTime: "11:00", endTime: "12:00" },
-                    ],
+    test("updates the existing interval and adds a separate afternoon interval", async () => {
+        const result = await updateAdminDoctorSchedule(
+            12,
+            31,
+            makeInput({
+                blocks: [
+                    { dayOfWeek: 1, startTime: "07:00", endTime: "12:00" },
+                    { dayOfWeek: 1, startTime: "13:00", endTime: "17:00" },
+                ],
+            }),
+        );
+
+        expect(currentSchedule.update).toHaveBeenCalledWith(
+            expect.objectContaining({ start_time: "07:00", end_time: "12:00" }),
+            { transaction, validate: true },
+        );
+        expect(models.DoctorAvailability.bulkCreate).toHaveBeenCalledWith(
+            [
+                expect.objectContaining({
+                    doctor_id: 7,
+                    day_of_week: 1,
+                    start_time: "13:00",
+                    end_time: "17:00",
+                    valid_from: "2026-01-01",
+                    valid_until: null,
+                    is_active: true,
                 }),
-            ),
-        ).rejects.toThrow("Edita un solo intervalo");
+            ],
+            { transaction, validate: true },
+        );
+        expect(result.additionalAvailability).toEqual([
+            expect.objectContaining({ id: 41, dayOfWeek: 1, startTime: "13:00", endTime: "17:00" }),
+        ]);
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                changes: expect.objectContaining({ added: result.additionalAvailability }),
+            }),
+            { transaction },
+        );
+    });
+
+    test("requires confirmation before soft-deleting an interval with affected appointments", async () => {
+        const affectedAppointment = {
+            id: 95,
+            start_at: new Date("2030-10-28T14:00:00.000Z"),
+            end_at: new Date("2030-10-28T14:30:00.000Z"),
+            update: jest.fn(),
+        };
+        models.Appointment.findAll.mockResolvedValue([affectedAppointment]);
+
+        await expect(deleteAdminDoctorSchedule(12, 31)).rejects.toMatchObject({
+            statusCode: 409,
+            requiresConfirmation: true,
+            impactedAppointments: [expect.objectContaining({ id: 95 })],
+        });
         expect(currentSchedule.update).not.toHaveBeenCalled();
+
+        const result = await deleteAdminDoctorSchedule(12, 31, { confirmImpact: true });
+
+        expect(affectedAppointment.update).toHaveBeenCalledWith({ status_id: 3 }, { transaction });
+        expect(currentSchedule.update).toHaveBeenCalledWith(
+            { is_active: false },
+            { transaction, validate: true },
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: "AdminDoctorScheduleDeleted",
+                changes: {
+                    before: expect.objectContaining({ dayOfWeek: 1, startTime: "08:00" }),
+                    after: null,
+                },
+            }),
+            { transaction },
+        );
+        expect(result).toMatchObject({ cancelledAppointments: 1, queuedNotifications: 1 });
+    });
+
+    test("soft-deletes an interval without changing appointments when none are affected", async () => {
+        const result = await deleteAdminDoctorSchedule(12, 31);
+
+        expect(currentSchedule.update).toHaveBeenCalledWith(
+            { is_active: false },
+            { transaction, validate: true },
+        );
+        expect(models.Appointment.findAll).toHaveBeenCalled();
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({ action: "AdminDoctorScheduleDeleted" }),
+            { transaction },
+        );
+        expect(result.message).toBe("El intervalo se eliminó correctamente.");
     });
 
     test("propagates audit failures so the transaction can roll back", async () => {

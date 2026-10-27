@@ -247,10 +247,11 @@ html(lang="es")
                         aria-labelledby="config-impact-title"
                     )
                         h3#config-impact-title Revisa las citas confirmadas
-                        p El horario propuesto deja estas citas fuera de la disponibilidad o coincide con una excepción. Las citas no se modificarán.
+                        p El horario propuesto afecta estas citas confirmadas. Al confirmar, se cancelarán. Las notificaciones se encolarán si la configuración y las preferencias de cada paciente lo permiten.
                         ul(data-config-impact-list)
                     footer.schedule-config-actions
                         button.schedule-config-cancel(type="button", data-config-close) Cancelar
+                        button.schedule-config-delete(type="button", data-config-delete, hidden) Eliminar intervalo
                         button.schedule-config-submit(type="submit", data-config-submit) Guardar horario
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-doctor-schedules.js", defer)

@@ -101,6 +101,8 @@
 .weekly-day-timeline { position: relative; min-height: 240px; overflow: hidden; border: 1px solid #e6edf4; border-radius: 5px; background-color: #f8fafc; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 35px, #e3eaf1 35px, #e3eaf1 36px); }
 .weekly-event { position: absolute; z-index: 2; display: flex; min-width: 0; flex-direction: column; justify-content: center; overflow: hidden; padding: 3px; border: 1px solid transparent; border-radius: 4px; font-size: 8px; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
 .weekly-event strong, .weekly-event span { display: block; }
+.weekly-event.is-editable { cursor: pointer; }
+.weekly-event.is-editable:focus-visible { outline: 3px solid rgb(22 141 226 / 65%); outline-offset: 1px; }
 .weekly-event.is-available { z-index: 1; justify-content: flex-start; color: #087a50; border-color: #bdebd8; background: rgb(216 247 234 / 88%); }
 .weekly-event.is-additionalAvailability { z-index: 1; justify-content: flex-start; color: #087a50; border-color: #a9dfcf; background: rgb(225 248 241 / 92%); }
 .weekly-event.is-appointment { color: #0754a6; border-color: #9ecaff; background: #dceeff; }
@@ -129,9 +131,9 @@
 .schedule-configure-open span { font-size: 21px; }
 .schedule-configure-open:disabled, .schedule-config-submit:disabled { opacity: .58; cursor: wait; }
 .schedule-config-page-feedback { margin: 0 0 12px; padding: 11px 14px; border: 1px solid #b8e7d5; border-radius: 9px; color: #087a50; background: #ecfbf5; font-size: 13px; }
-.schedule-config-dialog { width: min(760px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 900px); padding: 0; overflow: auto; border: 1px solid #dce8f4; border-radius: 16px; color: #123b73; box-shadow: 0 24px 80px rgb(7 31 67 / 25%); }
+.schedule-config-dialog { width: min(760px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 900px); padding: 0; overflow: auto; border: 1px solid #dce8f4; border-radius: 16px; color: #123b73; box-shadow: 0 24px 80px rgb(7 31 67 / 25%);margin: auto; }
 .schedule-config-dialog::backdrop { background: rgb(9 32 66 / 52%); backdrop-filter: blur(2px); }
-.schedule-config-form { display: grid; gap: 17px; padding: clamp(16px, 3vw, 26px); }
+.schedule-config-form { display: grid; gap: 17px; padding: clamp(16px, 3vw, 26px);}
 .schedule-config-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .schedule-config-heading .admin-eyebrow { margin: 0 0 4px; color: #6381a5; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
 .schedule-config-heading h2 { margin: 0; color: #082f7c; font-size: 22px; }
@@ -151,6 +153,7 @@
 .schedule-config-interval label span { font-size: 9px; }
 .schedule-config-interval input:disabled { opacity: .5; }
 .schedule-config-remove { width: 30px; height: 34px; border: 1px solid #f0caca; border-radius: 7px; color: #aa3942; background: #fff5f5; font-size: 19px; cursor: pointer; }
+.schedule-config-delete { min-height: 40px; padding: 0 14px; border: 1px solid #e5a5a5; border-radius: 8px; color: #a32632; background: #fff5f5; font-weight: 600; cursor: pointer; }
 .schedule-config-add { min-height: 34px; padding: 0 9px; border: 1px solid #cfe2f8; border-radius: 7px; color: #075fc3; background: #f3f8ff; font: inherit; font-size: 10px; cursor: pointer; }
 .schedule-config-duration { max-width: 260px; }
 .schedule-config-duration input { color: #527398; background: #f5f9fe; }

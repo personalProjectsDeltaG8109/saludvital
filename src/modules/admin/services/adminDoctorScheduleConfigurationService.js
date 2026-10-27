@@ -2,12 +2,18 @@ import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import {
     Appointment,
+    AppointmentHistory,
     AppointmentStatus,
     Doctor,
     DoctorAvailability,
     DoctorScheduleException,
     User,
 } from "../../../models/associations.js";
+import AuditLog from "../../../models/AuditLog.js";
+import {
+    cancelPendingAppointmentReminders,
+    enqueueAppointmentNotifications,
+} from "../../patient/services/notificationAutomationService.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const BUSINESS_START = "07:00";
@@ -233,7 +239,8 @@ export async function getDoctorScheduleContext(
         attributes: ["id"],
         transaction,
     });
-    if (!confirmedStatus) return { existingBlocks, impactedAppointments: [] };
+    if (!confirmedStatus)
+        return { existingBlocks, impactedAppointments: [], impactedAppointmentRecords: [] };
 
     const [appointments, exceptions] = await Promise.all([
         Appointment.findAll({
@@ -290,30 +297,119 @@ export async function getDoctorScheduleContext(
               },
           ]
         : null;
-    const impactedAppointments = appointments
-        .filter(
-            (appointment) =>
-                overlapsException(appointment, exceptions) ||
-                (previousBlocks
-                    ? scheduleCovers(appointment, previousBlocks) &&
-                      !scheduleCovers(appointment, resultingBlocks)
-                    : !scheduleCovers(appointment, resultingBlocks)),
-        )
-        .map((appointment) => formatImpactAppointment(appointment, exceptions));
+    const impactedAppointmentRecords = appointments.filter(
+        (appointment) =>
+            overlapsException(appointment, exceptions) ||
+            (previousBlocks
+                ? scheduleCovers(appointment, previousBlocks) &&
+                  !scheduleCovers(appointment, resultingBlocks)
+                : !scheduleCovers(appointment, resultingBlocks)),
+    );
+    const impactedAppointments = impactedAppointmentRecords.map((appointment) =>
+        formatImpactAppointment(appointment, exceptions),
+    );
 
-    return { existingBlocks, impactedAppointments };
+    return { existingBlocks, impactedAppointments, impactedAppointmentRecords };
 }
 
-/** Create weekly availability blocks without changing existing appointments. */
-export async function configureAdminDoctorSchedule(input) {
+export async function cancelImpactedAppointments(actor, appointments, transaction) {
+    if (!appointments.length) return { cancelledCount: 0, queuedNotificationCount: 0 };
+
+    const cancelledStatus = await AppointmentStatus.findOne({
+        where: { name: "Cancelled" },
+        transaction,
+    });
+    if (!cancelledStatus) {
+        throw serviceError("No estÃ¡ configurado el estado de citas canceladas.", 500);
+    }
+
+    const occurredAt = new Date();
+    const reason = "Cita cancelada automÃ¡ticamente por un cambio en el horario del mÃ©dico.";
+    let queuedNotificationCount = 0;
+    for (const appointment of appointments) {
+        await appointment.update({ status_id: cancelledStatus.id }, { transaction });
+        await AppointmentHistory.create(
+            {
+                appointment_id: appointment.id,
+                actor_user_id: actor.id,
+                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                event_type: "Cancelled",
+                previous_values: {
+                    status: "Confirmed",
+                    start_at: new Date(appointment.start_at).toISOString(),
+                    end_at: new Date(appointment.end_at).toISOString(),
+                },
+                new_values: { status: "Cancelled" },
+                reason,
+                occurred_at: occurredAt,
+            },
+            { transaction },
+        );
+        await AuditLog.create(
+            {
+                actor_user_id: actor.id,
+                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                action: "AdminAppointmentCancelled",
+                target_type: "Appointment",
+                target_id: String(appointment.id),
+                changes: {
+                    previous: { status: "Confirmed" },
+                    next: { status: "Cancelled" },
+                },
+                reason,
+                result: "Success",
+                occurred_at: occurredAt,
+            },
+            { transaction },
+        );
+        await cancelPendingAppointmentReminders(appointment.id, transaction);
+        const notifications = await enqueueAppointmentNotifications({
+            appointmentId: appointment.id,
+            eventType: "appointment_cancellation",
+            transaction,
+        });
+        queuedNotificationCount += notifications.length;
+    }
+
+    return { cancelledCount: appointments.length, queuedNotificationCount };
+}
+
+export function formatScheduleCancellationDetails({ cancelledCount, queuedNotificationCount }) {
+    if (!cancelledCount) return null;
+
+    const notificationMessage = queuedNotificationCount
+        ? `Notificaciones encoladas: ${queuedNotificationCount}.`
+        : "No se encolaron notificaciones; verifica la configuración de entregas y las preferencias de los pacientes.";
+    return `Se cancelaron ${cancelledCount} citas afectadas. ${notificationMessage}`;
+}
+
+/** Create weekly availability and resolve affected appointments after confirmation. */
+export async function configureAdminDoctorSchedule(input, actorId = null) {
     const schedule = normalizeDoctorSchedule(input);
     return database.transaction(async (transaction) => {
-        const { impactedAppointments } = await getDoctorScheduleContext(schedule, transaction);
+        const { impactedAppointments, impactedAppointmentRecords } = await getDoctorScheduleContext(
+            schedule,
+            transaction,
+        );
         if (impactedAppointments.length > 0 && input.confirmImpact !== true) {
             throw serviceError(
                 "Hay citas confirmadas que requieren revisión antes de guardar el horario.",
                 409,
                 { requiresConfirmation: true, impactedAppointments },
+            );
+        }
+
+        let cancellation = { cancelledCount: 0, queuedNotificationCount: 0 };
+        if (impactedAppointmentRecords.length > 0) {
+            const actor = await User.findByPk(actorId, {
+                attributes: ["id", "email"],
+                transaction,
+            });
+            if (!actor) throw serviceError("No se encontrÃ³ la sesiÃ³n del administrador.", 401);
+            cancellation = await cancelImpactedAppointments(
+                actor,
+                impactedAppointmentRecords,
+                transaction,
             );
         }
 
@@ -342,6 +438,9 @@ export async function configureAdminDoctorSchedule(input) {
                 validUntil: block.valid_until ? String(block.valid_until).slice(0, 10) : null,
             })),
             confirmedAppointmentsReviewed: impactedAppointments.length,
+            cancelledAppointments: cancellation.cancelledCount,
+            queuedNotifications: cancellation.queuedNotificationCount,
+            cancellationDetails: formatScheduleCancellationDetails(cancellation),
         };
     });
 }

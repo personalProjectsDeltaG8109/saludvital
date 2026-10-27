@@ -274,6 +274,16 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("doctor schedule interval deletion requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .delete("/api/admin/doctor-schedules/1")
+            .send({ confirmImpact: false })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("GET /register renders the patient registration form", async () => {
         const response = await request(app).get("/register");
 
