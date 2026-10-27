@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import { createHash } from "node:crypto";
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
-import { EmailOutbox, PasswordResetToken, User } from "../../../models/associations.js";
+import AuditLog from "../../../models/AuditLog.js";
+import { EmailOutbox, PasswordResetToken, Rol, User } from "../../../models/associations.js";
 import { endUserSessions } from "./sessionActivity.js";
 
 // Keep password recovery tokens valid for 30 minutes.
@@ -107,6 +108,7 @@ export async function resetPassword(token, password, confirmation) {
         }
 
         const user = await User.findByPk(resetToken.user_id, {
+            include: [{ model: Rol, as: "rol", attributes: ["name"], required: false }],
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
@@ -119,6 +121,24 @@ export async function resetPassword(token, password, confirmation) {
         const passwordHash = await bcrypt.hash(password, 12);
 
         await user.update({ password_hash: passwordHash }, { transaction });
+
+        if (user.rol?.name === "Administrator") {
+            await AuditLog.create(
+                {
+                    actor_user_id: user.id,
+                    actor_snapshot: user.email.slice(0, 100),
+                    action: "UserPasswordReset",
+                    target_type: "User",
+                    target_id: String(user.id),
+                    target_description: "Account password",
+                    changes: null,
+                    reason: "Account password reset completed.",
+                    result: "Success",
+                    occurred_at: now,
+                },
+                { transaction },
+            );
+        }
 
         // Consume all outstanding reset tokens for this user.
         await PasswordResetToken.update(

@@ -32,6 +32,7 @@ export function toAdminProfile(user) {
     return {
         displayName,
         email: user.email,
+        emailVerified: Boolean(user.email_verified_at),
         phone: user.phone,
         role: user.rol.name,
         isActive: user.is_active,
@@ -52,6 +53,7 @@ export async function getAdminProfile(rawUserId) {
             "id",
             "display_name",
             "email",
+            "email_verified_at",
             "phone",
             "is_active",
             "created_at",

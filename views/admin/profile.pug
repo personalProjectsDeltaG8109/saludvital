@@ -149,8 +149,15 @@ html(lang="es")
                     aria-labelledby="security-information-title"
                 )
                     h2#security-information-title Seguridad
-                    p La administración de contraseña continúa disponible mediante el proceso seguro de recuperación de cuenta.
-                    a(href="/forgot-password") Ir a recuperación de contraseña
+                    dl.admin-profile-fields
+                        .admin-profile-field
+                            dt Estado del correo electrónico
+                            dd= profile.emailVerified ? "Verificado" : "Pendiente de verificación"
+                    if profile.emailVerified
+                        p La contraseña se administra mediante el proceso seguro de recuperación por correo electrónico.
+                        a(href="/forgot-password") Recuperar contraseña
+                    else
+                        p Confirma tu correo electrónico para poder usar la recuperación de contraseña.
 
                 section#profile-preferences.admin-profile-note(
                     aria-labelledby="profile-preferences-title"

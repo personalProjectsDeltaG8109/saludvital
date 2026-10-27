@@ -12,6 +12,7 @@ const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     profile: {
         displayName: "Laura Méndez",
         email: "laura@example.com",
+        emailVerified: true,
         phone: "+573001234567",
         role: "Administrator",
         isActive: true,
@@ -60,6 +61,7 @@ try {
 
     await page.setViewportSize({ width: 375, height: 812 });
     const navigation = page.getByRole("navigation", { name: "Secciones del perfil" });
+    await page.getByRole("link", { name: "Recuperar contraseña" }).waitFor();
     await navigation.getByRole("link", { name: "Información personal" }).focus();
     if (
         !(await navigation

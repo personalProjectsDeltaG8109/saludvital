@@ -36,6 +36,7 @@ const ACTION_LABELS = {
     AdminSpecialtyUpdated: "Actualización de especialidad",
     AdminUserAccountUpdated: "Actualización de cuenta",
     AdminUserProfileUpdated: "Actualización de perfil",
+    UserPasswordReset: "Restablecimiento de contraseña",
 };
 
 const EVENT_DESCRIPTIONS = {
@@ -60,6 +61,7 @@ const EVENT_DESCRIPTIONS = {
     AdminSpecialtyUpdated: "Se actualizó una especialidad",
     AdminUserAccountUpdated: "Se actualizaron los permisos o el estado de una cuenta",
     AdminUserProfileUpdated: "Se actualizó un perfil de usuario",
+    UserPasswordReset: "Se restableció la contraseña de una cuenta",
 };
 
 const CHANGE_LABELS = {

@@ -367,4 +367,25 @@ describe("administrator audit log directory", () => {
         expect(result.targetDescription).toBe("Horario médico");
         expect(JSON.stringify(result)).not.toContain("82");
     });
+
+    test("describes password resets without exposing credential data", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 25,
+            actor_user_id: 42,
+            actor_snapshot: "admin@example.com",
+            action: "UserPasswordReset",
+            target_type: "User",
+            target_id: "42",
+            result: "Success",
+            occurred_at: new Date("2026-10-27T15:30:00.000Z"),
+            changes: null,
+        });
+
+        const result = await getAdminAuditEvent("25");
+
+        expect(result.action).toBe("Restablecimiento de contraseña");
+        expect(result.description).toBe("Se restableció la contraseña de una cuenta.");
+        expect(result.targetDescription).toBe("Cuenta de usuario");
+        expect(JSON.stringify(result)).not.toMatch(/password|token|hash/i);
+    });
 });
