@@ -8,6 +8,10 @@ import {
     User,
 } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
+import {
+    cancelImpactedAppointments,
+    formatScheduleCancellationDetails,
+} from "./adminDoctorScheduleConfigurationService.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const SUPPORTED_TYPES = new Set(["Unavailable", "AdditionalAvailability"]);
@@ -145,14 +149,14 @@ function getWindowForInput(input) {
 
 async function findAffectedAppointments(before, after, transaction) {
     const windows = getActiveWindows([before, after]);
-    if (windows.length === 0) return [];
+    if (windows.length === 0) return { records: [], affectedAppointments: [] };
 
     const confirmedStatus = await AppointmentStatus.findOne({
         where: { name: "Confirmed" },
         attributes: ["id"],
         transaction,
     });
-    if (!confirmedStatus) return [];
+    if (!confirmedStatus) return { records: [], affectedAppointments: [] };
 
     const appointmentWindows = windows.map((window) => ({
         doctor_id: window.doctorId,
@@ -172,14 +176,17 @@ async function findAffectedAppointments(before, after, transaction) {
     });
 
     const uniqueAppointments = [...new Map(appointments.map((item) => [item.id, item])).values()];
-    return uniqueAppointments.map((appointment) => ({
-        id: appointment.id,
-        doctorId: appointment.doctor_id,
-        startAt: appointment.start_at,
-        endAt: appointment.end_at,
-        startAtLocal: formatLocalDateTime(appointment.start_at),
-        endAtLocal: formatLocalDateTime(appointment.end_at),
-    }));
+    return {
+        records: uniqueAppointments,
+        affectedAppointments: uniqueAppointments.map((appointment) => ({
+            id: appointment.id,
+            doctorId: appointment.doctor_id,
+            startAt: appointment.start_at,
+            endAt: appointment.end_at,
+            startAtLocal: formatLocalDateTime(appointment.start_at),
+            endAtLocal: formatLocalDateTime(appointment.end_at),
+        })),
+    };
 }
 
 function requireImpactConfirmation(affectedAppointments, input) {
@@ -286,7 +293,11 @@ export async function createAdminDoctorScheduleException(actorId, rawInput) {
     return database.transaction(async (transaction) => {
         await ensureActiveDoctor(input.doctorId, transaction);
         const proposed = getWindowForInput(input);
-        const affectedAppointments = await findAffectedAppointments(null, proposed, transaction);
+        const { affectedAppointments } = await findAffectedAppointments(
+            null,
+            proposed,
+            transaction,
+        );
         requireImpactConfirmation(affectedAppointments, rawInput || {});
         const actor = await getAdministrator(actorId, transaction);
         const record = await DoctorScheduleException.create(
@@ -337,7 +348,7 @@ export async function updateAdminDoctorScheduleException(actorId, rawId, rawInpu
             isActive: record.is_active,
         };
         const after = { ...getWindowForInput(input), isActive: record.is_active };
-        const affectedAppointments = await findAffectedAppointments(before, after, transaction);
+        const { affectedAppointments } = await findAffectedAppointments(before, after, transaction);
         requireImpactConfirmation(affectedAppointments, rawInput || {});
         const actor = await getAdministrator(actorId, transaction);
         const previousValues = auditValues(record);
@@ -392,11 +403,47 @@ export async function updateAdminDoctorScheduleExceptionStatus(actorId, rawId, i
             isActive: record.is_active,
         };
         const after = { ...before, isActive: input.isActive };
-        const affectedAppointments = await findAffectedAppointments(before, after, transaction);
-        requireImpactConfirmation(affectedAppointments, input);
+        const autoCancelAppointments =
+            !input.isActive && record.exception_type === "AdditionalAvailability";
+        const { records: appointmentRecords, affectedAppointments } =
+            await findAffectedAppointments(before, after, transaction);
+        if (autoCancelAppointments && affectedAppointments.length > 0) {
+            const currentAppointmentIds = affectedAppointments
+                .map((appointment) => String(appointment.id))
+                .sort();
+            const confirmedAppointmentIds = Array.isArray(input.confirmedAppointmentIds)
+                ? [...new Set(input.confirmedAppointmentIds.map(String))].sort()
+                : [];
+            const reviewedAppointmentsMatch =
+                input.confirmImpact === true &&
+                currentAppointmentIds.length === confirmedAppointmentIds.length &&
+                currentAppointmentIds.every(
+                    (appointmentId, index) => appointmentId === confirmedAppointmentIds[index],
+                );
+
+            if (!reviewedAppointmentsMatch) {
+                throw serviceError(
+                    "Revisa las citas confirmadas que se cancelarían al desactivar esta disponibilidad adicional.",
+                    409,
+                    {
+                        requiresConfirmation: true,
+                        willCancelAppointments: true,
+                        affectedAppointments,
+                    },
+                );
+            }
+        }
+        if (!autoCancelAppointments) requireImpactConfirmation(affectedAppointments, input);
         const actor = await getAdministrator(actorId, transaction);
         const previousValues = auditValues(record);
         await record.update({ is_active: input.isActive }, { transaction, validate: true });
+
+        const cancellation = autoCancelAppointments
+            ? await cancelImpactedAppointments(actor, appointmentRecords, transaction, {
+                  reason: "La cita se canceló porque el administrador desactivó la disponibilidad adicional del médico.",
+                  auditCause: "AdditionalAvailabilityDeactivated",
+              })
+            : { cancelledCount: 0, queuedNotificationCount: 0 };
         await writeAudit(
             actor,
             input.isActive
@@ -412,7 +459,10 @@ export async function updateAdminDoctorScheduleExceptionStatus(actorId, rawId, i
         );
         return {
             exception: formatException(record),
-            affectedAppointmentsReviewed: affectedAppointments.length,
+            affectedAppointmentsReviewed: autoCancelAppointments ? 0 : affectedAppointments.length,
+            cancelledAppointmentsCount: cancellation.cancelledCount,
+            queuedNotificationCount: cancellation.queuedNotificationCount,
+            cancellationDetails: formatScheduleCancellationDetails(cancellation),
             message: input.isActive
                 ? "La excepción se reactivó correctamente."
                 : "La excepción se desactivó correctamente.",
