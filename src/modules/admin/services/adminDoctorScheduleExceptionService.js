@@ -407,13 +407,42 @@ export async function updateAdminDoctorScheduleExceptionStatus(actorId, rawId, i
             !input.isActive && record.exception_type === "AdditionalAvailability";
         const { records: appointmentRecords, affectedAppointments } =
             await findAffectedAppointments(before, after, transaction);
+        if (autoCancelAppointments && affectedAppointments.length > 0) {
+            const currentAppointmentIds = affectedAppointments
+                .map((appointment) => String(appointment.id))
+                .sort();
+            const confirmedAppointmentIds = Array.isArray(input.confirmedAppointmentIds)
+                ? [...new Set(input.confirmedAppointmentIds.map(String))].sort()
+                : [];
+            const reviewedAppointmentsMatch =
+                input.confirmImpact === true &&
+                currentAppointmentIds.length === confirmedAppointmentIds.length &&
+                currentAppointmentIds.every(
+                    (appointmentId, index) => appointmentId === confirmedAppointmentIds[index],
+                );
+
+            if (!reviewedAppointmentsMatch) {
+                throw serviceError(
+                    "Revisa las citas confirmadas que se cancelarían al desactivar esta disponibilidad adicional.",
+                    409,
+                    {
+                        requiresConfirmation: true,
+                        willCancelAppointments: true,
+                        affectedAppointments,
+                    },
+                );
+            }
+        }
         if (!autoCancelAppointments) requireImpactConfirmation(affectedAppointments, input);
         const actor = await getAdministrator(actorId, transaction);
         const previousValues = auditValues(record);
         await record.update({ is_active: input.isActive }, { transaction, validate: true });
 
         const cancellation = autoCancelAppointments
-            ? await cancelImpactedAppointments(actor, appointmentRecords, transaction)
+            ? await cancelImpactedAppointments(actor, appointmentRecords, transaction, {
+                  reason: "La cita se canceló porque el administrador desactivó la disponibilidad adicional del médico.",
+                  auditCause: "AdditionalAvailabilityDeactivated",
+              })
             : { cancelledCount: 0, queuedNotificationCount: 0 };
         await writeAudit(
             actor,

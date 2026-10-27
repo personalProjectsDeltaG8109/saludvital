@@ -91,14 +91,14 @@ try {
                 currentException?.type === "AdditionalAvailability";
             const attemptKey = `${options.method}:${requestUrl.pathname}:${JSON.stringify(body)}`;
             if (
-                !autoCancel &&
                 !body.confirmImpact &&
-                !window.impactAcknowledgements.includes(attemptKey)
+                (autoCancel || !window.impactAcknowledgements.includes(attemptKey))
             ) {
-                window.impactAcknowledgements.push(attemptKey);
+                if (!autoCancel) window.impactAcknowledgements.push(attemptKey);
                 return new Response(
                     JSON.stringify({
                         requiresConfirmation: true,
+                        willCancelAppointments: autoCancel,
                         affectedAppointments: [
                             {
                                 id: 201,
@@ -112,7 +112,7 @@ try {
             }
 
             if (isStatusRequest) {
-                if (autoCancel) window.cancelledAppointments += 1;
+                if (autoCancel && body.confirmImpact) window.cancelledAppointments += 1;
                 window.exceptions = window.exceptions.map((exception) =>
                     exception.id === exceptionId
                         ? { ...exception, isActive: body.isActive }
@@ -217,6 +217,11 @@ try {
     await page.locator("[data-exception-impact-confirm]").click();
     await page.locator("[data-exception-list]").getByText("Jornada adicional").waitFor();
     await page.locator("[data-exception-list] [data-toggle-exception]").last().click();
+    await page.locator("[data-exception-impact]:visible").waitFor();
+    assert.match(await page.locator("[data-exception-impact]").textContent(), /cancel/i);
+    assert.equal(await page.evaluate(() => window.cancelledAppointments), 0);
+    assert.match(await page.locator("[data-exception-impact-confirm]").textContent(), /cancel/i);
+    await page.locator("[data-exception-impact-confirm]").click();
     await page
         .locator("[data-exception-feedback]")
         .getByText("Notificaciones encoladas: 1.")

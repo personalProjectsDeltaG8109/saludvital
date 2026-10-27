@@ -313,7 +313,7 @@ export async function getDoctorScheduleContext(
     return { existingBlocks, impactedAppointments, impactedAppointmentRecords };
 }
 
-export async function cancelImpactedAppointments(actor, appointments, transaction) {
+export async function cancelImpactedAppointments(actor, appointments, transaction, options = {}) {
     if (!appointments.length) return { cancelledCount: 0, queuedNotificationCount: 0 };
 
     const cancelledStatus = await AppointmentStatus.findOne({
@@ -325,7 +325,9 @@ export async function cancelImpactedAppointments(actor, appointments, transactio
     }
 
     const occurredAt = new Date();
-    const reason = "Cita cancelada automÃ¡ticamente por un cambio en el horario del mÃ©dico.";
+    const reason =
+        options.reason ||
+        "Cita cancelada automÃ¡ticamente por un cambio en el horario del mÃ©dico.";
     let queuedNotificationCount = 0;
     for (const appointment of appointments) {
         await appointment.update({ status_id: cancelledStatus.id }, { transaction });
@@ -356,6 +358,7 @@ export async function cancelImpactedAppointments(actor, appointments, transactio
                 changes: {
                     previous: { status: "Confirmed" },
                     next: { status: "Cancelled" },
+                    ...(options.auditCause ? { cancellationCause: options.auditCause } : {}),
                 },
                 reason,
                 result: "Success",

@@ -200,7 +200,7 @@ describe("admin doctor schedule exception service", () => {
         expect(database.transaction).toHaveBeenCalled();
     });
 
-    test("cancels and queues notices for confirmed appointments when additional availability is deactivated", async () => {
+    test("requires explicit review before cancelling appointments when additional availability is deactivated", async () => {
         const record = createRecord({ exception_type: "AdditionalAvailability" });
         const appointment = {
             id: 93,
@@ -219,14 +219,32 @@ describe("admin doctor schedule exception service", () => {
             "Se canceló 1 cita. Notificaciones encoladas: 2.",
         );
 
+        await expect(
+            updateAdminDoctorScheduleExceptionStatus(12, 21, { isActive: false }),
+        ).rejects.toMatchObject({
+            statusCode: 409,
+            requiresConfirmation: true,
+            willCancelAppointments: true,
+            affectedAppointments: [expect.objectContaining({ id: 93 })],
+        });
+
+        expect(record.update).not.toHaveBeenCalled();
+        expect(scheduleConfiguration.cancelImpactedAppointments).not.toHaveBeenCalled();
+
         const result = await updateAdminDoctorScheduleExceptionStatus(12, 21, {
             isActive: false,
+            confirmImpact: true,
+            confirmedAppointmentIds: [93],
         });
 
         expect(scheduleConfiguration.cancelImpactedAppointments).toHaveBeenCalledWith(
             { id: 12, email: "admin@saludvital.co" },
             [appointment],
             transaction,
+            {
+                reason: "La cita se canceló porque el administrador desactivó la disponibilidad adicional del médico.",
+                auditCause: "AdditionalAvailabilityDeactivated",
+            },
         );
         expect(result).toMatchObject({
             cancelledAppointmentsCount: 1,
@@ -262,6 +280,34 @@ describe("admin doctor schedule exception service", () => {
         expect(record.update).not.toHaveBeenCalled();
     });
 
+    test("requests a fresh review if affected appointments change before confirmation", async () => {
+        const record = createRecord({ exception_type: "AdditionalAvailability" });
+        models.DoctorScheduleException.findByPk.mockResolvedValue(record);
+        models.Appointment.findAll.mockResolvedValue([
+            {
+                id: 96,
+                doctor_id: 7,
+                start_at: new Date("2030-10-28T14:00:00.000Z"),
+                end_at: new Date("2030-10-28T14:30:00.000Z"),
+            },
+        ]);
+
+        await expect(
+            updateAdminDoctorScheduleExceptionStatus(12, 21, {
+                isActive: false,
+                confirmImpact: true,
+                confirmedAppointmentIds: [95],
+            }),
+        ).rejects.toMatchObject({
+            requiresConfirmation: true,
+            willCancelAppointments: true,
+            affectedAppointments: [expect.objectContaining({ id: 96 })],
+        });
+
+        expect(record.update).not.toHaveBeenCalled();
+        expect(scheduleConfiguration.cancelImpactedAppointments).not.toHaveBeenCalled();
+    });
+
     test("propagates cancellation failures so the exception transaction can roll back", async () => {
         const record = createRecord({ exception_type: "AdditionalAvailability" });
         models.DoctorScheduleException.findByPk.mockResolvedValue(record);
@@ -279,7 +325,11 @@ describe("admin doctor schedule exception service", () => {
         );
 
         await expect(
-            updateAdminDoctorScheduleExceptionStatus(12, 21, { isActive: false }),
+            updateAdminDoctorScheduleExceptionStatus(12, 21, {
+                isActive: false,
+                confirmImpact: true,
+                confirmedAppointmentIds: [95],
+            }),
         ).rejects.toThrow("notification queue unavailable");
         expect(database.transaction).toHaveBeenCalled();
     });

@@ -58,6 +58,7 @@
     const exceptionImpact = document.querySelector("[data-exception-impact]");
     const exceptionImpactList = document.querySelector("[data-exception-impact-list]");
     const exceptionImpactConfirm = document.querySelector("[data-exception-impact-confirm]");
+    const exceptionImpactMessage = exceptionImpact?.querySelector("p");
     const exceptionManager = document.querySelector("[data-exception-manager]");
     const exceptionToolbar = document.querySelector(".schedule-exception-toolbar");
     let managedExceptions = [];
@@ -793,13 +794,21 @@
         exceptionSubmit.focus();
     }
 
-    function renderExceptionImpacts(appointments) {
+    function renderExceptionImpacts(appointments, willCancelAppointments = false) {
         exceptionImpactList.replaceChildren();
         for (const appointment of appointments) {
             const item = document.createElement("li");
             item.textContent = `Cita #${appointment.id} · ${formatExceptionRange(appointment.startAtLocal, appointment.endAtLocal)}`;
             exceptionImpactList.append(item);
         }
+        if (exceptionImpactMessage) {
+            exceptionImpactMessage.textContent = willCancelAppointments
+                ? "Si confirmas, estas citas se cancelarán y sus notificaciones se pondrán en cola."
+                : "Estas citas coinciden con el periodo. Confirmar solo guardará la excepción; las citas no se modificarán.";
+        }
+        exceptionImpactConfirm.textContent = willCancelAppointments
+            ? "Confirmar cancelación y notificar"
+            : "Confirmar y continuar";
         exceptionImpact.hidden = false;
         exceptionImpactConfirm.focus();
     }
@@ -866,9 +875,19 @@
         if (response.status === 409 && data.requiresConfirmation) {
             pendingExceptionStatusRequest = {
                 ...request,
-                body: { ...request.body, confirmImpact: true },
+                body: {
+                    ...request.body,
+                    confirmImpact: true,
+                    confirmedAppointmentIds: (data.affectedAppointments || []).map(
+                        (appointment) => appointment.id,
+                    ),
+                },
+                willCancelAppointments: data.willCancelAppointments === true,
             };
-            renderExceptionImpacts(data.affectedAppointments || []);
+            renderExceptionImpacts(
+                data.affectedAppointments || [],
+                data.willCancelAppointments === true,
+            );
             return;
         }
         if (!response.ok) throw new Error(data.message || "No pudimos actualizar el estado.");

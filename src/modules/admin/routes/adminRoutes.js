@@ -150,6 +150,9 @@ adminRoutes.patch(
                         ? {
                               requiresConfirmation: true,
                               affectedAppointments: error.affectedAppointments,
+                              ...(error.willCancelAppointments
+                                  ? { willCancelAppointments: true }
+                                  : {}),
                           }
                         : {}),
                 });
