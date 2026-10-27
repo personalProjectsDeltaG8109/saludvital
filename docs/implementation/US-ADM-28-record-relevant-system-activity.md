@@ -15,16 +15,18 @@ The existing `audit_logs` table and `AuditLog` model support actor ID and snapsh
 - Added audit records for patient and administrator appointment creation/rescheduling, and patient appointment cancellation through the shared appointment service. Events use the acting account, appointment target ID, action, timestamp, status, times, and doctor/specialty IDs where applicable.
 - Added an audit record for administrator specialty creation. Specialty creation and event persistence now share a transaction and identify the administrator from the authenticated route.
 - Added Spanish labels and descriptions for the new event types in the existing audit interface service.
-- Excluded free-text appointment reasons and patient names from new event data. Fixed system descriptions are stored in the existing `reason` field.
+- Excluded free-text appointment reasons and patient names from new event data. The audit interface resolves names from linked appointment, doctor, specialty, role, and user records when displaying events. Fixed system descriptions are stored in the existing `reason` field.
 - Audit persistence failures propagate through the transaction so the appointment or specialty operation is not committed without its required audit event.
 
 ## Verification
 
 - `npm.cmd test -- --runInBand tests/unit/adminSpecialtyCreationService.test.js tests/unit/patient/appointmentNotificationScheduling.test.js tests/unit/patient/appointmentRescheduling.test.js tests/unit/adminAuditService.test.js`: 4 suites passed, 38 tests passed.
-- `npm.cmd test -- --runInBand`: 57 suites passed, 482 tests passed.
+- `npm.cmd test -- --runInBand`: 57 suites passed, 484 tests passed after the audit name-display follow-up.
 - ESLint on changed JavaScript files, Prettier check on changed files, and `git diff --check`: passed.
+- `node tests/e2e/admin-audit.e2e.js`: passed safe rendering, filters, empty/error states, and mobile/tablet/desktop overflow checks.
 
 ## Limitations
 
 - Existing unaudited historical operations are not backfilled; only future successful operations create these events.
 - The GitHub Issue and requested milestone are recorded above. No schema migration or dependency change was required.
+- US-ADM-25 and US-ADM-27 need clearer acceptance wording for displaying names instead of numeric IDs. US-ADM-28 remains aligned because it records related record IDs and the interface resolves names without storing additional personal data. A separate user-profile story is needed if administrators must have full names rather than account email.

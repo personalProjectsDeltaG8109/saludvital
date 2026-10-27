@@ -44,11 +44,12 @@ try {
                     json: async () => ({
                         id: 1,
                         occurredAt: "2026-10-20T15:30:00.000Z",
-                        actor: "Administrador #12",
+                        actor: "Administrador: admin@saludvital.com",
                         module: "Usuarios y roles",
                         action: "Actualización de cuenta",
                         description: "Se actualizaron los permisos de una cuenta.",
                         targetType: "Usuarios y roles",
+                        targetDescription: "Cuenta de usuario",
                         targetId: "21",
                         result: "Correcto",
                         changes: {
@@ -95,7 +96,7 @@ try {
                         {
                             id: 1,
                             occurredAt: "2026-10-20T15:30:00.000Z",
-                            actor: "Administrador #12",
+                            actor: "Administrador: admin@saludvital.com",
                             module: "Citas médicas",
                             action: "Cancelación de cita",
                             description: "Texto <img src=x onerror=alert(1)> seguro",
@@ -114,8 +115,20 @@ try {
 
     await page.getByRole("button", { name: "Ver detalle del evento #1" }).click();
     await page.getByText("Se actualizaron los permisos de una cuenta.").waitFor();
-    if ((await page.locator("dialog").getByText("Administrador #12").count()) !== 1) {
+    await page.getByText("Cuenta de usuario", { exact: true }).waitFor();
+    if (
+        (await page.locator("dialog").getByText("Administrador: admin@saludvital.com").count()) !==
+        1
+    ) {
         throw new Error("The event detail view must display the persisted responsible user.");
+    }
+    if (
+        await page
+            .locator("dialog")
+            .getByText(/Usuarios y roles #21/)
+            .count()
+    ) {
+        throw new Error("The event detail view must identify related records without numeric IDs.");
     }
     await page.locator("[data-audit-detail-close]").click();
     if (await page.getByRole("button", { name: "Buscar" }).count())

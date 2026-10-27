@@ -254,10 +254,7 @@
                 ["Módulo", data.module],
                 ["Acción", data.action],
                 ["Descripción", data.description],
-                [
-                    "Registro asociado",
-                    data.targetId ? `${data.targetType} #${data.targetId}` : null,
-                ],
+                ["Registro asociado", data.targetDescription || data.targetType || null],
                 ["Resultado", data.result],
             ]);
             renderChangeGroups(data.changes);
