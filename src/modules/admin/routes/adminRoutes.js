@@ -45,6 +45,7 @@ import {
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
+import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import {
     createAdminSpecialty,
     getAdminSpecialties,
@@ -872,6 +873,15 @@ adminRoutes.get("/admin/profile", ...requireAdministrator, async (req, res, next
         });
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).send(error.message);
+        return next(error);
+    }
+});
+
+adminRoutes.patch("/api/admin/profile", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res.json(await updateAdminProfilePersonalInformation(req.auth.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
     }
 });

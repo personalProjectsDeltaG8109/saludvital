@@ -158,6 +158,112 @@
     font-size: 18px;
 }
 
+.admin-profile-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-profile-card-heading h2 {
+    margin-bottom: 0;
+}
+
+.admin-profile-edit-button,
+.admin-profile-cancel-button,
+.admin-profile-save-button {
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 1px solid #b9d9fb;
+    border-radius: 9px;
+    color: #075fc9;
+    background: #f2f8ff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-profile-save-button {
+    border-color: #0867cb;
+    color: #fff;
+    background: #0867cb;
+}
+
+.admin-profile-cancel-button {
+    color: #315985;
+    border-color: #d9e4f0;
+    background: #fff;
+}
+
+.admin-profile-edit-button:focus-visible,
+.admin-profile-cancel-button:focus-visible,
+.admin-profile-save-button:focus-visible,
+.admin-profile-form input:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 35%);
+    outline-offset: 2px;
+}
+
+.admin-profile-save-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.admin-profile-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.admin-profile-input-field {
+    margin-top: 5px;
+    color: #244a79;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-profile-form input {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 9px 11px;
+    border: 1px solid #d9e4f0;
+    border-radius: 8px;
+    color: #183f75;
+    background: #fff;
+    font: inherit;
+    font-size: 14px;
+}
+
+.admin-profile-field-help {
+    margin: -4px 0 4px;
+    color: #607995;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.admin-profile-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 8px;
+}
+
+.admin-profile-feedback,
+.admin-profile-error {
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.admin-profile-feedback {
+    color: #14804a;
+}
+
+.admin-profile-error {
+    color: #b4232d;
+}
+
 .admin-profile-fields {
     margin: 0;
 }

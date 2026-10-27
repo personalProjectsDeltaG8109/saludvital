@@ -27,6 +27,10 @@ const User = database.define(
             type: DataTypes.STRING(120),
             allowNull: true,
         },
+        phone: {
+            type: DataTypes.STRING(20),
+            allowNull: true,
+        },
         password_hash: {
             type: DataTypes.STRING(255),
             allowNull: false,
