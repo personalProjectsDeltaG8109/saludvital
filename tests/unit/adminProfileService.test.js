@@ -36,7 +36,15 @@ describe("administrator profile service", () => {
         expect(profile).not.toHaveProperty("password_hash");
         expect(JSON.stringify(profile)).not.toContain("must-not-be-returned");
         expect(User.findByPk).toHaveBeenCalledWith(7, {
-            attributes: ["id", "display_name", "email", "is_active", "created_at", "last_login_at"],
+            attributes: [
+                "id",
+                "display_name",
+                "email",
+                "phone",
+                "is_active",
+                "created_at",
+                "last_login_at",
+            ],
             include: [
                 { model: {}, as: "rol", attributes: ["name"], required: true },
                 {
