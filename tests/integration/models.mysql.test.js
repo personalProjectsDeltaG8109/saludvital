@@ -40,6 +40,7 @@ describe("MySQL model integration", () => {
                 "role_id",
                 "email",
                 "display_name",
+                "phone",
                 "password_hash",
                 "is_active",
                 "last_login_at",

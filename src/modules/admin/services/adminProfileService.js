@@ -14,11 +14,49 @@ function parseUserId(value) {
     return userId;
 }
 
+export function toAdminProfile(user) {
+    const patientName = [user.patient?.first_name, user.patient?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+    const displayName =
+        user.display_name?.trim() || user.doctor?.display_name?.trim() || patientName || null;
+    const initialsSource = displayName || "Administrador";
+    const initials = initialsSource
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0].toLocaleUpperCase("es-CO"))
+        .join("");
+
+    return {
+        displayName,
+        email: user.email,
+        phone: user.phone,
+        role: user.rol.name,
+        isActive: user.is_active,
+        createdAt: user.created_at,
+        lastLoginAt: user.last_login_at,
+        profilePhotoUrl: normalizeProfilePhotoUrl(
+            user.doctor?.profile_photo_url || user.patient?.profile_photo_url,
+        ),
+        initials,
+    };
+}
+
 /** Return only the authenticated administrator's safe, persisted profile fields. */
 export async function getAdminProfile(rawUserId) {
     const userId = parseUserId(rawUserId);
     const user = await User.findByPk(userId, {
-        attributes: ["id", "display_name", "email", "is_active", "created_at", "last_login_at"],
+        attributes: [
+            "id",
+            "display_name",
+            "email",
+            "phone",
+            "is_active",
+            "created_at",
+            "last_login_at",
+        ],
         include: [
             { model: Rol, as: "rol", attributes: ["name"], required: true },
             {
@@ -40,32 +78,7 @@ export async function getAdminProfile(rawUserId) {
         throw serviceError("No encontramos el perfil de administrador solicitado.", 404);
     }
 
-    const patientName = [user.patient?.first_name, user.patient?.last_name]
-        .filter(Boolean)
-        .join(" ")
-        .trim();
-    const displayName =
-        user.display_name?.trim() || user.doctor?.display_name?.trim() || patientName || null;
-    const initialsSource = displayName || "Administrador";
-    const initials = initialsSource
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0].toLocaleUpperCase("es-CO"))
-        .join("");
-
-    return {
-        displayName,
-        email: user.email,
-        role: user.rol.name,
-        isActive: user.is_active,
-        createdAt: user.created_at,
-        lastLoginAt: user.last_login_at,
-        profilePhotoUrl: normalizeProfilePhotoUrl(
-            user.doctor?.profile_photo_url || user.patient?.profile_photo_url,
-        ),
-        initials,
-    };
+    return toAdminProfile(user);
 }
 
 function normalizeProfilePhotoUrl(value) {

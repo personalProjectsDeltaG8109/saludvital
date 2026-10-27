@@ -9,6 +9,7 @@ describe("administrator profile page", () => {
             profile: {
                 displayName: "Laura Méndez",
                 email: "laura@example.com",
+                phone: "+573001234567",
                 role: "Administrator",
                 isActive: true,
                 createdAt: new Date("2025-01-15T10:00:00.000Z"),
@@ -19,6 +20,7 @@ describe("administrator profile page", () => {
 
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("laura@example.com");
+        expect(html).toContain("+573001234567");
         expect(html).toContain("Información personal");
         expect(html).toContain("Seguridad");
         expect(html).toContain("Preferencias");
@@ -33,6 +35,7 @@ describe("administrator profile page", () => {
             profile: {
                 displayName: null,
                 email: "admin@example.com",
+                phone: null,
                 role: "Administrator",
                 isActive: true,
                 initials: "A",

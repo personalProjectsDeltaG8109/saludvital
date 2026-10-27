@@ -14,7 +14,7 @@ html(lang="es")
         +adminSidebar("profile")
         .admin-main-shell
             +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
-            main.admin-profile-content
+            main.admin-profile-content(data-admin-profile, data-endpoint="/api/admin/profile")
                 header.admin-profile-heading
                     .admin-profile-heading-icon(aria-hidden="true")
                         svg(
@@ -37,10 +37,10 @@ html(lang="es")
                         if profile.profilePhotoUrl
                             img(src=profile.profilePhotoUrl, alt="")
                         else
-                            span= profile.initials
+                            span(data-profile-initials)= profile.initials
                     .admin-profile-identity
-                        h2#admin-profile-name= profile.displayName || "Nombre no registrado"
-                        p= profile.email
+                        h2#admin-profile-name(data-profile-identity-name)= profile.displayName || "Nombre no registrado"
+                        p(data-profile-identity-email)= profile.email
                         span.admin-profile-role= profile.role === "Administrator" ? "Administrador" : profile.role
 
                 nav.admin-profile-tabs(aria-label="Secciones del perfil")
@@ -52,14 +52,36 @@ html(lang="es")
                     section#personal-information.admin-profile-card(
                         aria-labelledby="personal-information-title"
                     )
-                        h2#personal-information-title Datos personales
-                        dl.admin-profile-fields
+                        header.admin-profile-card-heading
+                            h2#personal-information-title Datos personales
+                            button.admin-profile-edit-button(
+                                type="button",
+                                aria-expanded="false",
+                                aria-controls="profile-edit-form",
+                                data-profile-edit
+                            ) Editar
+                        p.admin-profile-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-profile-success,
+                            hidden
+                        )
+                        p.admin-profile-error(
+                            role="alert",
+                            aria-live="assertive",
+                            data-profile-error,
+                            hidden
+                        )
+                        dl.admin-profile-fields(data-profile-readonly)
                             .admin-profile-field
                                 dt Nombre completo
-                                dd= profile.displayName || "Nombre no registrado"
+                                dd(data-profile-value="displayName")= profile.displayName || "Nombre no registrado"
                             .admin-profile-field
                                 dt Correo electrónico
-                                dd= profile.email
+                                dd(data-profile-value="email")= profile.email
+                            .admin-profile-field
+                                dt Teléfono
+                                dd(data-profile-value="phone")= profile.phone || "Sin información registrada"
                             .admin-profile-field
                                 dt Rol
                                 dd= profile.role === "Administrator" ? "Administrador" : profile.role
@@ -70,6 +92,48 @@ html(lang="es")
                                         class=profile.isActive ? "is-active" : "is-inactive"
                                     )
                                         = profile.isActive ? "Activa" : "Inactiva"
+
+                        form#profile-edit-form.admin-profile-form(data-profile-form, hidden)
+                            label.admin-profile-input-field(for="profile-display-name") Nombre completo
+                            input#profile-display-name(
+                                type="text",
+                                name="displayName",
+                                maxlength="120",
+                                autocomplete="name",
+                                required,
+                                value=profile.displayName || "",
+                                data-profile-display-name
+                            )
+                            label.admin-profile-input-field(for="profile-email") Correo electrónico
+                            input#profile-email(
+                                type="email",
+                                name="email",
+                                maxlength="100",
+                                autocomplete="email",
+                                required,
+                                value=profile.email,
+                                aria-describedby="profile-email-help",
+                                data-profile-email
+                            )
+                            p#profile-email-help.admin-profile-field-help Si cambias el correo, tendrás que verificar la nueva dirección.
+                            label.admin-profile-input-field(for="profile-phone") Teléfono
+                            input#profile-phone(
+                                type="tel",
+                                name="phone",
+                                maxlength="20",
+                                autocomplete="tel",
+                                pattern="\\+?[0-9]{7,15}",
+                                value=profile.phone || "",
+                                aria-describedby="profile-phone-help",
+                                data-profile-phone
+                            )
+                            p#profile-phone-help.admin-profile-field-help Usa de 7 a 15 dígitos; puedes incluir + al inicio.
+                            .admin-profile-form-actions
+                                button.admin-profile-cancel-button(
+                                    type="button",
+                                    data-profile-cancel
+                                ) Cancelar
+                                button.admin-profile-save-button(type="submit", data-profile-save) Guardar cambios
 
                     section.admin-profile-card(aria-labelledby="additional-information-title")
                         h2#additional-information-title Información adicional
@@ -95,3 +159,4 @@ html(lang="es")
                     p Esta cuenta no tiene preferencias de perfil configuradas.
 
         script(src="/js/admin-dashboard.js", defer)
+        script(src="/js/admin-profile.js", defer)

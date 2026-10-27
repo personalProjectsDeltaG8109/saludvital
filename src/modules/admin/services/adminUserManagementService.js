@@ -16,6 +16,11 @@ import {
     resolveLocation,
 } from "../../auth/services/locationService.js";
 import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
+import {
+    normalizeProfileEmail,
+    normalizeProfilePhone,
+    normalizeProfileText,
+} from "./adminProfileFieldValidation.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -310,34 +315,6 @@ export async function updateAdminUser(actorUserId, rawUserId, payload) {
             },
         };
     });
-}
-
-function normalizeProfileText(value, label, maxLength, required = false) {
-    if (value === undefined || value === null || typeof value !== "string") {
-        if (required) throw serviceError(`${label} es obligatorio.`, 400);
-        return null;
-    }
-    const normalized = value.trim();
-    if ((required && !normalized) || normalized.length > maxLength) {
-        throw serviceError(`${label} no es válido.`, 400);
-    }
-    return normalized || null;
-}
-
-function normalizeProfileEmail(value) {
-    const email = normalizeProfileText(value, "El correo electrónico", 100, true)?.toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw serviceError("Ingresa un correo electrónico válido.", 400);
-    }
-    return email;
-}
-
-function normalizeProfilePhone(value, label, required = false) {
-    const phone = normalizeProfileText(value, label, 20, required);
-    if (phone && !/^\+?[0-9]{7,15}$/.test(phone)) {
-        throw serviceError(`Ingresa un número válido para ${label.toLowerCase()}.`, 400);
-    }
-    return phone;
 }
 
 function normalizeProfilePhotoUrl(value) {
