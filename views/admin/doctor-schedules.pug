@@ -15,7 +15,8 @@ html(lang="es")
             main.doctor-schedules-page(
                 data-doctor-schedules,
                 data-endpoint="/api/admin/doctor-schedules",
-                data-weekly-endpoint="/api/admin/doctor-schedules"
+                data-weekly-endpoint="/api/admin/doctor-schedules",
+                data-exceptions-endpoint="/api/admin/doctor-schedule-exceptions"
             )
                 p.schedule-config-page-feedback(
                     role="status",
@@ -162,6 +163,7 @@ html(lang="es")
                             div
                                 h2#upcoming-exceptions-title Próximas excepciones
                                 p Excepciones registradas para los próximos 7 días.
+                            button.schedule-exceptions-manage(type="button", data-exceptions-open) Administrar
                         p.schedule-exceptions-empty(data-schedule-exceptions-empty, hidden) No hay excepciones próximas.
                         ul.schedule-exceptions-list(data-schedule-exceptions)
                 p.schedule-footnote Los horarios se muestran según la disponibilidad configurada. Cada cita utiliza la duración establecida por el sistema.
@@ -253,5 +255,88 @@ html(lang="es")
                         button.schedule-config-cancel(type="button", data-config-close) Cancelar
                         button.schedule-config-delete(type="button", data-config-delete, hidden) Eliminar intervalo
                         button.schedule-config-submit(type="submit", data-config-submit) Guardar horario
+            dialog.schedule-exception-dialog(
+                data-exception-manager-dialog,
+                aria-labelledby="exception-manager-title"
+            )
+                section.schedule-exception-manager(data-exception-manager)
+                    header.schedule-exception-heading
+                        div
+                            p.admin-eyebrow Gestión de disponibilidad
+                            h2#exception-manager-title Excepciones de horario
+                            p Administra los periodos que modifican la disponibilidad del médico.
+                        button.schedule-config-close(
+                            type="button",
+                            aria-label="Cerrar excepciones",
+                            data-exception-close
+                        ) ×
+                    p.schedule-exception-error(
+                        role="alert",
+                        data-exception-error,
+                        tabindex="-1",
+                        hidden
+                    )
+                    p.schedule-exception-feedback(role="status", data-exception-feedback, hidden)
+                    .schedule-exception-toolbar
+                        label
+                            span Estado
+                            select(data-exception-status)
+                                option(value="all") Todos
+                                option(value="active") Activas
+                                option(value="inactive") Inactivas
+                        button.schedule-config-submit(type="button", data-exception-create) Nueva excepción
+                    p(data-exception-loading, role="status", hidden) Cargando excepciones...
+                    p(data-exception-empty, hidden) No hay excepciones para mostrar.
+                    ul.schedule-exception-manage-list(data-exception-list)
+                    form.schedule-exception-form(data-exception-form, hidden)
+                        input(type="hidden", data-exception-id)
+                        .schedule-exception-fields
+                            label
+                                span Médico
+                                select(required, data-exception-doctor)
+                                    option(value="") Selecciona un médico activo
+                            label
+                                span Tipo de excepción
+                                select(required, data-exception-type)
+                                    option(value="Unavailable") No disponible
+                                    option(value="AdditionalAvailability") Disponibilidad adicional
+                            label
+                                span Inicio
+                                input(
+                                    type="datetime-local",
+                                    step="1800",
+                                    required,
+                                    data-exception-start
+                                )
+                            label
+                                span Fin
+                                input(
+                                    type="datetime-local",
+                                    step="1800",
+                                    required,
+                                    data-exception-end
+                                )
+                            label.schedule-exception-reason
+                                span Descripción (vacaciones, permiso, día no laborable...)
+                                input(
+                                    type="text",
+                                    maxlength="255",
+                                    required,
+                                    data-exception-reason
+                                )
+                        footer.schedule-config-actions
+                            button.schedule-config-cancel(type="button", data-exception-back) Volver
+                            button.schedule-config-submit(type="submit", data-exception-submit) Guardar excepción
+                section.schedule-exception-impact(
+                    data-exception-impact,
+                    hidden,
+                    aria-labelledby="exception-impact-title"
+                )
+                    h3#exception-impact-title Citas confirmadas que requieren revisión
+                    p Estas citas coinciden con el periodo. Confirmar solo guardará la excepción; las citas no se modificarán.
+                    ul(data-exception-impact-list)
+                    footer.schedule-config-actions
+                        button.schedule-config-cancel(type="button", data-exception-impact-cancel) Volver
+                        button.schedule-config-submit(type="button", data-exception-impact-confirm) Confirmar y continuar
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-doctor-schedules.js", defer)

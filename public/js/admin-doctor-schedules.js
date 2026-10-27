@@ -3,6 +3,7 @@
     if (!page) return;
 
     const endpoint = page.dataset.endpoint;
+    const exceptionsEndpoint = page.dataset.exceptionsEndpoint;
     const filterForm = page.querySelector("[data-schedule-filters]");
     const searchInput = page.querySelector("[data-schedule-search]");
     const doctorSelect = page.querySelector("[data-schedule-doctor]");
@@ -19,6 +20,28 @@
     const configureImpactList = document.querySelector("[data-config-impact-list]");
     const configureSubmitButton = document.querySelector("[data-config-submit]");
     const configureDeleteButton = document.querySelector("[data-config-delete]");
+    const exceptionDialog = document.querySelector("[data-exception-manager-dialog]");
+    const exceptionForm = document.querySelector("[data-exception-form]");
+    const exceptionList = document.querySelector("[data-exception-list]");
+    const exceptionLoading = document.querySelector("[data-exception-loading]");
+    const exceptionEmpty = document.querySelector("[data-exception-empty]");
+    const exceptionError = document.querySelector("[data-exception-error]");
+    const exceptionFeedback = document.querySelector("[data-exception-feedback]");
+    const exceptionStatus = document.querySelector("[data-exception-status]");
+    const exceptionDoctor = document.querySelector("[data-exception-doctor]");
+    const exceptionType = document.querySelector("[data-exception-type]");
+    const exceptionStart = document.querySelector("[data-exception-start]");
+    const exceptionEnd = document.querySelector("[data-exception-end]");
+    const exceptionReason = document.querySelector("[data-exception-reason]");
+    const exceptionSubmit = document.querySelector("[data-exception-submit]");
+    const exceptionImpact = document.querySelector("[data-exception-impact]");
+    const exceptionImpactList = document.querySelector("[data-exception-impact-list]");
+    const exceptionImpactConfirm = document.querySelector("[data-exception-impact-confirm]");
+    const exceptionManager = document.querySelector("[data-exception-manager]");
+    const exceptionToolbar = document.querySelector(".schedule-exception-toolbar");
+    let managedExceptions = [];
+    let exceptionDoctors = [];
+    let pendingExceptionStatusRequest = null;
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
@@ -563,6 +586,245 @@
         </li>`;
     }
 
+    function formatExceptionRange(startAt, endAt) {
+        const localStart =
+            typeof startAt === "string" && startAt.includes("T")
+                ? startAt
+                : new Intl.DateTimeFormat("sv-SE", {
+                      timeZone: "America/Bogota",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                  })
+                      .format(new Date(startAt))
+                      .replace(" ", "T");
+        const localEnd =
+            typeof endAt === "string" && endAt.includes("T")
+                ? endAt
+                : new Intl.DateTimeFormat("sv-SE", {
+                      timeZone: "America/Bogota",
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                  })
+                      .format(new Date(endAt))
+                      .replace(" ", "T");
+        const startDate = new Date(`${localStart}:00-05:00`);
+        const endDate = new Date(`${localEnd}:00-05:00`);
+        const startLabel = `${formatDate(startDate, { day: "numeric", month: "short", year: "numeric" })} · ${formatTime(localStart.slice(11, 16))}`;
+        const endLabel = `${formatDate(endDate, { day: "numeric", month: "short", year: "numeric" })} · ${formatTime(localEnd.slice(11, 16))}`;
+        return `${startLabel} – ${endLabel}`;
+    }
+
+    function renderManagedExceptions() {
+        exceptionList.replaceChildren();
+        for (const exception of managedExceptions) {
+            const item = document.createElement("li");
+            item.className = "schedule-exception-manage-item";
+            const details = document.createElement("div");
+            const title = document.createElement("h3");
+            const typeLabel =
+                exception.type === "Unavailable" ? "No disponible" : "Disponibilidad adicional";
+            title.textContent = exception.reason;
+            const doctor = document.createElement("p");
+            doctor.textContent = `${exception.doctorName} · ${typeLabel}`;
+            const range = document.createElement("p");
+            range.textContent = formatExceptionRange(exception.startAtLocal, exception.endAtLocal);
+            const status = document.createElement("p");
+            status.textContent = exception.isActive ? "Activa" : "Inactiva";
+            details.append(title, doctor, range, status);
+
+            const actions = document.createElement("div");
+            actions.className = "schedule-exception-manage-actions";
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.dataset.editException = exception.id;
+            editButton.textContent = "Editar";
+            const statusButton = document.createElement("button");
+            statusButton.type = "button";
+            statusButton.dataset.toggleException = exception.id;
+            statusButton.dataset.nextActive = String(!exception.isActive);
+            statusButton.textContent = exception.isActive ? "Desactivar" : "Reactivar";
+            if (exception.isActive) statusButton.classList.add("is-danger");
+            actions.append(editButton, statusButton);
+            item.append(details, actions);
+            exceptionList.append(item);
+        }
+        exceptionEmpty.hidden = managedExceptions.length > 0;
+    }
+
+    function setExceptionManagerMode(mode) {
+        const showForm = mode === "form";
+        exceptionForm.hidden = !showForm;
+        exceptionList.hidden = showForm;
+        exceptionEmpty.hidden = showForm || managedExceptions.length > 0;
+        exceptionToolbar.hidden = showForm;
+        exceptionManager.querySelector("[data-exception-loading]").hidden = true;
+        exceptionImpact.hidden = true;
+        exceptionImpactList.replaceChildren();
+        pendingExceptionStatusRequest = null;
+    }
+
+    function showExceptionError(message) {
+        exceptionError.textContent = message;
+        exceptionError.hidden = false;
+        exceptionError.focus();
+    }
+
+    async function loadExceptionManager() {
+        exceptionError.hidden = true;
+        exceptionFeedback.hidden = true;
+        exceptionList.hidden = false;
+        exceptionEmpty.hidden = true;
+        exceptionLoading.hidden = false;
+        exceptionToolbar.hidden = false;
+        exceptionForm.hidden = true;
+        exceptionImpact.hidden = true;
+        try {
+            const params = new URLSearchParams({ status: exceptionStatus.value });
+            const response = await fetch(`${exceptionsEndpoint}?${params.toString()}`, {
+                headers: { Accept: "application/json" },
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos cargar las excepciones.");
+            managedExceptions = data.exceptions || [];
+            exceptionDoctors = data.doctors || [];
+            renderManagedExceptions();
+            renderSelectOptions(
+                exceptionDoctor,
+                exceptionDoctors,
+                "Selecciona un médico activo",
+                (doctor) => doctor.name,
+            );
+            exceptionEmpty.hidden = managedExceptions.length > 0;
+        } catch (error) {
+            exceptionList.replaceChildren();
+            exceptionEmpty.hidden = true;
+            showExceptionError(error.message || "No pudimos cargar las excepciones.");
+        } finally {
+            exceptionLoading.hidden = true;
+        }
+    }
+
+    function openExceptionForm(exception = null) {
+        exceptionError.hidden = true;
+        exceptionFeedback.hidden = true;
+        exceptionForm.reset();
+        exceptionForm.dataset.mode = exception ? "edit" : "create";
+        exceptionForm.querySelector("[data-exception-id]").value = exception?.id || "";
+        exceptionSubmit.dataset.confirmImpact = "false";
+        exceptionSubmit.textContent = exception ? "Guardar cambios" : "Guardar excepción";
+        if (exception) {
+            exceptionDoctor.value = String(exception.doctorId);
+            exceptionType.value = exception.type;
+            exceptionStart.value = exception.startAtLocal;
+            exceptionEnd.value = exception.endAtLocal;
+            exceptionReason.value = exception.reason;
+        }
+        setExceptionManagerMode("form");
+        exceptionForm.hidden = false;
+        exceptionList.hidden = true;
+        exceptionToolbar.hidden = true;
+        exceptionSubmit.focus();
+    }
+
+    function renderExceptionImpacts(appointments) {
+        exceptionImpactList.replaceChildren();
+        for (const appointment of appointments) {
+            const item = document.createElement("li");
+            item.textContent = `Cita #${appointment.id} · ${formatExceptionRange(appointment.startAtLocal, appointment.endAtLocal)}`;
+            exceptionImpactList.append(item);
+        }
+        exceptionImpact.hidden = false;
+        exceptionImpactConfirm.focus();
+    }
+
+    function collectExceptionForm() {
+        return {
+            doctorId: exceptionDoctor.value,
+            type: exceptionType.value,
+            startAt: exceptionStart.value,
+            endAt: exceptionEnd.value,
+            reason: exceptionReason.value,
+            confirmImpact: exceptionSubmit.dataset.confirmImpact === "true",
+        };
+    }
+
+    async function submitExceptionForm(event) {
+        event.preventDefault();
+        exceptionError.hidden = true;
+        exceptionFeedback.hidden = true;
+        const isEditing = exceptionForm.dataset.mode === "edit";
+        const exceptionId = exceptionForm.querySelector("[data-exception-id]").value;
+        const method = isEditing ? "PATCH" : "POST";
+        const url = isEditing ? `${exceptionsEndpoint}/${exceptionId}` : exceptionsEndpoint;
+        exceptionSubmit.disabled = true;
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify(collectExceptionForm()),
+            });
+            const data = await response.json();
+            if (response.status === 409 && data.requiresConfirmation) {
+                exceptionSubmit.dataset.confirmImpact = "true";
+                exceptionSubmit.textContent = "Confirmar y guardar sin modificar las citas";
+                renderExceptionImpacts(data.affectedAppointments || []);
+                return;
+            }
+            if (!response.ok) throw new Error(data.message || "No pudimos guardar la excepción.");
+            exceptionForm.hidden = true;
+            exceptionList.hidden = false;
+            exceptionToolbar.hidden = false;
+            exceptionImpact.hidden = true;
+            await loadExceptionManager();
+            await loadSchedules();
+            exceptionFeedback.textContent = data.affectedAppointmentsReviewed
+                ? `${data.message} ${data.affectedAppointmentsReviewed} citas confirmadas quedaron sin cambios y requieren revisión.`
+                : data.message;
+            exceptionFeedback.hidden = false;
+        } catch (error) {
+            showExceptionError(error.message || "No pudimos guardar la excepción.");
+        } finally {
+            exceptionSubmit.disabled = false;
+            if (exceptionSubmit.dataset.confirmImpact !== "true") {
+                exceptionSubmit.textContent = isEditing ? "Guardar cambios" : "Guardar excepción";
+            }
+        }
+    }
+
+    async function submitExceptionStatus(request) {
+        const response = await fetch(request.url, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify(request.body),
+        });
+        const data = await response.json();
+        if (response.status === 409 && data.requiresConfirmation) {
+            pendingExceptionStatusRequest = {
+                ...request,
+                body: { ...request.body, confirmImpact: true },
+            };
+            renderExceptionImpacts(data.affectedAppointments || []);
+            return;
+        }
+        if (!response.ok) throw new Error(data.message || "No pudimos actualizar el estado.");
+        pendingExceptionStatusRequest = null;
+        exceptionImpact.hidden = true;
+        await loadExceptionManager();
+        await loadSchedules();
+        exceptionFeedback.textContent = data.affectedAppointmentsReviewed
+            ? `${data.message} ${data.affectedAppointmentsReviewed} citas confirmadas quedaron sin cambios y requieren revisión.`
+            : data.message;
+        exceptionFeedback.hidden = false;
+    }
+
     function renderWeekLabel(week) {
         const start = new Date(`${week.start}T12:00:00-05:00`);
         const end = new Date(`${week.end}T12:00:00-05:00`);
@@ -687,6 +949,82 @@
     configureOpenButton?.addEventListener("click", () => {
         openConfigurationDialog("create");
     });
+
+    page.querySelector("[data-exceptions-open]")?.addEventListener("click", () => {
+        exceptionError.hidden = true;
+        exceptionFeedback.hidden = true;
+        exceptionManager.querySelector("[data-exception-loading]").hidden = false;
+        exceptionDialog.showModal();
+        loadExceptionManager();
+    });
+    exceptionDialog?.querySelector("[data-exception-close]")?.addEventListener("click", () => {
+        exceptionDialog.close();
+    });
+    exceptionDialog?.querySelector("[data-exception-create]")?.addEventListener("click", () => {
+        openExceptionForm();
+    });
+    exceptionDialog?.querySelector("[data-exception-back]")?.addEventListener("click", () => {
+        exceptionError.hidden = true;
+        exceptionImpact.hidden = true;
+        exceptionSubmit.dataset.confirmImpact = "false";
+        exceptionList.hidden = false;
+        exceptionForm.hidden = true;
+        exceptionToolbar.hidden = false;
+    });
+    exceptionStatus?.addEventListener("change", loadExceptionManager);
+    exceptionForm?.addEventListener("submit", submitExceptionForm);
+    exceptionList?.addEventListener("click", async (event) => {
+        const editButton = event.target.closest("[data-edit-exception]");
+        if (editButton) {
+            const exception = managedExceptions.find(
+                (item) => String(item.id) === editButton.dataset.editException,
+            );
+            if (exception) openExceptionForm(exception);
+            return;
+        }
+
+        const statusButton = event.target.closest("[data-toggle-exception]");
+        if (!statusButton) return;
+        statusButton.disabled = true;
+        exceptionError.hidden = true;
+        exceptionFeedback.hidden = true;
+        const isActive = statusButton.dataset.nextActive === "true";
+        try {
+            await submitExceptionStatus({
+                url: `${exceptionsEndpoint}/${statusButton.dataset.toggleException}/status`,
+                body: { isActive, confirmImpact: false },
+            });
+        } catch (error) {
+            showExceptionError(error.message || "No pudimos actualizar el estado de la excepción.");
+        } finally {
+            statusButton.disabled = false;
+        }
+    });
+    exceptionImpactConfirm?.addEventListener("click", async () => {
+        exceptionImpactConfirm.disabled = true;
+        try {
+            if (pendingExceptionStatusRequest) {
+                await submitExceptionStatus(pendingExceptionStatusRequest);
+            } else if (!exceptionForm.hidden) {
+                exceptionSubmit.dataset.confirmImpact = "true";
+                exceptionImpact.hidden = true;
+                exceptionForm.requestSubmit();
+            }
+        } catch (error) {
+            showExceptionError(error.message || "No pudimos aplicar el cambio.");
+        } finally {
+            exceptionImpactConfirm.disabled = false;
+        }
+    });
+    exceptionDialog
+        ?.querySelector("[data-exception-impact-cancel]")
+        ?.addEventListener("click", () => {
+            pendingExceptionStatusRequest = null;
+            exceptionImpact.hidden = true;
+            exceptionSubmit.dataset.confirmImpact = "false";
+            exceptionSubmit.textContent =
+                exceptionForm.dataset.mode === "edit" ? "Guardar cambios" : "Guardar excepción";
+        });
 
     configureDialog?.querySelectorAll("[data-config-close]").forEach((button) => {
         button.addEventListener("click", () => configureDialog.close());
