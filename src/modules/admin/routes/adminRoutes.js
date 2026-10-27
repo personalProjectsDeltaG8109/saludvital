@@ -5,6 +5,10 @@ import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.
 import { getAdminDoctorWeeklySchedule } from "../services/adminDoctorWeeklyScheduleService.js";
 import { configureAdminDoctorSchedule } from "../services/adminDoctorScheduleConfigurationService.js";
 import {
+    deleteAdminDoctorSchedule,
+    updateAdminDoctorSchedule,
+} from "../services/adminDoctorScheduleEditingService.js";
+import {
     createAdminAppointment,
     getAdminAppointmentBookingDoctors,
     getAdminAppointmentBookingOptions,
@@ -95,7 +99,7 @@ adminRoutes.get(
 );
 adminRoutes.post("/api/admin/doctor-schedules", ...requireAdministrator, async (req, res, next) => {
     try {
-        const result = await configureAdminDoctorSchedule(req.body);
+        const result = await configureAdminDoctorSchedule(req.body, req.auth.userId);
         return res.status(201).json({
             ...result,
             message: "El horario se configuró correctamente.",
@@ -115,6 +119,54 @@ adminRoutes.post("/api/admin/doctor-schedules", ...requireAdministrator, async (
         return next(error);
     }
 });
+adminRoutes.patch(
+    "/api/admin/doctor-schedules/:scheduleId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminDoctorSchedule(req.auth.userId, req.params.scheduleId, req.body),
+            );
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    ...(error.requiresConfirmation
+                        ? {
+                              requiresConfirmation: true,
+                              impactedAppointments: error.impactedAppointments,
+                          }
+                        : {}),
+                });
+            }
+            return next(error);
+        }
+    },
+);
+adminRoutes.delete(
+    "/api/admin/doctor-schedules/:scheduleId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await deleteAdminDoctorSchedule(req.auth.userId, req.params.scheduleId, req.body),
+            );
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({
+                    message: error.message,
+                    ...(error.requiresConfirmation
+                        ? {
+                              requiresConfirmation: true,
+                              impactedAppointments: error.impactedAppointments,
+                          }
+                        : {}),
+                });
+            }
+            return next(error);
+        }
+    },
+);
 adminRoutes.get(
     "/api/admin/appointments/export",
     ...requireAdministrator,

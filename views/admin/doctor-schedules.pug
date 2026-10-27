@@ -142,6 +142,11 @@ html(lang="es")
                                         div
                                             dt Horario de atención
                                             dd(data-weekly-working-hours) —
+                                    section.weekly-editable-schedules(
+                                        aria-labelledby="weekly-editable-title"
+                                    )
+                                        h5#weekly-editable-title Horarios configurados
+                                        ul(data-weekly-editable-blocks)
                             ul.weekly-legend(aria-label="Estados de horario")
                                 li.is-available Disponible
                                 li.is-additional-availability Disponibilidad adicional
@@ -168,7 +173,7 @@ html(lang="es")
                     header.schedule-config-heading
                         div
                             p.admin-eyebrow Configuración de disponibilidad
-                            h2#schedule-config-title Configurar horario
+                            h2#schedule-config-title(data-config-title) Configurar horario
                             p(data-config-doctor-label) Selecciona un médico activo para continuar.
                         button.schedule-config-close(
                             type="button",
@@ -242,10 +247,11 @@ html(lang="es")
                         aria-labelledby="config-impact-title"
                     )
                         h3#config-impact-title Revisa las citas confirmadas
-                        p El horario propuesto deja estas citas fuera de la disponibilidad o coincide con una excepción. Las citas no se modificarán.
+                        p El horario propuesto afecta estas citas confirmadas. Al confirmar, se cancelarán. Las notificaciones se encolarán si la configuración y las preferencias de cada paciente lo permiten.
                         ul(data-config-impact-list)
                     footer.schedule-config-actions
                         button.schedule-config-cancel(type="button", data-config-close) Cancelar
+                        button.schedule-config-delete(type="button", data-config-delete, hidden) Eliminar intervalo
                         button.schedule-config-submit(type="submit", data-config-submit) Guardar horario
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-doctor-schedules.js", defer)

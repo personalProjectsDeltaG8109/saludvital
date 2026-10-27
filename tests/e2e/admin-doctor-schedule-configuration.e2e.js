@@ -24,7 +24,7 @@ try {
           <div data-schedule-week-label></div><p data-schedule-feedback hidden></p><p data-schedule-error hidden></p>
           <section data-weekly-view hidden><button type="button" data-weekly-clear></button><p data-weekly-doctor-name></p><p data-weekly-date-range></p><p data-weekly-feedback></p><p data-weekly-error hidden></p><div data-weekly-content hidden><div data-weekly-grid></div><p data-weekly-specialty></p><p data-weekly-duration></p><p data-weekly-working-days></p><p data-weekly-working-hours></p><p data-weekly-empty hidden></p></div></section>
           <div data-schedule-doctor-list></div><p data-schedule-empty hidden></p><ul data-schedule-exceptions></ul><p data-schedule-exceptions-empty hidden></p>
-          <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form>
+          <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form><h2 data-config-title>Configurar horario</h2>
             <button type="button" data-config-close>Cerrar</button><p data-config-error hidden></p><p data-config-success hidden></p>
             <select data-config-doctor required></select><input type="date" data-config-valid-from required><input type="date" data-config-valid-until>
             <div data-config-day="1"><input type="checkbox" data-day-enabled><div data-config-intervals><div data-config-interval><input type="time" data-interval-start disabled><input type="time" data-interval-end disabled><button data-remove-interval hidden></button></div></div><button type="button" data-add-interval hidden></button></div>
@@ -56,7 +56,13 @@ try {
                     );
                 }
                 return new Response(
-                    JSON.stringify({ message: "El horario se configuró correctamente." }),
+                    JSON.stringify({
+                        message: "El horario se configuró correctamente.",
+                        cancelledAppointments: 1,
+                        queuedNotifications: 1,
+                        cancellationDetails:
+                            "Se canceló 1 cita afectada. Notificaciones encoladas: 1.",
+                    }),
                     { status: 201, headers: { "Content-Type": "application/json" } },
                 );
             }
@@ -67,7 +73,28 @@ try {
                       appointmentDurationMinutes: 30,
                       workingDays: [],
                       week: { start: "2026-10-26", end: "2026-11-01" },
-                      days: Array.from({ length: 7 }, () => ({ events: [] })),
+                      days: [
+                          "2026-10-26",
+                          "2026-10-27",
+                          "2026-10-28",
+                          "2026-10-29",
+                          "2026-10-30",
+                          "2026-10-31",
+                          "2026-11-01",
+                      ].map((date, index) => ({
+                          date,
+                          dayOfWeek: index + 1,
+                          dayLabel: [
+                              "Lunes",
+                              "Martes",
+                              "Miércoles",
+                              "Jueves",
+                              "Viernes",
+                              "Sábado",
+                              "Domingo",
+                          ][index],
+                          events: [],
+                      })),
                   }
                 : {
                       summary: {
@@ -112,17 +139,24 @@ try {
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-config-impact]:visible").waitFor();
     assert.match(await page.locator("[data-config-impact-list]").textContent(), /Cita #81/);
-    assert.match(await page.locator("[data-config-submit]").textContent(), /sin cambiar las citas/);
+    assert.match(
+        await page.locator("[data-config-submit]").textContent(),
+        /cancelar citas y notificar/,
+    );
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-schedule-config-dialog]").waitFor({ state: "hidden" });
     await page.locator("[data-config-page-feedback]:visible").waitFor();
+    assert.match(
+        await page.locator("[data-config-page-feedback]").textContent(),
+        /Se canceló 1 cita/,
+    );
     const attempts = await page.evaluate(() => window.configurationAttempts);
     assert.equal(attempts.length, 2);
     assert.equal(attempts[0].confirmImpact, false);
     assert.equal(attempts[1].confirmImpact, true);
     assert.equal(attempts[1].blocks[0].dayOfWeek, 1);
     console.log(
-        "PASS: configuration requires an explicit review before keeping affected appointments unchanged.",
+        "PASS: configuration requires explicit impact confirmation before cancelling affected appointments and notifying patients.",
     );
 
     for (const viewport of [
