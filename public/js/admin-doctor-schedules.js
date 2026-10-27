@@ -688,7 +688,7 @@
         openConfigurationDialog("create");
     });
 
-    configureDialog.querySelectorAll("[data-config-close]").forEach((button) => {
+    configureDialog?.querySelectorAll("[data-config-close]").forEach((button) => {
         button.addEventListener("click", () => configureDialog.close());
     });
     configureForm?.addEventListener("submit", submitConfiguration);
