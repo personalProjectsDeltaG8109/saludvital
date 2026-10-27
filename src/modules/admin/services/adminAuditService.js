@@ -15,7 +15,12 @@ const MODULE_LABELS = {
 };
 
 const ACTION_LABELS = {
+    AdminAppointmentCreated: "Creación de cita",
     AdminAppointmentCancelled: "Cancelación de cita",
+    AdminAppointmentRescheduled: "Reprogramación de cita",
+    AppointmentCancelled: "Cancelación de cita",
+    AppointmentCreated: "Creación de cita",
+    AppointmentRescheduled: "Reprogramación de cita",
     AdminDoctorActivated: "Activación de médico",
     AdminDoctorCreated: "Registro de médico",
     AdminDoctorDeactivated: "Desactivación de médico",
@@ -26,6 +31,7 @@ const ACTION_LABELS = {
     AdminDoctorScheduleExceptionUpdated: "Actualización de excepción",
     AdminDoctorScheduleUpdated: "Actualización de horario",
     AdminSpecialtyActivated: "Activación de especialidad",
+    AdminSpecialtyCreated: "Creación de especialidad",
     AdminSpecialtyDeactivated: "Desactivación de especialidad",
     AdminSpecialtyUpdated: "Actualización de especialidad",
     AdminUserAccountUpdated: "Actualización de cuenta",
@@ -33,7 +39,12 @@ const ACTION_LABELS = {
 };
 
 const EVENT_DESCRIPTIONS = {
+    AdminAppointmentCreated: "Se creó una cita",
     AdminAppointmentCancelled: "Se canceló una cita",
+    AdminAppointmentRescheduled: "Se reprogramó una cita",
+    AppointmentCancelled: "Se canceló una cita",
+    AppointmentCreated: "Se creó una cita",
+    AppointmentRescheduled: "Se reprogramó una cita",
     AdminDoctorActivated: "Se activó un médico",
     AdminDoctorCreated: "Se registró un médico",
     AdminDoctorDeactivated: "Se desactivó un médico",
@@ -44,6 +55,7 @@ const EVENT_DESCRIPTIONS = {
     AdminDoctorScheduleExceptionUpdated: "Se actualizó una excepción de horario",
     AdminDoctorScheduleUpdated: "Se actualizó un horario médico",
     AdminSpecialtyActivated: "Se activó una especialidad",
+    AdminSpecialtyCreated: "Se creó una especialidad",
     AdminSpecialtyDeactivated: "Se desactivó una especialidad",
     AdminSpecialtyUpdated: "Se actualizó una especialidad",
     AdminUserAccountUpdated: "Se actualizaron los permisos o el estado de una cuenta",

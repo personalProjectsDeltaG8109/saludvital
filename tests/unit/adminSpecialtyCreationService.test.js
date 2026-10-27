@@ -34,6 +34,7 @@ const {
 describe("Admin specialty creation service", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
         database.transaction.mockImplementation((callback) =>
             callback({ LOCK: { UPDATE: "UPDATE" } }),
         );
@@ -48,16 +49,30 @@ describe("Admin specialty creation service", () => {
             is_active: true,
         });
 
-        const result = await createAdminSpecialty({
+        const result = await createAdminSpecialty(9, {
             name: "  Medicina   Interna  ",
             description: " Atención especializada. ",
         });
 
-        expect(Specialities.create).toHaveBeenCalledWith({
-            name: "Medicina Interna",
-            description: "Atención especializada.",
-            is_active: true,
-        });
+        expect(Specialities.create).toHaveBeenCalledWith(
+            {
+                name: "Medicina Interna",
+                description: "Atención especializada.",
+                is_active: true,
+            },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actor_user_id: 9,
+                action: "AdminSpecialtyCreated",
+                target_type: "MedicalSpecialty",
+                target_id: "12",
+                changes: { next: { name: "Medicina Interna" } },
+            }),
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
         expect(result).toEqual({
             id: 12,
             name: "Medicina Interna",
@@ -75,20 +90,19 @@ describe("Admin specialty creation service", () => {
             is_active: true,
         });
 
-        const result = await createAdminSpecialty({ name: "Pediatría" });
+        const result = await createAdminSpecialty(9, { name: "Pediatría" });
 
-        expect(Specialities.create).toHaveBeenCalledWith({
-            name: "Pediatría",
-            description: null,
-            is_active: true,
-        });
+        expect(Specialities.create).toHaveBeenCalledWith(
+            { name: "Pediatría", description: null, is_active: true },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
         expect(result.description).toBe("");
     });
 
     test("rejects duplicate names before attempting to create a record", async () => {
         Specialities.findOne.mockResolvedValue({ id: 1 });
 
-        await expect(createAdminSpecialty({ name: "Medicina General" })).rejects.toMatchObject({
+        await expect(createAdminSpecialty(9, { name: "Medicina General" })).rejects.toMatchObject({
             statusCode: 409,
             message: "Ya existe una especialidad con ese nombre.",
         });
@@ -99,9 +113,26 @@ describe("Admin specialty creation service", () => {
         Specialities.findOne.mockResolvedValue(null);
         Specialities.create.mockRejectedValue({ name: "SequelizeUniqueConstraintError" });
 
-        await expect(createAdminSpecialty({ name: "Medicina General" })).rejects.toMatchObject({
+        await expect(createAdminSpecialty(9, { name: "Medicina General" })).rejects.toMatchObject({
             statusCode: 409,
         });
+    });
+
+    test("does not keep a specialty when its audit record fails", async () => {
+        Specialities.findOne.mockResolvedValue(null);
+        Specialities.create.mockResolvedValue({
+            id: 31,
+            name: "Cardiología",
+            description: null,
+            is_active: true,
+        });
+        AuditLog.create.mockRejectedValue(new Error("audit unavailable"));
+
+        await expect(createAdminSpecialty(9, { name: "Cardiología" })).rejects.toThrow(
+            "audit unavailable",
+        );
+
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
     });
 
     test.each([
@@ -109,7 +140,7 @@ describe("Admin specialty creation service", () => {
         ["   ", "El nombre de la especialidad es obligatorio."],
         ["x".repeat(101), "El nombre no puede superar los 100 caracteres."],
     ])("rejects invalid name: %s", async (name, message) => {
-        await expect(createAdminSpecialty({ name })).rejects.toMatchObject({
+        await expect(createAdminSpecialty(9, { name })).rejects.toMatchObject({
             statusCode: 400,
             message,
         });
@@ -118,10 +149,10 @@ describe("Admin specialty creation service", () => {
 
     test("rejects invalid or oversized descriptions", async () => {
         await expect(
-            createAdminSpecialty({ name: "Cardiología", description: 42 }),
+            createAdminSpecialty(9, { name: "Cardiología", description: 42 }),
         ).rejects.toMatchObject({ statusCode: 400 });
         await expect(
-            createAdminSpecialty({ name: "Cardiología", description: "x".repeat(256) }),
+            createAdminSpecialty(9, { name: "Cardiología", description: "x".repeat(256) }),
         ).rejects.toMatchObject({ statusCode: 400 });
         expect(Specialities.findOne).not.toHaveBeenCalled();
     });

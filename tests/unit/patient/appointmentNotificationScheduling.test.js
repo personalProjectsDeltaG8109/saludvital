@@ -5,6 +5,9 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
         transaction: jest.fn(),
     },
 }));
+jest.unstable_mockModule("../../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
+}));
 
 jest.unstable_mockModule("../../../src/models/associations.js", () => {
     const model = () => ({
@@ -47,7 +50,8 @@ const {
 } = await import("../../../src/models/associations.js");
 const { enqueueAppointmentNotifications } =
     await import("../../../src/modules/patient/services/notificationAutomationService.js");
-const { bookAppointment } =
+const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
+const { bookAppointment, cancelPatientAppointment } =
     await import("../../../src/modules/patient/services/appointmentService.js");
 
 describe("appointment reminder scheduling", () => {
@@ -70,6 +74,7 @@ describe("appointment reminder scheduling", () => {
         AppointmentStatus.findOne.mockResolvedValue({ id: 1, name: "Confirmed" });
         Appointment.create.mockResolvedValue({ id: 99 });
         AppointmentHistory.create.mockResolvedValue({});
+        AuditLog.create.mockResolvedValue({ id: 1 });
         enqueueAppointmentNotifications.mockResolvedValue([]);
     });
 
@@ -145,6 +150,63 @@ describe("appointment reminder scheduling", () => {
             expect.objectContaining({
                 actor_user_id: 5,
                 actor_snapshot: "Administrator 5",
+            }),
+            { transaction },
+        );
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actor_user_id: 5,
+                action: "AdminAppointmentCreated",
+                target_type: "Appointment",
+                target_id: "99",
+            }),
+            { transaction },
+        );
+    });
+
+    test("rolls back booking when its audit record cannot be persisted", async () => {
+        AuditLog.create.mockRejectedValue(new Error("audit unavailable"));
+
+        await expect(
+            bookAppointment({
+                userId: 2,
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+                reason: "Sensitive clinical detail",
+            }),
+        ).rejects.toThrow("audit unavailable");
+
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
+        expect(JSON.stringify(AuditLog.create.mock.calls[0][0])).not.toContain(
+            "Sensitive clinical detail",
+        );
+        expect(AuditLog.create.mock.calls[0][0].reason).not.toContain("Sensitive clinical detail");
+    });
+
+    test("records patient cancellation once without storing the patient's identity", async () => {
+        const appointment = {
+            id: 33,
+            patient_id: 12,
+            start_at: new Date("2026-11-03T15:30:00.000Z"),
+            end_at: new Date("2026-11-03T16:00:00.000Z"),
+            status: { name: "Confirmed" },
+            update: jest.fn(),
+        };
+        Appointment.findOne.mockResolvedValue(appointment);
+        AppointmentStatus.findOne.mockResolvedValue({ id: 2, name: "Cancelled" });
+
+        await cancelPatientAppointment({ userId: 2, appointmentId: 33 });
+
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actor_user_id: 2,
+                action: "AppointmentCancelled",
+                target_type: "Appointment",
+                target_id: "33",
             }),
             { transaction },
         );

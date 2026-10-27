@@ -3,6 +3,9 @@ import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globa
 jest.unstable_mockModule("../../../config/database.js", () => ({
     default: { transaction: jest.fn() },
 }));
+jest.unstable_mockModule("../../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
+}));
 
 jest.unstable_mockModule("../../../src/models/associations.js", () => {
     const model = () => ({
@@ -44,6 +47,7 @@ const {
 } = await import("../../../src/models/associations.js");
 const { cancelPendingAppointmentReminders, enqueueAppointmentNotifications } =
     await import("../../../src/modules/patient/services/notificationAutomationService.js");
+const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
 const { reschedulePatientAppointment } =
     await import("../../../src/modules/patient/services/appointmentService.js");
 
@@ -65,6 +69,7 @@ describe("appointment rescheduling", () => {
         DoctorAvailability.findOne.mockResolvedValue({ id: 2 });
         DoctorScheduleException.findOne.mockResolvedValue(null);
         AppointmentHistory.create.mockResolvedValue({});
+        AuditLog.create.mockResolvedValue({ id: 1 });
         cancelPendingAppointmentReminders.mockResolvedValue([]);
         enqueueAppointmentNotifications.mockResolvedValue([]);
 
@@ -132,6 +137,22 @@ describe("appointment rescheduling", () => {
             }),
             { transaction },
         );
+        expect(AuditLog.create).toHaveBeenCalledTimes(1);
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                actor_user_id: 5,
+                actor_snapshot: "Administrator 5",
+                action: "AdminAppointmentRescheduled",
+                target_type: "Appointment",
+                target_id: "17",
+                changes: expect.objectContaining({
+                    previous: expect.objectContaining({ startAt: expect.any(String) }),
+                    next: expect.objectContaining({ startAt: expect.any(String) }),
+                }),
+            }),
+            { transaction },
+        );
+        expect(JSON.stringify(AuditLog.create.mock.calls[0][0])).not.toContain("Nueva valoración");
         expect(cancelPendingAppointmentReminders).toHaveBeenCalledWith(17, transaction);
         expect(enqueueAppointmentNotifications).toHaveBeenCalledWith(
             expect.objectContaining({ appointmentId: 17, eventType: "appointment_reschedule" }),
@@ -156,6 +177,7 @@ describe("appointment rescheduling", () => {
 
         expect(appointment.update).not.toHaveBeenCalled();
         expect(AppointmentHistory.create).not.toHaveBeenCalled();
+        expect(AuditLog.create).not.toHaveBeenCalled();
     });
 
     test("preserves the appointment when the requested slot has a conflict", async () => {
