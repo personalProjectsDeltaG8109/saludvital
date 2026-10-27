@@ -18,6 +18,7 @@ const markup = `
                 </div></details></section>
                 <p data-audit-loading role="status">Cargando registros...</p><p data-audit-error role="alert" hidden></p><p data-audit-empty hidden>No hay registros que coincidan con los filtros seleccionados.</p>
                 <section data-audit-results hidden><div class="admin-audit-table-wrap"><table class="admin-audit-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Detalle</th></tr></thead><tbody data-audit-table-body></tbody></table></div><ul class="admin-audit-cards" data-audit-card-list></ul><footer class="admin-audit-footer"><p data-audit-count></p><nav data-audit-pagination aria-label="Paginación de auditoría" hidden></nav></footer></section>
+                <dialog data-audit-detail-dialog aria-labelledby="audit-detail-title"><header><h2 id="audit-detail-title">Detalle del evento</h2><button type="button" data-audit-detail-close aria-label="Cerrar detalle">×</button></header><p data-audit-detail-loading role="status" hidden></p><p data-audit-detail-error role="alert" hidden></p><div data-audit-detail-content hidden><dl data-audit-detail-fields></dl><section data-audit-change-section hidden><div data-audit-change-groups></div></section></div></dialog>
             </main>
         </div>
     </body></html>`;
@@ -37,6 +38,27 @@ try {
         window.fetch = async (url) => {
             const requestUrl = new URL(url, "http://localhost");
             window.auditRequests.push(requestUrl);
+            if (requestUrl.pathname === "/api/admin/audit-logs/1") {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        id: 1,
+                        occurredAt: "2026-10-20T15:30:00.000Z",
+                        actor: "Administrador #12",
+                        module: "Usuarios y roles",
+                        action: "Actualización de cuenta",
+                        description: "Se actualizaron los permisos de una cuenta.",
+                        targetType: "Usuarios y roles",
+                        targetId: "21",
+                        result: "Correcto",
+                        changes: {
+                            before: [{ label: "Estado activo", value: "Sí" }],
+                            after: [{ label: "Estado activo", value: "No" }],
+                            recorded: [],
+                        },
+                    }),
+                };
+            }
             if (window.auditMode === "error") {
                 return {
                     ok: false,
@@ -89,6 +111,13 @@ try {
         .getByText("Texto <img src=x onerror=alert(1)> seguro")
         .waitFor();
     if (await page.locator("img").count()) throw new Error("Audit text must not render as HTML.");
+
+    await page.getByRole("button", { name: "Ver detalle del evento #1" }).click();
+    await page.getByText("Se actualizaron los permisos de una cuenta.").waitFor();
+    if ((await page.locator("dialog").getByText("Administrador #12").count()) !== 1) {
+        throw new Error("The event detail view must display the persisted responsible user.");
+    }
+    await page.locator("[data-audit-detail-close]").click();
     if (await page.getByRole("button", { name: "Buscar" }).count())
         throw new Error("Audit filters must not require a Search button.");
 

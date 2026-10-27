@@ -133,11 +133,12 @@
     letter-spacing: 0.035em;
 }
 
-.admin-audit-table th:nth-child(1) { width: 15%; }
-.admin-audit-table th:nth-child(2) { width: 15%; }
-.admin-audit-table th:nth-child(3) { width: 17%; }
-.admin-audit-table th:nth-child(4) { width: 15%; }
-.admin-audit-table th:nth-child(5) { width: 38%; }
+.admin-audit-table th:nth-child(1) { width: 14%; }
+.admin-audit-table th:nth-child(2) { width: 13%; }
+.admin-audit-table th:nth-child(3) { width: 15%; }
+.admin-audit-table th:nth-child(4) { width: 14%; }
+.admin-audit-table th:nth-child(5) { width: 31%; }
+.admin-audit-table th:nth-child(6) { width: 13%; }
 
 .admin-audit-table td {
     padding: 14px;
@@ -203,6 +204,143 @@
 .admin-audit-action.is-error {
     color: #bd2730;
     background: #ffebeb;
+}
+
+.admin-audit-detail-button {
+    min-height: 34px;
+    padding: 5px 9px;
+    border: 1px solid #cfe0f2;
+    border-radius: 7px;
+    color: #075fc9;
+    background: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-audit-detail-button:hover {
+    background: #eaf4ff;
+}
+
+.admin-audit-detail-button:focus-visible,
+.admin-audit-detail-close:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 30%);
+    outline-offset: 2px;
+}
+
+.admin-audit-detail-dialog {
+    width: min(640px, calc(100vw - 24px));
+    max-height: min(85vh, 760px);
+    margin: auto;
+    padding: 22px;
+    overflow-y: auto;
+    border: 1px solid #dce7f3;
+    border-radius: 16px;
+    color: #123b73;
+    background: #fff;
+    box-shadow: 0 22px 70px rgb(10 37 69 / 24%);
+}
+
+.admin-audit-detail-dialog::backdrop {
+    background: rgb(8 28 54 / 48%);
+}
+
+.admin-audit-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.admin-audit-detail-header h2 {
+    margin: 0;
+    color: #092f78;
+    font-size: 22px;
+}
+
+.admin-audit-detail-header .admin-eyebrow {
+    margin: 0 0 4px;
+    color: #607b9b;
+    font-size: 11px;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-audit-detail-close {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 8px;
+    color: #315985;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.admin-audit-detail-close:hover {
+    background: #f1f6fc;
+}
+
+.admin-audit-detail-loading,
+.admin-audit-detail-error {
+    margin: 12px 0;
+    color: #526d90;
+    font-size: 14px;
+}
+
+.admin-audit-detail-error {
+    color: #b4232d;
+}
+
+.admin-audit-detail-fields,
+.admin-audit-change-group dl {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.5fr);
+    gap: 9px 16px;
+    margin: 0;
+}
+
+.admin-audit-detail-fields dt,
+.admin-audit-change-group dt {
+    color: #607b9b;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-audit-detail-fields dd,
+.admin-audit-change-group dd {
+    min-width: 0;
+    margin: 0;
+    color: #183e72;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.admin-audit-change-section {
+    margin-top: 22px;
+    padding-top: 17px;
+    border-top: 1px solid #e7eef6;
+}
+
+.admin-audit-change-section h3 {
+    margin: 0 0 12px;
+    color: #092f78;
+    font-size: 16px;
+}
+
+.admin-audit-change-groups {
+    display: grid;
+    gap: 15px;
+}
+
+.admin-audit-change-group h4 {
+    margin: 0 0 9px;
+    color: #315985;
+    font-size: 13px;
 }
 
 .admin-audit-cards {
@@ -401,6 +539,11 @@
         font-size: 10px;
     }
 
+    .admin-audit-card-detail {
+        grid-column: 2 / -1;
+        justify-self: start;
+    }
+
     .admin-audit-footer {
         align-items: flex-start;
         flex-direction: column;
@@ -421,5 +564,20 @@
         min-height: 32px;
         padding: 0 7px;
         font-size: 11px;
+    }
+
+    .admin-audit-detail-dialog {
+        padding: 17px 15px;
+    }
+
+    .admin-audit-detail-fields,
+    .admin-audit-change-group dl {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 4px;
+    }
+
+    .admin-audit-detail-fields dd,
+    .admin-audit-change-group dd {
+        margin-bottom: 8px;
     }
 }

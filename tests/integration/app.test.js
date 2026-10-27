@@ -358,4 +358,11 @@ describe("SaludVital application", () => {
         expect(response.status).toBe(303);
         expect(response.headers.location).toBe("/login");
     });
+
+    test("audit event details require an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/audit-logs/21").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
 });

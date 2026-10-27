@@ -69,6 +69,7 @@ html(lang="es")
                                     th(scope="col") Módulo
                                     th(scope="col") Acción
                                     th(scope="col") Detalle
+                                    th(scope="col") Evento
                             tbody(data-audit-table-body)
                     ul.admin-audit-cards(data-audit-card-list, aria-live="polite")
                     footer.admin-audit-footer
@@ -78,6 +79,37 @@ html(lang="es")
                             data-audit-pagination,
                             hidden
                         )
+
+                dialog.admin-audit-detail-dialog(
+                    data-audit-detail-dialog,
+                    aria-labelledby="audit-detail-title"
+                )
+                    header.admin-audit-detail-header
+                        div
+                            p.admin-eyebrow Control y seguimiento
+                            h2#audit-detail-title Detalle del evento
+                        button.admin-audit-detail-close(
+                            type="button",
+                            data-audit-detail-close,
+                            aria-label="Cerrar detalle"
+                        ) ×
+                    p.admin-audit-detail-loading(
+                        role="status",
+                        aria-live="polite",
+                        data-audit-detail-loading,
+                        hidden
+                    ) Cargando detalle del evento...
+                    p.admin-audit-detail-error(
+                        role="alert",
+                        aria-live="assertive",
+                        data-audit-detail-error,
+                        hidden
+                    )
+                    div(data-audit-detail-content, hidden)
+                        dl.admin-audit-detail-fields(data-audit-detail-fields)
+                        section.admin-audit-change-section(data-audit-change-section, hidden)
+                            h3 Cambios registrados
+                            div(data-audit-change-groups)
 
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-audit.js", defer)

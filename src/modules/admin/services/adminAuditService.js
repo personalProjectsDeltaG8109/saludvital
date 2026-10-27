@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import { Appointment } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
 
 const PAGE_SIZE = 10;
@@ -48,6 +49,30 @@ const EVENT_DESCRIPTIONS = {
     AdminUserAccountUpdated: "Se actualizaron los permisos o el estado de una cuenta",
     AdminUserProfileUpdated: "Se actualizó un perfil de usuario",
 };
+
+const CHANGE_LABELS = {
+    cancelledAppointmentCount: "Citas canceladas",
+    cancellationCause: "Motivo de cancelación",
+    dayOfWeek: "Día de la semana",
+    doctorId: "Identificador del médico",
+    endAt: "Fecha y hora de finalización",
+    endTime: "Hora de finalización",
+    isActive: "Estado activo",
+    next: "Nuevo valor",
+    previous: "Valor anterior",
+    roleId: "Identificador del rol",
+    startAt: "Fecha y hora de inicio",
+    startTime: "Hora de inicio",
+    specialtyId: "Identificador de especialidad",
+    startDate: "Fecha inicial",
+    status: "Estado",
+    type: "Tipo",
+    validFrom: "Vigente desde",
+    validUntil: "Vigente hasta",
+};
+
+const SAFE_CHANGE_KEYS = new Set(Object.keys(CHANGE_LABELS));
+const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 function createAuditError(message) {
     const error = new Error(message);
@@ -118,17 +143,24 @@ function getActorLabel(record) {
 
 function getSafeDescription(record) {
     const description = EVENT_DESCRIPTIONS[record.action] || "Se registró una acción del sistema";
-    if (!record.target_id) return `${description}.`;
+    const targetId = getSafeTargetId(record.target_id);
+    if (!targetId) return `${description}.`;
 
     if (record.target_type === "Appointment") {
-        return `${description} #${record.target_id}.`;
+        return `${description} #${targetId}.`;
     }
 
     if (record.target_type === "User") {
-        return `${description} #${record.target_id}.`;
+        return `${description} #${targetId}.`;
     }
 
-    return `${description} (registro #${record.target_id}).`;
+    return `${description} (registro #${targetId}).`;
+}
+
+function getSafeTargetId(value) {
+    if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
 }
 
 function formatAuditRecord(record) {
@@ -139,6 +171,154 @@ function formatAuditRecord(record) {
         module: MODULE_LABELS[record.target_type] || "Otros",
         action: ACTION_LABELS[record.action] || "Actividad",
         description: getSafeDescription(record),
+    };
+}
+
+function parseAuditId(value) {
+    if (typeof value !== "string" || !/^\d+$/.test(value)) {
+        throw createAuditError("El identificador del evento no es válido.");
+    }
+
+    const id = Number(value);
+    if (!Number.isSafeInteger(id) || id < 1) {
+        throw createAuditError("El identificador del evento no es válido.");
+    }
+
+    return id;
+}
+
+function formatChangeValue(key, value) {
+    if (key === "dayOfWeek") {
+        return Number.isInteger(value) && value >= 1 && value <= 7
+            ? WEEKDAY_LABELS[value - 1]
+            : null;
+    }
+    if (typeof value === "boolean") return value ? "Sí" : "No";
+    if (typeof value === "number" && Number.isSafeInteger(value)) return String(value);
+    if (typeof value !== "string") return null;
+
+    if (key === "status") {
+        return { Confirmed: "Confirmada", Cancelled: "Cancelada" }[value] || null;
+    }
+    if (key === "cancellationCause") {
+        return (
+            {
+                AdditionalAvailabilityDeactivated: "Se desactivó la disponibilidad adicional",
+            }[value] || null
+        );
+    }
+    if (key === "type") {
+        return (
+            {
+                Unavailable: "No disponible",
+                AdditionalAvailability: "Disponibilidad adicional",
+            }[value] || null
+        );
+    }
+    if (["startTime", "endTime"].includes(key)) {
+        return /^\d{2}:\d{2}(?::\d{2})?$/.test(value) ? value.slice(0, 5) : null;
+    }
+    if (["startAt", "endAt", "validFrom", "validUntil", "startDate"].includes(key)) {
+        if (
+            ["validFrom", "validUntil", "startDate"].includes(key) &&
+            /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ) {
+            const date = new Date(`${value}T00:00:00.000Z`);
+            return date.toISOString().slice(0, 10) === value ? value : null;
+        }
+        if (!/^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z)?$/.test(value)) {
+            return null;
+        }
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date.toISOString();
+    }
+
+    return null;
+}
+
+function formatChangeGroup(values) {
+    if (!values || typeof values !== "object" || Array.isArray(values)) return [];
+
+    return Object.entries(values).flatMap(([key, value]) => {
+        if (!SAFE_CHANGE_KEYS.has(key)) return [];
+        const formattedValue = formatChangeValue(key, value);
+        if (formattedValue === null) return [];
+        return [{ label: CHANGE_LABELS[key], value: formattedValue }];
+    });
+}
+
+function getSafeChanges(changes) {
+    if (!changes || typeof changes !== "object" || Array.isArray(changes)) return null;
+
+    const before = formatChangeGroup(changes.before ?? changes.previous);
+    const after = formatChangeGroup(changes.after ?? changes.next);
+    const recorded = formatChangeGroup(
+        Object.fromEntries(
+            Object.entries(changes).filter(
+                ([key]) => !["before", "after", "previous", "next", "added"].includes(key),
+            ),
+        ),
+    );
+
+    if (!before.length && !after.length && !recorded.length) return null;
+    return { before, after, recorded };
+}
+
+/** Return one persisted audit event with a strict allowlist for change values. */
+export async function getAdminAuditEvent(rawId) {
+    const id = parseAuditId(rawId);
+    const record = await AuditLog.findByPk(id, {
+        attributes: [
+            "id",
+            "actor_user_id",
+            "actor_snapshot",
+            "action",
+            "target_type",
+            "target_id",
+            "changes",
+            "result",
+            "occurred_at",
+        ],
+    });
+
+    if (!record) {
+        const error = new Error("No encontramos el evento de auditoría solicitado.");
+        error.statusCode = 404;
+        throw error;
+    }
+
+    const summary = formatAuditRecord(record);
+    const isAdditionalAvailabilityCancellation =
+        record.action === "AdminAppointmentCancelled" &&
+        record.changes?.cancellationCause === "AdditionalAvailabilityDeactivated";
+    if (isAdditionalAvailabilityCancellation) {
+        const targetId = getSafeTargetId(record.target_id);
+        const appointment = targetId
+            ? await Appointment.findByPk(Number(targetId), {
+                  attributes: ["id"],
+                  include: [
+                      {
+                          association: "patient",
+                          attributes: ["first_name", "last_name"],
+                          required: false,
+                      },
+                  ],
+              })
+            : null;
+        const patientName = [appointment?.patient?.first_name, appointment?.patient?.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+        const patientDescription = patientName ? ` del paciente ${patientName}` : "";
+        const appointmentReference = targetId ? ` #${targetId}` : "";
+        summary.description = `La cita${appointmentReference}${patientDescription} se canceló porque el administrador #${record.actor_user_id} desactivó la disponibilidad adicional.`;
+    }
+    return {
+        ...summary,
+        targetType: MODULE_LABELS[record.target_type] || "Otros",
+        targetId: getSafeTargetId(record.target_id),
+        result: { Success: "Correcto", Failure: "Fallido" }[record.result] || null,
+        changes: getSafeChanges(record.changes),
     };
 }
 
