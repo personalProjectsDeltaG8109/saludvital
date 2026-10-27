@@ -207,6 +207,7 @@ export async function getAdminDoctorWeeklySchedule(rawDoctorId, rawWeekStart) {
         DoctorScheduleException.findAll({
             where: {
                 doctor_id: doctorId,
+                is_active: true,
                 exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
                 start_at: { [Op.lt]: week.endAt },
                 end_at: { [Op.gt]: week.startAt },

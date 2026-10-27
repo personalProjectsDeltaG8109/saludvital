@@ -39,14 +39,18 @@ const DoctorScheduleException = database.define(
             type: DataTypes.STRING(100),
             allowNull: false,
         },
+        is_active: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true,
+        },
     },
     {
-        // This table only has created_at, not updated_at.
         tableName: "doctor_schedule_exceptions",
         freezeTableName: true,
         timestamps: true,
         createdAt: "created_at",
-        updatedAt: false,
+        updatedAt: "updated_at",
     },
 );
 

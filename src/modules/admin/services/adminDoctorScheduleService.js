@@ -185,6 +185,7 @@ async function countAffectedAppointments(now) {
         DoctorScheduleException.findAll({
             where: {
                 exception_type: "Unavailable",
+                is_active: true,
                 end_at: { [Op.gt]: now },
             },
             attributes: ["doctor_id", "start_at", "end_at"],
@@ -273,6 +274,7 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
         }),
         DoctorScheduleException.findAll({
             where: {
+                is_active: true,
                 start_at: { [Op.lt]: exceptionWindowEnd },
                 end_at: { [Op.gt]: exceptionWindowStart },
             },
