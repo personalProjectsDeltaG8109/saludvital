@@ -12,9 +12,9 @@ const markup = `
         <button type="button" class="admin-sidebar-backdrop" data-admin-close aria-label="Cerrar menú"></button>
         <div class="admin-main-shell">
         <header class="admin-topbar"><button class="admin-menu-toggle" type="button" data-admin-open aria-expanded="false" aria-controls="schedule-sidebar"><span></span><span></span><span></span></button><form class="admin-global-search"><input data-user-top-search></form></header>
-        <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules" data-affected-appointments-endpoint="/api/admin/doctor-schedules/affected-appointments">
+        <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules">
             <header class="schedule-heading"><div class="schedule-heading-icon">◷</div><div><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios médicos.</p></div></header>
-            <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong><strong data-stat-affected>—</strong></section>
+            <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong></section>
             <form class="schedule-filters" data-schedule-filters>
                 <label class="schedule-search">Buscar médico<input type="search" data-schedule-search></label>
                 <label>Médico<select data-schedule-doctor><option value="">Todos</option></select></label>
@@ -31,12 +31,6 @@ const markup = `
                     <div data-schedule-doctor-list></div><p data-schedule-empty hidden>No hay médicos que coincidan con los filtros seleccionados.</p>
                 </section>
                 <aside class="schedule-panel"><h2>Próximas excepciones</h2><p data-schedule-exceptions-empty hidden>No hay excepciones próximas.</p><ul data-schedule-exceptions></ul></aside>
-                <aside class="schedule-panel schedule-affected-panel">
-                    <h2>Citas afectadas por cambios</h2><p data-affected-count></p>
-                    <p data-affected-loading role="status">Cargando citas afectadas...</p><p data-affected-error role="alert" hidden></p>
-                    <p data-affected-empty hidden>No hay citas afectadas.</p><ul class="schedule-affected-list" data-affected-list aria-live="polite"></ul>
-                    <nav class="schedule-affected-pagination" data-affected-pagination hidden><button type="button" data-affected-previous>Anterior</button><span data-affected-page></span><button type="button" data-affected-next>Siguiente</button></nav>
-                </aside>
             </div>
         </main></div>
     </body></html>`;
@@ -53,48 +47,9 @@ try {
     await page.evaluate(() => {
         window.scheduleRequests = [];
         window.weeklyRequests = [];
-        window.affectedRequests = [];
         window.scheduleMode = "success";
         window.fetch = async (url) => {
             const requestUrl = new URL(url, "http://localhost");
-            if (requestUrl.pathname.endsWith("/affected-appointments")) {
-                const pageNumber = Number(requestUrl.searchParams.get("page") || 1);
-                window.affectedRequests.push(pageNumber);
-                const appointments = Array.from({ length: 6 }, (_, index) => ({
-                    id: 201 + index,
-                    reference: `Cita #${201 + index}`,
-                    dateLabel: "sábado, 31 de octubre de 2026",
-                    startTime: "09:30",
-                    endTime: "10:00",
-                    doctorName: "Dra. Ana Torres",
-                    statusLabel: "Confirmada",
-                    reason:
-                        index === 1
-                            ? "Permiso personal"
-                            : "El horario activo no cubre este intervalo.",
-                    exception:
-                        index === 1
-                            ? {
-                                  startDate: "2026-10-31",
-                                  startTime: "09:00",
-                                  endDate: "2026-10-31",
-                                  endTime: "10:30",
-                              }
-                            : null,
-                    detailsHref: `/admin/appointments/${201 + index}`,
-                }));
-                const startIndex = (pageNumber - 1) * 5;
-                return {
-                    ok: true,
-                    json: async () => ({
-                        appointments: appointments.slice(startIndex, startIndex + 5),
-                        totalItems: appointments.length,
-                        page: pageNumber,
-                        pageSize: 5,
-                        totalPages: 2,
-                    }),
-                };
-            }
             if (requestUrl.pathname.endsWith("/week")) {
                 window.weeklyRequests.push({
                     doctorId: requestUrl.pathname.split("/").at(-2),
@@ -207,7 +162,6 @@ try {
                 activeDoctors: 18,
                 configuredSchedules: 16,
                 upcomingExceptions: 1,
-                affectedAppointments: 6,
             },
             doctors: [
                 {
@@ -241,7 +195,6 @@ try {
     await page.waitForTimeout(1000);
     await page.locator("[data-schedule-doctor-list]").getByText("Dra. Ana Torres").waitFor();
     await page.getByRole("heading", { name: "Permiso personal" }).waitFor();
-    await page.getByText("Cita #201").waitFor();
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(200);
     await page.locator("[data-admin-open]").click();
@@ -262,23 +215,6 @@ try {
     }
     await page.waitForTimeout(200);
     await page.setViewportSize({ width: 1440, height: 900 });
-    if ((await page.locator("[data-affected-count]").textContent()) !== "6 citas afectadas") {
-        throw new Error("The affected appointment list count must match the summary count.");
-    }
-    if (
-        !(
-            await page.getByRole("link", { name: "Ver detalles de Cita #201" }).getAttribute("href")
-        ).endsWith("/admin/appointments/201")
-    ) {
-        throw new Error(
-            "Affected appointments should link to the existing appointment details view.",
-        );
-    }
-    await page.locator("[data-affected-next]").click();
-    await page.getByText("Cita #206").waitFor();
-    if ((await page.evaluate(() => window.affectedRequests.at(-1))) !== 2) {
-        throw new Error("Affected appointment pagination should load the requested page.");
-    }
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
         { label: "tablet", width: 768, height: 1024 },
@@ -291,7 +227,7 @@ try {
         }));
         if (dimensions.documentWidth > dimensions.viewportWidth) {
             throw new Error(
-                `Affected appointment panel overflows at ${viewport.label}: ${JSON.stringify(dimensions)}.`,
+                `The schedule page overflows at ${viewport.label}: ${JSON.stringify(dimensions)}.`,
             );
         }
     }

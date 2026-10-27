@@ -25,7 +25,6 @@
 
     const endpoint = page.dataset.endpoint;
     const exceptionsEndpoint = page.dataset.exceptionsEndpoint;
-    const affectedAppointmentsEndpoint = page.dataset.affectedAppointmentsEndpoint;
     const filterForm = page.querySelector("[data-schedule-filters]");
     const searchInput = page.querySelector("[data-schedule-search]");
     const doctorSelect = page.querySelector("[data-schedule-doctor]");
@@ -64,7 +63,6 @@
     let managedExceptions = [];
     let exceptionDoctors = [];
     let pendingExceptionStatusRequest = null;
-    let affectedAppointmentsPageNumber = 1;
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
@@ -76,15 +74,6 @@
     const weeklyError = page.querySelector("[data-weekly-error]");
     const exceptionsList = page.querySelector("[data-schedule-exceptions]");
     const exceptionsEmpty = page.querySelector("[data-schedule-exceptions-empty]");
-    const affectedAppointmentsList = page.querySelector("[data-affected-list]");
-    const affectedAppointmentsLoading = page.querySelector("[data-affected-loading]");
-    const affectedAppointmentsError = page.querySelector("[data-affected-error]");
-    const affectedAppointmentsEmpty = page.querySelector("[data-affected-empty]");
-    const affectedAppointmentsCount = page.querySelector("[data-affected-count]");
-    const affectedAppointmentsPagination = page.querySelector("[data-affected-pagination]");
-    const affectedAppointmentsPageLabel = page.querySelector("[data-affected-page]");
-    const affectedAppointmentsPrevious = page.querySelector("[data-affected-previous]");
-    const affectedAppointmentsNext = page.querySelector("[data-affected-next]");
     const topbarSearch = document.querySelector("[data-user-top-search]");
     const topbarForm = topbarSearch?.closest("form");
     const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -646,86 +635,6 @@
         </li>`;
     }
 
-    function formatAffectedExceptionRange(exception) {
-        const startDate = formatDate(new Date(`${exception.startDate}T12:00:00-05:00`), {
-            day: "numeric",
-            month: "short",
-        });
-        const endDate = formatDate(new Date(`${exception.endDate}T12:00:00-05:00`), {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-        });
-        return `${startDate} ${formatTime(exception.startTime)} – ${endDate} ${formatTime(exception.endTime)}`;
-    }
-
-    function renderAffectedAppointments(data) {
-        affectedAppointmentsList.replaceChildren();
-        affectedAppointmentsCount.textContent = `${data.totalItems} ${data.totalItems === 1 ? "cita afectada" : "citas afectadas"}`;
-        for (const appointment of data.appointments) {
-            const item = document.createElement("li");
-            item.className = "schedule-affected-item";
-            const details = document.createElement("div");
-            const reference = document.createElement("h3");
-            reference.textContent = appointment.reference;
-            const date = document.createElement("p");
-            date.textContent = `${appointment.dateLabel} · ${formatTime(appointment.startTime)}–${formatTime(appointment.endTime)}`;
-            const doctor = document.createElement("p");
-            doctor.textContent = appointment.doctorName;
-            const status = document.createElement("span");
-            status.className = "schedule-affected-status";
-            status.textContent = appointment.statusLabel;
-            const cause = document.createElement("p");
-            cause.className = "schedule-affected-cause";
-            cause.textContent = appointment.reason;
-            details.append(reference, date, doctor, status, cause);
-            if (appointment.exception) {
-                const exceptionRange = document.createElement("p");
-                exceptionRange.className = "schedule-affected-exception-range";
-                exceptionRange.textContent = `Excepción: ${formatAffectedExceptionRange(appointment.exception)}`;
-                details.append(exceptionRange);
-            }
-            const detailsLink = document.createElement("a");
-            detailsLink.href = `/admin/appointments/${appointment.id}`;
-            detailsLink.textContent = "Ver cita";
-            detailsLink.setAttribute("aria-label", `Ver detalles de ${appointment.reference}`);
-            item.append(details, detailsLink);
-            affectedAppointmentsList.append(item);
-        }
-
-        affectedAppointmentsEmpty.hidden = data.totalItems > 0;
-        affectedAppointmentsPageNumber = data.page;
-        affectedAppointmentsPagination.hidden = data.totalPages <= 1;
-        affectedAppointmentsPageLabel.textContent = `Página ${data.page} de ${data.totalPages}`;
-        affectedAppointmentsPrevious.disabled = data.page <= 1;
-        affectedAppointmentsNext.disabled = data.page >= data.totalPages;
-    }
-
-    async function loadAffectedAppointments(pageNumber = 1) {
-        if (!affectedAppointmentsEndpoint || !affectedAppointmentsList) return;
-        affectedAppointmentsLoading.hidden = false;
-        affectedAppointmentsError.hidden = true;
-        affectedAppointmentsEmpty.hidden = true;
-        affectedAppointmentsPagination.hidden = true;
-        affectedAppointmentsList.replaceChildren();
-        try {
-            const params = new URLSearchParams({ page: String(pageNumber), pageSize: "5" });
-            const response = await fetch(`${affectedAppointmentsEndpoint}?${params}`, {
-                headers: { Accept: "application/json" },
-            });
-            const data = await response.json();
-            if (!response.ok)
-                throw new Error(data.message || "No pudimos cargar las citas afectadas.");
-            renderAffectedAppointments(data);
-        } catch (error) {
-            affectedAppointmentsError.textContent =
-                error.message || "No pudimos cargar las citas afectadas.";
-            affectedAppointmentsError.hidden = false;
-        } finally {
-            affectedAppointmentsLoading.hidden = true;
-        }
-    }
-
     function formatExceptionRange(startAt, endAt) {
         const localStart =
             typeof startAt === "string" && startAt.includes("T")
@@ -998,7 +907,6 @@
             setText("[data-stat-active-doctors]", data.summary.activeDoctors);
             setText("[data-stat-configured]", data.summary.configuredSchedules);
             setText("[data-stat-exceptions]", data.summary.upcomingExceptions);
-            setText("[data-stat-affected]", data.summary.affectedAppointments);
             renderWeekLabel(data.week);
             updateConfigurationOptions(data.doctorOptions);
             renderSelectOptions(
@@ -1013,7 +921,6 @@
             weeklyView.hidden = !doctorSelect.value;
             exceptionsList.innerHTML = data.exceptions.map(renderException).join("");
             exceptionsEmpty.hidden = data.exceptions.length > 0;
-            loadAffectedAppointments(1);
             feedback.hidden = true;
             emptyMessage.hidden = Boolean(doctorSelect.value) || data.doctors.length > 0;
             doctorList.querySelectorAll("[data-view-week]").forEach((button) => {
@@ -1113,13 +1020,6 @@
         exceptionToolbar.hidden = false;
     });
     exceptionStatus?.addEventListener("change", loadExceptionManager);
-    affectedAppointmentsPrevious?.addEventListener("click", () => {
-        loadAffectedAppointments(affectedAppointmentsPageNumber - 1);
-    });
-    affectedAppointmentsNext?.addEventListener("click", () => {
-        loadAffectedAppointments(affectedAppointmentsPageNumber + 1);
-    });
-
     exceptionForm?.addEventListener("submit", submitExceptionForm);
     exceptionList?.addEventListener("click", async (event) => {
         const editButton = event.target.closest("[data-edit-exception]");

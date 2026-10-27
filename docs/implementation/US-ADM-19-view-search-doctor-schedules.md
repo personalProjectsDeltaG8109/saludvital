@@ -9,8 +9,8 @@ Branch: `feature/us-adm-19-view-search-doctor-schedules`
 ## Acceptance criteria
 
 - Administrator authentication protects the page and schedule directory API.
-- Schedule data, exceptions, doctor accounts, specialties, and affected appointments come from the existing database models.
-- The summary reports active doctors, active doctors with availability in the selected week, exceptions overlapping the next seven calendar days in Bogota, and future confirmed appointments currently outside configured availability or overlapping an unavailable exception.
+- Schedule data, exceptions, doctor accounts, and specialties come from the existing database models.
+- The summary reports active doctors, active doctors with availability in the selected week, and exceptions overlapping the next seven calendar days in Bogota.
 - Administrators can search by doctor name or email and filter by doctor, specialty, schedule configuration, and Monday-to-Sunday week in the `America/Bogota` timezone.
 - Summary counts remain independent from doctor, specialty, and schedule-status filters; the configured-schedule count uses the selected week.
 - Loading, empty, and safe error states are present. The Spanish page uses the shared administrator sidebar and topbar and adapts to mobile, tablet, and desktop.
@@ -18,11 +18,16 @@ Branch: `feature/us-adm-19-view-search-doctor-schedules`
 
 ## Implementation notes
 
-- Added a protected administrator page and JSON endpoint using the existing doctor, availability, exception, specialty, appointment, and status models.
+- Added a protected administrator page and JSON endpoint using the existing doctor, availability, exception, and specialty models.
 - Reused the shared administrator shell and enabled its existing Horarios y disponibilidad navigation item.
-- Added doctor search and filters, a weekly availability view, summary cards, exception preview, and responsive layouts. The page does not expose patient data.
-- The exception model has no active flag; existing exception records are treated according to their stored type and dates. The affected appointment count is a current-state calculation, not historical impact tracking.
+- Added doctor search and filters, a weekly availability view, three summary cards, exception preview, and responsive layouts. The page does not expose patient data.
+- The exception model has no active flag; existing exception records are treated according to their stored type and dates.
 - No schema changes or new dependencies were needed.
+
+## Product change
+
+- Removed the passive affected-appointments summary count and list from this page. The current summary contains active doctors, configured schedules, and upcoming exceptions.
+- Appointment-impact confirmation remains in schedule and exception mutation workflows.
 
 ## Verification
 

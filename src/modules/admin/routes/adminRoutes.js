@@ -1,10 +1,7 @@
 ﻿import { Router } from "express";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
-import {
-    getAdminAffectedAppointments,
-    getAdminDoctorSchedules,
-} from "../services/adminDoctorScheduleService.js";
+import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.js";
 import { getAdminDoctorWeeklySchedule } from "../services/adminDoctorWeeklyScheduleService.js";
 import {
     createAdminDoctorScheduleException,
@@ -185,19 +182,6 @@ adminRoutes.get("/api/admin/doctor-schedules", ...requireAdministrator, async (r
         return next(error);
     }
 });
-adminRoutes.get(
-    "/api/admin/doctor-schedules/affected-appointments",
-    ...requireAdministrator,
-    async (req, res, next) => {
-        try {
-            return res.json(await getAdminAffectedAppointments(req.query));
-        } catch (error) {
-            if (error.statusCode)
-                return res.status(error.statusCode).json({ message: error.message });
-            return next(error);
-        }
-    },
-);
 adminRoutes.get(
     "/api/admin/doctor-schedules/:doctorId/week",
     ...requireAdministrator,
