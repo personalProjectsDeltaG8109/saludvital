@@ -4,7 +4,7 @@
 
 Withdrawn from the active product scope. The passive affected-appointments panel, summary count, and read-only endpoint were removed after the product decision that this overview is no longer used.
 
-GitHub Issue [#155](https://github.com/personalProjectsDeltaG8109/saludvital/issues/155) has not been changed by this code update. Close it as `not planned` and remove or mark US-ADM-24 as withdrawn in the User Stories wiki when updating the backlog.
+GitHub Issue [#155](https://github.com/personalProjectsDeltaG8109/saludvital/issues/155) is closed as `not planned`. The issue body records the withdrawal decision and clarifies which appointment-impact safeguards remain in place.
 
 ## Kept behavior
 
