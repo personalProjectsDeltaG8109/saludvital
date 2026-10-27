@@ -17,7 +17,7 @@ const markup = `
                     <label>Acción<select data-audit-action><option value="">Todas</option></select></label><label>Módulo<select data-audit-module><option value="">Todos</option></select></label>
                 </div></details></section>
                 <p data-audit-loading role="status">Cargando registros...</p><p data-audit-error role="alert" hidden></p><p data-audit-empty hidden>No hay registros que coincidan con los filtros seleccionados.</p>
-                <section data-audit-results hidden><div class="admin-audit-table-wrap"><table class="admin-audit-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Detalle</th></tr></thead><tbody data-audit-table-body></tbody></table></div><ul class="admin-audit-cards" data-audit-card-list></ul><footer class="admin-audit-footer"><p data-audit-count></p></footer></section>
+                <section data-audit-results hidden><div class="admin-audit-table-wrap"><table class="admin-audit-table"><thead><tr><th>Fecha</th><th>Usuario</th><th>Módulo</th><th>Acción</th><th>Detalle</th></tr></thead><tbody data-audit-table-body></tbody></table></div><ul class="admin-audit-cards" data-audit-card-list></ul><footer class="admin-audit-footer"><p data-audit-count></p><nav data-audit-pagination aria-label="Paginación de auditoría" hidden></nav></footer></section>
             </main>
         </div>
     </body></html>`;
@@ -56,7 +56,13 @@ try {
             return {
                 ok: true,
                 json: async () => ({
-                    totalItems: 1,
+                    totalItems: 25,
+                    pagination: {
+                        page: Number(requestUrl.searchParams.get("page") || 1),
+                        pageSize: 10,
+                        totalItems: 25,
+                        totalPages: 3,
+                    },
                     filters: {
                         actions: [
                             { value: "AdminAppointmentCancelled", label: "Cancelación de cita" },
@@ -83,11 +89,18 @@ try {
         .getByText("Texto <img src=x onerror=alert(1)> seguro")
         .waitFor();
     if (await page.locator("img").count()) throw new Error("Audit text must not render as HTML.");
-    if (await page.locator("button").count())
+    if (await page.getByRole("button", { name: "Buscar" }).count())
         throw new Error("Audit filters must not require a Search button.");
 
+    await page.getByRole("button", { name: "2", exact: true }).click();
+    await page.waitForFunction(() => window.auditRequests.at(-1).searchParams.get("page") === "2");
+
     await page.locator("[data-audit-action]").selectOption("AdminAppointmentCancelled");
-    await page.waitForFunction(() => window.auditRequests.length >= 2);
+    await page.waitForFunction(
+        () =>
+            window.auditRequests.length >= 3 &&
+            window.auditRequests.at(-1).searchParams.get("page") === "1",
+    );
     const filteredQuery = await page.evaluate(() =>
         Object.fromEntries(window.auditRequests.at(-1).searchParams),
     );
@@ -96,7 +109,7 @@ try {
     }
 
     await page.locator("[data-audit-module]").selectOption("Appointment");
-    await page.waitForFunction(() => window.auditRequests.length >= 3);
+    await page.waitForFunction(() => window.auditRequests.length >= 4);
     const moduleQuery = await page.evaluate(() =>
         Object.fromEntries(window.auditRequests.at(-1).searchParams),
     );
@@ -104,7 +117,7 @@ try {
         throw new Error("Module changes must filter immediately.");
     await page.locator("[data-audit-start]").fill("2026-10-20");
     await page.locator("[data-audit-start]").dispatchEvent("change");
-    await page.waitForFunction(() => window.auditRequests.length >= 4);
+    await page.waitForFunction(() => window.auditRequests.length >= 5);
     const dateQuery = await page.evaluate(() =>
         Object.fromEntries(window.auditRequests.at(-1).searchParams),
     );

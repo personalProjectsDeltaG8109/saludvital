@@ -14,8 +14,10 @@
     const tableBody = page.querySelector("[data-audit-table-body]");
     const cardList = page.querySelector("[data-audit-card-list]");
     const countLabel = page.querySelector("[data-audit-count]");
+    const pagination = page.querySelector("[data-audit-pagination]");
     let requestNumber = 0;
     let filterOptionsLoaded = false;
+    let currentPage = 1;
 
     const moduleIcons = {
         "Citas médicas": "▣",
@@ -157,6 +159,60 @@
         filterOptionsLoaded = true;
     }
 
+    function renderPagination(pageInfo) {
+        pagination.replaceChildren();
+        pagination.hidden = pageInfo.totalPages < 2;
+        if (pagination.hidden) return;
+
+        const list = document.createElement("div");
+        list.className = "admin-audit-pagination-list";
+
+        function addPageButton(label, pageNumber, { disabled = false, current = false } = {}) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "admin-audit-page-button";
+            button.textContent = label;
+            button.disabled = disabled;
+            if (current) button.setAttribute("aria-current", "page");
+            button.addEventListener("click", () => {
+                currentPage = pageNumber;
+                loadAuditLogs();
+            });
+            list.append(button);
+        }
+
+        addPageButton("Anterior", pageInfo.page - 1, { disabled: pageInfo.page <= 1 });
+
+        const pageNumbers = new Set([1, pageInfo.totalPages]);
+        for (
+            let pageNumber = Math.max(1, pageInfo.page - 2);
+            pageNumber <= Math.min(pageInfo.totalPages, pageInfo.page + 2);
+            pageNumber += 1
+        ) {
+            pageNumbers.add(pageNumber);
+        }
+
+        let previousPage = 0;
+        for (const pageNumber of [...pageNumbers].sort((first, second) => first - second)) {
+            if (previousPage && pageNumber - previousPage > 1) {
+                const ellipsis = document.createElement("span");
+                ellipsis.className = "admin-audit-pagination-ellipsis";
+                ellipsis.textContent = "…";
+                ellipsis.setAttribute("aria-hidden", "true");
+                list.append(ellipsis);
+            }
+            addPageButton(String(pageNumber), pageNumber, {
+                current: pageNumber === pageInfo.page,
+            });
+            previousPage = pageNumber;
+        }
+
+        addPageButton("Siguiente", pageInfo.page + 1, {
+            disabled: pageInfo.page >= pageInfo.totalPages,
+        });
+        pagination.append(list);
+    }
+
     async function loadAuditLogs() {
         const currentRequest = ++requestNumber;
         loadingMessage.hidden = false;
@@ -170,6 +226,7 @@
         if (endDateInput.value) params.set("endDate", endDateInput.value);
         if (actionSelect.value) params.set("action", actionSelect.value);
         if (moduleSelect.value) params.set("module", moduleSelect.value);
+        params.set("page", String(currentPage));
 
         try {
             const response = await fetch(`${endpoint}?${params.toString()}`, {
@@ -189,11 +246,11 @@
             renderTable(data.records);
             renderCards(data.records);
             results.hidden = false;
-            const shownCount = data.records.length;
-            countLabel.textContent =
-                shownCount < data.totalItems
-                    ? `Mostrando los ${shownCount} registros más recientes de ${data.totalItems}.`
-                    : `Mostrando ${data.totalItems} registros.`;
+            currentPage = data.pagination.page;
+            const firstRecord = (currentPage - 1) * data.pagination.pageSize + 1;
+            const lastRecord = firstRecord + data.records.length - 1;
+            countLabel.textContent = `Mostrando ${firstRecord} a ${lastRecord} de ${data.pagination.totalItems} registros`;
+            renderPagination(data.pagination);
         } catch (error) {
             if (currentRequest !== requestNumber) return;
             loadingMessage.hidden = true;
@@ -203,7 +260,10 @@
     }
 
     [startDateInput, endDateInput, actionSelect, moduleSelect].forEach((control) => {
-        control.addEventListener("change", loadAuditLogs);
+        control.addEventListener("change", () => {
+            currentPage = 1;
+            loadAuditLogs();
+        });
     });
 
     loadAuditLogs();
