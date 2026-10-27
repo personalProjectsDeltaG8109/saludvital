@@ -133,6 +133,16 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("doctor schedule update endpoint requires an authenticated administrator", async () => {
+        const response = await request(app)
+            .patch("/api/admin/doctor-schedules/1")
+            .send({ blocks: [] })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("administrator appointments page requires an authenticated administrator", async () => {
         const response = await request(app).get("/admin/appointments").redirects(0);
 

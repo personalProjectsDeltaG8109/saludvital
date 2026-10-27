@@ -24,7 +24,7 @@ try {
           <div data-schedule-week-label></div><p data-schedule-feedback hidden></p><p data-schedule-error hidden></p>
           <section data-weekly-view hidden><button type="button" data-weekly-clear></button><p data-weekly-doctor-name></p><p data-weekly-date-range></p><p data-weekly-feedback></p><p data-weekly-error hidden></p><div data-weekly-content hidden><div data-weekly-grid></div><p data-weekly-specialty></p><p data-weekly-duration></p><p data-weekly-working-days></p><p data-weekly-working-hours></p><p data-weekly-empty hidden></p></div></section>
           <div data-schedule-doctor-list></div><p data-schedule-empty hidden></p><ul data-schedule-exceptions></ul><p data-schedule-exceptions-empty hidden></p>
-          <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form>
+          <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form><h2 data-config-title>Configurar horario</h2>
             <button type="button" data-config-close>Cerrar</button><p data-config-error hidden></p><p data-config-success hidden></p>
             <select data-config-doctor required></select><input type="date" data-config-valid-from required><input type="date" data-config-valid-until>
             <div data-config-day="1"><input type="checkbox" data-day-enabled><div data-config-intervals><div data-config-interval><input type="time" data-interval-start disabled><input type="time" data-interval-end disabled><button data-remove-interval hidden></button></div></div><button type="button" data-add-interval hidden></button></div>
@@ -67,7 +67,28 @@ try {
                       appointmentDurationMinutes: 30,
                       workingDays: [],
                       week: { start: "2026-10-26", end: "2026-11-01" },
-                      days: Array.from({ length: 7 }, () => ({ events: [] })),
+                      days: [
+                          "2026-10-26",
+                          "2026-10-27",
+                          "2026-10-28",
+                          "2026-10-29",
+                          "2026-10-30",
+                          "2026-10-31",
+                          "2026-11-01",
+                      ].map((date, index) => ({
+                          date,
+                          dayOfWeek: index + 1,
+                          dayLabel: [
+                              "Lunes",
+                              "Martes",
+                              "Miércoles",
+                              "Jueves",
+                              "Viernes",
+                              "Sábado",
+                              "Domingo",
+                          ][index],
+                          events: [],
+                      })),
                   }
                 : {
                       summary: {
