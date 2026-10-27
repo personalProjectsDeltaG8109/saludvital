@@ -8,7 +8,7 @@
 
 ## Acceptance criteria
 
-Implementation follows the 15 acceptance criteria recorded in Issue #151, with the administrator's later instruction that appointments affected by a confirmed schedule change are cancelled and patients notified. Existing weekly availability blocks can be edited individually; the system-wide 30-minute appointment duration remains informational because the current model does not store a per-doctor duration.
+Implementation follows the 18 acceptance criteria recorded in Issue #151. Administrators can edit, add, or remove existing weekly availability intervals. Removal makes an interval unavailable for future bookings while preserving its database record and historical references. The system-wide 30-minute appointment duration remains informational because the current model does not store a per-doctor duration.
 
 ## Implementation
 
