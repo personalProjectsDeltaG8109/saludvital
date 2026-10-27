@@ -34,6 +34,7 @@ function setDefaults() {
     models.DoctorScheduleException.findAll.mockResolvedValue([
         {
             id: 41,
+            is_active: true,
             exception_type: "Unavailable",
             reason: "Permiso personal",
             start_at: new Date("2026-10-27T17:00:00.000Z"),
@@ -41,6 +42,7 @@ function setDefaults() {
         },
         {
             id: 42,
+            is_active: true,
             exception_type: "AdditionalAvailability",
             reason: "Jornada extendida",
             start_at: new Date("2026-10-30T13:00:00.000Z"),
@@ -134,6 +136,7 @@ describe("admin weekly doctor schedule service", () => {
             expect.objectContaining({
                 where: expect.objectContaining({
                     doctor_id: 7,
+                    is_active: true,
                     exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
                 }),
             }),

@@ -211,6 +211,7 @@ describe("admin doctor schedule configuration service", () => {
         ]);
         models.DoctorScheduleException.findAll.mockResolvedValue([
             {
+                is_active: true,
                 start_at: new Date("2026-10-26T13:45:00.000Z"),
                 end_at: new Date("2026-10-26T14:45:00.000Z"),
                 reason: "Permiso personal",
