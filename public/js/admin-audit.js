@@ -1,4 +1,27 @@
 (() => {
+    const adminApp = document.querySelector(".admin-app");
+    const adminSidebar = document.querySelector("[data-admin-sidebar]");
+    const adminMenuButton = document.querySelector("[data-admin-open]");
+
+    function closeAdminSidebar() {
+        adminApp?.classList.remove("is-sidebar-open");
+        adminMenuButton?.setAttribute("aria-expanded", "false");
+    }
+
+    if (adminApp && adminSidebar && adminMenuButton) {
+        adminMenuButton.addEventListener("click", () => {
+            adminApp.classList.add("is-sidebar-open");
+            adminMenuButton.setAttribute("aria-expanded", "true");
+            adminSidebar.querySelector('a[href="/admin/audit"]')?.focus();
+        });
+        document.querySelectorAll("[data-admin-close]").forEach((button) => {
+            button.addEventListener("click", closeAdminSidebar);
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") closeAdminSidebar();
+        });
+    }
+
     const page = document.querySelector("[data-admin-audit]");
     if (!page) return;
 

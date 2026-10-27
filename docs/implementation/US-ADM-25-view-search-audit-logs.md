@@ -13,6 +13,7 @@ Branch: `feature/us-adm-25-view-search-audit-logs`
 - The API returns the ten most recent matching records and the total matching count. Pagination controls are left to US-ADM-26.
 - The response excludes actor snapshots, reasons, and raw change JSON. It identifies responsible actors by their available patient or doctor profile name; administrator accounts use email as a fallback because the user model has no administrator name field. Appointment summaries include patient, doctor, and specialty names when linked records are available. Numeric record and actor IDs are not shown in the interface.
 - Reused the shared administrator sidebar, topbar, authentication middleware, and database schema. No dependencies or migrations were added.
+- Connected the shared mobile menu controls on the audit page; the sidebar opens, closes from its controls or backdrop, and responds to Escape.
 - The responsive page uses a desktop table and mobile cards with loading, empty, and error states.
 
 ## Files
