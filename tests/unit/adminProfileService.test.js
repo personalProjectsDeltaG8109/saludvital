@@ -17,6 +17,7 @@ describe("administrator profile service", () => {
         User.findByPk.mockResolvedValue({
             display_name: "Laura Méndez",
             email: "laura@example.com",
+            email_verified_at: new Date("2026-10-01T10:00:00.000Z"),
             is_active: true,
             created_at: new Date("2025-01-15T10:00:00.000Z"),
             last_login_at: new Date("2026-10-27T10:24:00.000Z"),
@@ -29,6 +30,7 @@ describe("administrator profile service", () => {
         expect(profile).toMatchObject({
             displayName: "Laura Méndez",
             email: "laura@example.com",
+            emailVerified: true,
             role: "Administrator",
             isActive: true,
             initials: "LM",
@@ -40,6 +42,7 @@ describe("administrator profile service", () => {
                 "id",
                 "display_name",
                 "email",
+                "email_verified_at",
                 "phone",
                 "is_active",
                 "created_at",
@@ -76,6 +79,7 @@ describe("administrator profile service", () => {
 
         await expect(getAdminProfile(3)).resolves.toMatchObject({
             displayName: "Juan Montoya",
+            emailVerified: false,
             initials: "JM",
             profilePhotoUrl: null,
             createdAt: null,

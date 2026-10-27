@@ -7,6 +7,10 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
     },
 }));
 
+jest.unstable_mockModule("../../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
+}));
+
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
     EmailOutbox: {
         create: jest.fn(),
@@ -15,6 +19,7 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
         findOne: jest.fn(),
         update: jest.fn(),
     },
+    Rol: {},
     User: {
         findOne: jest.fn(),
         findByPk: jest.fn(),
@@ -35,6 +40,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js"
 const { default: database } = await import("../../../config/database.js");
 const { EmailOutbox, PasswordResetToken, User } =
     await import("../../../src/models/associations.js");
+const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
 const bcrypt = (await import("bcrypt")).default;
 
 const { requestPasswordReset, resetPassword } =
@@ -55,6 +61,7 @@ describe("Password reset service", () => {
         EmailOutbox.create.mockResolvedValue({});
         PasswordResetToken.findOne.mockResolvedValue(null);
         PasswordResetToken.update.mockResolvedValue([0]);
+        AuditLog.create.mockResolvedValue({ id: 1 });
         bcrypt.hash.mockResolvedValue("hashed-password");
     });
 
@@ -169,8 +176,10 @@ describe("Password reset service", () => {
             const resetToken = { user_id: 42 };
             const user = {
                 id: 42,
+                email: "admin@example.com",
                 is_active: true,
                 email_verified_at: new Date(),
+                rol: { name: "Administrator" },
                 update: jest.fn().mockResolvedValue(undefined),
             };
 
@@ -196,6 +205,20 @@ describe("Password reset service", () => {
                 { password_hash: "hashed-password" },
                 { transaction },
             );
+            expect(AuditLog.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actor_user_id: 42,
+                    action: "UserPasswordReset",
+                    target_type: "User",
+                    target_id: "42",
+                    changes: null,
+                    reason: "Account password reset completed.",
+                }),
+                { transaction },
+            );
+            expect(JSON.stringify(AuditLog.create.mock.calls)).not.toMatch(
+                /SecurePass1!|hashed-password|token_hash/i,
+            );
 
             expect(PasswordResetToken.update).toHaveBeenCalledWith(
                 { used_at: expect.any(Date) },
@@ -213,8 +236,10 @@ describe("Password reset service", () => {
             const resetToken = { user_id: 42 };
             const user = {
                 id: 42,
+                email: "admin@example.com",
                 is_active: true,
                 email_verified_at: new Date(),
+                rol: { name: "Administrator" },
                 update: jest.fn().mockResolvedValue(undefined),
             };
 
@@ -229,6 +254,27 @@ describe("Password reset service", () => {
             expect(endUserSessions).toHaveBeenCalledWith("42");
         });
 
+        test("does not change audit behavior for non-administrator password resets", async () => {
+            const resetToken = { user_id: 42 };
+            const user = {
+                id: 42,
+                email: "patient@example.com",
+                is_active: true,
+                email_verified_at: new Date(),
+                rol: { name: "Patient" },
+                update: jest.fn().mockResolvedValue(undefined),
+            };
+            PasswordResetToken.findOne.mockResolvedValue(resetToken);
+            User.findByPk.mockResolvedValue(user);
+
+            await expect(
+                resetPassword("a".repeat(64), "SecurePass1!", "SecurePass1!"),
+            ).resolves.toEqual({ reset: true });
+
+            expect(AuditLog.create).not.toHaveBeenCalled();
+            expect(endUserSessions).toHaveBeenCalledWith("42");
+        });
+
         test("does not revoke sessions when the reset token is invalid", async () => {
             PasswordResetToken.findOne.mockResolvedValue(null);
 
@@ -239,6 +285,28 @@ describe("Password reset service", () => {
                 reason: "invalid_or_expired",
             });
 
+            expect(endUserSessions).not.toHaveBeenCalled();
+        });
+
+        test("does not revoke sessions when audit persistence fails", async () => {
+            const resetToken = { user_id: 42 };
+            const user = {
+                id: 42,
+                email: "admin@example.com",
+                is_active: true,
+                email_verified_at: new Date(),
+                rol: { name: "Administrator" },
+                update: jest.fn().mockResolvedValue(undefined),
+            };
+            PasswordResetToken.findOne.mockResolvedValue(resetToken);
+            User.findByPk.mockResolvedValue(user);
+            AuditLog.create.mockRejectedValue(new Error("Audit unavailable"));
+
+            await expect(
+                resetPassword("a".repeat(64), "SecurePass1!", "SecurePass1!"),
+            ).rejects.toThrow("Audit unavailable");
+
+            expect(PasswordResetToken.update).not.toHaveBeenCalled();
             expect(endUserSessions).not.toHaveBeenCalled();
         });
     });
