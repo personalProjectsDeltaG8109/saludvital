@@ -440,6 +440,10 @@
                 : event.type === "blocked"
                   ? `${event.label}${event.reason ? ` · ${event.reason}` : ""}`
                   : event.label;
+        const timeLabel =
+            event.startTime === "00:00" && event.endTime === "24:00"
+                ? "Todo el día"
+                : `${formatTime(event.startTime)}–${formatTime(event.endTime)}`;
         const isAppointment = event.type === "appointment";
         const className = `weekly-event is-${event.type}`;
         const lane = Math.min(event.lane, 2);
@@ -454,6 +458,7 @@
         return `<div class="${className}${isEditable ? " is-editable" : ""}" style="top:${top}px;height:${duration}px;${laneStyle}"${editAttributes}>
             <strong>${escapeAttribute(isAppointment ? event.reference : event.label)}</strong>
             <span>${escapeAttribute(isAppointment ? event.statusLabel : event.reason || `${formatTime(event.startTime)}–${formatTime(event.endTime)}`)}</span>
+            <small class="weekly-event-time">${escapeAttribute(timeLabel)}</small>
         </div>`;
     }
 

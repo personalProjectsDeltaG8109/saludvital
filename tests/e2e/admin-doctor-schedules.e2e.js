@@ -225,6 +225,24 @@ try {
     }
     console.log("PASS: weekly view shows persisted schedule states and doctor information.");
 
+    await page.setViewportSize({ width: 375, height: 812 });
+    const mobileTimelineHeights = await page
+        .locator(".weekly-day-timeline")
+        .evaluateAll((elements) =>
+            elements.map((element) => element.getBoundingClientRect().height),
+        );
+    if (Math.max(...mobileTimelineHeights) > 160) {
+        throw new Error("Mobile weekly schedule days should use compact event rows.");
+    }
+    if (!(await tuesdayColumn.locator(".weekly-event-time").first().isVisible())) {
+        throw new Error("Mobile schedule rows must show their time range.");
+    }
+    if (
+        !(await blockedVacation.locator(".weekly-event-time").textContent()).includes("Todo el día")
+    ) {
+        throw new Error("A full-day mobile exception should be labeled as such.");
+    }
+
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
         { label: "tablet", width: 768, height: 1024 },
