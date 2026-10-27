@@ -62,7 +62,11 @@ mixin adminSidebar(activePage)
                     img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
                 span WhatsApp y chatbot
             .admin-nav-section.admin-nav-section-small Control y seguimiento
-            span.admin-nav-link.is-unavailable(aria-disabled="true")
+            a.admin-nav-link(
+                href="/admin/audit",
+                class=activePage === "audit" ? "is-active" : null,
+                aria-current=activePage === "audit" ? "page" : null
+            )
                 span.admin-nav-icon(aria-hidden="true") ◉
                 span Auditoría
             span.admin-nav-link.is-unavailable(aria-disabled="true")
