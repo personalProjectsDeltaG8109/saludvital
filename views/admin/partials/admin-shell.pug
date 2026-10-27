@@ -72,6 +72,13 @@ mixin adminSidebar(activePage)
             span.admin-nav-link.is-unavailable(aria-disabled="true")
                 span.admin-nav-icon(aria-hidden="true") ▥
                 span Reportes e indicadores
+            a.admin-nav-link(
+                href="/admin/profile",
+                class=activePage === "profile" ? "is-active" : null,
+                aria-current=activePage === "profile" ? "page" : null
+            )
+                span.admin-nav-icon(aria-hidden="true") ♙
+                span Mi perfil
         form.admin-logout(action="/logout", method="POST")
             button.admin-nav-link(type="submit")
                 span.admin-nav-icon(aria-hidden="true") ⇥
