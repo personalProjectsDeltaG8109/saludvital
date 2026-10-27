@@ -24,8 +24,8 @@ Branch: `feature/us-adm-29-cancel-appointments-on-exception-deactivation`
 
 ## Verification
 
-- Targeted Jest checks for exception management and schedule configuration: 2 suites passed, 18 tests passed.
-- `node tests/e2e/admin-doctor-schedule-exceptions.e2e.js`: passed creation, editing, status changes, impact review, automatic cancellation feedback, and responsive checks.
+- Targeted Jest checks for exception management and schedule configuration: 2 suites passed, 19 tests passed.
+- `node tests/e2e/admin-doctor-schedule-exceptions.e2e.js`: passed creation, editing, status changes, pre-cancellation review, explicit cancellation confirmation, and responsive checks.
 - ESLint on changed JavaScript and test files: passed.
 - Prettier and `git diff --check`: passed.
 
