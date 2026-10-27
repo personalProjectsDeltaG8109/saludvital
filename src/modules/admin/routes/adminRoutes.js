@@ -3,6 +3,7 @@ import { authenticateToken, requireRole } from "../../../middleware/authenticate
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
 import { getAdminDoctorSchedules } from "../services/adminDoctorScheduleService.js";
 import { getAdminDoctorWeeklySchedule } from "../services/adminDoctorWeeklyScheduleService.js";
+import { configureAdminDoctorSchedule } from "../services/adminDoctorScheduleConfigurationService.js";
 import {
     createAdminAppointment,
     getAdminAppointmentBookingDoctors,
@@ -92,6 +93,28 @@ adminRoutes.get(
         }
     },
 );
+adminRoutes.post("/api/admin/doctor-schedules", ...requireAdministrator, async (req, res, next) => {
+    try {
+        const result = await configureAdminDoctorSchedule(req.body);
+        return res.status(201).json({
+            ...result,
+            message: "El horario se configuró correctamente.",
+        });
+    } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({
+                message: error.message,
+                ...(error.requiresConfirmation
+                    ? {
+                          requiresConfirmation: true,
+                          impactedAppointments: error.impactedAppointments,
+                      }
+                    : {}),
+            });
+        }
+        return next(error);
+    }
+});
 adminRoutes.get(
     "/api/admin/appointments/export",
     ...requireAdministrator,

@@ -9,6 +9,16 @@
     const specialtySelect = page.querySelector("[data-schedule-specialty]");
     const statusSelect = page.querySelector("[data-schedule-status]");
     const weekInput = page.querySelector("[data-schedule-week]");
+    const configureOpenButton = page.querySelector("[data-configure-open]");
+    const configureDialog = page.querySelector("[data-schedule-config-dialog]");
+    const configureForm = page.querySelector("[data-schedule-config-form]");
+    const configureDoctorSelect = page.querySelector("[data-config-doctor]");
+    const configureError = page.querySelector("[data-config-error]");
+    const configureSuccess = page.querySelector("[data-config-success]");
+    const configureImpact = page.querySelector("[data-config-impact]");
+    const configureImpactList = page.querySelector("[data-config-impact-list]");
+    const configureSubmitButton = page.querySelector("[data-config-submit]");
+    const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
     const doctorList = page.querySelector("[data-schedule-doctor-list]");
@@ -90,6 +100,128 @@
             const item = new Option(getLabel(option), String(option.id));
             if (String(option.id) === selectedValue) item.selected = true;
             select.add(item);
+        }
+    }
+
+    function updateConfigurationOptions(doctors) {
+        renderSelectOptions(doctorSelect, doctors, "Todos los médicos", (doctor) => doctor.name);
+        if (!configureDoctorSelect || !configureOpenButton) return;
+        const activeDoctors = doctors.filter((doctor) => doctor.isActive);
+        renderSelectOptions(
+            configureDoctorSelect,
+            activeDoctors,
+            "Selecciona un médico activo",
+            (doctor) => doctor.name,
+        );
+        configureOpenButton.disabled = activeDoctors.length === 0;
+        if (doctorSelect.value) configureDoctorSelect.value = doctorSelect.value;
+    }
+
+    function resetConfigurationMessages() {
+        configureError.hidden = true;
+        configureSuccess.hidden = true;
+        configureImpact.hidden = true;
+        configureImpactList.replaceChildren();
+        configureSubmitButton.dataset.confirmImpact = "false";
+        configureSubmitButton.textContent = "Guardar horario";
+    }
+
+    function setEnabledDay(dayElement, enabled) {
+        dayElement
+            .querySelectorAll("[data-interval-start], [data-interval-end]")
+            .forEach((input) => {
+                input.disabled = !enabled;
+                input.required = enabled;
+            });
+        dayElement.querySelector("[data-add-interval]").hidden = !enabled;
+    }
+
+    function updateIntervalRemoveButtons(dayElement) {
+        const intervals = [...dayElement.querySelectorAll("[data-config-interval]")];
+        intervals.forEach((interval) => {
+            interval.querySelector("[data-remove-interval]").hidden = intervals.length === 1;
+        });
+    }
+
+    function renderImpactAppointments(appointments) {
+        configureImpactList.replaceChildren();
+        for (const appointment of appointments) {
+            const item = document.createElement("li");
+            const date = new Date(`${appointment.date}T12:00:00-05:00`);
+            const dateLabel = new Intl.DateTimeFormat("es-CO", {
+                dateStyle: "full",
+                timeZone: "America/Bogota",
+            }).format(date);
+            item.textContent = `Cita #${appointment.id} · ${dateLabel}, ${formatTime(appointment.startTime)} a ${formatTime(appointment.endTime)} · ${appointment.reason}`;
+            configureImpactList.append(item);
+        }
+        configureImpact.hidden = false;
+        configureSubmitButton.dataset.confirmImpact = "true";
+        configureSubmitButton.textContent = "Confirmar y guardar sin cambiar las citas";
+        configureSubmitButton.focus();
+    }
+
+    function collectConfiguration() {
+        const blocks = [];
+        configureForm.querySelectorAll("[data-config-day]").forEach((dayElement) => {
+            if (!dayElement.querySelector("[data-day-enabled]").checked) return;
+            dayElement.querySelectorAll("[data-config-interval]").forEach((interval) => {
+                const startTime = interval.querySelector("[data-interval-start]").value;
+                const endTime = interval.querySelector("[data-interval-end]").value;
+                if (startTime && endTime) {
+                    blocks.push({
+                        dayOfWeek: Number(dayElement.dataset.configDay),
+                        startTime,
+                        endTime,
+                    });
+                }
+            });
+        });
+        return {
+            doctorId: configureDoctorSelect.value,
+            validFrom: page.querySelector("[data-config-valid-from]").value,
+            validUntil: page.querySelector("[data-config-valid-until]").value || null,
+            blocks,
+            confirmImpact: configureSubmitButton.dataset.confirmImpact === "true",
+        };
+    }
+
+    async function submitConfiguration(event) {
+        event.preventDefault();
+        configureError.hidden = true;
+        configureSuccess.hidden = true;
+        configureSubmitButton.disabled = true;
+        const isConfirmingImpact = configureSubmitButton.dataset.confirmImpact === "true";
+        configureSubmitButton.textContent = isConfirmingImpact ? "Confirmando…" : "Revisando…";
+        try {
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify(collectConfiguration()),
+            });
+            const data = await response.json();
+            if (response.status === 409 && data.requiresConfirmation) {
+                renderImpactAppointments(data.impactedAppointments || []);
+                return;
+            }
+            if (!response.ok) throw new Error(data.message || "No pudimos guardar el horario.");
+
+            configureDialog.close();
+            configPageFeedback.textContent = data.message;
+            configPageFeedback.hidden = false;
+            doctorSelect.value = String(data.doctorId);
+            await loadSchedules();
+        } catch (error) {
+            configureSubmitButton.dataset.confirmImpact = "false";
+            configureImpact.hidden = true;
+            configureError.textContent = error.message || "Revisa la información del horario.";
+            configureError.hidden = false;
+            configureError.focus?.();
+        } finally {
+            configureSubmitButton.disabled = false;
+            if (configureSubmitButton.dataset.confirmImpact !== "true") {
+                configureSubmitButton.textContent = "Guardar horario";
+            }
         }
     }
 
@@ -354,12 +486,7 @@
             setText("[data-stat-exceptions]", data.summary.upcomingExceptions);
             setText("[data-stat-affected]", data.summary.affectedAppointments);
             renderWeekLabel(data.week);
-            renderSelectOptions(
-                doctorSelect,
-                data.doctorOptions,
-                "Todos los médicos",
-                (doctor) => doctor.name,
-            );
+            updateConfigurationOptions(data.doctorOptions);
             renderSelectOptions(
                 specialtySelect,
                 data.specialtyOptions,
@@ -423,6 +550,64 @@
     });
     topbarSearch?.addEventListener("input", () => {
         searchInput.value = topbarSearch.value;
+    });
+
+    configureOpenButton?.addEventListener("click", () => {
+        resetConfigurationMessages();
+        configureForm.reset();
+        const todayParts = new Intl.DateTimeFormat("en-GB", {
+            timeZone: "America/Bogota",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+        }).formatToParts(new Date());
+        const today = Object.fromEntries(todayParts.map(({ type, value }) => [type, value]));
+        page.querySelector("[data-config-valid-from]").value =
+            `${today.year}-${today.month}-${today.day}`;
+        configureDoctorSelect.value = doctorSelect.value || "";
+        configureForm.querySelectorAll("[data-config-day]").forEach((dayElement) => {
+            setEnabledDay(dayElement, false);
+            dayElement.querySelector("[data-day-enabled]").checked = false;
+            const intervalList = dayElement.querySelector("[data-config-intervals]");
+            [...intervalList.querySelectorAll("[data-config-interval]")]
+                .slice(1)
+                .forEach((row) => row.remove());
+        });
+        configureDialog.showModal();
+        configureDoctorSelect.focus();
+    });
+
+    page.querySelectorAll("[data-config-close]").forEach((button) => {
+        button.addEventListener("click", () => configureDialog.close());
+    });
+    configureForm?.addEventListener("submit", submitConfiguration);
+    configureForm?.querySelectorAll("[data-day-enabled]").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+            setEnabledDay(checkbox.closest("[data-config-day]"), checkbox.checked);
+        });
+    });
+    configureForm?.querySelectorAll("[data-add-interval]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const dayElement = button.closest("[data-config-day]");
+            const intervalList = dayElement.querySelector("[data-config-intervals]");
+            const newInterval = intervalList
+                .querySelector("[data-config-interval]")
+                .cloneNode(true);
+            newInterval.querySelectorAll("input").forEach((input) => {
+                input.value = "";
+                input.disabled = false;
+                input.required = true;
+            });
+            const removeButton = newInterval.querySelector("[data-remove-interval]");
+            removeButton.hidden = false;
+            removeButton.addEventListener("click", () => {
+                newInterval.remove();
+                updateIntervalRemoveButtons(dayElement);
+            });
+            intervalList.append(newInterval);
+            updateIntervalRemoveButtons(dayElement);
+            newInterval.querySelector("[data-interval-start]").focus();
+        });
     });
 
     loadSchedules();

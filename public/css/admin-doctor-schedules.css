@@ -116,6 +116,46 @@
 .weekly-feedback, .weekly-empty { margin: 0; padding: 12px; border-radius: 8px; color: #58759a; background: #f5f9fe; font-size: 11px; text-align: center; }
 .weekly-error { margin: 0 0 10px; padding: 10px; border-radius: 8px; color: #a62c35; background: #fff0f0; font-size: 11px; }
 
+.schedule-heading { justify-content: space-between; }
+.schedule-configure-open, .schedule-config-submit { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 7px; padding: 0 17px; border: 0; border-radius: 8px; color: #fff; background: linear-gradient(115deg, #087cf0, #0561cf); font: inherit; font-size: 12px; font-weight: 650; cursor: pointer; }
+.schedule-configure-open span { font-size: 21px; }
+.schedule-configure-open:disabled, .schedule-config-submit:disabled { opacity: .58; cursor: wait; }
+.schedule-config-page-feedback { margin: 0 0 12px; padding: 11px 14px; border: 1px solid #b8e7d5; border-radius: 9px; color: #087a50; background: #ecfbf5; font-size: 13px; }
+.schedule-config-dialog { width: min(760px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 900px); padding: 0; overflow: auto; border: 1px solid #dce8f4; border-radius: 16px; color: #123b73; box-shadow: 0 24px 80px rgb(7 31 67 / 25%); }
+.schedule-config-dialog::backdrop { background: rgb(9 32 66 / 52%); backdrop-filter: blur(2px); }
+.schedule-config-form { display: grid; gap: 17px; padding: clamp(16px, 3vw, 26px); }
+.schedule-config-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.schedule-config-heading .admin-eyebrow { margin: 0 0 4px; color: #6381a5; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.schedule-config-heading h2 { margin: 0; color: #082f7c; font-size: 22px; }
+.schedule-config-heading p:last-child { margin: 5px 0 0; color: #617c9e; font-size: 12px; }
+.schedule-config-close { width: 36px; height: 36px; border: 1px solid #dce7f2; border-radius: 9px; color: #315c8a; background: #f8fbff; font-size: 23px; cursor: pointer; }
+.schedule-config-fields { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 11px; }
+.schedule-config-fields label, .schedule-config-interval label, .schedule-config-duration { display: grid; min-width: 0; gap: 6px; color: #31577f; font-size: 11px; font-weight: 600; }
+.schedule-config-fields input, .schedule-config-fields select, .schedule-config-interval input, .schedule-config-duration input { width: 100%; min-width: 0; height: 41px; padding: 0 10px; border: 1px solid #d8e4f0; border-radius: 8px; color: #244773; background: #fff; font: inherit; font-size: 12px; }
+.schedule-config-dialog :focus-visible { outline: 3px solid rgb(22 141 226 / 35%); outline-offset: 2px; }
+.schedule-config-days { display: grid; gap: 7px; margin: 0; padding: 13px; border: 1px solid #e1eaf4; border-radius: 11px; }
+.schedule-config-days legend { padding: 0 6px; color: #183f70; font-size: 13px; font-weight: 700; }
+.schedule-config-day { display: grid; grid-template-columns: minmax(100px, .7fr) minmax(0, 2fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid #edf2f7; border-radius: 9px; background: #fbfdff; }
+.schedule-config-day-toggle { display: flex; align-items: center; gap: 8px; color: #244c79; font-size: 12px; font-weight: 650; cursor: pointer; }
+.schedule-config-day-toggle input { width: 17px; height: 17px; accent-color: #087cf0; }
+.schedule-config-intervals { display: grid; gap: 7px; }
+.schedule-config-interval { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(95px, 1fr) 30px; align-items: end; gap: 8px; }
+.schedule-config-interval label span { font-size: 9px; }
+.schedule-config-interval input:disabled { opacity: .5; }
+.schedule-config-remove { width: 30px; height: 34px; border: 1px solid #f0caca; border-radius: 7px; color: #aa3942; background: #fff5f5; font-size: 19px; cursor: pointer; }
+.schedule-config-add { min-height: 34px; padding: 0 9px; border: 1px solid #cfe2f8; border-radius: 7px; color: #075fc3; background: #f3f8ff; font: inherit; font-size: 10px; cursor: pointer; }
+.schedule-config-duration { max-width: 260px; }
+.schedule-config-duration input { color: #527398; background: #f5f9fe; }
+.schedule-config-impact { padding: 13px; border: 1px solid #f3d290; border-radius: 10px; color: #72521a; background: #fff9e9; }
+.schedule-config-impact h3 { margin: 0 0 5px; font-size: 13px; }
+.schedule-config-impact p { margin: 0 0 8px; font-size: 11px; line-height: 1.5; }
+.schedule-config-impact ul { display: grid; gap: 6px; max-height: 180px; margin: 0; padding-left: 20px; overflow: auto; font-size: 11px; }
+.schedule-config-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.schedule-config-cancel { min-height: 42px; padding: 0 16px; border: 1px solid #d6e2ee; border-radius: 8px; color: #31577f; background: #fff; font: inherit; font-size: 12px; cursor: pointer; }
+.schedule-config-error, .schedule-config-success { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 12px; }
+.schedule-config-error { color: #a62c35; background: #fff0f0; }
+.schedule-config-success { color: #087a50; background: #ecfbf5; }
+
 @media (max-width: 1100px) {
     .schedule-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .schedule-search-button { min-width: 110px; }
@@ -161,6 +201,18 @@
     .weekly-information-panel h4 { font-size: 14px; }
     .weekly-information-list dt { font-size: 10px; }
     .weekly-information-list dd { font-size: 11px; }
+    .schedule-heading { align-items: flex-start; flex-wrap: wrap; }
+    .schedule-configure-open { width: 100%; }
+    .schedule-config-fields { grid-template-columns: minmax(0, 1fr); }
+    .schedule-config-day { grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+    .schedule-config-day-toggle { grid-column: 1 / -1; }
+    .schedule-config-intervals { grid-column: 1; }
+    .schedule-config-add { grid-column: 2; grid-row: 2; }
+    .schedule-config-interval { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 30px; gap: 6px; }
+    .schedule-config-form { gap: 13px; }
+    .schedule-config-dialog { max-height: 92vh; border-radius: 13px; }
+    .schedule-config-actions { position: sticky; bottom: -1px; margin: 0 -1px -1px; padding: 10px 0 0; background: #fff; }
+    .schedule-config-actions button { flex: 1; padding: 0 9px; font-size: 11px; }
 }
 
 @media (max-width: 360px) {

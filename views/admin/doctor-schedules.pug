@@ -17,6 +17,12 @@ html(lang="es")
                 data-endpoint="/api/admin/doctor-schedules",
                 data-weekly-endpoint="/api/admin/doctor-schedules"
             )
+                p.schedule-config-page-feedback(
+                    role="status",
+                    aria-live="polite",
+                    data-config-page-feedback,
+                    hidden
+                )
                 header.schedule-heading
                     .schedule-heading-icon(aria-hidden="true")
                         span ◷
@@ -24,6 +30,9 @@ html(lang="es")
                         p.admin-eyebrow Gestión médica
                         h1 Horarios y disponibilidad
                         p Gestiona los horarios de atención de los médicos y su disponibilidad.
+                    button.schedule-configure-open(type="button", data-configure-open, disabled)
+                        span(aria-hidden="true") ＋
+                        | Configurar horario
                 section.schedule-stats(aria-label="Resumen de horarios")
                     article.schedule-stat
                         span Médicos activos
@@ -151,5 +160,92 @@ html(lang="es")
                         p.schedule-exceptions-empty(data-schedule-exceptions-empty, hidden) No hay excepciones próximas.
                         ul.schedule-exceptions-list(data-schedule-exceptions)
                 p.schedule-footnote Los horarios se muestran según la disponibilidad configurada. Cada cita utiliza la duración establecida por el sistema.
+            dialog.schedule-config-dialog(
+                data-schedule-config-dialog,
+                aria-labelledby="schedule-config-title"
+            )
+                form.schedule-config-form(data-schedule-config-form)
+                    header.schedule-config-heading
+                        div
+                            p.admin-eyebrow Configuración de disponibilidad
+                            h2#schedule-config-title Configurar horario
+                            p(data-config-doctor-label) Selecciona un médico activo para continuar.
+                        button.schedule-config-close(
+                            type="button",
+                            aria-label="Cerrar configuración",
+                            data-config-close
+                        ) ×
+                    p.schedule-config-error(role="alert", data-config-error, tabindex="-1", hidden)
+                    p.schedule-config-success(role="status", data-config-success, hidden)
+                    .schedule-config-fields
+                        label
+                            span Médico
+                            select(required, data-config-doctor)
+                                option(value="") Selecciona un médico activo
+                        label
+                            span Inicio de vigencia
+                            input(type="date", required, data-config-valid-from)
+                        label
+                            span Fin de vigencia (opcional)
+                            input(type="date", data-config-valid-until)
+                    fieldset.schedule-config-days
+                        legend Días y horas de atención
+                        each day, index in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+                            .schedule-config-day(data-config-day=index + 1)
+                                label.schedule-config-day-toggle
+                                    input(type="checkbox", data-day-enabled)
+                                    span= day
+                                .schedule-config-intervals(data-config-intervals)
+                                    .schedule-config-interval(data-config-interval)
+                                        label
+                                            span Desde
+                                            input(
+                                                type="time",
+                                                min="07:00",
+                                                max="18:30",
+                                                step="1800",
+                                                data-interval-start,
+                                                disabled
+                                            )
+                                        label
+                                            span Hasta
+                                            input(
+                                                type="time",
+                                                min="07:30",
+                                                max="19:00",
+                                                step="1800",
+                                                data-interval-end,
+                                                disabled
+                                            )
+                                        button.schedule-config-remove(
+                                            type="button",
+                                            data-remove-interval,
+                                            aria-label="Eliminar intervalo",
+                                            hidden
+                                        ) ×
+                                button.schedule-config-add(
+                                    type="button",
+                                    data-add-interval,
+                                    hidden
+                                ) Agregar otro intervalo
+                    label.schedule-config-duration
+                        span Duración de cita
+                        input(
+                            type="text",
+                            value="30 minutos · duración del sistema",
+                            readonly,
+                            aria-readonly="true"
+                        )
+                    section.schedule-config-impact(
+                        data-config-impact,
+                        hidden,
+                        aria-labelledby="config-impact-title"
+                    )
+                        h3#config-impact-title Revisa las citas confirmadas
+                        p El horario propuesto deja estas citas fuera de la disponibilidad o coincide con una excepción. Las citas no se modificarán.
+                        ul(data-config-impact-list)
+                    footer.schedule-config-actions
+                        button.schedule-config-cancel(type="button", data-config-close) Cancelar
+                        button.schedule-config-submit(type="submit", data-config-submit) Guardar horario
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-doctor-schedules.js", defer)
