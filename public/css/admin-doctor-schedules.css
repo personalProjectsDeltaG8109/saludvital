@@ -72,10 +72,54 @@
 .schedule-footnote { margin: 11px 2px 0; color: #7187a2; font-size: 10px; line-height: 1.5; }
 .doctor-schedules-page :focus-visible { outline: 3px solid rgb(22 141 226 / 35%); outline-offset: 2px; }
 
+.doctor-schedules-page [hidden] { display: none !important; }
+.schedule-view-week-button, .schedule-back-button { min-height: 38px; padding: 0 12px; border: 1px solid #cfe0f3; border-radius: 8px; color: #086bd4; background: #f5faff; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.schedule-view-week-button:hover, .schedule-back-button:hover { background: #e8f3ff; }
+.weekly-selected-view { min-width: 0; }
+.weekly-view-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.weekly-view-heading h3 { margin: 0; color: #0c2d75; font-size: 15px; }
+.weekly-view-heading p { margin: 4px 0 0; color: #627c9f; font-size: 11px; }
+.weekly-view-layout { display: grid; grid-template-columns: minmax(0, 1fr) 210px; align-items: start; gap: 11px; }
+.weekly-calendar-card, .weekly-information-panel { min-width: 0; padding: 11px; border: 1px solid #e6eef7; border-radius: 10px; background: #fff; }
+.weekly-grid { min-width: 0; }
+.weekly-grid-header { display: grid; grid-template-columns: 47px repeat(7, minmax(0, 1fr)); gap: 2px; margin-bottom: 5px; }
+.weekly-grid-header > span { display: grid; min-width: 0; gap: 3px; padding: 5px 2px; color: #16447e; background: #eff6fd; font-size: 9px; text-align: center; }
+.weekly-grid-header > span:first-child { border-radius: 5px; }
+.weekly-grid-header strong { font-size: 10px; }
+.weekly-grid-header small { color: #6682a4; font-size: 8px; }
+.weekly-grid-body { display: grid; grid-template-columns: 47px minmax(0, 1fr); gap: 2px; }
+.weekly-time-axis { position: relative; min-height: 100px; }
+.weekly-time-label { position: absolute; right: 4px; transform: translateY(-50%); color: #496b93; font-size: 8px; white-space: nowrap; }
+.weekly-time-label:last-child { transform: translateY(-100%); }
+.weekly-day-columns { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; min-width: 0; }
+.weekly-day-column { min-width: 0; }
+.weekly-day-column h5 { display: none; }
+.weekly-day-timeline { position: relative; min-height: 240px; overflow: hidden; border: 1px solid #e6edf4; border-radius: 5px; background-color: #f8fafc; background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 35px, #e3eaf1 35px, #e3eaf1 36px); }
+.weekly-event { position: absolute; z-index: 2; display: flex; min-width: 0; flex-direction: column; justify-content: center; overflow: hidden; padding: 3px; border: 1px solid transparent; border-radius: 4px; font-size: 8px; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+.weekly-event strong, .weekly-event span { display: block; }
+.weekly-event.is-available { z-index: 1; justify-content: flex-start; color: #087a50; border-color: #bdebd8; background: rgb(216 247 234 / 88%); }
+.weekly-event.is-additionalAvailability { z-index: 1; justify-content: flex-start; color: #087a50; border-color: #a9dfcf; background: rgb(225 248 241 / 92%); }
+.weekly-event.is-appointment { color: #0754a6; border-color: #9ecaff; background: #dceeff; }
+.weekly-event.is-blocked { color: #a52732; border-color: #f2b7b7; background: #ffe4e4; }
+.weekly-information-panel h4 { margin: 0 0 10px; color: #0c2d75; font-size: 13px; }
+.weekly-information-list { display: grid; gap: 8px; margin: 0; }
+.weekly-information-list > div { display: grid; gap: 3px; padding-bottom: 7px; border-bottom: 1px solid #edf1f6; }
+.weekly-information-list > div:last-child { padding-bottom: 0; border-bottom: 0; }
+.weekly-information-list dt { color: #45668c; font-size: 9px; }
+.weekly-information-list dd { margin: 0; color: #163e72; font-size: 10px; line-height: 1.45; overflow-wrap: anywhere; }
+.weekly-legend { display: flex; flex-wrap: wrap; gap: 9px 14px; margin: 10px 0 0; padding: 0; list-style: none; }
+.weekly-legend li { display: inline-flex; align-items: center; gap: 5px; color: #49688d; font-size: 9px; }
+.weekly-legend li::before { width: 9px; height: 9px; border: 1px solid #9bcbb7; border-radius: 3px; background: #d8f7ea; content: ""; }
+.weekly-legend li.is-appointment::before { border-color: #8abcf2; background: #dceeff; }
+.weekly-legend li.is-blocked::before { border-color: #efaaaa; background: #ffe4e4; }
+.weekly-legend li.is-additional-availability::before { border-color: #82c9b5; background: #e1f8f1; }
+.weekly-feedback, .weekly-empty { margin: 0; padding: 12px; border-radius: 8px; color: #58759a; background: #f5f9fe; font-size: 11px; text-align: center; }
+.weekly-error { margin: 0 0 10px; padding: 10px; border-radius: 8px; color: #a62c35; background: #fff0f0; font-size: 11px; }
+
 @media (max-width: 1100px) {
     .schedule-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .schedule-search-button { min-width: 110px; }
-    .schedule-content { grid-template-columns: minmax(0, 1.5fr) minmax(220px, .8fr); }
+    .schedule-content, .weekly-view-layout { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 760px) {
@@ -105,6 +149,18 @@
     .schedule-day p { font-size: 10px; }
     .schedule-doctor-card { padding: 10px; }
     .schedule-doctor-state { font-size: 9px; }
+    .weekly-view-heading { align-items: flex-start; flex-direction: column; }
+    .weekly-view-layout { grid-template-columns: minmax(0, 1fr); }
+    .weekly-grid-header, .weekly-time-axis { display: none; }
+    .weekly-grid-body { display: block; }
+    .weekly-day-columns { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .weekly-day-column { padding: 8px; border: 1px solid #e6eef7; border-radius: 8px; background: #fbfdff; }
+    .weekly-day-column h5 { display: block; margin: 0 0 6px; color: #17457d; font-size: 11px; }
+    .weekly-day-timeline { border-radius: 6px; }
+    .weekly-event { font-size: 9px; }
+    .weekly-information-panel h4 { font-size: 14px; }
+    .weekly-information-list dt { font-size: 10px; }
+    .weekly-information-list dd { font-size: 11px; }
 }
 
 @media (max-width: 360px) {

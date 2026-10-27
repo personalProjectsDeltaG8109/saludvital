@@ -16,12 +16,10 @@ import {
     cancelPendingAppointmentReminders,
     enqueueAppointmentNotifications,
 } from "./notificationAutomationService.js";
+import { APPOINTMENT_SLOT_MINUTES } from "../../../config/appointmentScheduling.js";
 
 // Require at least thirty minutes of notice for booking or rescheduling.
 const MINIMUM_ADVANCE_MINUTES = 30;
-
-// Define the duration of each appointment slot in minutes.
-const APPOINTMENT_SLOT_MINUTES = 30;
 
 // Limit each appointment to three patient rescheduling actions.
 const MAX_APPOINTMENT_RESCHEDULES = 3;

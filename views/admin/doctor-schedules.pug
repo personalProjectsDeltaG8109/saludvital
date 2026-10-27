@@ -14,7 +14,8 @@ html(lang="es")
             +adminTopbar("/admin/doctor-schedules", "Buscar médicos por nombre o correo...")
             main.doctor-schedules-page(
                 data-doctor-schedules,
-                data-endpoint="/api/admin/doctor-schedules"
+                data-endpoint="/api/admin/doctor-schedules",
+                data-weekly-endpoint="/api/admin/doctor-schedules"
             )
                 header.schedule-heading
                     .schedule-heading-icon(aria-hidden="true")
@@ -93,6 +94,51 @@ html(lang="es")
                             data-schedule-feedback
                         ) Cargando horarios…
                         p.schedule-error(role="alert", data-schedule-error, hidden)
+                        section.weekly-selected-view(
+                            data-weekly-view,
+                            aria-labelledby="weekly-doctor-title",
+                            hidden
+                        )
+                            header.weekly-view-heading
+                                div
+                                    h3#weekly-doctor-title(data-weekly-doctor-name) Horario del médico
+                                    p(data-weekly-date-range)
+                                button.schedule-back-button(type="button", data-weekly-clear) Ver todos los médicos
+                            p.weekly-feedback(
+                                role="status",
+                                aria-live="polite",
+                                data-weekly-feedback,
+                                hidden
+                            ) Cargando disponibilidad de la semana…
+                            p.weekly-error(role="alert", data-weekly-error, hidden)
+                            .weekly-view-layout(data-weekly-content, hidden)
+                                section.weekly-calendar-card(
+                                    aria-label="Agenda semanal del médico"
+                                )
+                                    .weekly-grid(data-weekly-grid)
+                                aside.weekly-information-panel(
+                                    aria-label="Información del horario"
+                                )
+                                    h4 Información del horario
+                                    dl.weekly-information-list
+                                        div
+                                            dt Especialidad
+                                            dd(data-weekly-specialty) —
+                                        div
+                                            dt Duración de cita
+                                            dd(data-weekly-duration) —
+                                        div
+                                            dt Días de atención
+                                            dd(data-weekly-working-days) —
+                                        div
+                                            dt Horario de atención
+                                            dd(data-weekly-working-hours) —
+                            ul.weekly-legend(aria-label="Estados de horario")
+                                li.is-available Disponible
+                                li.is-additional-availability Disponibilidad adicional
+                                li.is-appointment Cita
+                                li.is-blocked No disponible
+                            p.weekly-empty(data-weekly-empty, hidden) Este médico no tiene horario configurado para la semana seleccionada.
                         .schedule-doctor-list(data-schedule-doctor-list)
                         p.schedule-empty(data-schedule-empty, hidden) No hay médicos que coincidan con los filtros seleccionados.
                     aside.schedule-panel.schedule-exceptions-panel(
