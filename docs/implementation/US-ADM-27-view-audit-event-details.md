@@ -23,7 +23,7 @@ Branch: `feature/us-adm-27-view-audit-event-details`
 
 ## Verification
 
-- `npm.cmd test -- --runInBand tests/unit/adminAuditService.test.js tests/integration/app.test.js`: 2 suites passed, 56 tests passed.
+- `npm.cmd test -- --runInBand tests/unit/adminAuditService.test.js tests/integration/app.test.js`: 2 suites passed, 57 tests passed, including the schedule-triggered cancellation description and sensitive-data exclusion.
 - `node tests/e2e/admin-audit.e2e.js`: passed detail opening, audit list interactions, loading/empty/error states, safe text rendering, and mobile/tablet/desktop overflow checks.
 - ESLint on changed JavaScript and test files: passed.
 - Prettier check on changed source, styles, Pug, and test files: passed.
