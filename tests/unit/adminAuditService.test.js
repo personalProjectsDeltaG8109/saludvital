@@ -388,4 +388,24 @@ describe("administrator audit log directory", () => {
         expect(result.targetDescription).toBe("Cuenta de usuario");
         expect(JSON.stringify(result)).not.toMatch(/password|token|hash/i);
     });
+
+    test("labels administrator photo changes without returning the stored image path", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 26,
+            actor_user_id: 42,
+            actor_snapshot: "admin@example.com",
+            action: "AdminUserProfilePhotoUpdated",
+            target_type: "User",
+            target_id: "42",
+            result: "Success",
+            occurred_at: new Date("2026-10-27T15:30:00.000Z"),
+            changes: null,
+        });
+
+        const result = await getAdminAuditEvent("26");
+
+        expect(result.action).toBe("Actualización de foto de perfil");
+        expect(result.description).toBe("Se actualizó la foto de perfil de un administrador.");
+        expect(JSON.stringify(result)).not.toContain("/uploads/profile-photos/");
+    });
 });
