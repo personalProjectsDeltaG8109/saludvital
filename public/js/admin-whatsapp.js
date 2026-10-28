@@ -965,52 +965,200 @@ if (whatsappPage) {
         panel.append(layout);
     }
 
+    function createTemplateStatusCard(title, value, description, colorClass) {
+        const card = element("article", "admin-whatsapp-count-card");
+        const icon = element("span", `admin-whatsapp-stat-icon ${colorClass}`, "▤");
+        icon.setAttribute("aria-hidden", "true");
+        const details = element("div");
+        details.append(element("span", "", title), element("strong", "", value));
+        details.append(element("small", "", description));
+        card.append(icon, details);
+        return card;
+    }
+
+    function createTemplateCard(template) {
+        const card = element("article", "admin-whatsapp-card admin-whatsapp-template-card");
+        card.dataset.templateRecord = "";
+        card.dataset.templateSearch = `${template.name} ${template.purpose}`.toLocaleLowerCase(
+            "es-CO",
+        );
+        card.dataset.templateConfiguration = template.configured ? "configured" : "missing";
+
+        const header = element("header", "admin-whatsapp-card-heading");
+        const titleGroup = element("div");
+        titleGroup.append(element("h3", "", template.name), element("p", "", template.purpose));
+        const status = element(
+            "span",
+            `admin-whatsapp-record-status ${template.configured ? "is-active" : "is-incomplete"}`,
+            template.configured ? "ID configurado" : "Sin configurar",
+        );
+        header.append(titleGroup, status);
+
+        const details = element("dl", "admin-whatsapp-template-details");
+        details.append(
+            element("dt", "", "Contenido"),
+            element("dd", "", "No disponible en la configuración local"),
+            element("dt", "", "Fuente"),
+            element("dd", "", "Configuración de la aplicación"),
+            element("dt", "", "Idioma"),
+            element("dd", "", "No informado"),
+            element("dt", "", "Aprobación en Twilio"),
+            element("dd", "", "No consultada"),
+        );
+        card.append(header, details);
+        return card;
+    }
+
+    function filterTemplateCards() {
+        const search =
+            panel
+                .querySelector("[data-template-search]")
+                ?.value.trim()
+                .toLocaleLowerCase("es-CO") || "";
+        const configuration =
+            panel.querySelector("[data-template-configuration-filter]")?.value || "";
+        const cards = [...panel.querySelectorAll("[data-template-record]")];
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+            const matchesSearch = card.dataset.templateSearch.includes(search);
+            const matchesConfiguration =
+                !configuration || card.dataset.templateConfiguration === configuration;
+            card.hidden = !matchesSearch || !matchesConfiguration;
+            if (!card.hidden) visibleCount += 1;
+        });
+
+        const emptyState = panel.querySelector("[data-template-empty]");
+        if (emptyState) emptyState.hidden = visibleCount > 0;
+    }
+
+    function renderMessageTemplates(data) {
+        const templates = data.integrationConfiguration.templates || [];
+        const configuredCount = templates.filter((template) => template.configured).length;
+        const content = element("div", "admin-whatsapp-template-page");
+        const summary = element("div", "admin-whatsapp-count-grid");
+        summary.append(
+            createTemplateStatusCard(
+                "Tipos compatibles",
+                String(templates.length),
+                "Notificaciones de cita",
+                "is-blue",
+            ),
+            createTemplateStatusCard(
+                "ID local configurado",
+                String(configuredCount),
+                "Identificadores ocultos",
+                "is-green",
+            ),
+            createTemplateStatusCard(
+                "Sin configurar",
+                String(templates.length - configuredCount),
+                "Requieren configuración de despliegue",
+                "is-amber",
+            ),
+            createTemplateStatusCard(
+                "Estado del proveedor",
+                "No consultado",
+                "La integración no verifica aprobación",
+                "is-neutral",
+            ),
+        );
+
+        const section = element("section", "admin-whatsapp-card admin-whatsapp-template-list");
+        const heading = element("header", "admin-whatsapp-card-heading");
+        const title = element("div");
+        title.append(
+            element("h2", "", "Plantillas de mensajes"),
+            element("p", "", "Configuraciones locales para las notificaciones compatibles."),
+        );
+        heading.append(title);
+
+        const filters = element("div", "admin-whatsapp-template-filters");
+        const searchLabel = element("label", "admin-whatsapp-request-control");
+        searchLabel.append(element("span", "", "Buscar por nombre o propósito"));
+        const searchInput = element("input");
+        searchInput.type = "search";
+        searchInput.setAttribute("aria-label", "Buscar plantillas por nombre o propósito");
+        searchInput.dataset.templateSearch = "";
+        searchInput.placeholder = "Buscar plantillas…";
+        searchLabel.append(searchInput);
+
+        const statusLabel = element("label", "admin-whatsapp-request-control");
+        statusLabel.append(element("span", "", "Configuración local"));
+        const statusSelect = element("select");
+        statusSelect.setAttribute("aria-label", "Filtrar por configuración local");
+        statusSelect.dataset.templateConfigurationFilter = "";
+        [
+            ["", "Todas"],
+            ["configured", "ID configurado"],
+            ["missing", "Sin configurar"],
+        ].forEach(([value, label]) => {
+            const option = element("option", "", label);
+            option.value = value;
+            statusSelect.append(option);
+        });
+        statusLabel.append(statusSelect);
+        filters.append(searchLabel, statusLabel);
+
+        const list = element("div", "admin-whatsapp-template-grid");
+        templates.forEach((template) => list.append(createTemplateCard(template)));
+        const emptyState = element(
+            "p",
+            "admin-whatsapp-empty",
+            templates.length
+                ? "No hay plantillas que coincidan con la búsqueda."
+                : "No hay configuraciones de plantilla disponibles.",
+        );
+        emptyState.dataset.templateEmpty = "";
+        emptyState.hidden = templates.length > 0;
+        const limitation = element(
+            "p",
+            "admin-whatsapp-template-limitation",
+            "La aplicación guarda los identificadores en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.",
+        );
+        section.append(heading, filters, list, emptyState, limitation);
+        content.append(summary, section);
+        panel.append(content);
+        filterTemplateCards();
+    }
+
     function renderInformationTab(data) {
         if (selectedTab === "flows") {
             renderChatbotFlows(data);
             return;
         }
-        const card = element("section", "admin-whatsapp-info-card");
         if (selectedTab === "templates") {
-            card.append(
-                element("h2", "", "Plantillas de mensajes"),
-                element(
-                    "p",
-                    "",
-                    "Solo se muestra la configuración local de las categorías utilizadas por las notificaciones.",
-                ),
-                renderConfigurationList(data.integrationConfiguration.templates),
-                element("p", "", "La aprobación del proveedor no se consulta en este sistema."),
-            );
-        } else {
-            const configuration = data.integrationConfiguration;
-            const details = [
-                ["Proveedor", configuration.provider],
-                ["Remitente configurado", configuration.senderConfigured ? "Sí" : "No"],
-                ["Credenciales disponibles", configuration.credentialsConfigured ? "Sí" : "No"],
-                ["Conexión con el proveedor", "Estado no verificado"],
-                ["Chatbot", "Estado no disponible"],
-            ];
-            const list = element("dl", "admin-whatsapp-configuration-list");
-            details.forEach(([name, value]) => {
-                list.append(element("dt", "", name), element("dd", "", value));
-            });
-            card.append(
-                element("h2", "", "Configuración e integración"),
-                element(
-                    "p",
-                    "",
-                    "El estado describe la configuración local; no verifica conexión con Twilio.",
-                ),
-                list,
-                renderConfigurationList(configuration.templates),
-                element(
-                    "p",
-                    "",
-                    "No se muestran credenciales y esta vista no modifica la configuración.",
-                ),
-            );
+            renderMessageTemplates(data);
+            return;
         }
+        const card = element("section", "admin-whatsapp-info-card");
+        const configuration = data.integrationConfiguration;
+        const details = [
+            ["Proveedor", configuration.provider],
+            ["Remitente configurado", configuration.senderConfigured ? "Sí" : "No"],
+            ["Credenciales disponibles", configuration.credentialsConfigured ? "Sí" : "No"],
+            ["Conexión con el proveedor", "Estado no verificado"],
+            ["Chatbot", "Estado no disponible"],
+        ];
+        const list = element("dl", "admin-whatsapp-configuration-list");
+        details.forEach(([name, value]) => {
+            list.append(element("dt", "", name), element("dd", "", value));
+        });
+        card.append(
+            element("h2", "", "Configuración e integración"),
+            element(
+                "p",
+                "",
+                "El estado describe la configuración local; no verifica conexión con Twilio.",
+            ),
+            list,
+            renderConfigurationList(configuration.templates),
+            element(
+                "p",
+                "",
+                "No se muestran credenciales y esta vista no modifica la configuración.",
+            ),
+        );
         panel.append(card);
     }
 
@@ -1215,6 +1363,10 @@ if (whatsappPage) {
         load("conversations", 1);
     });
     panel.addEventListener("input", (event) => {
+        if (event.target.matches("[data-template-search]")) {
+            filterTemplateCards();
+            return;
+        }
         if (
             !event.target.matches("[name=search]") ||
             !event.target.closest("[data-conversation-filters]")
@@ -1229,6 +1381,10 @@ if (whatsappPage) {
         }, 300);
     });
     panel.addEventListener("change", (event) => {
+        if (event.target.matches("[data-template-configuration-filter]")) {
+            filterTemplateCards();
+            return;
+        }
         if (
             !event.target.matches("[name=status]") ||
             !event.target.closest("[data-conversation-filters]")

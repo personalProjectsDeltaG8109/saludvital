@@ -26,7 +26,22 @@ function overviewData(tab = "summary", period = 7) {
             status: "Incomplete",
             senderConfigured: false,
             credentialsConfigured: false,
-            templates: [],
+            templates: [
+                {
+                    eventType: "appointment_reminder",
+                    name: "Recordatorio de cita",
+                    purpose: "Recordar al paciente una cita programada.",
+                    configured: true,
+                    providerStatus: "Unknown",
+                },
+                {
+                    eventType: "appointment_cancellation",
+                    name: "Cancelación de cita",
+                    purpose: "Informar al paciente que su cita fue cancelada.",
+                    configured: false,
+                    providerStatus: "Unknown",
+                },
+            ],
         },
         chatbotStatus: "Unknown",
         chatbotStatusMessage: "No hay una verificación operativa del chatbot disponible.",
@@ -400,6 +415,29 @@ try {
     if (await page.getByRole("button", { name: "Activar" }).count()) {
         throw new Error("Draft-only flow management must not expose an activation control.");
     }
+    await page.getByRole("tab", { name: "Plantillas de mensajes" }).click();
+    await page.getByText("Recordatorio de cita", { exact: true }).waitFor();
+    await page.getByLabel("Buscar plantillas por nombre o propósito").fill("cancelación");
+    if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
+        throw new Error("Template search must narrow the visible configuration cards.");
+    }
+    await page.getByLabel("Filtrar por configuración local").selectOption("configured");
+    if ((await page.locator("[data-template-record]:visible").count()) !== 0) {
+        throw new Error("Template configuration filters must combine with the current search.");
+    }
+    await page.getByLabel("Buscar plantillas por nombre o propósito").fill("");
+    if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
+        throw new Error("The local configuration filter must show only configured templates.");
+    }
+    for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const hasHorizontalOverflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > window.innerWidth,
+        );
+        if (hasHorizontalOverflow) {
+            throw new Error(`The template view overflows horizontally at ${width}px.`);
+        }
+    }
     await page.getByRole("tab", { name: "Resumen" }).click();
     await page.locator(".admin-whatsapp-bar-item").nth(29).waitFor();
 
@@ -430,7 +468,7 @@ try {
     }
 
     console.log(
-        "PASS: WhatsApp sections, activity period, and mobile navigation work without horizontal overflow.",
+        "PASS: WhatsApp template search, local filters, activity period, and mobile navigation work without horizontal overflow.",
     );
 } finally {
     await browser.close();

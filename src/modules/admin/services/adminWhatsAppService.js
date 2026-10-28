@@ -8,6 +8,7 @@ import WhatsAppConversation from "../../../models/WhatsAppConversation.js";
 import WhatsAppMessage from "../../../models/WhatsAppMessage.js";
 import { getWhatsAppIntegrationStatus } from "./adminDashboardService.js";
 import { getAdminChatbotFlows } from "./adminChatbotFlowService.js";
+import { getAdminWhatsAppTemplateConfiguration } from "./adminWhatsAppTemplateService.js";
 
 const PAGE_SIZE = 8;
 const SUMMARY_LIMIT = 6;
@@ -334,26 +335,6 @@ async function findPage(model, options, requestedPage) {
     return { rows: adjustedResult.rows, pagination };
 }
 
-function getTemplateStatus() {
-    return [
-        {
-            name: "Recordatorio de cita",
-            configured: Boolean(
-                process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID?.trim() ||
-                process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim(),
-            ),
-        },
-        {
-            name: "Reprogramación de cita",
-            configured: Boolean(process.env.TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID?.trim()),
-        },
-        {
-            name: "Cancelación de cita",
-            configured: Boolean(process.env.TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID?.trim()),
-        },
-    ];
-}
-
 function getSafeIntegrationConfiguration() {
     return {
         provider: "Twilio",
@@ -361,7 +342,7 @@ function getSafeIntegrationConfiguration() {
         credentialsConfigured: Boolean(
             process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim(),
         ),
-        templates: getTemplateStatus(),
+        templates: getAdminWhatsAppTemplateConfiguration(),
     };
 }
 
