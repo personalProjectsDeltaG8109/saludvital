@@ -13,6 +13,7 @@ const BOGOTA_TIME_ZONE = "America/Bogota";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_REPORT_DAYS = 30;
 const SUPPORTED_REPORT_DAYS = [7, 30, 90];
+const TOP_DOCTOR_LIMIT = 5;
 const APPOINTMENT_STATUSES = ["Confirmed", "In Progress", "Attended", "Cancelled"];
 const STATUS_CHART_STATUSES = ["Confirmed", "Cancelled", "Rescheduled"];
 const STATUS_PRESENTATION = {
@@ -212,15 +213,25 @@ function buildSpecialtyDistribution(rows) {
 }
 
 function buildDoctorRanking(rows) {
-    const doctors = rows.map((row) => ({
-        name: row.doctorName || "Médico sin nombre registrado",
-        count: toCount(row.count),
-    }));
-    const maximum = Math.max(1, ...doctors.map((doctor) => doctor.count));
-    return doctors.map((doctor, index) => ({
-        ...doctor,
+    const doctors = rows
+        .map((row) => ({
+            doctorId: Number(row.doctorId),
+            name: row.doctorName || "Médico sin nombre registrado",
+            count: toCount(row.count),
+        }))
+        .sort(
+            (first, second) =>
+                second.count - first.count ||
+                first.name.localeCompare(second.name, "es") ||
+                first.doctorId - second.doctorId,
+        );
+    const topDoctors = doctors.slice(0, TOP_DOCTOR_LIMIT);
+    const maximum = Math.max(1, ...topDoctors.map((doctor) => doctor.count));
+    return topDoctors.map(({ name, count }, index) => ({
+        name,
+        count,
         rank: index + 1,
-        width: Math.round((doctor.count / maximum) * 100),
+        width: Math.round((count / maximum) * 100),
     }));
 }
 
@@ -312,17 +323,19 @@ export async function getAdminReportsData(
         }),
         Appointment.findAll({
             attributes: [
+                [col("doctor.id"), "doctorId"],
                 [col("doctor.display_name"), "doctorName"],
                 [fn("COUNT", col("Appointment.id")), "count"],
             ],
             include: [{ model: Doctor, as: "doctor", attributes: [], required: false }],
             where: appointmentWhere,
-            group: ["doctor.id", "doctor.display_name"],
+            group: [col("doctor.id"), col("doctor.display_name")],
             order: [
                 [fn("COUNT", col("Appointment.id")), "DESC"],
                 [col("doctor.display_name"), "ASC"],
+                [col("doctor.id"), "ASC"],
             ],
-            limit: 5,
+            limit: TOP_DOCTOR_LIMIT,
             raw: true,
         }),
         Appointment.findAll({

@@ -44,8 +44,8 @@ describe("administrator reports service", () => {
                 { specialty: null, count: "1" },
             ])
             .mockResolvedValueOnce([
-                { doctorName: "Dra. Ana Torres", count: "3" },
-                { doctorName: null, count: "2" },
+                { doctorId: 1, doctorName: "Dra. Ana Torres", count: "3" },
+                { doctorId: 2, doctorName: null, count: "2" },
             ])
             .mockResolvedValueOnce([
                 { date: "2026-10-01", status: "Confirmed", count: "2" },
@@ -144,6 +144,45 @@ describe("administrator reports service", () => {
         expect(report.topDoctors).toEqual([]);
         expect(report.averageConsultationMinutes).toBeNull();
         expect(report.whatsappAppointmentRequests).toBe(0);
+    });
+
+    test("ranks five doctors by count, then name and doctor ID, within the selected period", async () => {
+        Appointment.findAll.mockReset();
+        Appointment.findAll
+            .mockResolvedValueOnce([
+                { status: "Confirmed", count: "6" },
+                { status: "Cancelled", count: "1" },
+            ])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([
+                { doctorId: 6, doctorName: "Dra. Zeta", count: "4" },
+                { doctorId: 2, doctorName: "Dra. Ana Torres", count: "10" },
+                { doctorId: 5, doctorName: "Dra. Elena", count: "7" },
+                { doctorId: 1, doctorName: "Dra. Ana Torres", count: "10" },
+                { doctorId: 4, doctorName: "Dr. Carlos", count: "8" },
+                { doctorId: 3, doctorName: "Dra. Ana Suarez", count: "10" },
+            ])
+            .mockResolvedValueOnce([]);
+
+        const report = await getAdminReportsData(new Date("2026-10-27T12:00:00.000Z"), 7);
+
+        expect(report.topDoctors).toEqual([
+            { name: "Dra. Ana Suarez", count: 10, rank: 1, width: 100 },
+            { name: "Dra. Ana Torres", count: 10, rank: 2, width: 100 },
+            { name: "Dra. Ana Torres", count: 10, rank: 3, width: 100 },
+            { name: "Dr. Carlos", count: 8, rank: 4, width: 80 },
+            { name: "Dra. Elena", count: 7, rank: 5, width: 70 },
+        ]);
+
+        const rankingQuery = Appointment.findAll.mock.calls[2][0];
+        expect(rankingQuery.where.start_at[gte]).toEqual(new Date("2026-10-21T05:00:00.000Z"));
+        expect(rankingQuery.where.start_at[lt]).toEqual(new Date("2026-10-28T05:00:00.000Z"));
+        expect(rankingQuery.limit).toBe(5);
+        expect(rankingQuery.order.slice(1)).toEqual([
+            ["doctor.display_name", "ASC"],
+            ["doctor.id", "ASC"],
+        ]);
+        expect(rankingQuery.include.some((include) => include.as === "history")).toBe(false);
     });
 
     test.each([
