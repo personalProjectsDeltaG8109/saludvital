@@ -20,6 +20,7 @@ describe("administrator profile service", () => {
             email_verified_at: new Date("2026-10-01T10:00:00.000Z"),
             is_active: true,
             created_at: new Date("2025-01-15T10:00:00.000Z"),
+            updated_at: new Date("2026-10-26T10:00:00.000Z"),
             last_login_at: new Date("2026-10-27T10:24:00.000Z"),
             password_hash: "must-not-be-returned",
             rol: { name: "Administrator" },
@@ -31,6 +32,10 @@ describe("administrator profile service", () => {
             displayName: "Laura Méndez",
             email: "laura@example.com",
             emailVerified: true,
+            emailVerifiedAt: new Date("2026-10-01T10:00:00.000Z"),
+            createdAt: new Date("2025-01-15T10:00:00.000Z"),
+            updatedAt: new Date("2026-10-26T10:00:00.000Z"),
+            lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
             role: "Administrator",
             isActive: true,
             initials: "LM",
@@ -48,6 +53,7 @@ describe("administrator profile service", () => {
                 "admin_notifications_enabled",
                 "is_active",
                 "created_at",
+                "updated_at",
                 "last_login_at",
             ],
             include: [
@@ -75,6 +81,7 @@ describe("administrator profile service", () => {
             is_active: true,
             created_at: null,
             last_login_at: null,
+            updated_at: null,
             rol: { name: "Administrator" },
             patient: { first_name: "Juan", last_name: "Montoya", profile_photo_url: null },
         });
@@ -86,6 +93,8 @@ describe("administrator profile service", () => {
             profilePhotoUrl: null,
             createdAt: null,
             lastLoginAt: null,
+            updatedAt: null,
+            emailVerifiedAt: undefined,
         });
     });
 

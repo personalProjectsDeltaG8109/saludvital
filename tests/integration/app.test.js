@@ -366,6 +366,12 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("administrator profile page requires authentication", async () => {
+        const response = await request(app).get("/admin/profile").redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("administrator notification preference updates require authentication", async () => {
         const response = await request(app)
             .patch("/api/admin/profile/preferences")

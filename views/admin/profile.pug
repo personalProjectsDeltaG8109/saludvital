@@ -275,6 +275,9 @@ html(lang="es")
                             .admin-profile-field
                                 dt Último acceso
                                 dd= profile.lastLoginAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.lastLoginAt)) : "Sin información registrada"
+                            .admin-profile-field
+                                dt Última actualización de la cuenta
+                                dd= profile.updatedAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.updatedAt)) : "Sin información registrada"
 
                 section#security-information.admin-profile-note(
                     aria-labelledby="security-information-title",
@@ -300,6 +303,10 @@ html(lang="es")
                         span.admin-profile-status(
                             class=profile.emailVerified ? "is-active" : "is-inactive"
                         )= profile.emailVerified ? "Correo verificado" : "Verificación pendiente"
+                    if profile.emailVerified && profile.emailVerifiedAt
+                        .admin-profile-field.admin-profile-verification-date
+                            dt Correo verificado el
+                            dd= new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.emailVerifiedAt))
                     .admin-profile-security-card
                         .admin-profile-security-card-icon(aria-hidden="true")
                             svg(
