@@ -1,0 +1,58 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-reports.css")
+    body.admin-app.admin-reports-page
+        include partials/admin-shell.pug
+        +adminSidebar("reports")
+        .admin-main-shell
+            +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
+            main.admin-dashboard.admin-reports
+                header.admin-reports-heading
+                    .admin-reports-title-group
+                        .admin-reports-title-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 32 32",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2.4",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="M5 27V17h6v10M13 27V10h6v17M21 27V5h6v22")
+                        div
+                            h1 Reportes e indicadores
+                            p Visualiza la información más importante de la operación de SaludVital.
+                    .admin-reports-period(aria-label="Período del reporte")
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            aria-hidden="true"
+                        )
+                            rect(x="3", y="5", width="18", height="16", rx="2")
+                            path(d="M16 3v4M8 3v4M3 10h18")
+                        span Últimos 30 días
+                        small(data-report-period-dates)
+                section.admin-reports-loading(
+                    role="status",
+                    aria-live="polite",
+                    data-reports-loading
+                )
+                    span.admin-reports-spinner(aria-hidden="true")
+                    | Cargando reportes e indicadores...
+                section.admin-reports-error(role="alert", data-reports-error, hidden)
+                    h2 No pudimos cargar los reportes
+                    p No se pudieron cargar los datos del reporte.
+                    a(href="/admin/reports") Volver a intentar
+                .admin-reports-results(data-reports-results, hidden)
+        script(src="/js/admin-dashboard.js", defer)
+        script(src="/js/admin-reports.js", defer)

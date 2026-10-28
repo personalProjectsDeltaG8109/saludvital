@@ -1,0 +1,190 @@
+.admin-reports-content(
+    data-report-period-start=reports.period.start,
+    data-report-period-end=reports.period.end
+)
+    section.admin-report-summary(aria-label="Resumen de citas del período")
+        article.admin-report-stat-card
+            .admin-report-stat-icon.blue(aria-hidden="true")
+                svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8")
+                    rect(x="3", y="5", width="18", height="16", rx="2")
+                    path(d="M16 3v4M8 3v4M3 10h18")
+            .admin-report-stat-copy
+                span Total de citas
+                strong= reports.summary.totalAppointments.toLocaleString("es-CO")
+                small En el período seleccionado
+        article.admin-report-stat-card
+            .admin-report-stat-icon.green(aria-hidden="true")
+                svg(
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="2.4",
+                    stroke-linecap="round",
+                    stroke-linejoin="round"
+                )
+                    path(d="m5 12 4 4L19 6")
+            .admin-report-stat-copy
+                span Citas atendidas
+                strong= reports.summary.attendedAppointments.toLocaleString("es-CO")
+                small= reports.summary.attendedPercentage + "% del total"
+        article.admin-report-stat-card
+            .admin-report-stat-icon.red(aria-hidden="true")
+                svg(
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="2.4",
+                    stroke-linecap="round"
+                )
+                    path(d="m7 7 10 10M17 7 7 17")
+            .admin-report-stat-copy
+                span Citas canceladas
+                strong= reports.summary.cancelledAppointments.toLocaleString("es-CO")
+                small= reports.summary.cancellationRate + "% del total"
+        article.admin-report-stat-card
+            .admin-report-stat-icon.orange(aria-hidden="true")
+                svg(
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="1.8",
+                    stroke-linecap="round",
+                    stroke-linejoin="round"
+                )
+                    circle(cx="9", cy="8", r="3")
+                    path(d="M3 20v-1a6 6 0 0 1 12 0v1M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v1")
+            .admin-report-stat-copy
+                span Pacientes únicos
+                strong= reports.summary.uniquePatients.toLocaleString("es-CO")
+                small En el período seleccionado
+
+    .admin-reports-chart-grid
+        section.admin-report-card.admin-status-card(aria-labelledby="report-status-title")
+            header.admin-report-card-heading
+                h2#report-status-title Citas por estado
+                span= reports.statusChart.total.toLocaleString("es-CO") + " citas"
+            if reports.statusChart.total
+                .admin-status-chart-layout
+                    .admin-status-donut(
+                        role="img",
+                        aria-label=reports.statusChart.description,
+                        style=reports.statusChart.style
+                    )
+                        span
+                            strong= reports.statusChart.total.toLocaleString("es-CO")
+                            small total
+                    ul.admin-status-legend
+                        each segment in reports.statusChart.segments
+                            li
+                                span.admin-legend-swatch(
+                                    style="background-color: " + segment.color,
+                                    aria-hidden="true"
+                                )
+                                span= segment.label
+                                strong= segment.count.toLocaleString("es-CO") + " (" + Math.round(segment.percentage) + "%)"
+            else
+                p.admin-report-empty No hay citas en el período seleccionado.
+
+        section.admin-report-card.admin-specialty-card(aria-labelledby="report-specialty-title")
+            header.admin-report-card-heading
+                h2#report-specialty-title Citas por especialidad
+            if reports.specialties.length
+                .admin-specialty-chart(
+                    role="img",
+                    aria-label="Distribución de citas por especialidad"
+                )
+                    each item in reports.specialties
+                        .admin-specialty-bar-group
+                            strong.admin-specialty-count= item.count.toLocaleString("es-CO")
+                            .admin-specialty-bar-track
+                                span.admin-specialty-bar(
+                                    style="height: " + item.height + "px; background-color: " + item.color
+                                )
+                            span.admin-specialty-label= item.name
+            else
+                p.admin-report-empty No hay citas por especialidad en el período.
+
+        section.admin-report-card.admin-trend-card(aria-labelledby="report-trend-title")
+            header.admin-report-card-heading.admin-trend-heading
+                h2#report-trend-title Tendencia de citas
+                ul.admin-trend-legend
+                    each series in reports.trend.series
+                        li
+                            span.admin-legend-swatch(
+                                style="background-color: " + series.color,
+                                aria-hidden="true"
+                            )
+                            span= series.label
+            if reports.statusChart.total
+                .admin-trend-chart(
+                    role="img",
+                    aria-label="Tendencia diaria de citas atendidas, confirmadas y canceladas en el período"
+                )
+                    svg(viewBox="0 0 700 250", preserveAspectRatio="none", aria-hidden="true")
+                        each gridIndex in [0, 1, 2, 3, 4]
+                            line.admin-trend-gridline(
+                                x1="12",
+                                x2="688",
+                                y1=12 + gridIndex * 56,
+                                y2=12 + gridIndex * 56
+                            )
+                        each series in reports.trend.series
+                            polyline.admin-trend-line(points=series.points, stroke=series.color)
+                        each date, index in reports.trend.dates
+                            if date.showLabel
+                                text.admin-trend-date(x=date.x, y="242")= date.label
+            else
+                p.admin-report-empty No hay tendencias para mostrar en el período.
+
+        section.admin-report-card.admin-doctors-card(aria-labelledby="report-doctors-title")
+            header.admin-report-card-heading
+                h2#report-doctors-title Top médicos por número de citas
+            if reports.topDoctors.length
+                ol.admin-doctor-ranking
+                    each doctor in reports.topDoctors
+                        li
+                            span.admin-doctor-rank= doctor.rank
+                            span.admin-doctor-name= doctor.name
+                            span.admin-doctor-bar-track
+                                span.admin-doctor-bar(style="width: " + doctor.width + "%")
+                            strong.admin-doctor-count= doctor.count.toLocaleString("es-CO")
+            else
+                p.admin-report-empty No hay citas de médicos en el período.
+
+    section.admin-report-card.admin-operational-summary(aria-labelledby="report-operational-title")
+        header.admin-report-card-heading
+            h2#report-operational-title Resumen de indicadores
+        .admin-operational-grid
+            article.admin-operational-item
+                .admin-report-stat-icon.blue(aria-hidden="true")
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round"
+                    )
+                        circle(cx="12", cy="12", r="9")
+                        path(d="M12 7v5l3 2")
+                div
+                    span Tiempo promedio de consulta
+                    strong= reports.averageConsultationMinutes === null ? "Sin datos" : reports.averageConsultationMinutes + " min"
+            article.admin-operational-item
+                .admin-report-stat-icon.red(aria-hidden="true")
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8"
+                    )
+                        rect(x="3", y="5", width="18", height="16", rx="2")
+                        path(d="M16 3v4M8 3v4M3 10h18")
+                div
+                    span Tasa de cancelación
+                    strong= reports.summary.cancellationRate + "%"
+            article.admin-operational-item
+                .admin-report-stat-icon.green(aria-hidden="true")
+                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                div
+                    span Solicitudes por WhatsApp
+                    strong= reports.whatsappAppointmentRequests.toLocaleString("es-CO")
