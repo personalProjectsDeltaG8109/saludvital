@@ -101,7 +101,7 @@ export function getWhatsAppIntegrationStatus() {
 }
 
 /** Return bounded administrator dashboard data using existing persisted records. */
-export async function getAdminDashboardData(query = {}) {
+export async function getAdminDashboardData(query = {}, adminUserId = null) {
     if (query.week !== undefined && !["current", "previous"].includes(query.week)) {
         const error = new Error("Selecciona un rango semanal válido.");
         error.statusCode = 400;
@@ -115,6 +115,10 @@ export async function getAdminDashboardData(query = {}) {
     const [doctorRole] = await Promise.all([
         Rol.findOne({ where: { name: "Doctor" }, attributes: ["id"], raw: true }),
     ]);
+    const administrator = adminUserId
+        ? await User.findByPk(adminUserId, { attributes: ["admin_notifications_enabled"] })
+        : null;
+    const showNotificationFeed = administrator?.admin_notifications_enabled !== false;
 
     const [
         registeredUsers,
@@ -258,12 +262,14 @@ export async function getAdminDashboardData(query = {}) {
             result: row.result,
             occurredAt: row.occurred_at,
         })),
-        systemNotifications: notificationRows.map((row) => ({
-            eventType: row.event_type,
-            status: row.status,
-            occurredAt: row.sent_at || row.scheduled_at,
-        })),
-        notificationAlertCount: failedNotificationsToday,
+        systemNotifications: showNotificationFeed
+            ? notificationRows.map((row) => ({
+                  eventType: row.event_type,
+                  status: row.status,
+                  occurredAt: row.sent_at || row.scheduled_at,
+              }))
+            : [],
+        notificationAlertCount: showNotificationFeed ? failedNotificationsToday : 0,
         range: { start: week.start.toISOString(), end: week.end.toISOString() },
     };
 }
