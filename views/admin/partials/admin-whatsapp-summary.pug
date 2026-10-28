@@ -140,6 +140,10 @@
                         div
                             h2#whatsapp-events-title Mensajes del sistema
                             p Estados de notificaciones WhatsApp; no se muestra el contenido enviado.
+                        a.admin-whatsapp-view-all(
+                            href="/admin/whatsapp?view=deliveries",
+                            data-whatsapp-open-deliveries
+                        ) Ver todos
                     if whatsapp.recentSystemEvents.length
                         ul.admin-whatsapp-event-list
                             each event in whatsapp.recentSystemEvents

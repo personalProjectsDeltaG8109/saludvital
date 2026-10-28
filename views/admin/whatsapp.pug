@@ -21,7 +21,10 @@ html(lang="es")
         data-request-status=whatsapp.requestFilters && whatsapp.requestFilters.status,
         data-request-specialty=whatsapp.requestFilters && whatsapp.requestFilters.specialtyId,
         data-request-date-from=whatsapp.requestFilters && whatsapp.requestFilters.dateFrom,
-        data-request-date-to=whatsapp.requestFilters && whatsapp.requestFilters.dateTo
+        data-request-date-to=whatsapp.requestFilters && whatsapp.requestFilters.dateTo,
+        data-delivery-status=whatsapp.deliveryFilters && whatsapp.deliveryFilters.status,
+        data-delivery-date-from=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateFrom,
+        data-delivery-date-to=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateTo
     )
         include partials/admin-shell.pug
         +adminSidebar("whatsapp")
@@ -102,7 +105,7 @@ html(lang="es")
                     button#admin-whatsapp-tab-summary.admin-whatsapp-tab(
                         type="button",
                         role="tab",
-                        aria-selected=whatsapp.selectedTab === "summary" ? "true" : "false",
+                        aria-selected=whatsapp.selectedTab === "summary" || whatsapp.selectedTab === "deliveries" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="summary"
                     ) Resumen
@@ -144,17 +147,22 @@ html(lang="es")
                 section#admin-whatsapp-panel.admin-whatsapp-panel(
                     class=whatsapp.selectedTab === "summary" ? "is-summary-panel" : "",
                     role="tabpanel",
-                    aria-labelledby="admin-whatsapp-tab-" + whatsapp.selectedTab,
+                    aria-labelledby="admin-whatsapp-tab-" + (whatsapp.selectedTab === "deliveries" ? "summary" : whatsapp.selectedTab),
                     tabindex="0",
                     data-whatsapp-panel
                 )
                     if whatsapp.selectedTab === "summary"
                         include partials/admin-whatsapp-summary.pug
-                    else if whatsapp.selectedTab === "conversations" || whatsapp.selectedTab === "requests"
+                    else if whatsapp.selectedTab === "conversations" || whatsapp.selectedTab === "requests" || whatsapp.selectedTab === "deliveries"
                         header.admin-whatsapp-list-heading
                             div
-                                h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : "Solicitudes de citas"
+                                h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : whatsapp.selectedTab === "requests" ? "Solicitudes de citas" : "Mensajes y estado de envío"
                                 p(data-whatsapp-result-count)= whatsapp.pagination.totalItems.toLocaleString("es-CO") + " registros"
+                            if whatsapp.selectedTab === "deliveries"
+                                a.admin-whatsapp-view-all(
+                                    href="/admin/whatsapp",
+                                    data-whatsapp-back-summary
+                                ) Volver al resumen
                         if whatsapp.selectedTab === "conversations"
                             form.admin-whatsapp-conversation-filters(
                                 data-conversation-filters,
@@ -194,7 +202,7 @@ html(lang="es")
                                             value="Blocked",
                                             selected=whatsapp.status === "Blocked"
                                         ) Bloqueadas
-                        else
+                        else if whatsapp.selectedTab === "requests"
                             form.admin-whatsapp-request-filters(data-request-filters)
                                 label.admin-whatsapp-search-field(for="whatsapp-request-search")
                                     span.sr-only Buscar por paciente o número de contacto
@@ -263,6 +271,64 @@ html(lang="es")
                                         value=whatsapp.requestFilters.dateTo
                                     )
                                 button.admin-whatsapp-request-submit(type="submit") Buscar
+                        else
+                            .admin-whatsapp-count-grid(
+                                aria-label="Resumen de estados de mensajes WhatsApp"
+                            )
+                                article.admin-whatsapp-count-card
+                                    span Total de mensajes
+                                    strong= whatsapp.deliveryTotal.toLocaleString("es-CO")
+                                    small Histórico de WhatsApp
+                                each item in whatsapp.deliveryStatuses
+                                    article.admin-whatsapp-count-card
+                                        span= item.label
+                                        strong= item.count.toLocaleString("es-CO")
+                            form.admin-whatsapp-request-filters(data-delivery-filters)
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-delivery-status"
+                                )
+                                    span Estado
+                                    select#whatsapp-delivery-status(name="status")
+                                        option(value="", selected=!whatsapp.deliveryFilters.status) Todos los estados
+                                        option(
+                                            value="Pending",
+                                            selected=whatsapp.deliveryFilters.status === "Pending"
+                                        ) Pendiente
+                                        option(
+                                            value="Processing",
+                                            selected=whatsapp.deliveryFilters.status === "Processing"
+                                        ) En proceso
+                                        option(
+                                            value="Sent",
+                                            selected=whatsapp.deliveryFilters.status === "Sent"
+                                        ) Aceptado por proveedor
+                                        option(
+                                            value="Failed",
+                                            selected=whatsapp.deliveryFilters.status === "Failed"
+                                        ) Fallido
+                                        option(
+                                            value="Cancelled",
+                                            selected=whatsapp.deliveryFilters.status === "Cancelled"
+                                        ) Cancelado
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-delivery-date-from"
+                                )
+                                    span Fecha desde
+                                    input#whatsapp-delivery-date-from(
+                                        type="date",
+                                        name="dateFrom",
+                                        value=whatsapp.deliveryFilters.dateFrom
+                                    )
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-delivery-date-to"
+                                )
+                                    span Fecha hasta
+                                    input#whatsapp-delivery-date-to(
+                                        type="date",
+                                        name="dateTo",
+                                        value=whatsapp.deliveryFilters.dateTo
+                                    )
+                                button.admin-whatsapp-request-submit(type="submit") Filtrar
                         if whatsapp.rows.length
                             ul.admin-whatsapp-record-list(data-whatsapp-record-list)
                                 each record in whatsapp.rows
@@ -281,7 +347,7 @@ html(lang="es")
                                                     class="is-" + record.status.toLowerCase()
                                                 )= record.statusLabel
                                                 time(datetime=record.lastActivityAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt))
-                                        else
+                                        else if whatsapp.selectedTab === "requests"
                                             span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
                                             span.admin-whatsapp-record-copy
                                                 strong= record.patientName
@@ -293,6 +359,18 @@ html(lang="es")
                                                 class="is-" + record.status.toLowerCase()
                                             )= record.statusLabel
                                             time(datetime=record.createdAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt))
+                                        else
+                                            span.admin-message-avatar(aria-hidden="true")= record.recipientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
+                                            span.admin-whatsapp-record-copy
+                                                strong= record.recipientName
+                                                small= record.contactNumber || "Número no disponible"
+                                                small= record.eventLabel
+                                                if record.error
+                                                    small.admin-whatsapp-delivery-error= record.error.description + (record.error.code ? " (código " + record.error.code + ")" : "")
+                                            span.admin-whatsapp-record-status(
+                                                class="is-" + record.status.toLowerCase()
+                                            )= record.statusLabel
+                                            time(datetime=record.occurredAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.occurredAt))
                         else
                             p.admin-whatsapp-empty(data-whatsapp-empty) No hay registros para esta sección.
                         .admin-whatsapp-pagination(data-whatsapp-pagination)

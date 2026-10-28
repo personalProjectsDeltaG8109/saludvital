@@ -62,6 +62,8 @@ describe("administrator WhatsApp overview view", () => {
         );
         expect(html).toContain("Conversaciones");
         expect(html).toContain("Solicitudes de citas");
+        expect(html).toContain("Ver todos");
+        expect(html).toMatch(/data-whatsapp-open-deliveries/);
         expect(html).toContain("Flujos del chatbot");
         expect(html).toContain("Plantillas de mensajes");
         expect(html).toContain("Configuración e integración");
@@ -103,5 +105,44 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).not.toContain("<script>alert(1)</script>");
         expect(html).toContain("Laura Méndez");
         expect(html).not.toMatch(/clinical notes|message body|auth token|account sid/i);
+    });
+
+    test("renders the delivery monitor with persisted statuses and safe failed-message details", () => {
+        const html = pug.renderFile("views/admin/whatsapp.pug", {
+            pageTitle: "WhatsApp y chatbot | SaludVital",
+            adminName: "Administradora",
+            whatsapp: createOverviewData({
+                selectedTab: "deliveries",
+                deliveryStatuses: [
+                    { status: "Pending", label: "Pendiente", count: 1 },
+                    { status: "Failed", label: "Fallido", count: 1 },
+                ],
+                deliveryTotal: 2,
+                deliveryFilters: { status: "Failed", dateFrom: "", dateTo: "" },
+                rows: [
+                    {
+                        recipientName: "Laura Mendez",
+                        contactNumber: "••••567",
+                        eventLabel: "Recordatorio de cita",
+                        status: "Failed",
+                        statusLabel: "Fallido",
+                        occurredAt: new Date("2026-10-28T15:00:00Z"),
+                        error: { description: "El proveedor no está disponible.", code: "503" },
+                    },
+                ],
+            }),
+        });
+
+        expect(html).toContain("Mensajes y estado de envío");
+        expect(html).toContain("Fecha desde");
+        expect(html).toContain("Fecha hasta");
+        expect(html).toContain("Laura Mendez");
+        expect(html).toContain("••••567");
+        expect(html).toContain("El proveedor no está disponible.");
+        expect(html).toContain("Aceptado por proveedor");
+        expect(html).not.toContain("+573001234567");
+        expect(html).toMatch(/aria-labelledby="admin-whatsapp-tab-summary"/);
+        expect(html).not.toMatch(/data-whatsapp-tab="deliveries"/);
+        expect(html.match(/role="tab"/g)).toHaveLength(6);
     });
 });
