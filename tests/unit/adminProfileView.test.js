@@ -14,7 +14,9 @@ describe("administrator profile page", () => {
                 role: "Administrator",
                 isActive: true,
                 createdAt: new Date("2025-01-15T10:00:00.000Z"),
+                updatedAt: new Date("2026-10-26T10:00:00.000Z"),
                 lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
+                emailVerifiedAt: new Date("2026-10-01T10:00:00.000Z"),
                 initials: "LM",
             },
         });
@@ -26,6 +28,8 @@ describe("administrator profile page", () => {
         expect(html).toContain("Seguridad");
         expect(html).toContain("Correo electrónico");
         expect(html).toContain("Verificado");
+        expect(html).toContain("Última actualización de la cuenta");
+        expect(html).toContain("Correo verificado el");
         expect(html).toContain("Recuperar contraseña");
         expect(html).toContain("Preferencias");
         expect(html).toContain("Activa");
@@ -42,6 +46,7 @@ describe("administrator profile page", () => {
                 phone: null,
                 role: "Administrator",
                 isActive: true,
+                emailVerifiedAt: null,
                 initials: "A",
             },
         });
@@ -49,6 +54,7 @@ describe("administrator profile page", () => {
         expect(html).toContain("Nombre no registrado");
         expect(html).toContain("admin@example.com");
         expect(html).toContain("Pendiente de verificación");
+        expect(html).not.toContain("Correo verificado el");
         expect(html).toContain("Confirma tu correo electrónico");
         expect(html).not.toContain("Recuperar contraseña");
     });

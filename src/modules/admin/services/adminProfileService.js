@@ -33,10 +33,12 @@ export function toAdminProfile(user) {
         displayName,
         email: user.email,
         emailVerified: Boolean(user.email_verified_at),
+        emailVerifiedAt: user.email_verified_at,
         phone: user.phone,
         role: user.rol.name,
         isActive: user.is_active,
         createdAt: user.created_at,
+        updatedAt: user.updated_at,
         lastLoginAt: user.last_login_at,
         profilePhotoUrl: normalizeProfilePhotoUrl(
             user.profile_photo_url ||
@@ -60,6 +62,7 @@ export async function getAdminProfile(rawUserId) {
             "profile_photo_url",
             "is_active",
             "created_at",
+            "updated_at",
             "last_login_at",
         ],
         include: [

@@ -219,6 +219,9 @@ html(lang="es")
                             .admin-profile-field
                                 dt Último acceso
                                 dd= profile.lastLoginAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.lastLoginAt)) : "Sin información registrada"
+                            .admin-profile-field
+                                dt Última actualización de la cuenta
+                                dd= profile.updatedAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.updatedAt)) : "Sin información registrada"
 
                 section#security-information.admin-profile-note(
                     aria-labelledby="security-information-title"
@@ -228,6 +231,10 @@ html(lang="es")
                         .admin-profile-field
                             dt Estado del correo electrónico
                             dd= profile.emailVerified ? "Verificado" : "Pendiente de verificación"
+                    if profile.emailVerified && profile.emailVerifiedAt
+                        .admin-profile-field
+                            dt Correo verificado el
+                            dd= new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.emailVerifiedAt))
                     if profile.emailVerified
                         p La contraseña se administra mediante el proceso seguro de recuperación por correo electrónico.
                         a(href="/forgot-password") Recuperar contraseña

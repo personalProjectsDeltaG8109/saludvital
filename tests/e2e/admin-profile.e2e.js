@@ -19,7 +19,9 @@ const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
         role: "Administrator",
         isActive: true,
         createdAt: new Date("2025-01-15T10:00:00.000Z"),
+        updatedAt: new Date("2026-10-26T10:00:00.000Z"),
         lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
+        emailVerifiedAt: new Date("2026-10-01T10:00:00.000Z"),
         profilePhotoUrl: null,
         initials: "LM",
     },
@@ -90,6 +92,8 @@ try {
     }
 
     await page.setViewportSize({ width: 375, height: 812 });
+    await page.getByText("Última actualización de la cuenta").waitFor();
+    await page.getByText("Correo verificado el").waitFor();
     const navigation = page.getByRole("navigation", { name: "Secciones del perfil" });
     await page.getByRole("link", { name: "Recuperar contraseña" }).waitFor();
     await navigation.getByRole("link", { name: "Información personal" }).focus();
