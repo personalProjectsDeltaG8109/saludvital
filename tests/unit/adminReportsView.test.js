@@ -25,8 +25,14 @@ const reports = {
             {
                 label: "Canceladas",
                 color: "#ff4c55",
-                count: 4,
-                percentage: 50,
+                count: 2,
+                percentage: 25,
+            },
+            {
+                label: "Reprogramadas",
+                color: "#168de2",
+                count: 2,
+                percentage: 25,
             },
         ],
     },
@@ -36,6 +42,7 @@ const reports = {
         { name: "<script>alert(1)</script>", count: 1, rank: 2, width: 13 },
     ],
     trend: {
+        total: 8,
         maximum: 4,
         dates: [{ label: "1 oct", x: 12, showLabel: true }],
         series: [
@@ -63,9 +70,9 @@ describe("administrator reports page", () => {
         expect(html).toContain('role="img"');
         expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
         expect(html).not.toContain("<script>alert(1)</script>");
-        expect(html).not.toMatch(
-            /Pacientes nuevos|Pending|Reprogramadas|clinical_notes|password_hash/i,
-        );
+        expect(html).not.toMatch(/Pacientes nuevos|Pending|clinical_notes|password_hash/i);
+        expect(html).toContain("Reprogramadas");
+        expect(html).not.toMatch(/En curso/);
     });
 
     test("provides accessible loading and safe error states", () => {
@@ -96,5 +103,24 @@ describe("administrator reports page", () => {
         });
 
         expect(html).toContain('<option value="90" selected>Últimos 90 días</option>');
+    });
+
+    test("shows trends when the period has only attended appointments", () => {
+        const html = pug.renderFile("views/admin/partials/admin-reports-content.pug", {
+            reports: {
+                ...reports,
+                statusChart: {
+                    ...reports.statusChart,
+                    total: 0,
+                    description:
+                        "No hay citas confirmadas, canceladas o reprogramadas en el período.",
+                    segments: [],
+                },
+                trend: { ...reports.trend, total: 1 },
+            },
+        });
+
+        expect(html).toContain("No hay citas en el período seleccionado.");
+        expect(html).toContain("Tendencia diaria de citas atendidas, confirmadas y canceladas");
     });
 });
