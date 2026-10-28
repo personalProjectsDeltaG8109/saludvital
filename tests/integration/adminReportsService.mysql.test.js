@@ -34,4 +34,21 @@ describe("administrator reports service MySQL integration", () => {
             "Cancelled",
         ]);
     });
+
+    test("returns at most five doctors in deterministic count and name order", async () => {
+        const report = await getAdminReportsData(new Date("2026-10-27T12:00:00.000Z"), 30);
+
+        expect(report.topDoctors.length).toBeLessThanOrEqual(5);
+        expect(report.topDoctors.map((doctor) => doctor.rank)).toEqual(
+            report.topDoctors.map((_, index) => index + 1),
+        );
+        for (let index = 1; index < report.topDoctors.length; index += 1) {
+            const previous = report.topDoctors[index - 1];
+            const current = report.topDoctors[index];
+            expect(previous.count).toBeGreaterThanOrEqual(current.count);
+            if (previous.count === current.count) {
+                expect(previous.name.localeCompare(current.name, "es")).toBeLessThanOrEqual(0);
+            }
+        }
+    });
 });
