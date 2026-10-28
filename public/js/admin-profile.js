@@ -2,6 +2,40 @@
     const page = document.querySelector("[data-admin-profile]");
     if (!page) return;
 
+    const profileTabs = [...page.querySelectorAll("[data-profile-tab]")];
+    const profilePanels = [...page.querySelectorAll("[data-profile-panel]")];
+
+    function activateProfileTab(tab, moveFocus = false) {
+        const selectedPanel = tab.dataset.profileTab;
+        for (const currentTab of profileTabs) {
+            const isSelected = currentTab === tab;
+            currentTab.setAttribute("aria-selected", String(isSelected));
+            currentTab.tabIndex = isSelected ? 0 : -1;
+            currentTab.classList.toggle("is-active", isSelected);
+        }
+        for (const panel of profilePanels) {
+            panel.hidden = panel.dataset.profilePanel !== selectedPanel;
+        }
+        if (moveFocus) tab.focus();
+    }
+
+    profileTabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => activateProfileTab(tab));
+        tab.addEventListener("keydown", (event) => {
+            let nextIndex = index;
+            if (event.key === "ArrowRight") nextIndex = (index + 1) % profileTabs.length;
+            else if (event.key === "ArrowLeft") {
+                nextIndex = (index - 1 + profileTabs.length) % profileTabs.length;
+            } else if (event.key === "Home") nextIndex = 0;
+            else if (event.key === "End") nextIndex = profileTabs.length - 1;
+            else return;
+
+            event.preventDefault();
+            activateProfileTab(profileTabs[nextIndex], true);
+        });
+    });
+    if (profileTabs.length) activateProfileTab(profileTabs[0]);
+
     const endpoint = page.dataset.endpoint;
     const editButton = page.querySelector("[data-profile-edit]");
     const form = page.querySelector("[data-profile-form]");

@@ -50,6 +50,7 @@ describe("administrator profile service", () => {
                 "email_verified_at",
                 "phone",
                 "profile_photo_url",
+                "admin_notifications_enabled",
                 "is_active",
                 "created_at",
                 "updated_at",

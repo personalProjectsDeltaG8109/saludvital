@@ -45,6 +45,7 @@ export function toAdminProfile(user) {
                 user.doctor?.profile_photo_url ||
                 user.patient?.profile_photo_url,
         ),
+        adminNotificationsEnabled: Boolean(user.admin_notifications_enabled ?? true),
         initials,
     };
 }
@@ -60,6 +61,7 @@ export async function getAdminProfile(rawUserId) {
             "email_verified_at",
             "phone",
             "profile_photo_url",
+            "admin_notifications_enabled",
             "is_active",
             "created_at",
             "updated_at",
