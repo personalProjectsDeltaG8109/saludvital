@@ -1,9 +1,37 @@
+const app = document.querySelector(".admin-app");
+const sidebar = document.querySelector("[data-admin-sidebar]");
+const menuButton = document.querySelector("[data-admin-open]");
+
+function closeMenu(restoreFocus = false) {
+    const wasOpen = app?.classList.contains("is-sidebar-open");
+    app?.classList.remove("is-sidebar-open");
+    menuButton?.setAttribute("aria-expanded", "false");
+    if (restoreFocus && wasOpen) menuButton?.focus();
+}
+
+function openMenu() {
+    app?.classList.add("is-sidebar-open");
+    menuButton?.setAttribute("aria-expanded", "true");
+    sidebar?.querySelector('.admin-nav-link[aria-current="page"]')?.focus();
+}
+
+if (app && sidebar && menuButton && menuButton.dataset.sidebarBound !== "true") {
+    menuButton.dataset.sidebarBound = "true";
+    menuButton.addEventListener("click", openMenu);
+    document.querySelectorAll("[data-admin-close]").forEach((button) => {
+        button.addEventListener("click", () => closeMenu(true));
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu(true);
+    });
+    window.addEventListener("resize", () => {
+        if (window.matchMedia("(min-width: 761px)").matches) closeMenu();
+    });
+}
+
 const page = document.querySelector("[data-admin-dashboard]");
 
 if (page) {
-    const app = document.querySelector(".admin-app");
-    const sidebar = document.querySelector("[data-admin-sidebar]");
-    const menuButton = document.querySelector("[data-admin-open]");
     const weekSelect = document.querySelector("[data-week-select]");
     const chart = document.querySelector("[data-week-chart]");
     const tableBody = document.querySelector("[data-chart-table-body]");
@@ -15,25 +43,6 @@ if (page) {
     } catch {
         weeklyAppointments = [];
     }
-
-    function closeMenu() {
-        app.classList.remove("is-sidebar-open");
-        menuButton?.setAttribute("aria-expanded", "false");
-    }
-
-    function openMenu() {
-        app.classList.add("is-sidebar-open");
-        menuButton?.setAttribute("aria-expanded", "true");
-        sidebar?.querySelector('a[href="/admin/dashboard"]')?.focus();
-    }
-
-    document.querySelector("[data-admin-open]")?.addEventListener("click", openMenu);
-    document.querySelectorAll("[data-admin-close]").forEach((button) => {
-        button.addEventListener("click", closeMenu);
-    });
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") closeMenu();
-    });
 
     function renderChart(days) {
         chart.replaceChildren();
@@ -107,9 +116,5 @@ if (page) {
         } finally {
             weekSelect.disabled = false;
         }
-    });
-
-    window.addEventListener("resize", () => {
-        if (window.matchMedia("(min-width: 761px)").matches) closeMenu();
     });
 }

@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 
 const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.css"), "utf8");
 const profileStyles = await readFile(path.resolve("public/css/admin-profile.css"), "utf8");
+const dashboardScript = await readFile(path.resolve("public/js/admin-dashboard.js"), "utf8");
 const profileScript = await readFile(path.resolve("public/js/admin-profile.js"), "utf8");
 const profilePhotoScript = await readFile(path.resolve("public/js/admin-profile-photo.js"), "utf8");
 const profilePreferencesScript = await readFile(
@@ -97,6 +98,7 @@ try {
                   };
         };
     });
+    await page.addScriptTag({ content: dashboardScript });
     await page.addScriptTag({ content: profileScript });
     await page.addScriptTag({ content: profilePhotoScript });
     await page.addScriptTag({ content: profilePreferencesScript });
@@ -112,6 +114,19 @@ try {
     }
 
     await page.setViewportSize({ width: 375, height: 812 });
+    const menuButton = page.getByRole("button", { name: "Abrir menú" });
+    await menuButton.click();
+    await page.locator("body.admin-app.is-sidebar-open").waitFor();
+    if ((await menuButton.getAttribute("aria-expanded")) !== "true") {
+        throw new Error("Opening the mobile sidebar must update its expanded state.");
+    }
+    await page.locator(".admin-sidebar-collapse").click();
+    await page.locator("body.admin-app:not(.is-sidebar-open)").waitFor();
+    if ((await menuButton.getAttribute("aria-expanded")) !== "false") {
+        throw new Error("Closing the mobile sidebar must restore its collapsed state.");
+    }
+    console.log("PASS: the shared mobile sidebar opens and closes outside the dashboard page.");
+
     const navigation = page.getByRole("tablist", { name: "Secciones del perfil" });
     const personalTab = navigation.getByRole("tab", { name: "Información personal" });
     await personalTab.focus();
