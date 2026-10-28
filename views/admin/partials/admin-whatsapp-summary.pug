@@ -1,0 +1,186 @@
+.admin-whatsapp-summary
+    .admin-whatsapp-count-grid
+        article.admin-whatsapp-count-card
+            .admin-whatsapp-stat-icon.is-green(aria-hidden="true")
+                img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+            div
+                span Conversaciones hoy
+                strong= whatsapp.summary.conversationsToday.toLocaleString("es-CO")
+                small= whatsapp.summary.activeConversations.toLocaleString("es-CO") + " activas en total"
+        article.admin-whatsapp-count-card
+            .admin-whatsapp-stat-icon.is-blue(aria-hidden="true")
+                span ◷
+            div
+                span Solicitudes de citas hoy
+                strong= whatsapp.summary.requestsToday.toLocaleString("es-CO")
+                small= whatsapp.summary.pendingRequestsToday.toLocaleString("es-CO") + " pendientes hoy"
+        article.admin-whatsapp-count-card
+            .admin-whatsapp-stat-icon.is-teal(aria-hidden="true")
+                span ▤
+            div
+                span Mensajes enviados hoy
+                strong= whatsapp.summary.sentToday.toLocaleString("es-CO")
+                small= whatsapp.summary.failedToday.toLocaleString("es-CO") + " fallidos hoy"
+        article.admin-whatsapp-count-card.admin-whatsapp-service-stat
+            .admin-whatsapp-stat-icon.is-neutral(aria-hidden="true")
+                span ?
+            div
+                span Estado de conexión
+                strong No verificado
+                small= whatsapp.summary.configurationStatus === "Configured" ? "Configuración local completa" : "Configuración local incompleta"
+
+    .admin-whatsapp-content-grid.grid.grid-cols-1.gap-3(
+        class="min-[1100px]:grid-cols-[minmax(0,1fr)_300px]"
+    )
+        .admin-whatsapp-primary-grid.grid.min-w-0.gap-3
+            .admin-whatsapp-dashboard-grid.grid.min-w-0.grid-cols-1.gap-3(class="min-[760px]:grid-cols-2")
+                section.admin-whatsapp-card.admin-whatsapp-chart-card(
+                    aria-labelledby="whatsapp-activity-title"
+                )
+                    header.admin-whatsapp-card-heading
+                        div
+                            h2#whatsapp-activity-title Conversaciones por día
+                            p= "Actividad de los últimos " + whatsapp.activityPeriodDays + " días · hora de Bogotá"
+                        label.admin-whatsapp-period-control(for="whatsapp-activity-period")
+                            span.sr-only Período de actividad
+                            select#whatsapp-activity-period(data-whatsapp-period)
+                                option(value="7", selected=whatsapp.activityPeriodDays === 7) Últimos 7 días
+                                option(value="30", selected=whatsapp.activityPeriodDays === 30) Últimos 30 días
+                    if whatsapp.conversationsByDay.some((day) => day.count > 0)
+                        .admin-whatsapp-chart-scroll(
+                            tabindex="0",
+                            aria-label="Desplazar gráfico de actividad"
+                        )
+                            .admin-whatsapp-bar-chart(
+                                role="img",
+                                aria-label="Conversaciones iniciadas por día",
+                                style="--chart-count: " + whatsapp.conversationsByDay.length
+                            )
+                                each day in whatsapp.conversationsByDay
+                                    .admin-whatsapp-bar-item
+                                        strong= day.count.toLocaleString("es-CO")
+                                        span.admin-whatsapp-bar-track
+                                            span.admin-whatsapp-bar(
+                                                style="height: " + Math.max(4, Math.round((day.count / Math.max(1, ...whatsapp.conversationsByDay.map((item) => item.count))) * 100)) + "%"
+                                            )
+                                        small= day.label
+                    else
+                        p.admin-whatsapp-empty No hay conversaciones iniciadas durante este período.
+                section.admin-whatsapp-card.admin-whatsapp-request-chart(
+                    aria-labelledby="whatsapp-request-status-title"
+                )
+                    header.admin-whatsapp-card-heading
+                        div
+                            h2#whatsapp-request-status-title Estado de las solicitudes
+                            p Últimos 30 días por fecha de creación
+                    if whatsapp.appointmentRequestStatuses.some((item) => item.count > 0)
+                        .admin-whatsapp-status-chart
+                            .admin-whatsapp-donut(
+                                role="img",
+                                aria-label="Distribución de solicitudes por estado",
+                                style="background: " + whatsapp.requestStatusStyle
+                            )
+                                span
+                                    strong= whatsapp.requestStatusTotal.toLocaleString("es-CO")
+                                    small solicitudes
+                            ul.admin-whatsapp-status-legend
+                                each item in whatsapp.appointmentRequestStatuses
+                                    if item.count > 0
+                                        li
+                                            span.admin-whatsapp-legend-dot(
+                                                class="is-" + item.status.toLowerCase(),
+                                                aria-hidden="true"
+                                            )
+                                            span= item.label
+                                            strong= item.count.toLocaleString("es-CO")
+                    else
+                        p.admin-whatsapp-empty No hay solicitudes registradas durante este período.
+
+            .admin-whatsapp-lower-grid.grid.min-w-0.grid-cols-1.gap-3(class="min-[760px]:grid-cols-2")
+                section.admin-whatsapp-card.admin-whatsapp-recent-requests(
+                    aria-labelledby="whatsapp-recent-requests-title"
+                )
+                    header.admin-whatsapp-card-heading
+                        div
+                            h2#whatsapp-recent-requests-title Solicitudes recientes por WhatsApp
+                            p Últimos registros recibidos
+                        a.admin-whatsapp-view-all(
+                            href="/admin/whatsapp?tab=requests",
+                            data-whatsapp-tab-link="requests"
+                        ) Ver todas
+                    if whatsapp.recentRequests.length
+                        .admin-whatsapp-table-wrap(
+                            tabindex="0",
+                            aria-label="Desplazar tabla de solicitudes recientes"
+                        )
+                            table.admin-whatsapp-request-table
+                                thead
+                                    tr
+                                        th(scope="col") Paciente
+                                        th(scope="col") Especialidad
+                                        th(scope="col") Estado
+                                        th(scope="col") Fecha
+                                tbody
+                                    each request in whatsapp.recentRequests
+                                        tr
+                                            td= request.patientName
+                                            td= request.specialty || "Sin especialidad indicada"
+                                            td
+                                                span.admin-whatsapp-record-status(
+                                                    class="is-" + request.status.toLowerCase()
+                                                )= request.statusLabel
+                                            td
+                                                time(datetime=request.createdAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(request.createdAt))
+                    else
+                        p.admin-whatsapp-empty No hay solicitudes recientes.
+                section.admin-whatsapp-card.admin-whatsapp-events-card(
+                    aria-labelledby="whatsapp-events-title"
+                )
+                    header.admin-whatsapp-card-heading
+                        div
+                            h2#whatsapp-events-title Mensajes del sistema
+                            p Estados de notificaciones WhatsApp; no se muestra el contenido enviado.
+                    if whatsapp.recentSystemEvents.length
+                        ul.admin-whatsapp-event-list
+                            each event in whatsapp.recentSystemEvents
+                                li
+                                    span.admin-whatsapp-event-icon(
+                                        class=event.status === "Failed" ? "is-error" : event.status === "Sent" ? "is-success" : "is-neutral",
+                                        aria-hidden="true"
+                                    )= event.status === "Failed" ? "!" : event.status === "Sent" ? "✓" : "i"
+                                    span.admin-whatsapp-record-copy
+                                        strong= event.event
+                                        small= event.statusLabel
+                                    time(datetime=event.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(event.occurredAt))
+                    else
+                        p.admin-whatsapp-empty No hay eventos de notificación disponibles.
+
+        section.admin-whatsapp-card.admin-whatsapp-chatbot-card(
+            aria-labelledby="whatsapp-chatbot-status-title"
+        )
+            header.admin-whatsapp-card-heading
+                div
+                    h2#whatsapp-chatbot-status-title Estado del chatbot
+            .admin-whatsapp-unknown-state
+                span.admin-whatsapp-chatbot-icon(aria-hidden="true") ◉
+                div
+                    strong Estado no disponible
+                    p No existe una verificación operativa del chatbot en el sistema.
+            header.admin-whatsapp-card-heading.admin-whatsapp-preview-heading
+                div
+                    h2 Vista de conversación
+                    p Solo se muestran datos de estado; el contenido se mantiene protegido.
+            if whatsapp.recentMessagePreviews.length
+                - const preview = whatsapp.recentMessagePreviews[0];
+                .admin-whatsapp-conversation-preview
+                    span.admin-message-avatar(aria-hidden="true")= preview.initials
+                    div
+                        strong= preview.patientName
+                        small= preview.directionLabel + " · " + preview.messageTypeLabel + " · " + preview.processingStatusLabel
+                    time(datetime=preview.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(preview.occurredAt))
+                a.admin-whatsapp-view-all(
+                    href="/admin/whatsapp?tab=conversations",
+                    data-whatsapp-tab-link="conversations"
+                ) Ver conversaciones
+            else
+                p.admin-whatsapp-empty No hay una conversación disponible para mostrar.

@@ -57,7 +57,11 @@ mixin adminSidebar(activePage)
                 span.admin-nav-icon(aria-hidden="true") ◷
                 span Horarios y disponibilidad
             .admin-nav-section Canales y comunicación
-            a.admin-nav-link(href="/admin/whatsapp")
+            a.admin-nav-link(
+                href="/admin/whatsapp",
+                class=activePage === "whatsapp" ? "is-active" : null,
+                aria-current=activePage === "whatsapp" ? "page" : null
+            )
                 span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
                     img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
                 span WhatsApp y chatbot
