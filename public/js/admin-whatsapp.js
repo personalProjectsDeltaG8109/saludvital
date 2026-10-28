@@ -9,6 +9,13 @@ if (whatsappPage) {
     let pageNumber = Number(whatsappPage.dataset.currentPage) || 1;
     let conversationSearch = whatsappPage.dataset.search || "";
     let conversationStatus = whatsappPage.dataset.status || "";
+    let requestFilters = {
+        search: whatsappPage.dataset.requestSearch || "",
+        status: whatsappPage.dataset.requestStatus || "",
+        specialtyId: whatsappPage.dataset.requestSpecialty || "",
+        dateFrom: whatsappPage.dataset.requestDateFrom || "",
+        dateTo: whatsappPage.dataset.requestDateTo || "",
+    };
     let activeRequest = 0;
     let conversationSearchTimer;
 
@@ -80,6 +87,11 @@ if (whatsappPage) {
             else url.searchParams.delete("search");
             if (conversationStatus) url.searchParams.set("status", conversationStatus);
             else url.searchParams.delete("status");
+        } else if (tab === "requests") {
+            Object.entries(requestFilters).forEach(([key, value]) => {
+                if (value) url.searchParams.set(key, value);
+                else url.searchParams.delete(key);
+            });
         }
         window.history.replaceState({}, "", url);
     }
@@ -426,11 +438,25 @@ if (whatsappPage) {
         item.append(element("span", "admin-message-avatar", initials(record.patientName)));
         const copy = element("span", "admin-whatsapp-record-copy");
         copy.append(element("strong", "", record.patientName));
-        const subtitle =
-            tab === "conversations"
-                ? "Última actividad: " + formatTime(record.lastActivityAt, true)
-                : record.specialty || "Sin especialidad indicada";
-        copy.append(element("small", "", subtitle));
+        if (tab === "requests") {
+            copy.append(
+                element("small", "", record.contactNumber || "Número no disponible"),
+                element("small", "", record.specialty || "Especialidad no indicada"),
+            );
+            if (record.updatedAt) {
+                copy.append(
+                    element("small", "", "Actualizada: " + formatTime(record.updatedAt, true)),
+                );
+            }
+        } else {
+            copy.append(
+                element(
+                    "small",
+                    "",
+                    "Última actividad: " + formatTime(record.lastActivityAt, true),
+                ),
+            );
+        }
         item.append(copy);
         const status = element(
             "span",
@@ -463,6 +489,7 @@ if (whatsappPage) {
         heading.append(headingCopy);
         panel.append(heading);
         if (selectedTab === "conversations") panel.append(renderConversationFilters(data));
+        if (selectedTab === "requests") panel.append(renderRequestFilters(data));
         if (data.rows.length) {
             const records = element("ul", "admin-whatsapp-record-list");
             data.rows.forEach((record) => records.append(renderRecord(record, selectedTab)));
@@ -523,6 +550,73 @@ if (whatsappPage) {
         statusLabel.append(status);
         form.append(searchLabel, statusLabel);
         return form;
+    }
+
+    function renderRequestFilters(data) {
+        const filters = data.requestFilters || requestFilters;
+        const form = element("form", "admin-whatsapp-request-filters");
+        form.dataset.requestFilters = "";
+        form.append(
+            createFilterInput("search", "Buscar por nombre o número", "search", filters.search),
+        );
+        form.append(
+            createFilterSelect("status", "Estado", filters.status, [
+                ["", "Todos los estados"],
+                ["Pending", "Pendientes"],
+                ["Confirmed", "Confirmadas"],
+                ["Rejected", "Rechazadas"],
+                ["Cancelled", "Canceladas"],
+                ["Expired", "Vencidas"],
+            ]),
+        );
+        form.append(
+            createFilterSelect("specialtyId", "Especialidad", filters.specialtyId, [
+                ["", "Todas las especialidades"],
+                ...(data.requestSpecialties || []).map((item) => [String(item.id), item.name]),
+            ]),
+        );
+        form.append(createFilterInput("dateFrom", "Fecha desde", "date", filters.dateFrom));
+        form.append(createFilterInput("dateTo", "Fecha hasta", "date", filters.dateTo));
+        const submit = element("button", "admin-whatsapp-request-submit", "Buscar");
+        submit.type = "submit";
+        form.append(submit);
+        return form;
+    }
+
+    function createFilterInput(name, labelText, type, value) {
+        const label = element(
+            "label",
+            name === "search"
+                ? "admin-whatsapp-request-control admin-whatsapp-search-field"
+                : "admin-whatsapp-request-control",
+        );
+        label.append(element("span", "", labelText));
+        const input = element("input");
+        input.name = name;
+        input.type = type;
+        if (type === "search") {
+            input.maxLength = 100;
+            input.placeholder = labelText;
+            input.autocomplete = "off";
+        }
+        input.value = value || "";
+        label.append(input);
+        return label;
+    }
+
+    function createFilterSelect(name, labelText, value, options) {
+        const label = element("label", "admin-whatsapp-request-control");
+        label.append(element("span", "", labelText));
+        const select = element("select");
+        select.name = name;
+        options.forEach(([optionValue, optionLabel]) => {
+            const option = element("option", "", optionLabel);
+            option.value = optionValue;
+            option.selected = optionValue === String(value || "");
+            select.append(option);
+        });
+        label.append(select);
+        return label;
     }
 
     function renderConversationDetail(data) {
@@ -723,9 +817,14 @@ if (whatsappPage) {
                 tab,
                 page: String(requestedPage),
                 period: String(requestedPeriod),
-                search: conversationSearch,
-                status: conversationStatus,
             });
+            if (tab === "conversations") {
+                params.set("search", conversationSearch);
+                params.set("status", conversationStatus);
+            }
+            if (tab === "requests") {
+                Object.entries(requestFilters).forEach(([key, value]) => params.set(key, value));
+            }
             const response = await fetch(whatsappPage.dataset.whatsappEndpoint + "?" + params, {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
@@ -788,6 +887,12 @@ if (whatsappPage) {
         if (button) loadConversation(button.dataset.conversationOpen);
     });
     panel.addEventListener("submit", (event) => {
+        if (event.target.matches("[data-request-filters]")) {
+            event.preventDefault();
+            requestFilters = Object.fromEntries(new FormData(event.target).entries());
+            load("requests", 1);
+            return;
+        }
         if (!event.target.matches("[data-conversation-filters]")) return;
         event.preventDefault();
         const form = event.target;

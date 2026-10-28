@@ -132,6 +132,7 @@ try {
             window.requestedWhatsAppTab = tab;
             window.requestedConversationSearch = requestUrl.searchParams.get("search");
             window.requestedConversationStatus = requestUrl.searchParams.get("status");
+            window.requestedRequestFilters = Object.fromEntries(requestUrl.searchParams.entries());
             if (window.delayNextWhatsAppRequest) {
                 window.delayNextWhatsAppRequest = false;
                 await new Promise((resolve) => {
@@ -164,7 +165,27 @@ try {
                                       lastActivityAt: "2026-10-28T15:00:00.000Z",
                                   },
                               ]
-                            : [],
+                            : tab === "requests" && !window.emptyWhatsAppRequests
+                              ? [
+                                    {
+                                        patientName: "Laura Mendez",
+                                        contactNumber: "••••567",
+                                        specialty: "Pediatría",
+                                        status: "Confirmed",
+                                        statusLabel: "Confirmada",
+                                        createdAt: "2026-10-28T15:00:00.000Z",
+                                        updatedAt: "2026-10-28T16:00:00.000Z",
+                                    },
+                                ]
+                              : [],
+                    requestFilters: {
+                        search: requestUrl.searchParams.get("search") || "",
+                        status: requestUrl.searchParams.get("status") || "",
+                        specialtyId: requestUrl.searchParams.get("specialtyId") || "",
+                        dateFrom: requestUrl.searchParams.get("dateFrom") || "",
+                        dateTo: requestUrl.searchParams.get("dateTo") || "",
+                    },
+                    requestSpecialties: [{ id: 4, name: "Pediatría" }],
                     pagination: { page: 1, pageSize: 8, totalItems: 1, totalPages: 1 },
                     conversationsByDay:
                         period === 30
@@ -226,6 +247,44 @@ try {
     if ((await page.evaluate(() => window.requestedWhatsAppTab)) !== "requests") {
         throw new Error("The section control must load its corresponding backend tab.");
     }
+    await page.getByRole("searchbox", { name: "Buscar por nombre o número" }).fill("Laura");
+    await page.getByLabel("Estado").selectOption("Confirmed");
+    await page.getByLabel("Especialidad").selectOption("4");
+    await page.getByLabel("Fecha desde").fill("2026-10-22");
+    await page.getByLabel("Fecha hasta").fill("2026-10-28");
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.getByText("••••567").waitFor();
+    const appliedRequestFilters = await page.evaluate(() => window.requestedRequestFilters);
+    if (
+        appliedRequestFilters.search !== "Laura" ||
+        appliedRequestFilters.status !== "Confirmed" ||
+        appliedRequestFilters.specialtyId !== "4" ||
+        appliedRequestFilters.dateFrom !== "2026-10-22" ||
+        appliedRequestFilters.dateTo !== "2026-10-28"
+    ) {
+        throw new Error("The WhatsApp request filters must be sent together to the backend.");
+    }
+    if ((await page.locator("[data-whatsapp-panel]").innerText()).includes("+573001234567")) {
+        throw new Error("The request list must not expose a full contact number.");
+    }
+    for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const hasHorizontalOverflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > window.innerWidth,
+        );
+        if (hasHorizontalOverflow) {
+            throw new Error(`The WhatsApp request list overflows horizontally at ${width}px.`);
+        }
+    }
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.evaluate(() => {
+        window.emptyWhatsAppRequests = true;
+    });
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.getByText("No hay registros para esta sección.").waitFor();
+    await page.evaluate(() => {
+        window.emptyWhatsAppRequests = false;
+    });
     await page.evaluate(() => {
         window.failWhatsAppRequest = true;
     });
