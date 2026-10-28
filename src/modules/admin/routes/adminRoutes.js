@@ -45,7 +45,7 @@ import {
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
-import { getAdminReportsData } from "../services/adminReportsService.js";
+import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
 import {
@@ -870,9 +870,16 @@ adminRoutes.get("/admin/dashboard", ...requireAdministrator, async (req, res, ne
 });
 
 // Render the administrator reports page using persisted, period-bounded aggregates.
-adminRoutes.get("/api/admin/reports", ...requireAdministrator, async (_req, res, next) => {
+adminRoutes.get("/api/admin/reports", ...requireAdministrator, async (req, res, next) => {
+    let reportDays;
     try {
-        const reports = await getAdminReportsData();
+        reportDays = parseReportPeriod(req.query.period);
+    } catch {
+        return res.status(400).json({ message: "Selecciona un período válido para el reporte." });
+    }
+
+    try {
+        const reports = await getAdminReportsData(new Date(), reportDays);
         return res.render("admin/partials/admin-reports-content", { reports }, (error, html) => {
             if (error) return next(error);
             res.set("Cache-Control", "no-store");
@@ -883,10 +890,18 @@ adminRoutes.get("/api/admin/reports", ...requireAdministrator, async (_req, res,
     }
 });
 
-adminRoutes.get("/admin/reports", ...requireAdministrator, (_req, res) => {
+adminRoutes.get("/admin/reports", ...requireAdministrator, (req, res) => {
+    let selectedReportDays;
+    try {
+        selectedReportDays = parseReportPeriod(req.query.period);
+    } catch {
+        return res.status(400).send("Selecciona un período válido para el reporte.");
+    }
+
     return res.render("admin/reports", {
         pageTitle: "Reportes e indicadores | SaludVital",
         adminName: "Administrador",
+        selectedReportDays,
     });
 });
 

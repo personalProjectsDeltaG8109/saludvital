@@ -30,7 +30,7 @@ html(lang="es")
                         div
                             h1 Reportes e indicadores
                             p Visualiza la información más importante de la operación de SaludVital.
-                    .admin-reports-period(aria-label="Período del reporte")
+                    .admin-reports-period
                         svg(
                             viewBox="0 0 24 24",
                             fill="none",
@@ -40,7 +40,15 @@ html(lang="es")
                         )
                             rect(x="3", y="5", width="18", height="16", rx="2")
                             path(d="M16 3v4M8 3v4M3 10h18")
-                        span Últimos 30 días
+                        label(for="report-period") Período
+                        select#report-period.admin-reports-period-select(
+                            name="period",
+                            data-report-period,
+                            aria-label="Seleccionar período del reporte"
+                        )
+                            option(value="7", selected=selectedReportDays === 7) Últimos 7 días
+                            option(value="30", selected=selectedReportDays === 30) Últimos 30 días
+                            option(value="90", selected=selectedReportDays === 90) Últimos 90 días
                         small(data-report-period-dates)
                 section.admin-reports-loading(
                     role="status",
@@ -52,7 +60,7 @@ html(lang="es")
                 section.admin-reports-error(role="alert", data-reports-error, hidden)
                     h2 No pudimos cargar los reportes
                     p No se pudieron cargar los datos del reporte.
-                    a(href="/admin/reports") Volver a intentar
+                    button.admin-reports-retry(type="button", data-report-retry) Volver a intentar
                 .admin-reports-results(data-reports-results, hidden)
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-reports.js", defer)

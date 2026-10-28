@@ -56,12 +56,18 @@ const html = pug
     .renderFile(path.resolve("views/admin/reports.pug"), {
         pageTitle: "Reportes e indicadores | SaludVital",
         adminName: "Administrador",
+        selectedReportDays: 30,
     })
     .replace("<head>", '<head><base href="http://localhost/">');
-const reportContent = pug.renderFile(
-    path.resolve("views/admin/partials/admin-reports-content.pug"),
-    { reports },
-);
+function renderReportContent(days) {
+    const periodStart = days === 7 ? "21 oct 2026" : days === 90 ? "30 jul 2026" : "28 sept 2026";
+    return pug.renderFile(path.resolve("views/admin/partials/admin-reports-content.pug"), {
+        reports: {
+            ...reports,
+            period: { label: `Últimos ${days} días`, start: periodStart, end: "27 oct 2026" },
+        },
+    });
+}
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 
@@ -71,9 +77,27 @@ try {
     const reportResponseGate = new Promise((resolve) => {
         releaseReportResponse = resolve;
     });
-    await page.route("**/api/admin/reports", async (route) => {
-        await reportResponseGate;
-        await route.fulfill({ status: 200, contentType: "text/html", body: reportContent });
+    let markReportRequestStarted;
+    const reportRequestStarted = new Promise((resolve) => {
+        markReportRequestStarted = resolve;
+    });
+    let releaseNinetyDayResponse;
+    const requestedPeriods = [];
+    const ninetyDayResponseGate = new Promise((resolve) => {
+        releaseNinetyDayResponse = resolve;
+    });
+    await page.route("**/api/admin/reports**", async (route) => {
+        markReportRequestStarted();
+        const requestUrl = new URL(route.request().url());
+        const days = Number(requestUrl.searchParams.get("period"));
+        requestedPeriods.push(days);
+        if (days === 30) await reportResponseGate;
+        if (days === 90) await ninetyDayResponseGate;
+        await route.fulfill({
+            status: 200,
+            contentType: "text/html",
+            body: renderReportContent(days),
+        });
     });
     await page.setContent(html);
     await page.addStyleTag({ content: dashboardStyles });
@@ -82,6 +106,7 @@ try {
     await page.addScriptTag({
         content: await readFile(path.resolve("public/js/admin-reports.js"), "utf8"),
     });
+    await reportRequestStarted;
     await page.locator("[data-reports-loading]").waitFor({ state: "attached" });
     const isLoadingVisible = await page
         .locator("[data-reports-loading]")
@@ -89,6 +114,26 @@ try {
     if (!isLoadingVisible) throw new Error("The reports loading state should be visible.");
     releaseReportResponse();
     await page.locator("[data-reports-results]:not([hidden])").waitFor();
+    await page.locator("[data-report-period]").selectOption("7");
+    await page.getByText("21 oct 2026 – 27 oct 2026").waitFor();
+    await page.locator("[data-report-period]").selectOption("90");
+    await page.locator("[data-reports-loading]:not([hidden])").waitFor();
+    if (!(await page.locator("[data-reports-results]").evaluate((element) => element.hidden))) {
+        throw new Error("Old report results must be hidden while the selected period is loading.");
+    }
+    releaseNinetyDayResponse();
+    await page.getByText("30 jul 2026 – 27 oct 2026").waitFor();
+    if ((await page.locator("[data-report-period]").inputValue()) !== "90") {
+        throw new Error("The selected report period should remain visible after loading.");
+    }
+    const currentUrl = new URL(page.url());
+    if (
+        currentUrl.searchParams.get("period") !== "90" ||
+        requestedPeriods.join(",") !== "30,7,90"
+    ) {
+        throw new Error("Each selected period must update the report request and page URL.");
+    }
+    console.log("PASS: 7/30/90-day selections reload all reports and prevent stale results.");
 
     for (const width of [320, 375, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
@@ -126,7 +171,7 @@ try {
     console.log("PASS: the shared mobile sidebar opens and closes on the reports page.");
 
     const errorPage = await browser.newPage({ viewport: { width: 375, height: 812 } });
-    await errorPage.route("**/api/admin/reports", (route) =>
+    await errorPage.route("**/api/admin/reports**", (route) =>
         route.fulfill({
             status: 503,
             contentType: "application/json",
