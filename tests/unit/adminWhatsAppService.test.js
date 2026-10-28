@@ -31,6 +31,9 @@ jest.unstable_mockModule("../../src/models/WhatsAppMessage.js", () => ({
 jest.unstable_mockModule("../../src/modules/admin/services/adminDashboardService.js", () => ({
     getWhatsAppIntegrationStatus: jest.fn(() => "Configured"),
 }));
+jest.unstable_mockModule("../../src/modules/admin/services/adminChatbotFlowService.js", () => ({
+    getAdminChatbotFlows: jest.fn().mockResolvedValue([]),
+}));
 
 const Notification = (await import("../../src/models/Notification.js")).default;
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
@@ -40,6 +43,8 @@ const Specialities = (await import("../../src/models/Specialities.js")).default;
 const WhatsAppMessage = (await import("../../src/models/WhatsAppMessage.js")).default;
 const { getAdminWhatsAppData } =
     await import("../../src/modules/admin/services/adminWhatsAppService.js");
+const { getAdminChatbotFlows } =
+    await import("../../src/modules/admin/services/adminChatbotFlowService.js");
 
 function modelRecord(record) {
     return { get: () => ({ ...record }) };
@@ -379,12 +384,21 @@ describe("administrator WhatsApp overview service", () => {
         expect(result.deliveryTotal).toBe(0);
     });
 
-    test("keeps unavailable chatbot state distinct from provider configuration", async () => {
+    test("keeps unknown chatbot runtime state distinct from provider configuration", async () => {
         const result = await getAdminWhatsAppData({}, new Date("2026-10-28T16:00:00Z"));
 
         expect(result.chatbotStatus).toBe("Unknown");
         expect(result.chatbotStatusMessage).toContain("No hay una verificación operativa");
         expect(result.summary.configurationStatus).toBe("Configured");
-        expect(result.flowUnavailableMessage).toContain("No hay un catálogo de flujos");
+    });
+
+    test("loads persisted chatbot drafts only for the flows section", async () => {
+        const drafts = [{ id: 4, version: 2, name: "Persisted draft", definition: { steps: [] } }];
+        getAdminChatbotFlows.mockResolvedValue(drafts);
+
+        const result = await getAdminWhatsAppData({ tab: "flows" });
+
+        expect(result.chatbotFlows).toBe(drafts);
+        expect(getAdminChatbotFlows).toHaveBeenCalledTimes(1);
     });
 });

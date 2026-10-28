@@ -23,6 +23,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.WhatsAppMessage).toBeDefined();
         expect(database.models.WhatsAppVerification).toBeDefined();
         expect(database.models.WhatsAppAppointmentRequest).toBeDefined();
+        expect(database.models.ChatbotFlow).toBeDefined();
+        expect(database.models.ChatbotFlowVersion).toBeDefined();
         expect(database.models.Consultation).toBeDefined();
         expect(database.models.Diagnosis).toBeDefined();
         expect(database.models.Prescription).toBeDefined();
@@ -53,6 +55,8 @@ describe("Sequelize model registry", () => {
         expect(database.models.WhatsAppAppointmentRequest.tableName).toBe(
             "whatsapp_appointment_requests",
         );
+        expect(database.models.ChatbotFlow.tableName).toBe("chatbot_flows");
+        expect(database.models.ChatbotFlowVersion.tableName).toBe("chatbot_flow_versions");
         expect(database.models.Consultation.tableName).toBe("consultations");
         expect(database.models.Diagnosis.tableName).toBe("diagnoses");
         expect(database.models.Prescription.tableName).toBe("prescriptions");

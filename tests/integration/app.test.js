@@ -88,6 +88,36 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("chatbot flow retrieval requires an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/whatsapp?tab=flows").redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("chatbot flow details require an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/whatsapp/flows/1").redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("chatbot flow drafts can only be created by authenticated administrators", async () => {
+        const response = await request(app)
+            .post("/api/admin/whatsapp/flows")
+            .send({ name: "Draft", description: "", definition: {} })
+            .redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("chatbot flow drafts can only be edited by authenticated administrators", async () => {
+        const response = await request(app)
+            .patch("/api/admin/whatsapp/flows/1")
+            .send({ name: "Draft", description: "", definition: {} })
+            .redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("specialty directory API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/specialties").redirects(0);
 

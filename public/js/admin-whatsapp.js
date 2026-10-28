@@ -23,6 +23,8 @@ if (whatsappPage) {
     };
     let activeRequest = 0;
     let conversationSearchTimer;
+    let selectedFlowId = null;
+    let chatbotFlows = [];
 
     const labels = {
         Active: "Activa",
@@ -833,20 +835,143 @@ if (whatsappPage) {
         return list;
     }
 
-    function renderInformationTab(data) {
-        const card = element("section", "admin-whatsapp-info-card");
-        if (selectedTab === "flows") {
-            card.append(
-                element("span", "admin-whatsapp-info-icon", "◉"),
-                element("h2", "", "Flujos del chatbot"),
-                element("p", "", data.flowUnavailableMessage),
+    function renderChatbotFlowEditor(container, flow = null) {
+        const form = element("form", "admin-whatsapp-flow-form");
+        form.dataset.chatbotFlowForm = "";
+        const heading = element("h2", "", flow ? "Editar borrador" : "Nuevo borrador");
+
+        const nameLabel = element("label", "admin-whatsapp-request-control");
+        nameLabel.append(element("span", "", "Nombre del flujo"));
+        const nameInput = element("input");
+        nameInput.name = "name";
+        nameInput.required = true;
+        nameInput.maxLength = 100;
+        nameInput.value = flow?.name || "";
+        nameLabel.append(nameInput);
+
+        const descriptionLabel = element("label", "admin-whatsapp-request-control");
+        descriptionLabel.append(element("span", "", "Descripción"));
+        const descriptionInput = element("textarea");
+        descriptionInput.name = "description";
+        descriptionInput.maxLength = 500;
+        descriptionInput.rows = 2;
+        descriptionInput.value = flow?.description || "";
+        descriptionLabel.append(descriptionInput);
+
+        const definitionLabel = element("label", "admin-whatsapp-request-control");
+        definitionLabel.append(element("span", "", "Pasos, preguntas y transiciones"));
+        const definitionInput = element("textarea");
+        definitionInput.name = "definition";
+        definitionInput.required = true;
+        definitionInput.rows = 14;
+        definitionInput.spellcheck = false;
+        definitionInput.setAttribute("aria-describedby", "chatbot-flow-definition-help");
+        definitionInput.value = flow ? JSON.stringify(flow.definition, null, 2) : "";
+        definitionLabel.append(definitionInput);
+
+        const help = element(
+            "p",
+            "admin-whatsapp-flow-runtime-note",
+            "Formato: objeto con startStepId y steps. Tipos admitidos: message (text y nextStepId opcional) y question (text y options con label y nextStepId). Cada transición debe apuntar a un paso existente. No se admiten acciones ejecutables.",
+        );
+        help.id = "chatbot-flow-definition-help";
+        form.append(nameLabel, descriptionLabel, definitionLabel, help);
+        if (flow) {
+            form.append(
                 element(
                     "p",
-                    "",
-                    "El proyecto actual no almacena definiciones, pasos ni transiciones de flujos.",
+                    "admin-whatsapp-flow-runtime-note",
+                    `Versión ${flow.version} · Borrador. Guardar creará la versión ${flow.version + 1}.`,
                 ),
             );
-        } else if (selectedTab === "templates") {
+        }
+        form.append(
+            element(
+                "p",
+                "admin-whatsapp-flow-runtime-note",
+                "El borrador no se ejecuta ni afecta conversaciones existentes. La activación está deshabilitada hasta que exista un runtime compatible.",
+            ),
+        );
+        const save = element("button", "admin-whatsapp-request-submit", "Guardar borrador");
+        save.type = "submit";
+        form.append(save);
+        container.replaceChildren(heading, form);
+    }
+
+    function renderChatbotFlows(data) {
+        chatbotFlows = data.chatbotFlows || [];
+        const layout = element("section", "admin-whatsapp-flow-layout");
+        const listCard = element("article", "admin-whatsapp-card admin-whatsapp-flow-list-card");
+        const listHeading = element("header", "admin-whatsapp-card-heading");
+        const title = element("div");
+        title.append(
+            element("h2", "", "Flujos de conversación"),
+            element("p", "", "Definiciones persistidas en versiones de borrador."),
+        );
+        const create = element("button", "admin-whatsapp-request-submit", "Nuevo borrador");
+        create.type = "button";
+        create.dataset.chatbotNewFlow = "";
+        listHeading.append(title, create);
+        listCard.append(listHeading);
+
+        if (!chatbotFlows.length) {
+            addEmptyState(listCard, "No hay borradores de flujos guardados.");
+        } else {
+            const list = element("ul", "admin-whatsapp-flow-list");
+            chatbotFlows.forEach((flow) => {
+                const row = element("li");
+                const open = element("button", "admin-whatsapp-flow-select");
+                open.type = "button";
+                open.dataset.chatbotEditFlow = String(flow.id);
+                const copy = element("span", "admin-whatsapp-record-copy");
+                copy.append(
+                    element("strong", "", flow.name),
+                    element("small", "", flow.description || "Sin descripción"),
+                    element(
+                        "small",
+                        "",
+                        `Versión ${flow.version} · ${flow.definition.steps.length} pasos`,
+                    ),
+                );
+                open.append(
+                    copy,
+                    element("span", "admin-whatsapp-record-status is-pending", "Borrador"),
+                );
+                row.append(open);
+                list.append(row);
+            });
+            listCard.append(list);
+        }
+        listCard.append(
+            element(
+                "p",
+                "admin-whatsapp-flow-runtime-note",
+                "Los borradores no se ejecutan en el chatbot ni modifican conversaciones activas.",
+            ),
+        );
+
+        const editor = element("article", "admin-whatsapp-card");
+        editor.dataset.chatbotFlowEditor = "";
+        const selectedFlow = chatbotFlows.find((flow) => flow.id === selectedFlowId);
+        if (selectedFlow) {
+            renderChatbotFlowEditor(editor, selectedFlow);
+        } else {
+            editor.append(
+                element("h2", "", "Selecciona un borrador o crea uno nuevo"),
+                element("p", "", "Abrir un flujo solo muestra su configuración; no lo ejecuta."),
+            );
+        }
+        layout.append(listCard, editor);
+        panel.append(layout);
+    }
+
+    function renderInformationTab(data) {
+        if (selectedTab === "flows") {
+            renderChatbotFlows(data);
+            return;
+        }
+        const card = element("section", "admin-whatsapp-info-card");
+        if (selectedTab === "templates") {
             card.append(
                 element("h2", "", "Plantillas de mensajes"),
                 element(
@@ -985,7 +1110,70 @@ if (whatsappPage) {
             load("summary", 1, Number(event.target.value));
         }
     });
+    async function saveChatbotFlowDraft(form) {
+        const saveButton = form.querySelector("[type=submit]");
+        let definition;
+        try {
+            definition = JSON.parse(form.elements.definition.value);
+        } catch {
+            feedback.textContent = "La definición debe tener un formato JSON válido.";
+            feedback.classList.add("is-error");
+            feedback.setAttribute("role", "alert");
+            form.elements.definition.focus();
+            return;
+        }
+
+        const requestBody = {
+            name: form.elements.name.value,
+            description: form.elements.description.value,
+            definition,
+        };
+        const isEditing = selectedFlowId !== null;
+        const endpoint =
+            whatsappPage.dataset.whatsappEndpoint +
+            "/flows" +
+            (isEditing ? "/" + encodeURIComponent(selectedFlowId) : "");
+        saveButton.disabled = true;
+        feedback.textContent = "Guardando borrador…";
+        feedback.classList.remove("is-error");
+        try {
+            const response = await fetch(endpoint, {
+                method: isEditing ? "PATCH" : "POST",
+                headers: { Accept: "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(requestBody),
+                cache: "no-store",
+            });
+            const result = await response.json();
+            if (!response.ok)
+                throw new Error(result.message || "No fue posible guardar el borrador.");
+            selectedFlowId = result.id;
+            await load("flows", 1);
+            feedback.textContent = "Borrador guardado correctamente.";
+        } catch (error) {
+            feedback.textContent = error.message || "No fue posible guardar el borrador.";
+            feedback.classList.add("is-error");
+            feedback.setAttribute("role", "alert");
+        } finally {
+            saveButton.disabled = false;
+        }
+    }
+
     panel.addEventListener("click", (event) => {
+        const createFlow = event.target.closest("[data-chatbot-new-flow]");
+        if (createFlow) {
+            selectedFlowId = null;
+            const editor = panel.querySelector("[data-chatbot-flow-editor]");
+            if (editor) renderChatbotFlowEditor(editor);
+            return;
+        }
+        const editFlow = event.target.closest("[data-chatbot-edit-flow]");
+        if (editFlow) {
+            selectedFlowId = Number(editFlow.dataset.chatbotEditFlow);
+            const editor = panel.querySelector("[data-chatbot-flow-editor]");
+            const flow = chatbotFlows.find((item) => item.id === selectedFlowId);
+            if (editor && flow) renderChatbotFlowEditor(editor, flow);
+            return;
+        }
         const deliveryLink = event.target.closest("[data-whatsapp-open-deliveries]");
         if (deliveryLink) {
             event.preventDefault();
@@ -1002,6 +1190,11 @@ if (whatsappPage) {
         if (button) loadConversation(button.dataset.conversationOpen);
     });
     panel.addEventListener("submit", (event) => {
+        if (event.target.matches("[data-chatbot-flow-form]")) {
+            event.preventDefault();
+            saveChatbotFlowDraft(event.target);
+            return;
+        }
         if (event.target.matches("[data-delivery-filters]")) {
             event.preventDefault();
             deliveryFilters = Object.fromEntries(new FormData(event.target).entries());
@@ -1048,4 +1241,5 @@ if (whatsappPage) {
     });
     setTabs(selectedTab);
     panel.setAttribute("aria-busy", "false");
+    if (selectedTab === "flows") load("flows", pageNumber);
 }

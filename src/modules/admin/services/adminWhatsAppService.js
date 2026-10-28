@@ -7,6 +7,7 @@ import WhatsAppAppointmentRequest from "../../../models/WhatsAppAppointmentReque
 import WhatsAppConversation from "../../../models/WhatsAppConversation.js";
 import WhatsAppMessage from "../../../models/WhatsAppMessage.js";
 import { getWhatsAppIntegrationStatus } from "./adminDashboardService.js";
+import { getAdminChatbotFlows } from "./adminChatbotFlowService.js";
 
 const PAGE_SIZE = 8;
 const SUMMARY_LIMIT = 6;
@@ -586,8 +587,9 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
             (total, count) => total + (Number(count) || 0),
             0,
         ),
-        flowUnavailableMessage: "No hay un catálogo de flujos del chatbot disponible.",
     };
+
+    if (tab === "flows") dashboard.chatbotFlows = await getAdminChatbotFlows();
 
     let rows = [];
     let pagination = buildPagination(0, page);

@@ -47,6 +47,10 @@ import {
     getAdminWhatsAppConversation,
     getAdminWhatsAppData,
 } from "../services/adminWhatsAppService.js";
+import {
+    getAdminChatbotFlow,
+    saveAdminChatbotFlowDraft,
+} from "../services/adminChatbotFlowService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
 import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
@@ -824,6 +828,47 @@ adminRoutes.get(
     async (req, res, next) => {
         try {
             return res.json(await getAdminMunicipalities(req.query.departmentCode));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.get(
+    "/api/admin/whatsapp/flows/:flowId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await getAdminChatbotFlow(req.params.flowId));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.post("/api/admin/whatsapp/flows", ...requireAdministrator, async (req, res, next) => {
+    try {
+        return res
+            .status(201)
+            .json(await saveAdminChatbotFlowDraft(req.auth.userId, null, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+adminRoutes.patch(
+    "/api/admin/whatsapp/flows/:flowId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await saveAdminChatbotFlowDraft(req.auth.userId, req.params.flowId, req.body),
+            );
         } catch (error) {
             if (error.statusCode)
                 return res.status(error.statusCode).json({ message: error.message });
