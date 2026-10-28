@@ -52,10 +52,12 @@ const reports = {
     averageConsultationMinutes: 28,
     whatsappAppointmentRequests: 7,
 };
-const html = pug.renderFile(path.resolve("views/admin/reports.pug"), {
-    pageTitle: "Reportes e indicadores | SaludVital",
-    adminName: "Administrador",
-}).replace("<head>", '<head><base href="http://localhost/">');
+const html = pug
+    .renderFile(path.resolve("views/admin/reports.pug"), {
+        pageTitle: "Reportes e indicadores | SaludVital",
+        adminName: "Administrador",
+    })
+    .replace("<head>", '<head><base href="http://localhost/">');
 const reportContent = pug.renderFile(
     path.resolve("views/admin/partials/admin-reports-content.pug"),
     { reports },
