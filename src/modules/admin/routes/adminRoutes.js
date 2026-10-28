@@ -43,7 +43,10 @@ import {
     updateAdminUser,
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
-import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
+import {
+    getAdminWhatsAppConversation,
+    getAdminWhatsAppData,
+} from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
 import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
@@ -824,6 +827,23 @@ adminRoutes.get(
         } catch (error) {
             if (error.statusCode)
                 return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.get(
+    "/api/admin/whatsapp/conversations/:conversationId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await getAdminWhatsAppConversation(req.params.conversationId, req.query),
+            );
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
             return next(error);
         }
     },

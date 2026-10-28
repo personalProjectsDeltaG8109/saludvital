@@ -103,9 +103,35 @@ try {
         window.releaseWhatsAppRequest = null;
         window.fetch = async (url) => {
             const requestUrl = new URL(url, "http://localhost");
+            if (requestUrl.pathname.endsWith("/conversations/12")) {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        conversation: {
+                            id: 12,
+                            patientName: "Laura Mendez",
+                            contactNumber: "••••567",
+                            status: "Active",
+                            statusLabel: "Activa",
+                        },
+                        messages: [
+                            {
+                                id: 1,
+                                direction: "Inbound",
+                                content: "<script>texto no ejecutable</script>",
+                                contentExpired: false,
+                                occurredAt: "2026-10-28T15:00:00.000Z",
+                            },
+                        ],
+                        pagination: { page: 1, pageSize: 40, totalItems: 1, totalPages: 1 },
+                    }),
+                };
+            }
             const tab = requestUrl.searchParams.get("tab") || "summary";
             const period = Number(requestUrl.searchParams.get("period") || 7);
             window.requestedWhatsAppTab = tab;
+            window.requestedConversationSearch = requestUrl.searchParams.get("search");
+            window.requestedConversationStatus = requestUrl.searchParams.get("status");
             if (window.delayNextWhatsAppRequest) {
                 window.delayNextWhatsAppRequest = false;
                 await new Promise((resolve) => {
@@ -124,6 +150,22 @@ try {
                     ...window.whatsappResponse,
                     selectedTab: tab,
                     activityPeriodDays: period,
+                    search: requestUrl.searchParams.get("search") || "",
+                    status: requestUrl.searchParams.get("status") || "",
+                    rows:
+                        tab === "conversations"
+                            ? [
+                                  {
+                                      id: 12,
+                                      patientName: "Laura Mendez",
+                                      contactNumber: "••••567",
+                                      status: "Active",
+                                      statusLabel: "Activa",
+                                      lastActivityAt: "2026-10-28T15:00:00.000Z",
+                                  },
+                              ]
+                            : [],
+                    pagination: { page: 1, pageSize: 8, totalItems: 1, totalPages: 1 },
                     conversationsByDay:
                         period === 30
                             ? Array.from({ length: 30 }, (_, index) => ({
@@ -155,6 +197,30 @@ try {
     await page.getByRole("tab", { name: "Resumen" }).focus();
     await page.keyboard.press("ArrowRight");
     await page.getByRole("heading", { name: "Conversaciones" }).waitFor();
+    await page
+        .getByRole("searchbox", { name: "Buscar por nombre o número de contacto" })
+        .fill("Laura");
+    await page.waitForFunction(() => window.requestedConversationSearch === "Laura");
+    await page.getByLabel("Filtrar por estado").selectOption("Active");
+    await page.waitForFunction(() => window.requestedConversationStatus === "Active");
+    await page.getByRole("button", { name: "Abrir conversación de Laura Mendez" }).click();
+    await page.getByText("<script>texto no ejecutable</script>").waitFor();
+    if (await page.locator(".admin-whatsapp-message script").count()) {
+        throw new Error("Persisted message content must render as text, not executable markup.");
+    }
+    for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const hasHorizontalOverflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > window.innerWidth,
+        );
+        if (hasHorizontalOverflow) {
+            throw new Error(`The conversation history overflows horizontally at ${width}px.`);
+        }
+    }
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.getByRole("button", { name: "Volver a conversaciones" }).click();
+    await page.getByRole("heading", { name: "Conversaciones" }).waitFor();
+    await page.getByRole("tab", { name: "Conversaciones" }).focus();
     await page.keyboard.press("ArrowRight");
     await page.getByRole("heading", { name: "Solicitudes de citas" }).waitFor();
     if ((await page.evaluate(() => window.requestedWhatsAppTab)) !== "requests") {
