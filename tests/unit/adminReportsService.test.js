@@ -119,7 +119,14 @@ describe("administrator reports service", () => {
                 col: "appointment_id",
             }),
         );
-        expect(Consultation.findOne.mock.calls[0][0].where.status).toBe("Completed");
+        expect(Consultation.findOne.mock.calls[0][0].where).toMatchObject({
+            status: "Completed",
+            duration_seconds: { [not]: null },
+        });
+        expect(Consultation.findOne.mock.calls[0][0].where.ended_at).toEqual({
+            [gte]: new Date("2026-09-28T05:00:00.000Z"),
+            [lt]: new Date("2026-10-28T05:00:00.000Z"),
+        });
         expect(WhatsAppAppointmentRequest.count.mock.calls[0][0].where.created_at[gte]).toEqual(
             new Date("2026-09-28T05:00:00.000Z"),
         );
@@ -136,6 +143,7 @@ describe("administrator reports service", () => {
         const report = await getAdminReportsData(new Date("2026-10-27T12:00:00.000Z"));
 
         expect(report.summary.totalAppointments).toBe(0);
+        expect(report.summary.cancellationRate).toBeNull();
         expect(report.statusChart.description).toBe(
             "No hay citas confirmadas, canceladas o reprogramadas en el período.",
         );
@@ -210,7 +218,7 @@ describe("administrator reports service", () => {
             [gte]: start,
             [lt]: end,
         });
-        expect(Consultation.findOne.mock.calls[0][0].where.started_at).toEqual({
+        expect(Consultation.findOne.mock.calls[0][0].where.ended_at).toEqual({
             [gte]: start,
             [lt]: end,
         });

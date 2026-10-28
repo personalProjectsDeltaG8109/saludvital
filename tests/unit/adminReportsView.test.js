@@ -123,4 +123,21 @@ describe("administrator reports page", () => {
         expect(html).toContain("No hay citas en el período seleccionado.");
         expect(html).toContain("Tendencia diaria de citas atendidas, confirmadas y canceladas");
     });
+
+    test("shows an unavailable cancellation rate when the period has no appointments", () => {
+        const html = pug.renderFile("views/admin/partials/admin-reports-content.pug", {
+            reports: {
+                ...reports,
+                summary: {
+                    ...reports.summary,
+                    totalAppointments: 0,
+                    cancelledAppointments: 0,
+                    cancellationRate: null,
+                },
+            },
+        });
+
+        expect(html.match(/Sin datos/g)).toHaveLength(2);
+        expect(html).not.toContain("null%");
+    });
 });

@@ -249,7 +249,7 @@ export async function getAdminReportsData(
         start_at: { [Op.gte]: range.start, [Op.lt]: range.end },
     };
     const consultationWhere = {
-        started_at: { [Op.gte]: range.start, [Op.lt]: range.end },
+        ended_at: { [Op.gte]: range.start, [Op.lt]: range.end },
         status: "Completed",
         duration_seconds: { [Op.not]: null },
     };
@@ -391,7 +391,7 @@ export async function getAdminReportsData(
                 : 0,
             cancellationRate: totalAppointments
                 ? Math.round((toCount(cancelledAppointments?.count) / totalAppointments) * 100)
-                : 0,
+                : null,
         },
         statusChart,
         specialties: buildSpecialtyDistribution(specialtyRows),
