@@ -11,6 +11,8 @@ import { getWhatsAppIntegrationStatus } from "./adminDashboardService.js";
 const PAGE_SIZE = 8;
 const SUMMARY_LIMIT = 6;
 const MAX_PAGE = 10000;
+const MAX_SEARCH_LENGTH = 100;
+const MESSAGE_PAGE_SIZE = 40;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const REQUEST_METRIC_DAYS = 30;
 const BOGOTA_TIME_ZONE = "America/Bogota";
@@ -23,6 +25,7 @@ const REQUEST_STATUSES = {
     Expired: "Vencidas",
 };
 const SUPPORTED_ACTIVITY_DAYS = [7, 30];
+const CONVERSATION_STATUSES = ["Active", "Completed", "Expired", "Blocked"];
 const EVENT_LABELS = {
     appointment_reminder: "Recordatorio de cita",
     appointment_reschedule: "Reprogramación de cita",
@@ -68,7 +71,44 @@ function parsePagination(query) {
     if (!SUPPORTED_ACTIVITY_DAYS.includes(activityDays)) {
         throw createServiceError("El período de actividad no es válido.", 400);
     }
-    return { page, tab, activityDays };
+    const search = typeof query.search === "string" ? query.search.trim() : "";
+    if (search.length > MAX_SEARCH_LENGTH) {
+        throw createServiceError("La búsqueda supera el máximo permitido.", 400);
+    }
+    const status = query.status || "";
+    if (status && !CONVERSATION_STATUSES.includes(status)) {
+        throw createServiceError("El estado de conversación no es válido.", 400);
+    }
+    return { page, tab, activityDays, search, status };
+}
+
+function parseConversationId(value) {
+    const id = Number(value);
+    if (!Number.isSafeInteger(id) || id < 1) {
+        throw createServiceError("La conversación solicitada no es válida.", 400);
+    }
+    return id;
+}
+
+function maskPhoneNumber(value) {
+    if (!value) return null;
+    const digits = String(value).replace(/\\D/g, "");
+    return digits.length > 3 ? `••••${digits.slice(-3)}` : "•••";
+}
+
+function buildConversationWhere(search, status) {
+    const where = {};
+    if (status) where.status = status;
+    if (search) {
+        const pattern = `%${search}%`;
+        where[Op.or] = [
+            { "$patient.first_name$": { [Op.like]: pattern } },
+            { "$patient.last_name$": { [Op.like]: pattern } },
+            { "$patient.phone$": { [Op.like]: pattern } },
+            { "$patient.notification_whatsapp_phone$": { [Op.like]: pattern } },
+        ];
+    }
+    return where;
 }
 
 function getBogotaDateParts(date) {
@@ -175,11 +215,11 @@ function addRequestPercentages(statuses) {
     return { statuses: segments, total, style: `conic-gradient(${gradient})` };
 }
 
-function buildPagination(count, page) {
-    const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+function buildPagination(count, page, pageSize = PAGE_SIZE) {
+    const totalPages = Math.max(1, Math.ceil(count / pageSize));
     return {
         page: Math.min(page, totalPages),
-        pageSize: PAGE_SIZE,
+        pageSize,
         totalItems: count,
         totalPages,
     };
@@ -266,7 +306,7 @@ function mapAppointmentRequest(request) {
 
 /** Return administrator-only WhatsApp metrics and bounded, safe records. */
 export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
-    const { page, tab, activityDays } = parsePagination(query);
+    const { page, tab, activityDays, search, status } = parsePagination(query);
     const today = getPeriodRange(referenceDate, 1);
     const activityRange = getPeriodRange(referenceDate, activityDays);
     const requestsRange = getPeriodRange(referenceDate, REQUEST_METRIC_DAYS);
@@ -403,9 +443,23 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
             {
                 attributes: ["id", "status", "started_at", "last_activity_at"],
                 include: [
-                    { model: Patient, as: "patient", attributes: ["first_name", "last_name"] },
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: [
+                            "first_name",
+                            "last_name",
+                            "phone",
+                            "notification_whatsapp_phone",
+                        ],
+                        required: Boolean(search),
+                    },
                 ],
-                order: [["last_activity_at", "DESC"]],
+                where: buildConversationWhere(search, status),
+                order: [
+                    ["last_activity_at", "DESC"],
+                    ["id", "DESC"],
+                ],
                 distinct: true,
             },
             page,
@@ -414,8 +468,19 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         rows = result.rows.map((conversation) => {
             const record = conversation.get({ plain: true });
             return {
+                id: record.id,
                 patientName: getPatientName(record.patient),
+                contactNumber: maskPhoneNumber(
+                    record.patient?.notification_whatsapp_phone || record.patient?.phone,
+                ),
                 status: record.status,
+                statusLabel:
+                    {
+                        Active: "Activa",
+                        Completed: "Finalizada",
+                        Expired: "Vencida",
+                        Blocked: "Bloqueada",
+                    }[record.status] || "Estado registrado",
                 startedAt: record.started_at,
                 lastActivityAt: record.last_activity_at,
             };
@@ -440,5 +505,115 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         rows = result.rows.map(mapAppointmentRequest);
     }
 
-    return { ...dashboard, rows, pagination };
+    return { ...dashboard, rows, pagination, search, status };
+}
+
+/** Return one persisted conversation and a bounded chronological message page. */
+export async function getAdminWhatsAppConversation(
+    conversationId,
+    query = {},
+    referenceDate = new Date(),
+) {
+    const id = parseConversationId(conversationId);
+    const page = query.page === undefined ? 1 : Number(query.page);
+    if (!Number.isSafeInteger(page) || page < 1 || page > MAX_PAGE) {
+        throw createServiceError("El número de página no es válido.", 400);
+    }
+
+    const conversation = await WhatsAppConversation.findByPk(id, {
+        attributes: ["id", "status", "started_at", "last_activity_at", "ended_at"],
+        include: [
+            {
+                model: Patient,
+                as: "patient",
+                attributes: ["first_name", "last_name", "phone", "notification_whatsapp_phone"],
+            },
+        ],
+    });
+    if (!conversation) throw createServiceError("No se encontró la conversación.", 404);
+
+    const result = await WhatsAppMessage.findAndCountAll({
+        attributes: [
+            "id",
+            "direction",
+            "message_type",
+            "content",
+            "processing_status",
+            "delivery_status",
+            "received_at",
+            "content_expires_at",
+            "created_at",
+        ],
+        where: { conversation_id: id },
+        order: [
+            ["created_at", "ASC"],
+            ["id", "ASC"],
+        ],
+        limit: MESSAGE_PAGE_SIZE,
+        offset: (page - 1) * MESSAGE_PAGE_SIZE,
+    });
+    const pagination = buildPagination(result.count, page, MESSAGE_PAGE_SIZE);
+    const actualPage = Math.min(page, pagination.totalPages);
+    let messages = result.rows;
+    if (actualPage !== page) {
+        const adjusted = await WhatsAppMessage.findAndCountAll({
+            attributes: [
+                "id",
+                "direction",
+                "message_type",
+                "content",
+                "processing_status",
+                "delivery_status",
+                "received_at",
+                "content_expires_at",
+                "created_at",
+            ],
+            where: { conversation_id: id },
+            order: [
+                ["created_at", "ASC"],
+                ["id", "ASC"],
+            ],
+            limit: MESSAGE_PAGE_SIZE,
+            offset: (actualPage - 1) * MESSAGE_PAGE_SIZE,
+        });
+        messages = adjusted.rows;
+    }
+
+    const record = conversation.get({ plain: true });
+    return {
+        conversation: {
+            id: record.id,
+            patientName: getPatientName(record.patient),
+            contactNumber: maskPhoneNumber(
+                record.patient?.notification_whatsapp_phone || record.patient?.phone,
+            ),
+            status: record.status,
+            statusLabel:
+                {
+                    Active: "Activa",
+                    Completed: "Finalizada",
+                    Expired: "Vencida",
+                    Blocked: "Bloqueada",
+                }[record.status] || "Estado registrado",
+            startedAt: record.started_at,
+            lastActivityAt: record.last_activity_at,
+            endedAt: record.ended_at,
+        },
+        messages: messages.map((message) => {
+            const item = message.get({ plain: true });
+            const contentExpired =
+                item.content_expires_at && new Date(item.content_expires_at) <= referenceDate;
+            return {
+                id: item.id,
+                direction: item.direction,
+                messageType: item.message_type,
+                content: contentExpired ? null : item.content,
+                contentExpired: Boolean(contentExpired),
+                processingStatus: item.processing_status,
+                deliveryStatus: item.delivery_status,
+                occurredAt: item.received_at || item.created_at,
+            };
+        }),
+        pagination: { ...pagination, page: actualPage },
+    };
 }
