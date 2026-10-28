@@ -7,6 +7,7 @@ const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.
 const profileStyles = await readFile(path.resolve("public/css/admin-profile.css"), "utf8");
 const profileScript = await readFile(path.resolve("public/js/admin-profile.js"), "utf8");
 const profilePhotoScript = await readFile(path.resolve("public/js/admin-profile-photo.js"), "utf8");
+const validPng = await readFile(path.resolve("public/brand/logo-symbol.png"));
 const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
     adminName: "Laura Méndez",
@@ -28,7 +29,11 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
-    await page.setContent(html);
+    const htmlWithImagePolicy = html.replace(
+        '<meta charset="UTF-8">',
+        '<meta http-equiv="Content-Security-Policy" content="img-src \'self\' data:"><meta charset="UTF-8">',
+    );
+    await page.setContent(htmlWithImagePolicy);
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: profileStyles });
     await page.evaluate(() => {
@@ -162,9 +167,15 @@ try {
     await page.locator("[data-profile-photo-input]").setInputFiles({
         name: "profile.png",
         mimeType: "image/png",
-        buffer: Buffer.from("png-test-data"),
+        buffer: validPng,
     });
     await photoDialog.locator("[data-photo-preview-container]:not([hidden])").waitFor();
+    const previewIsVisible = await page.locator("[data-photo-preview]").evaluate((image) => {
+        return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+    });
+    if (!previewIsVisible) {
+        throw new Error("The selected image must render in the preview under the image CSP.");
+    }
     await photoDialog.getByRole("button", { name: "Guardar foto" }).click();
     await photoDialog.getByRole("alert").getByText("No pudimos guardar la foto.").waitFor();
     if (await page.locator("[data-profile-avatar-image]").count()) {

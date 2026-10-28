@@ -19,7 +19,6 @@
     const maximumPhotoSize = 2 * 1024 * 1024;
 
     let selectedPhotoDataUrl = null;
-    let previewUrl = null;
     let hasProfilePhoto = Boolean(avatar.querySelector("[data-profile-avatar-image]"));
 
     function setMessage(element, message) {
@@ -28,8 +27,6 @@
     }
 
     function clearPreview() {
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        previewUrl = null;
         selectedPhotoDataUrl = null;
         previewImage.removeAttribute("src");
         previewContainer.hidden = true;
@@ -145,8 +142,7 @@
             const dataUrl = await readSelectedFile(file);
             if (typeof dataUrl !== "string") throw new Error("No se pudo leer la imagen.");
             selectedPhotoDataUrl = dataUrl;
-            previewUrl = URL.createObjectURL(file);
-            previewImage.src = previewUrl;
+            previewImage.src = dataUrl;
             actions.hidden = true;
             previewContainer.hidden = false;
             setMessage(statusMessage, "Revisa la vista previa antes de guardar.");

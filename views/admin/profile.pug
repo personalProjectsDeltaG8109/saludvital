@@ -111,12 +111,12 @@ html(lang="es")
                         h2#admin-profile-name(data-profile-identity-name)= profile.displayName || "Nombre no registrado"
                         p(data-profile-identity-email)= profile.email
                         span.admin-profile-role= profile.role === "Administrator" ? "Administrador" : profile.role
-                    p.admin-profile-photo-page-feedback(
-                        role="status",
-                        aria-live="polite",
-                        data-photo-page-feedback,
-                        hidden
-                    )
+                        p.admin-profile-photo-page-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-photo-page-feedback,
+                            hidden
+                        )
 
                 nav.admin-profile-tabs(aria-label="Secciones del perfil")
                     a(href="#personal-information") Información personal
