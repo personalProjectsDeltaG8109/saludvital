@@ -56,7 +56,7 @@ function overviewData(tab = "summary", period = 7) {
             {
                 event: "Recordatorio de cita",
                 status: "Sent",
-                statusLabel: "Enviado",
+                statusLabel: "Aceptado por proveedor",
                 occurredAt: "2026-10-28T15:00:00.000Z",
             },
         ],
@@ -70,6 +70,15 @@ function overviewData(tab = "summary", period = 7) {
                 occurredAt: "2026-10-28T15:00:00.000Z",
             },
         ],
+        deliveryStatuses: [
+            { status: "Pending", label: "Pendiente", count: 0 },
+            { status: "Processing", label: "En proceso", count: 0 },
+            { status: "Sent", label: "Aceptado por proveedor", count: 1 },
+            { status: "Failed", label: "Fallido", count: 1 },
+            { status: "Cancelled", label: "Cancelado", count: 0 },
+        ],
+        deliveryTotal: 2,
+        deliveryFilters: { status: "", dateFrom: "", dateTo: "" },
         notificationAlertCount: 0,
         flowUnavailableMessage: "No hay un catálogo de flujos del chatbot disponible.",
         rows: [],
@@ -133,6 +142,7 @@ try {
             window.requestedConversationSearch = requestUrl.searchParams.get("search");
             window.requestedConversationStatus = requestUrl.searchParams.get("status");
             window.requestedRequestFilters = Object.fromEntries(requestUrl.searchParams.entries());
+            window.requestedDeliveryFilters = Object.fromEntries(requestUrl.searchParams.entries());
             if (window.delayNextWhatsAppRequest) {
                 window.delayNextWhatsAppRequest = false;
                 await new Promise((resolve) => {
@@ -177,7 +187,22 @@ try {
                                         updatedAt: "2026-10-28T16:00:00.000Z",
                                     },
                                 ]
-                              : [],
+                              : tab === "deliveries"
+                                ? [
+                                      {
+                                          recipientName: "Laura Mendez",
+                                          contactNumber: "••••567",
+                                          eventLabel: "Recordatorio de cita",
+                                          status: "Failed",
+                                          statusLabel: "Fallido",
+                                          occurredAt: "2026-10-28T15:00:00.000Z",
+                                          error: {
+                                              description: "El proveedor no está disponible.",
+                                              code: "503",
+                                          },
+                                      },
+                                  ]
+                                : [],
                     requestFilters: {
                         search: requestUrl.searchParams.get("search") || "",
                         status: requestUrl.searchParams.get("status") || "",
@@ -186,6 +211,12 @@ try {
                         dateTo: requestUrl.searchParams.get("dateTo") || "",
                     },
                     requestSpecialties: [{ id: 4, name: "Pediatría" }],
+                    deliveryStatuses: window.whatsappResponse.deliveryStatuses,
+                    deliveryFilters: {
+                        status: requestUrl.searchParams.get("status") || "",
+                        dateFrom: requestUrl.searchParams.get("dateFrom") || "",
+                        dateTo: requestUrl.searchParams.get("dateTo") || "",
+                    },
                     pagination: { page: 1, pageSize: 8, totalItems: 1, totalPages: 1 },
                     conversationsByDay:
                         period === 30
@@ -285,11 +316,40 @@ try {
     await page.evaluate(() => {
         window.emptyWhatsAppRequests = false;
     });
+    await page.getByRole("tab", { name: "Mensajes y entregas" }).click();
+    await page.getByRole("heading", { name: "Mensajes y estado de envío" }).waitFor();
+    await page.getByLabel("Estado").selectOption("Failed");
+    await page.getByLabel("Fecha desde").fill("2026-10-22");
+    await page.getByLabel("Fecha hasta").fill("2026-10-28");
+    await page.getByRole("button", { name: "Filtrar" }).click();
+    await page.getByText("El proveedor no está disponible.").waitFor();
+    const appliedDeliveryFilters = await page.evaluate(() => window.requestedDeliveryFilters);
+    if (
+        appliedDeliveryFilters.status !== "Failed" ||
+        appliedDeliveryFilters.dateFrom !== "2026-10-22" ||
+        appliedDeliveryFilters.dateTo !== "2026-10-28"
+    ) {
+        throw new Error(
+            "The delivery status and date filters must be sent together to the backend.",
+        );
+    }
+    if ((await page.locator("[data-whatsapp-panel]").innerText()).includes("+573001234567")) {
+        throw new Error("The delivery list must not expose a full contact number.");
+    }
+    for (const width of [320, 375, 768, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const hasHorizontalOverflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > window.innerWidth,
+        );
+        if (hasHorizontalOverflow) {
+            throw new Error(`The WhatsApp delivery list overflows horizontally at ${width}px.`);
+        }
+    }
+    await page.setViewportSize({ width: 375, height: 812 });
     await page.evaluate(() => {
         window.failWhatsAppRequest = true;
     });
-    await page.getByRole("tab", { name: "Solicitudes de citas" }).focus();
-    await page.keyboard.press("ArrowRight");
+    await page.getByRole("tab", { name: "Flujos del chatbot" }).click();
     await page.waitForFunction(() => {
         const feedback = document.querySelector("[data-whatsapp-feedback]");
         return (

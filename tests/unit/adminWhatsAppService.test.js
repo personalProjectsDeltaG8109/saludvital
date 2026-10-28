@@ -12,7 +12,7 @@ jest.unstable_mockModule("sequelize", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({}));
 jest.unstable_mockModule("../../src/models/Notification.js", () => ({
-    default: { count: jest.fn(), findAll: jest.fn() },
+    default: { count: jest.fn(), findAll: jest.fn(), findAndCountAll: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/Patient.js", () => ({ default: {} }));
 jest.unstable_mockModule("../../src/models/Specialities.js", () => ({
@@ -66,6 +66,7 @@ describe("administrator WhatsApp overview service", () => {
         Specialities.findAll.mockReset().mockResolvedValue([]);
         Notification.count.mockReset().mockResolvedValue(0);
         Notification.findAll.mockReset().mockResolvedValue([]);
+        Notification.findAndCountAll.mockReset().mockResolvedValue({ count: 0, rows: [] });
         WhatsAppMessage.findAll.mockReset().mockResolvedValue([]);
     });
 
@@ -126,7 +127,7 @@ describe("administrator WhatsApp overview service", () => {
         });
         expect(result.recentSystemEvents[0]).toMatchObject({
             event: "Recordatorio de cita",
-            statusLabel: "Enviado",
+            statusLabel: "Aceptado por proveedor",
         });
         expect(result.recentMessagePreviews[0]).toEqual(
             expect.objectContaining({
@@ -290,6 +291,92 @@ describe("administrator WhatsApp overview service", () => {
 
         expect(result.rows).toEqual([]);
         expect(result.pagination).toMatchObject({ totalItems: 0, totalPages: 1 });
+    });
+
+    test("filters and paginates WhatsApp deliveries while masking personal and provider data", async () => {
+        Notification.findAll
+            .mockResolvedValueOnce([
+                { status: "Failed", count: "1" },
+                { status: "Sent", count: "4" },
+            ])
+            .mockResolvedValueOnce([]);
+        Notification.findAndCountAll.mockResolvedValueOnce({
+            count: 17,
+            rows: [
+                modelRecord({
+                    event_type: "appointment_reminder",
+                    status: "Failed",
+                    recipient_address: "+573001234567",
+                    created_at: new Date("2026-10-22T15:00:00Z"),
+                    updated_at: new Date("2026-10-22T15:10:00Z"),
+                    last_error: "HTTP 503 failed for +573001234567 with secret bearer abc123",
+                    provider_message_id: "SM-private",
+                    payload: { appointment: "private" },
+                    patient: { first_name: "Laura", last_name: "Mendez" },
+                }),
+            ],
+        });
+
+        const result = await getAdminWhatsAppData({
+            tab: "deliveries",
+            status: "Failed",
+            dateFrom: "2026-10-22",
+            dateTo: "2026-10-28",
+            page: "2",
+        });
+
+        const query = Notification.findAndCountAll.mock.calls[0][0];
+        expect(query.where).toMatchObject({ channel: "WhatsApp", status: "Failed" });
+        expect(query.where.created_at[gte]).toEqual(new Date("2026-10-22T05:00:00.000Z"));
+        expect(query.where.created_at[lt]).toEqual(new Date("2026-10-29T05:00:00.000Z"));
+        expect(query.limit).toBe(8);
+        expect(query.offset).toBe(8);
+        expect(query.order).toEqual([
+            ["updated_at", "DESC"],
+            ["id", "DESC"],
+        ]);
+        expect(result.deliveryTotal).toBe(5);
+        expect(result.pagination).toMatchObject({ page: 2, totalItems: 17 });
+        expect(result.rows[0]).toMatchObject({
+            eventLabel: "Recordatorio de cita",
+            recipientName: "Laura Mendez",
+            statusLabel: "Fallido",
+            error: {
+                description: "El proveedor de mensajería no está disponible temporalmente.",
+                code: "503",
+            },
+        });
+        expect(result.rows[0].contactNumber.slice(-3)).toBe("567");
+        expect(query.attributes).not.toEqual(
+            expect.arrayContaining(["payload", "provider_message_id"]),
+        );
+        expect(JSON.stringify(result.rows)).not.toMatch(
+            /\+573001234567|secret bearer|abc123|SM-private|private/,
+        );
+    });
+
+    test("rejects unsupported delivery states and reversed dates", async () => {
+        await expect(
+            getAdminWhatsAppData({ tab: "deliveries", status: "Delivered" }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        await expect(
+            getAdminWhatsAppData({
+                tab: "deliveries",
+                dateFrom: "2026-10-29",
+                dateTo: "2026-10-28",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(Notification.findAndCountAll).not.toHaveBeenCalled();
+    });
+
+    test("returns an empty paginated delivery list when no records match", async () => {
+        Notification.findAll.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+        const result = await getAdminWhatsAppData({ tab: "deliveries", status: "Sent" });
+
+        expect(result.rows).toEqual([]);
+        expect(result.pagination).toMatchObject({ totalItems: 0, totalPages: 1 });
+        expect(result.deliveryTotal).toBe(0);
     });
 
     test("keeps unavailable chatbot state distinct from provider configuration", async () => {
