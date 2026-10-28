@@ -62,6 +62,8 @@ describe("administrator WhatsApp overview view", () => {
         );
         expect(html).toContain("Conversaciones");
         expect(html).toContain("Solicitudes de citas");
+        expect(html).toContain("Ver todos");
+        expect(html).toMatch(/data-whatsapp-open-deliveries/);
         expect(html).toContain("Flujos del chatbot");
         expect(html).toContain("Plantillas de mensajes");
         expect(html).toContain("Configuración e integración");
@@ -139,6 +141,8 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).toContain("El proveedor no está disponible.");
         expect(html).toContain("Aceptado por proveedor");
         expect(html).not.toContain("+573001234567");
-        expect(html).toMatch(/data-whatsapp-tab="deliveries"/);
+        expect(html).toMatch(/aria-labelledby="admin-whatsapp-tab-summary"/);
+        expect(html).not.toMatch(/data-whatsapp-tab="deliveries"/);
+        expect(html.match(/role="tab"/g)).toHaveLength(6);
     });
 });

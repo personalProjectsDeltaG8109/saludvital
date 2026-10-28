@@ -863,7 +863,8 @@ adminRoutes.get("/api/admin/whatsapp", ...requireAdministrator, async (req, res,
 // Render read-only WhatsApp monitoring data for administrators.
 adminRoutes.get("/admin/whatsapp", ...requireAdministrator, async (req, res, next) => {
     try {
-        const whatsapp = await getAdminWhatsAppData(req.query);
+        const selectedTab = req.query.view === "deliveries" ? "deliveries" : req.query.tab;
+        const whatsapp = await getAdminWhatsAppData({ ...req.query, tab: selectedTab });
         return res.render("admin/whatsapp", {
             pageTitle: "WhatsApp y chatbot | SaludVital",
             adminName: "Administrador",

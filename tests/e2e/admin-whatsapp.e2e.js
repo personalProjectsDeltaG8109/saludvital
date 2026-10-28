@@ -316,8 +316,12 @@ try {
     await page.evaluate(() => {
         window.emptyWhatsAppRequests = false;
     });
-    await page.getByRole("tab", { name: "Mensajes y entregas" }).click();
+    await page.getByRole("tab", { name: "Resumen" }).click();
+    await page.locator("[data-whatsapp-open-deliveries]").click();
     await page.getByRole("heading", { name: "Mensajes y estado de envío" }).waitFor();
+    if ((await page.getByRole("tab").count()) !== 6) {
+        throw new Error("The WhatsApp navigation must keep its six reference sections.");
+    }
     await page.getByLabel("Estado").selectOption("Failed");
     await page.getByLabel("Fecha desde").fill("2026-10-22");
     await page.getByLabel("Fecha hasta").fill("2026-10-28");

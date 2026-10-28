@@ -105,7 +105,7 @@ html(lang="es")
                     button#admin-whatsapp-tab-summary.admin-whatsapp-tab(
                         type="button",
                         role="tab",
-                        aria-selected=whatsapp.selectedTab === "summary" ? "true" : "false",
+                        aria-selected=whatsapp.selectedTab === "summary" || whatsapp.selectedTab === "deliveries" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="summary"
                     ) Resumen
@@ -123,13 +123,6 @@ html(lang="es")
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="requests"
                     ) Solicitudes de citas
-                    button#admin-whatsapp-tab-deliveries.admin-whatsapp-tab(
-                        type="button",
-                        role="tab",
-                        aria-selected=whatsapp.selectedTab === "deliveries" ? "true" : "false",
-                        aria-controls="admin-whatsapp-panel",
-                        data-whatsapp-tab="deliveries"
-                    ) Mensajes y entregas
                     button#admin-whatsapp-tab-flows.admin-whatsapp-tab(
                         type="button",
                         role="tab",
@@ -154,7 +147,7 @@ html(lang="es")
                 section#admin-whatsapp-panel.admin-whatsapp-panel(
                     class=whatsapp.selectedTab === "summary" ? "is-summary-panel" : "",
                     role="tabpanel",
-                    aria-labelledby="admin-whatsapp-tab-" + whatsapp.selectedTab,
+                    aria-labelledby="admin-whatsapp-tab-" + (whatsapp.selectedTab === "deliveries" ? "summary" : whatsapp.selectedTab),
                     tabindex="0",
                     data-whatsapp-panel
                 )
@@ -165,6 +158,11 @@ html(lang="es")
                             div
                                 h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : whatsapp.selectedTab === "requests" ? "Solicitudes de citas" : "Mensajes y estado de envío"
                                 p(data-whatsapp-result-count)= whatsapp.pagination.totalItems.toLocaleString("es-CO") + " registros"
+                            if whatsapp.selectedTab === "deliveries"
+                                a.admin-whatsapp-view-all(
+                                    href="/admin/whatsapp",
+                                    data-whatsapp-back-summary
+                                ) Volver al resumen
                         if whatsapp.selectedTab === "conversations"
                             form.admin-whatsapp-conversation-filters(
                                 data-conversation-filters,

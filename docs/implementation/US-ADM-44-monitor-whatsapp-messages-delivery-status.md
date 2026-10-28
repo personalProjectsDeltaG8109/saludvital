@@ -16,7 +16,7 @@
 
 ## Implementation
 
-- Added a protected `deliveries` tab to the existing WhatsApp page and API.
+- Added a protected delivery-monitor view accessible through “Ver todos” in the existing Summary > System Messages card. The six primary WhatsApp sections remain unchanged.
 - Reused persisted `Notification` records filtered to the WhatsApp channel. Status totals and the filtered list are queried from the database; list retrieval is paginated and ordered by update time and ID.
 - Added date and status validation and combined filters using the existing Sequelize query layer and `America/Bogota` calendar boundaries.
 - Added a minimal record projection and maps raw errors to safe Spanish diagnostic categories. Only a numeric provider error code may be included.

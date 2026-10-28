@@ -74,19 +74,23 @@ if (whatsappPage) {
 
     function setTabs(tab) {
         selectedTab = tab;
+        const navigationTab = tab === "deliveries" ? "summary" : tab;
         tabs.forEach((button) => {
-            const isSelected = button.dataset.whatsappTab === tab;
+            const isSelected = button.dataset.whatsappTab === navigationTab;
             button.setAttribute("aria-selected", String(isSelected));
             button.tabIndex = isSelected ? 0 : -1;
         });
-        panel.setAttribute("aria-labelledby", "admin-whatsapp-tab-" + tab);
+        panel.setAttribute("aria-labelledby", "admin-whatsapp-tab-" + navigationTab);
     }
 
     function updateUrl(tab, page, period) {
         const url = new URL(window.location.href);
-        url.searchParams.set("tab", tab);
+        const navigationTab = tab === "deliveries" ? "summary" : tab;
+        url.searchParams.set("tab", navigationTab);
         url.searchParams.set("page", String(page));
         url.searchParams.set("period", String(period));
+        if (tab === "deliveries") url.searchParams.set("view", "deliveries");
+        else url.searchParams.delete("view");
         if (tab === "conversations") {
             if (conversationSearch) url.searchParams.set("search", conversationSearch);
             else url.searchParams.delete("search");
@@ -277,7 +281,9 @@ if (whatsappPage) {
 
     function renderSystemEvents(data) {
         const card = element("section", "admin-whatsapp-card admin-whatsapp-events-card");
-        card.append(
+        const heading = element("header", "admin-whatsapp-card-heading");
+        const copy = element("div");
+        copy.append(
             element("h2", "", "Mensajes del sistema"),
             element(
                 "p",
@@ -285,6 +291,11 @@ if (whatsappPage) {
                 "Estados de notificaciones WhatsApp; no se muestra el contenido enviado.",
             ),
         );
+        const viewAll = element("a", "admin-whatsapp-view-all", "Ver todos");
+        viewAll.href = "/admin/whatsapp?view=deliveries";
+        viewAll.dataset.whatsappOpenDeliveries = "";
+        heading.append(copy, viewAll);
+        card.append(heading);
         if (!data.recentSystemEvents.length) {
             addEmptyState(card, "No hay eventos de notificación disponibles.");
             return card;
@@ -543,6 +554,12 @@ if (whatsappPage) {
             ),
         );
         heading.append(headingCopy);
+        if (selectedTab === "deliveries") {
+            const backToSummary = element("a", "admin-whatsapp-view-all", "Volver al resumen");
+            backToSummary.href = "/admin/whatsapp";
+            backToSummary.dataset.whatsappBackSummary = "";
+            heading.append(backToSummary);
+        }
         panel.append(heading);
         if (selectedTab === "conversations") panel.append(renderConversationFilters(data));
         if (selectedTab === "requests") panel.append(renderRequestFilters(data));
@@ -969,6 +986,18 @@ if (whatsappPage) {
         }
     });
     panel.addEventListener("click", (event) => {
+        const deliveryLink = event.target.closest("[data-whatsapp-open-deliveries]");
+        if (deliveryLink) {
+            event.preventDefault();
+            load("deliveries", 1);
+            return;
+        }
+        const summaryLink = event.target.closest("[data-whatsapp-back-summary]");
+        if (summaryLink) {
+            event.preventDefault();
+            load("summary", 1);
+            return;
+        }
         const button = event.target.closest("[data-conversation-open]");
         if (button) loadConversation(button.dataset.conversationOpen);
     });
