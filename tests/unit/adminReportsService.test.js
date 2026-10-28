@@ -12,6 +12,7 @@ jest.unstable_mockModule("sequelize", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Appointment: { findAll: jest.fn(), count: jest.fn() },
+    AppointmentHistory: { count: jest.fn() },
     AppointmentStatus: {},
     Consultation: { findOne: jest.fn() },
     Doctor: {},
@@ -21,7 +22,8 @@ jest.unstable_mockModule("../../src/models/WhatsAppAppointmentRequest.js", () =>
     default: { count: jest.fn() },
 }));
 
-const { Appointment, Consultation } = await import("../../src/models/associations.js");
+const { Appointment, AppointmentHistory, Consultation } =
+    await import("../../src/models/associations.js");
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
     .default;
 const { getAdminReportsData, parseReportPeriod } =
@@ -51,6 +53,7 @@ describe("administrator reports service", () => {
                 { date: "2026-10-02", status: "Cancelled", count: "1" },
             ]);
         Appointment.count.mockResolvedValue(6);
+        AppointmentHistory.count.mockResolvedValue(1);
         Consultation.findOne.mockResolvedValue({ averageSeconds: "3600" });
         WhatsAppAppointmentRequest.count.mockResolvedValue(5);
     });
@@ -71,10 +74,15 @@ describe("administrator reports service", () => {
         });
         expect(report.statusChart.segments.map((segment) => segment.status)).toEqual([
             "Confirmed",
-            "In Progress",
-            "Attended",
             "Cancelled",
+            "Rescheduled",
         ]);
+        expect(report.statusChart.segments.map((segment) => segment.count)).toEqual([3, 1, 1]);
+        expect(report.statusChart.segments.map((segment) => segment.percentage)).toEqual([
+            60, 20, 20,
+        ]);
+        expect(report.statusChart.total).toBe(5);
+        expect(report.statusChart.description).not.toMatch(/En curso|Atendidas|Pendientes/i);
         expect(report.specialties).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({ name: "Medicina General", count: 4 }),
@@ -88,6 +96,7 @@ describe("administrator reports service", () => {
             "Confirmadas",
             "Canceladas",
         ]);
+        expect(report.trend.total).toBe(4);
         expect(report.averageConsultationMinutes).toBe(60);
         expect(report.whatsappAppointmentRequests).toBe(5);
 
@@ -103,6 +112,13 @@ describe("administrator reports service", () => {
         expect(Appointment.count).toHaveBeenCalledWith(
             expect.objectContaining({ distinct: true, col: "patient_id" }),
         );
+        expect(AppointmentHistory.count).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { event_type: "Rescheduled" },
+                distinct: true,
+                col: "appointment_id",
+            }),
+        );
         expect(Consultation.findOne.mock.calls[0][0].where.status).toBe("Completed");
         expect(WhatsAppAppointmentRequest.count.mock.calls[0][0].where.created_at[gte]).toEqual(
             new Date("2026-09-28T05:00:00.000Z"),
@@ -113,13 +129,16 @@ describe("administrator reports service", () => {
         Appointment.findAll.mockReset();
         Appointment.findAll.mockResolvedValue([]);
         Appointment.count.mockResolvedValue(0);
+        AppointmentHistory.count.mockResolvedValue(0);
         Consultation.findOne.mockResolvedValue({ averageSeconds: null });
         WhatsAppAppointmentRequest.count.mockResolvedValue(0);
 
         const report = await getAdminReportsData(new Date("2026-10-27T12:00:00.000Z"));
 
         expect(report.summary.totalAppointments).toBe(0);
-        expect(report.statusChart.description).toBe("No hay citas para mostrar en el período.");
+        expect(report.statusChart.description).toBe(
+            "No hay citas confirmadas, canceladas o reprogramadas en el período.",
+        );
         expect(report.statusChart.style).toContain("#e8eef7");
         expect(report.specialties).toEqual([]);
         expect(report.topDoctors).toEqual([]);
@@ -145,6 +164,10 @@ describe("administrator reports service", () => {
             expect(query.where.start_at[lt]).toEqual(end);
         }
         expect(Appointment.count.mock.calls[0][0].where.start_at).toEqual({
+            [gte]: start,
+            [lt]: end,
+        });
+        expect(AppointmentHistory.count.mock.calls[0][0].include[0].where.start_at).toEqual({
             [gte]: start,
             [lt]: end,
         });

@@ -1,6 +1,7 @@
 import { col, fn, Op } from "sequelize";
 import {
     Appointment,
+    AppointmentHistory,
     AppointmentStatus,
     Consultation,
     Doctor,
@@ -13,11 +14,11 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_REPORT_DAYS = 30;
 const SUPPORTED_REPORT_DAYS = [7, 30, 90];
 const APPOINTMENT_STATUSES = ["Confirmed", "In Progress", "Attended", "Cancelled"];
+const STATUS_CHART_STATUSES = ["Confirmed", "Cancelled", "Rescheduled"];
 const STATUS_PRESENTATION = {
     Confirmed: { label: "Confirmadas", color: "#13b87a" },
-    "In Progress": { label: "En curso", color: "#f59e0b" },
-    Attended: { label: "Atendidas", color: "#168de2" },
     Cancelled: { label: "Canceladas", color: "#ff4c55" },
+    Rescheduled: { label: "Reprogramadas", color: "#168de2" },
 };
 const SPECIALTY_COLORS = ["#168de2", "#13b8b0", "#7c8ef5", "#f59e0b", "#13b87a", "#ff747b"];
 
@@ -103,8 +104,12 @@ function buildTrendSeries(rows, dates) {
         { status: "Confirmed", label: "Confirmadas", color: "#168de2" },
         { status: "Cancelled", label: "Canceladas", color: "#ff4c55" },
     ];
+    const total = Object.values(valuesByStatus)
+        .flatMap((counts) => [...counts.values()])
+        .reduce((sum, count) => sum + count, 0);
 
     return {
+        total,
         maximum,
         dates: dates.map((date, index) => ({
             key: date,
@@ -133,15 +138,22 @@ function buildTrendSeries(rows, dates) {
     };
 }
 
-function buildStatusDistribution(rows) {
+function buildStatusDistribution(rows, reprogrammedAppointmentCount) {
     const countByStatus = new Map(rows.map((row) => [row.status, toCount(row.count)]));
-    const total = APPOINTMENT_STATUSES.reduce(
-        (sum, status) => sum + (countByStatus.get(status) || 0),
+    const confirmedCount = countByStatus.get("Confirmed") || 0;
+    const rescheduledCount = Math.min(toCount(reprogrammedAppointmentCount), confirmedCount);
+    const countByChartStatus = new Map([
+        ["Confirmed", confirmedCount - rescheduledCount],
+        ["Cancelled", countByStatus.get("Cancelled") || 0],
+        ["Rescheduled", rescheduledCount],
+    ]);
+    const total = STATUS_CHART_STATUSES.reduce(
+        (sum, status) => sum + countByChartStatus.get(status),
         0,
     );
     let start = 0;
-    const segments = APPOINTMENT_STATUSES.map((status) => {
-        const count = countByStatus.get(status) || 0;
+    const segments = STATUS_CHART_STATUSES.map((status) => {
+        const count = countByChartStatus.get(status);
         const percentage = total ? (count / total) * 100 : 0;
         const segment = {
             status,
@@ -173,7 +185,7 @@ function buildStatusDistribution(rows) {
                   .filter((segment) => segment.count)
                   .map((segment) => `${segment.label}: ${segment.count}`)
                   .join(", ")}.`
-            : "No hay citas para mostrar en el período.",
+            : "No hay citas confirmadas, canceladas o reprogramadas en el período.",
     };
 }
 
@@ -234,6 +246,7 @@ export async function getAdminReportsData(
     const [
         statusRows,
         distinctPatientCount,
+        reprogrammedAppointmentCount,
         specialtyRows,
         doctorRows,
         trendRows,
@@ -263,6 +276,29 @@ export async function getAdminReportsData(
             ],
             distinct: true,
             col: "patient_id",
+        }),
+        AppointmentHistory.count({
+            where: { event_type: "Rescheduled" },
+            include: [
+                {
+                    model: Appointment,
+                    as: "appointment",
+                    attributes: [],
+                    required: true,
+                    where: appointmentWhere,
+                    include: [
+                        {
+                            model: AppointmentStatus,
+                            as: "status",
+                            attributes: [],
+                            required: true,
+                            where: { name: "Confirmed" },
+                        },
+                    ],
+                },
+            ],
+            distinct: true,
+            col: "appointment_id",
         }),
         Appointment.findAll({
             attributes: [
@@ -314,8 +350,8 @@ export async function getAdminReportsData(
         }),
     ]);
 
-    const statusChart = buildStatusDistribution(statusRows);
-    const totalAppointments = statusChart.total;
+    const statusChart = buildStatusDistribution(statusRows, reprogrammedAppointmentCount);
+    const totalAppointments = statusRows.reduce((total, row) => total + toCount(row.count), 0);
     const attendedAppointments = statusRows.find((row) => row.status === "Attended");
     const cancelledAppointments = statusRows.find((row) => row.status === "Cancelled");
     const averageSeconds =

@@ -17,14 +17,14 @@ const reports = {
         cancellationRate: 13,
     },
     statusChart: {
-        total: 32,
-        style: "background: conic-gradient(#13b87a 0deg 140deg, #f59e0b 140deg 170deg, #168de2 170deg 300deg, #ff4c55 300deg 360deg)",
-        description: "Distribución de citas por estado.",
+        total: 26,
+        style: "background: conic-gradient(#13b87a 0deg 166deg, #ff4c55 166deg 263deg, #168de2 263deg 360deg)",
+        description:
+            "Distribución de 26 citas por estado: Confirmadas: 12, Canceladas: 7, Reprogramadas: 7.",
         segments: [
             { label: "Confirmadas", color: "#13b87a", count: 12, percentage: 37.5 },
-            { label: "En curso", color: "#f59e0b", count: 3, percentage: 9.4 },
-            { label: "Atendidas", color: "#168de2", count: 13, percentage: 40.6 },
-            { label: "Canceladas", color: "#ff4c55", count: 4, percentage: 12.5 },
+            { label: "Canceladas", color: "#ff4c55", count: 7, percentage: 21.9 },
+            { label: "Reprogramadas", color: "#168de2", count: 7, percentage: 21.9 },
         ],
     },
     specialties: [
@@ -38,6 +38,7 @@ const reports = {
         { name: "Dra. Laura Méndez", count: 5, rank: 3, width: 42 },
     ],
     trend: {
+        total: 24,
         maximum: 8,
         dates: [
             { label: "28 sept", x: 12, showLabel: true },
@@ -159,7 +160,7 @@ try {
     if (await page.getByText("Pacientes nuevos").count()) {
         throw new Error("The reports page must not display a new-patients indicator.");
     }
-    await page.getByRole("img", { name: /Distribución de citas por estado/ }).waitFor();
+    await page.getByRole("img", { name: /Distribución de 26 citas por estado/ }).waitFor();
     await page.getByRole("img", { name: /Distribución de citas por especialidad/ }).waitFor();
     await page.getByRole("img", { name: /Tendencia diaria de citas/ }).waitFor();
     console.log(
