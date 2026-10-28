@@ -191,6 +191,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
     gap: 12px;
+    padding-top: 10px;
 }
 
 .admin-report-card {
@@ -450,6 +451,7 @@
 
 .admin-operational-summary {
     padding: 18px 18px 20px;
+    margin-top: 10px;
 }
 
 .admin-operational-grid {
