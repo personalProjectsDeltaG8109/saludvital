@@ -45,6 +45,7 @@ import {
 } from "../services/adminUserManagementService.js";
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
+import { getAdminReportsData } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
 import {
@@ -866,6 +867,27 @@ adminRoutes.get("/admin/dashboard", ...requireAdministrator, async (req, res, ne
     } catch (error) {
         return next(error);
     }
+});
+
+// Render the administrator reports page using persisted, period-bounded aggregates.
+adminRoutes.get("/api/admin/reports", ...requireAdministrator, async (_req, res, next) => {
+    try {
+        const reports = await getAdminReportsData();
+        return res.render("admin/partials/admin-reports-content", { reports }, (error, html) => {
+            if (error) return next(error);
+            res.set("Cache-Control", "no-store");
+            return res.type("html").send(html);
+        });
+    } catch {
+        return res.status(503).json({ message: "No pudimos cargar los reportes." });
+    }
+});
+
+adminRoutes.get("/admin/reports", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/reports", {
+        pageTitle: "Reportes e indicadores | SaludVital",
+        adminName: "Administrador",
+    });
 });
 
 adminRoutes.get("/admin/profile", ...requireAdministrator, async (req, res, next) => {

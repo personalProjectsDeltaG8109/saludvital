@@ -1,0 +1,563 @@
+.admin-reports {
+    gap: 16px;
+    padding-top: 22px;
+    color: #102b72;
+}
+
+.admin-reports-heading,
+.admin-reports-title-group,
+.admin-report-card-heading,
+.admin-status-chart-layout,
+.admin-report-stat-card,
+.admin-operational-item {
+    display: flex;
+    align-items: center;
+}
+
+.admin-reports-heading {
+    justify-content: space-between;
+    gap: 20px;
+    padding: 4px 8px 8px;
+}
+
+.admin-reports-title-group {
+    min-width: 0;
+    gap: 20px;
+}
+
+.admin-reports-title-icon {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    flex: 0 0 68px;
+    place-items: center;
+    border-radius: 20px;
+    background: #e2f2ff;
+    color: #0875df;
+}
+
+.admin-reports-title-icon svg {
+    width: 39px;
+    height: 39px;
+}
+
+.admin-reports-heading h1 {
+    margin: 0;
+    color: #101b70;
+    font-size: clamp(25px, 2.15vw, 34px);
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.admin-reports-heading p {
+    margin: 7px 0 0;
+    color: #234580;
+    font-size: 15px;
+}
+
+.admin-reports-period {
+    display: grid;
+    grid-template-columns: 22px auto;
+    align-items: center;
+    column-gap: 10px;
+    min-width: 190px;
+    padding: 10px 13px;
+    border: 1px solid #d9e5f5;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgb(17 55 111 / 5%);
+    color: #102b72;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-reports-period svg {
+    width: 21px;
+    height: 21px;
+    color: #123b73;
+}
+
+.admin-reports-period small {
+    grid-column: 2;
+    margin-top: 2px;
+    color: #687fa4;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.admin-reports-loading,
+.admin-reports-error {
+    padding: 28px 18px;
+    border: 1px solid #e2eaf4;
+    border-radius: 14px;
+    background: #fff;
+    color: #59719a;
+    text-align: center;
+}
+
+.admin-reports-loading[hidden],
+.admin-reports-error[hidden],
+.admin-reports-results[hidden] {
+    display: none;
+}
+
+.admin-reports-spinner {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    margin-right: 8px;
+    vertical-align: -3px;
+    border: 2px solid #d8e7f8;
+    border-top-color: #168de2;
+    border-radius: 50%;
+    animation: admin-reports-spin 0.8s linear infinite;
+}
+
+.admin-reports-error h2 { margin: 0 0 6px; color: #a42c35; font-size: 18px; }
+.admin-reports-error p { margin: 0 0 10px; }
+.admin-reports-error a { color: #0875df; font-weight: 650; text-decoration: underline; }
+
+@keyframes admin-reports-spin {
+    to { transform: rotate(360deg); }
+}
+
+.admin-report-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.admin-report-stat-card,
+.admin-report-card {
+    min-width: 0;
+    border: 1px solid #e7edf5;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 5px 17px rgb(16 52 109 / 5%);
+}
+
+.admin-report-stat-card {
+    gap: 13px;
+    min-height: 116px;
+    padding: 16px;
+}
+
+.admin-report-stat-icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    place-items: center;
+    border-radius: 15px;
+}
+
+.admin-report-stat-icon svg,
+.admin-report-stat-icon img {
+    width: 31px;
+    height: 31px;
+}
+
+.admin-report-stat-icon.blue { background: #e6f3ff; color: #0875df; }
+.admin-report-stat-icon.green { background: #e1f8ef; color: #05a86d; }
+.admin-report-stat-icon.red { background: #ffebec; color: #f0444a; }
+.admin-report-stat-icon.orange { background: #fff4df; color: #ed8a00; }
+
+.admin-report-stat-copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.admin-report-stat-copy span,
+.admin-operational-item span {
+    color: #183876;
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.admin-report-stat-copy strong {
+    color: #101b70;
+    font-size: clamp(22px, 2vw, 29px);
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.admin-report-stat-copy small {
+    color: #6a81a8;
+    font-size: 11px;
+}
+
+.admin-reports-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+    gap: 12px;
+    padding-top: 10px;
+}
+
+.admin-report-card {
+    padding: 16px;
+}
+
+.admin-report-card-heading {
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 13px;
+}
+
+.admin-report-card-heading h2 {
+    margin: 0;
+    color: #111b70;
+    font-size: 16px;
+    font-weight: 750;
+    line-height: 1.3;
+}
+
+.admin-report-card-heading > span {
+    color: #6a81a8;
+    font-size: 12px;
+}
+
+.admin-status-chart-layout {
+    min-height: 190px;
+    justify-content: space-evenly;
+    gap: 20px;
+}
+
+.admin-status-donut {
+    display: grid;
+    width: 168px;
+    height: 168px;
+    flex: 0 0 168px;
+    place-items: center;
+    border-radius: 50%;
+}
+
+.admin-status-donut > span {
+    display: grid;
+    width: 94px;
+    height: 94px;
+    place-content: center;
+    border-radius: 50%;
+    background: #fff;
+    text-align: center;
+}
+
+.admin-status-donut strong {
+    color: #101b70;
+    font-size: 24px;
+    line-height: 1.15;
+}
+
+.admin-status-donut small { color: #425d91; font-size: 12px; }
+
+.admin-status-legend,
+.admin-trend-legend,
+.admin-doctor-ranking {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-status-legend {
+    display: grid;
+    width: min(100%, 250px);
+    gap: 13px;
+}
+
+.admin-status-legend li {
+    display: grid;
+    grid-template-columns: 12px minmax(60px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    color: #24447f;
+    font-size: 12px;
+}
+
+.admin-legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    flex: 0 0 10px;
+    border-radius: 50%;
+}
+
+.admin-status-legend strong {
+    color: #24447f;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.admin-specialty-chart {
+    display: flex;
+    height: 202px;
+    align-items: flex-end;
+    justify-content: space-around;
+    gap: 10px;
+    padding: 8px 4px 0;
+}
+
+.admin-specialty-bar-group {
+    display: grid;
+    min-width: 0;
+    height: 100%;
+    flex: 1 1 0;
+    grid-template-rows: 18px 1fr 34px;
+    align-items: end;
+    justify-items: center;
+}
+
+.admin-specialty-count {
+    color: #111b70;
+    font-size: 12px;
+}
+
+.admin-specialty-bar-track {
+    display: flex;
+    width: min(54px, 74%);
+    height: 100%;
+    align-items: flex-end;
+    justify-content: center;
+    border-bottom: 1px solid #dbe6f3;
+    background: repeating-linear-gradient(to bottom, #f5f8fc 0, #f5f8fc 1px, transparent 1px, transparent 37px);
+}
+
+.admin-specialty-bar {
+    display: block;
+    width: 100%;
+    max-height: 100%;
+    border-radius: 5px 5px 0 0;
+    opacity: 0.88;
+}
+
+.admin-specialty-label {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    color: #516b9b;
+    font-size: 10px;
+    line-height: 1.25;
+    text-align: center;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.admin-trend-card,
+.admin-doctors-card {
+    min-height: 260px;
+}
+
+.admin-trend-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.admin-trend-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-trend-legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #476390;
+    font-size: 10px;
+}
+
+.admin-trend-chart {
+    width: 100%;
+    height: 210px;
+}
+
+.admin-trend-chart svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.admin-trend-gridline {
+    stroke: #e8eef6;
+    stroke-width: 1;
+}
+
+.admin-trend-line {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.admin-trend-date {
+    fill: #6179a4;
+    font-size: 11px;
+    text-anchor: middle;
+}
+
+.admin-doctor-ranking {
+    display: grid;
+    gap: 14px;
+    padding: 5px 2px;
+}
+
+.admin-doctor-ranking li {
+    display: grid;
+    grid-template-columns: 28px minmax(90px, 1fr) minmax(55px, 1.15fr) 32px;
+    align-items: center;
+    gap: 9px;
+}
+
+.admin-doctor-rank {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    border-radius: 50%;
+    background: #edf4ff;
+    color: #123b73;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.admin-doctor-name {
+    overflow: hidden;
+    color: #183876;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-doctor-bar-track {
+    height: 13px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #edf3fb;
+}
+
+.admin-doctor-bar {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #168de2, #61b6fa);
+}
+
+.admin-doctor-count {
+    color: #183876;
+    font-size: 12px;
+    text-align: right;
+}
+
+.admin-operational-summary {
+    padding: 18px 18px 20px;
+    margin-top: 10px;
+}
+
+.admin-operational-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-operational-item {
+    min-width: 0;
+    gap: 13px;
+    padding: 7px 18px;
+}
+
+.admin-operational-item + .admin-operational-item {
+    border-left: 1px solid #e4ecf5;
+}
+
+.admin-operational-item > div:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+}
+
+.admin-operational-item strong {
+    color: #101b70;
+    font-size: 22px;
+}
+
+.admin-report-empty,
+.admin-reports-message {
+    color: #59719a;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.admin-reports-message {
+    padding: 28px;
+    border: 1px solid #f4c8c8;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.admin-reports-message h2 { margin: 0 0 7px; color: #a42c35; font-size: 18px; }
+.admin-reports-message p { margin: 0; }
+
+@media (max-width: 1100px) {
+    .admin-report-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-status-chart-layout { gap: 12px; }
+    .admin-status-donut { width: 145px; height: 145px; flex-basis: 145px; }
+    .admin-status-donut > span { width: 82px; height: 82px; }
+    .admin-operational-item { padding-inline: 11px; }
+}
+
+@media (max-width: 760px) {
+    .admin-reports { gap: 12px; padding: 13px 12px 24px; }
+    .admin-reports-heading { align-items: flex-start; flex-direction: column; gap: 12px; padding: 4px 2px; }
+    .admin-reports-title-group { align-items: flex-start; gap: 12px; }
+    .admin-reports-title-icon { width: 52px; height: 52px; flex-basis: 52px; border-radius: 15px; }
+    .admin-reports-title-icon svg { width: 30px; height: 30px; }
+    .admin-reports-heading h1 { font-size: 23px; }
+    .admin-reports-heading p { max-width: 320px; margin-top: 4px; font-size: 12px; }
+    .admin-reports-period { width: 100%; min-width: 0; padding: 8px 10px; }
+    .admin-report-summary { gap: 8px; }
+    .admin-report-stat-card { min-height: 94px; gap: 8px; padding: 10px; }
+    .admin-report-stat-icon { width: 42px; height: 42px; flex-basis: 42px; border-radius: 12px; }
+    .admin-report-stat-icon svg, .admin-report-stat-icon img { width: 25px; height: 25px; }
+    .admin-report-stat-copy span { font-size: 10px; }
+    .admin-report-stat-copy strong { font-size: 21px; }
+    .admin-report-stat-copy small { font-size: 9px; }
+    .admin-reports-chart-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .admin-report-card { padding: 13px; }
+    .admin-report-card-heading h2 { font-size: 15px; }
+    .admin-status-chart-layout { min-height: 165px; justify-content: flex-start; gap: 16px; }
+    .admin-status-donut { width: 132px; height: 132px; flex-basis: 132px; }
+    .admin-status-donut > span { width: 76px; height: 76px; }
+    .admin-status-donut strong { font-size: 21px; }
+    .admin-status-legend { gap: 10px; }
+    .admin-status-legend li { grid-template-columns: 10px minmax(54px, 1fr) auto; gap: 6px; font-size: 10px; }
+    .admin-status-legend strong { font-size: 10px; }
+    .admin-specialty-chart { gap: 5px; height: 175px; padding-inline: 0; }
+    .admin-specialty-bar-group { grid-template-rows: 16px 1fr 32px; }
+    .admin-specialty-bar-track { width: min(38px, 80%); }
+    .admin-specialty-label { font-size: 8px; }
+    .admin-specialty-count { font-size: 10px; }
+    .admin-trend-card, .admin-doctors-card { min-height: 0; }
+    .admin-trend-chart { height: 185px; }
+    .admin-trend-date { font-size: 10px; }
+    .admin-doctor-ranking { gap: 12px; }
+    .admin-doctor-ranking li { grid-template-columns: 26px minmax(75px, 1fr) minmax(40px, 0.8fr) 28px; gap: 6px; }
+    .admin-doctor-name, .admin-doctor-count { font-size: 10px; }
+    .admin-operational-grid { grid-template-columns: minmax(0, 1fr); }
+    .admin-operational-item { padding: 11px 2px; }
+    .admin-operational-item + .admin-operational-item { border-top: 1px solid #e4ecf5; border-left: 0; }
+    .admin-operational-item .admin-report-stat-icon { width: 46px; height: 46px; flex-basis: 46px; }
+    .admin-operational-item span { font-size: 11px; }
+    .admin-operational-item strong { font-size: 19px; }
+}
+
+@media (max-width: 360px) {
+    .admin-status-chart-layout { align-items: flex-start; flex-direction: column; }
+    .admin-status-donut { align-self: center; }
+    .admin-status-legend { width: 100%; }
+    .admin-specialty-label { font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-reports-spinner { animation: none; }
+    .admin-reports *, .admin-reports *::before, .admin-reports *::after { scroll-behavior: auto !important; }
+}

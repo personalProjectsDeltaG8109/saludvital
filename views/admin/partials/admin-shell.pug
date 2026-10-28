@@ -69,7 +69,11 @@ mixin adminSidebar(activePage)
             )
                 span.admin-nav-icon(aria-hidden="true") ◉
                 span Auditoría
-            span.admin-nav-link.is-unavailable(aria-disabled="true")
+            a.admin-nav-link(
+                href="/admin/reports",
+                class=activePage === "reports" ? "is-active" : null,
+                aria-current=activePage === "reports" ? "page" : null
+            )
                 span.admin-nav-icon(aria-hidden="true") ▥
                 span Reportes e indicadores
             a.admin-nav-link(
