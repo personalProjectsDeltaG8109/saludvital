@@ -72,14 +72,29 @@ describe("administrator reports page", () => {
         const html = pug.renderFile("views/admin/reports.pug", {
             pageTitle: "Reportes e indicadores | SaludVital",
             adminName: "Administrador",
+            selectedReportDays: 30,
         });
 
         expect(html).toContain("Reportes e indicadores");
+        expect(html).toContain("Últimos 7 días");
         expect(html).toContain("Últimos 30 días");
+        expect(html).toContain("Últimos 90 días");
+        expect(html).toContain('name="period"');
+        expect(html).toContain("Seleccionar período del reporte");
         expect(html).toContain('role="status"');
         expect(html).toContain("Cargando reportes e indicadores");
         expect(html).toContain('role="alert"');
         expect(html).toContain("No pudimos cargar los reportes");
         expect(html).not.toContain("stack");
+    });
+
+    test("marks the selected period in the selector", () => {
+        const html = pug.renderFile("views/admin/reports.pug", {
+            pageTitle: "Reportes e indicadores | SaludVital",
+            adminName: "Administrador",
+            selectedReportDays: 90,
+        });
+
+        expect(html).toContain('<option value="90" selected>Últimos 90 días</option>');
     });
 });

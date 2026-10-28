@@ -10,7 +10,8 @@ import WhatsAppAppointmentRequest from "../../../models/WhatsAppAppointmentReque
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const REPORT_DAYS = 30;
+const DEFAULT_REPORT_DAYS = 30;
+const SUPPORTED_REPORT_DAYS = [7, 30, 90];
 const APPOINTMENT_STATUSES = ["Confirmed", "In Progress", "Attended", "Cancelled"];
 const STATUS_PRESENTATION = {
     Confirmed: { label: "Confirmadas", color: "#13b87a" },
@@ -35,10 +36,18 @@ function getBogotaDayStart(date) {
     return new Date(Date.UTC(year, month - 1, day, 5));
 }
 
-function getReportRange(referenceDate) {
+function getReportRange(referenceDate, reportDays) {
     const end = getBogotaDayStart(referenceDate);
-    const start = new Date(end.getTime() - (REPORT_DAYS - 1) * DAY_IN_MS);
+    const start = new Date(end.getTime() - (reportDays - 1) * DAY_IN_MS);
     return { start, end: new Date(end.getTime() + DAY_IN_MS) };
+}
+
+export function parseReportPeriod(value) {
+    if (value === undefined) return DEFAULT_REPORT_DAYS;
+    if (typeof value !== "string" || !["7", "30", "90"].includes(value)) {
+        throw new Error("El período seleccionado no es válido.");
+    }
+    return Number(value);
 }
 
 function dateKey(date) {
@@ -203,9 +212,16 @@ function buildDoctorRanking(rows) {
     }));
 }
 
-/** Load bounded appointment and consultation aggregates for the fixed initial 30-day report. */
-export async function getAdminReportsData(referenceDate = new Date()) {
-    const range = getReportRange(referenceDate);
+/** Load every report aggregate using one validated reporting period. */
+export async function getAdminReportsData(
+    referenceDate = new Date(),
+    reportDays = DEFAULT_REPORT_DAYS,
+) {
+    if (!SUPPORTED_REPORT_DAYS.includes(reportDays)) {
+        throw new Error("El período seleccionado no es válido.");
+    }
+
+    const range = getReportRange(referenceDate, reportDays);
     const appointmentWhere = {
         start_at: { [Op.gte]: range.start, [Op.lt]: range.end },
     };
@@ -306,12 +322,13 @@ export async function getAdminReportsData(referenceDate = new Date()) {
         durationRow?.averageSeconds === null || durationRow?.averageSeconds === undefined
             ? null
             : Number(durationRow.averageSeconds);
-    const dates = createDateKeys(range.start, REPORT_DAYS);
+    const dates = createDateKeys(range.start, reportDays);
     const trend = buildTrendSeries(trendRows, dates);
 
     return {
         period: {
-            label: "Últimos 30 días",
+            days: reportDays,
+            label: `Últimos ${reportDays} días`,
             start: formatDate(dates[0]),
             end: formatDate(dates.at(-1)),
         },

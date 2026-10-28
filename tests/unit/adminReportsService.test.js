@@ -24,7 +24,7 @@ jest.unstable_mockModule("../../src/models/WhatsAppAppointmentRequest.js", () =>
 const { Appointment, Consultation } = await import("../../src/models/associations.js");
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
     .default;
-const { getAdminReportsData } =
+const { getAdminReportsData, parseReportPeriod } =
     await import("../../src/modules/admin/services/adminReportsService.js");
 
 describe("administrator reports service", () => {
@@ -125,5 +125,44 @@ describe("administrator reports service", () => {
         expect(report.topDoctors).toEqual([]);
         expect(report.averageConsultationMinutes).toBeNull();
         expect(report.whatsappAppointmentRequests).toBe(0);
+    });
+
+    test.each([
+        [7, new Date("2026-10-21T05:00:00.000Z")],
+        [30, new Date("2026-09-28T05:00:00.000Z")],
+        [90, new Date("2026-07-30T05:00:00.000Z")],
+    ])("applies the same Bogota date range to every metric for %i days", async (days, start) => {
+        const report = await getAdminReportsData(new Date("2026-10-27T12:00:00.000Z"), days);
+        const end = new Date("2026-10-28T05:00:00.000Z");
+        const appointmentQueries = Appointment.findAll.mock.calls.map(([query]) => query);
+
+        expect(report.period.days).toBe(days);
+        expect(report.period.label).toBe(`Últimos ${days} días`);
+        expect(report.trend.dates).toHaveLength(days);
+        expect(appointmentQueries).toHaveLength(4);
+        for (const query of appointmentQueries) {
+            expect(query.where.start_at[gte]).toEqual(start);
+            expect(query.where.start_at[lt]).toEqual(end);
+        }
+        expect(Appointment.count.mock.calls[0][0].where.start_at).toEqual({
+            [gte]: start,
+            [lt]: end,
+        });
+        expect(Consultation.findOne.mock.calls[0][0].where.started_at).toEqual({
+            [gte]: start,
+            [lt]: end,
+        });
+        expect(WhatsAppAppointmentRequest.count.mock.calls[0][0].where.created_at).toEqual({
+            [gte]: start,
+            [lt]: end,
+        });
+    });
+
+    test("defaults to 30 days and rejects unsupported period values", () => {
+        expect(parseReportPeriod(undefined)).toBe(30);
+        expect(parseReportPeriod("7")).toBe(7);
+        expect(parseReportPeriod("90")).toBe(90);
+        expect(() => parseReportPeriod("14")).toThrow("El período seleccionado no es válido.");
+        expect(() => parseReportPeriod(["7"])).toThrow("El período seleccionado no es válido.");
     });
 });
