@@ -218,6 +218,19 @@
 .admin-whatsapp-flow-form textarea[name="definition"] { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
 .admin-whatsapp-flow-form textarea:focus-visible, .admin-whatsapp-flow-form input:focus-visible { outline: 2px solid #168de2; outline-offset: 2px; }
 .admin-whatsapp-flow-definition { min-width: 0; }
+.admin-whatsapp-template-page { display: grid; min-width: 0; gap: 12px; }
+.admin-whatsapp-stat-icon.is-amber { color: #a36500; background: #fff5dc; }
+.admin-whatsapp-template-list { min-width: 0; }
+.admin-whatsapp-template-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .45fr); gap: 12px; margin-bottom: 14px; }
+.admin-whatsapp-template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.admin-whatsapp-template-card { min-width: 0; padding: 14px; box-shadow: none; }
+.admin-whatsapp-template-card h3 { margin: 0; color: #123876; font-size: 13px; font-weight: 700; }
+.admin-whatsapp-template-card .admin-whatsapp-card-heading p { margin: 4px 0 0; color: #7185a0; font-size: 10px; line-height: 1.45; }
+.admin-whatsapp-template-details { display: grid; grid-template-columns: minmax(120px, .55fr) minmax(0, 1fr); gap: 8px 12px; margin: 10px 0 0; padding-top: 10px; border-top: 1px solid #edf2f7; font-size: 10px; }
+.admin-whatsapp-template-details dt { color: #7185a0; }
+.admin-whatsapp-template-details dd { min-width: 0; margin: 0; color: #355477; overflow-wrap: anywhere; }
+.admin-whatsapp-record-status.is-incomplete { color: #946000; background: #fff4d6; }
+.admin-whatsapp-template-limitation { margin: 0; padding: 12px 14px; border: 1px solid #e2ebf4; border-radius: 10px; color: #637b99; background: #f7faff; font-size: 10px; line-height: 1.55; }
 .admin-whatsapp-info-card > p { max-width: 720px; color: #657d9c; font-size: 12px; line-height: 1.6; }
 .admin-whatsapp-info-icon { display: grid; width: 45px; height: 45px; place-items: center; margin-bottom: 13px; border-radius: 12px; color: #7289a5; background: #f0f4f8; }
 .admin-whatsapp-configuration-list { max-width: 720px; margin: 16px 0; padding: 0; list-style: none; }
@@ -279,6 +292,8 @@
     .admin-whatsapp-donut { max-width: 145px; }
     .admin-whatsapp-flow-layout { grid-template-columns: minmax(0, 1fr); }
     .admin-whatsapp-flow-select { align-items: flex-start; }
+    .admin-whatsapp-template-grid { grid-template-columns: minmax(0, 1fr); }
+    .admin-whatsapp-template-filters { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 390px) {

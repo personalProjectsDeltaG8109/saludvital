@@ -146,6 +146,43 @@ describe("administrator WhatsApp overview view", () => {
         expect(html.match(/role="tab"/g)).toHaveLength(6);
     });
 
+    test("renders real local template configuration without claiming provider approval", () => {
+        const html = pug.renderFile("views/admin/whatsapp.pug", {
+            pageTitle: "WhatsApp y chatbot | SaludVital",
+            adminName: "Administradora",
+            whatsapp: createOverviewData({
+                selectedTab: "templates",
+                integrationConfiguration: {
+                    provider: "Twilio",
+                    status: "Configured",
+                    senderConfigured: true,
+                    credentialsConfigured: true,
+                    templates: [
+                        {
+                            eventType: "appointment_reminder",
+                            name: "Recordatorio de cita",
+                            purpose: "Recordar una cita programada.",
+                            configured: true,
+                            configurationStatus: "Configured",
+                            providerStatus: "Unknown",
+                            content: null,
+                            language: null,
+                        },
+                    ],
+                },
+            }),
+        });
+
+        expect(html).toContain("Tipos compatibles");
+        expect(html).toContain("Recordatorio de cita");
+        expect(html).toContain("ID configurado");
+        expect(html).toContain("Aprobación en Twilio");
+        expect(html).toContain("No consultada");
+        expect(html).toContain("Buscar plantillas por nombre o propósito");
+        expect(html).not.toContain("HX");
+        expect(html).not.toContain("Nueva plantilla");
+    });
+
     test("renders only persisted chatbot draft data and keeps activation unavailable", () => {
         const html = pug.renderFile("views/admin/whatsapp.pug", {
             pageTitle: "WhatsApp y chatbot | SaludVital",

@@ -1,0 +1,78 @@
+- const templates = whatsapp.integrationConfiguration.templates || [];
+- const configuredCount = templates.filter((template) => template.configured).length;
+.admin-whatsapp-template-page
+    .admin-whatsapp-count-grid
+        article.admin-whatsapp-count-card
+            span.admin-whatsapp-stat-icon.is-blue(aria-hidden="true") ▤
+            div
+                span Tipos compatibles
+                strong= templates.length.toLocaleString("es-CO")
+                small Notificaciones de cita
+        article.admin-whatsapp-count-card
+            span.admin-whatsapp-stat-icon.is-green(aria-hidden="true") ✓
+            div
+                span ID local configurado
+                strong= configuredCount.toLocaleString("es-CO")
+                small Identificadores ocultos
+        article.admin-whatsapp-count-card
+            span.admin-whatsapp-stat-icon.is-amber(aria-hidden="true") ◷
+            div
+                span Sin configurar
+                strong= (templates.length - configuredCount).toLocaleString("es-CO")
+                small Requieren configuración de despliegue
+        article.admin-whatsapp-count-card.admin-whatsapp-service-stat
+            span.admin-whatsapp-stat-icon.is-neutral(aria-hidden="true") ◉
+            div
+                span Estado del proveedor
+                strong No consultado
+                small La integración no verifica aprobación
+    section.admin-whatsapp-card.admin-whatsapp-template-list
+        header.admin-whatsapp-card-heading
+            div
+                h2 Plantillas de mensajes
+                p Configuraciones locales para las notificaciones compatibles.
+        .admin-whatsapp-template-filters
+            label.admin-whatsapp-request-control
+                span Buscar por nombre o propósito
+                input(
+                    type="search",
+                    aria-label="Buscar plantillas por nombre o propósito",
+                    placeholder="Buscar plantillas…",
+                    data-template-search
+                )
+            label.admin-whatsapp-request-control
+                span Configuración local
+                select(
+                    aria-label="Filtrar por configuración local",
+                    data-template-configuration-filter
+                )
+                    option(value="") Todas
+                    option(value="configured") ID configurado
+                    option(value="missing") Sin configurar
+        .admin-whatsapp-template-grid
+            each template in templates
+                article.admin-whatsapp-card.admin-whatsapp-template-card(
+                    data-template-record,
+                    data-template-search=(template.name + " " + template.purpose).toLocaleLowerCase("es-CO"),
+                    data-template-configuration=template.configured ? "configured" : "missing"
+                )
+                    header.admin-whatsapp-card-heading
+                        div
+                            h3= template.name
+                            p= template.purpose
+                        span.admin-whatsapp-record-status(
+                            class=template.configured ? "is-active" : "is-incomplete"
+                        )= template.configured ? "ID configurado" : "Sin configurar"
+                    dl.admin-whatsapp-template-details
+                        dt Contenido
+                        dd No disponible en la configuración local
+                        dt Fuente
+                        dd Configuración de la aplicación
+                        dt Idioma
+                        dd No informado
+                        dt Aprobación en Twilio
+                        dd No consultada
+        p.admin-whatsapp-empty(data-template-empty, hidden=templates.length > 0)
+            | No hay plantillas que coincidan con la búsqueda.
+        p.admin-whatsapp-template-limitation
+            | La aplicación guarda los identificadores en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.

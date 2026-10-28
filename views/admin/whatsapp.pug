@@ -388,17 +388,7 @@ html(lang="es")
                     else if whatsapp.selectedTab === "flows"
                         include partials/admin-whatsapp-flows.pug
                     else if whatsapp.selectedTab === "templates"
-                        section.admin-whatsapp-info-card
-                            h2 Plantillas de mensajes
-                            p Solo se muestra la configuración local de las categorías utilizadas por las notificaciones.
-                            ul.admin-whatsapp-configuration-list
-                                each template in whatsapp.integrationConfiguration.templates
-                                    li
-                                        span= template.name
-                                        strong(
-                                            class=template.configured ? "is-configured" : "is-incomplete"
-                                        )= template.configured ? "Configurada" : "Sin configurar"
-                            p La aprobación del proveedor no se consulta en este sistema.
+                        include partials/admin-whatsapp-templates.pug
                     else if whatsapp.selectedTab === "settings"
                         section.admin-whatsapp-info-card
                             h2 Configuración e integración
