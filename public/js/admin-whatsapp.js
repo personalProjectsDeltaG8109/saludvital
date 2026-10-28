@@ -16,6 +16,11 @@ if (whatsappPage) {
         dateFrom: whatsappPage.dataset.requestDateFrom || "",
         dateTo: whatsappPage.dataset.requestDateTo || "",
     };
+    let deliveryFilters = {
+        status: whatsappPage.dataset.deliveryStatus || "",
+        dateFrom: whatsappPage.dataset.deliveryDateFrom || "",
+        dateTo: whatsappPage.dataset.deliveryDateTo || "",
+    };
     let activeRequest = 0;
     let conversationSearchTimer;
 
@@ -28,7 +33,7 @@ if (whatsappPage) {
         Confirmed: "Confirmada",
         Rejected: "Rechazada",
         Cancelled: "Cancelada",
-        Sent: "Enviado",
+        Sent: "Aceptado por proveedor",
         Processing: "En proceso",
         Failed: "Fallido",
         Received: "Recibido",
@@ -89,6 +94,11 @@ if (whatsappPage) {
             else url.searchParams.delete("status");
         } else if (tab === "requests") {
             Object.entries(requestFilters).forEach(([key, value]) => {
+                if (value) url.searchParams.set(key, value);
+                else url.searchParams.delete(key);
+            });
+        } else if (tab === "deliveries") {
+            Object.entries(deliveryFilters).forEach(([key, value]) => {
                 if (value) url.searchParams.set(key, value);
                 else url.searchParams.delete(key);
             });
@@ -435,9 +445,26 @@ if (whatsappPage) {
             item.append(open);
             return item;
         }
-        item.append(element("span", "admin-message-avatar", initials(record.patientName)));
+        const displayName = tab === "deliveries" ? record.recipientName : record.patientName;
+        item.append(element("span", "admin-message-avatar", initials(displayName)));
         const copy = element("span", "admin-whatsapp-record-copy");
-        copy.append(element("strong", "", record.patientName));
+        copy.append(element("strong", "", displayName));
+        if (tab === "deliveries") {
+            copy.append(
+                element("small", "", record.contactNumber || "Número no disponible"),
+                element("small", "", record.eventLabel),
+            );
+            if (record.error) {
+                copy.append(
+                    element(
+                        "small",
+                        "admin-whatsapp-delivery-error",
+                        record.error.description +
+                            (record.error.code ? ` (código ${record.error.code})` : ""),
+                    ),
+                );
+            }
+        }
         if (tab === "requests") {
             copy.append(
                 element("small", "", record.contactNumber || "Número no disponible"),
@@ -448,7 +475,7 @@ if (whatsappPage) {
                     element("small", "", "Actualizada: " + formatTime(record.updatedAt, true)),
                 );
             }
-        } else {
+        } else if (tab === "conversations") {
             copy.append(
                 element(
                     "small",
@@ -468,14 +495,43 @@ if (whatsappPage) {
             element(
                 "time",
                 "",
-                formatTime(record.lastActivityAt || record.createdAt || record.startedAt, true),
+                formatTime(
+                    record.occurredAt ||
+                        record.lastActivityAt ||
+                        record.createdAt ||
+                        record.startedAt,
+                    true,
+                ),
             ),
         );
         return item;
     }
 
     function renderPaginatedRecords(data) {
-        const title = selectedTab === "conversations" ? "Conversaciones" : "Solicitudes de citas";
+        const title =
+            selectedTab === "conversations"
+                ? "Conversaciones"
+                : selectedTab === "requests"
+                  ? "Solicitudes de citas"
+                  : "Mensajes y estado de envío";
+        if (selectedTab === "deliveries") {
+            const summary = element("div", "admin-whatsapp-count-grid");
+            summary.append(
+                createCard(
+                    "Total de mensajes",
+                    data.deliveryTotal,
+                    "Histórico de WhatsApp",
+                    "#",
+                    "",
+                ),
+            );
+            data.deliveryStatuses.forEach((item) => {
+                summary.append(
+                    createCard(item.label, item.count, "Registros almacenados", "•", ""),
+                );
+            });
+            panel.append(summary);
+        }
         const heading = element("header", "admin-whatsapp-list-heading");
         const headingCopy = element("div");
         headingCopy.append(
@@ -490,6 +546,7 @@ if (whatsappPage) {
         panel.append(heading);
         if (selectedTab === "conversations") panel.append(renderConversationFilters(data));
         if (selectedTab === "requests") panel.append(renderRequestFilters(data));
+        if (selectedTab === "deliveries") panel.append(renderDeliveryFilters(data));
         if (data.rows.length) {
             const records = element("ul", "admin-whatsapp-record-list");
             data.rows.forEach((record) => records.append(renderRecord(record, selectedTab)));
@@ -578,6 +635,28 @@ if (whatsappPage) {
         form.append(createFilterInput("dateFrom", "Fecha desde", "date", filters.dateFrom));
         form.append(createFilterInput("dateTo", "Fecha hasta", "date", filters.dateTo));
         const submit = element("button", "admin-whatsapp-request-submit", "Buscar");
+        submit.type = "submit";
+        form.append(submit);
+        return form;
+    }
+
+    function renderDeliveryFilters(data) {
+        const filters = data.deliveryFilters || deliveryFilters;
+        const form = element("form", "admin-whatsapp-request-filters");
+        form.dataset.deliveryFilters = "";
+        form.append(
+            createFilterSelect("status", "Estado", filters.status, [
+                ["", "Todos los estados"],
+                ["Pending", "Pendiente"],
+                ["Processing", "En proceso"],
+                ["Sent", "Aceptado por proveedor"],
+                ["Failed", "Fallido"],
+                ["Cancelled", "Cancelado"],
+            ]),
+            createFilterInput("dateFrom", "Fecha desde", "date", filters.dateFrom),
+            createFilterInput("dateTo", "Fecha hasta", "date", filters.dateTo),
+        );
+        const submit = element("button", "admin-whatsapp-request-submit", "Filtrar");
         submit.type = "submit";
         form.append(submit);
         return form;
@@ -796,7 +875,11 @@ if (whatsappPage) {
     function render(data) {
         panel.replaceChildren();
         if (selectedTab === "summary") renderSummary(data);
-        else if (selectedTab === "conversations" || selectedTab === "requests")
+        else if (
+            selectedTab === "conversations" ||
+            selectedTab === "requests" ||
+            selectedTab === "deliveries"
+        )
             renderPaginatedRecords(data);
         else renderInformationTab(data);
     }
@@ -824,6 +907,9 @@ if (whatsappPage) {
             }
             if (tab === "requests") {
                 Object.entries(requestFilters).forEach(([key, value]) => params.set(key, value));
+            }
+            if (tab === "deliveries") {
+                Object.entries(deliveryFilters).forEach(([key, value]) => params.set(key, value));
             }
             const response = await fetch(whatsappPage.dataset.whatsappEndpoint + "?" + params, {
                 headers: { Accept: "application/json" },
@@ -887,6 +973,12 @@ if (whatsappPage) {
         if (button) loadConversation(button.dataset.conversationOpen);
     });
     panel.addEventListener("submit", (event) => {
+        if (event.target.matches("[data-delivery-filters]")) {
+            event.preventDefault();
+            deliveryFilters = Object.fromEntries(new FormData(event.target).entries());
+            load("deliveries", 1);
+            return;
+        }
         if (event.target.matches("[data-request-filters]")) {
             event.preventDefault();
             requestFilters = Object.fromEntries(new FormData(event.target).entries());

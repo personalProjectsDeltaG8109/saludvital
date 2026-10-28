@@ -73,6 +73,8 @@
 .admin-whatsapp-request-control input, .admin-whatsapp-request-control select { width: 100%; min-width: 0; min-height: 38px; padding: 0 9px; border: 1px solid #dce8f3; border-radius: 8px; color: #173b72; background: #fff; font: inherit; font-size: 11px; }
 .admin-whatsapp-request-control input:focus-visible, .admin-whatsapp-request-control select:focus-visible, .admin-whatsapp-request-submit:focus-visible { outline: 3px solid rgb(8 124 240 / 35%); outline-offset: 2px; }
 .admin-whatsapp-request-submit { min-height: 38px; padding: 0 14px; border: 0; border-radius: 8px; color: #fff; background: linear-gradient(110deg, #064c91, #087cf0); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.admin-whatsapp-delivery-error { color: #a52b2b !important; white-space: normal; }
+.admin-whatsapp-count-grid .admin-whatsapp-count-card { min-height: 72px; }
 
 @media (max-width: 900px) {
     .admin-whatsapp-request-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -106,6 +108,7 @@
     .admin-whatsapp-request-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
     .admin-whatsapp-request-filters .admin-whatsapp-search-field { grid-column: 1 / -1; }
     .admin-whatsapp-request-submit { min-height: 40px; }
+    .admin-whatsapp-count-grid .admin-whatsapp-count-card { min-height: 68px; }
     .admin-whatsapp-conversation-open { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 8px; padding-inline: 2px; }
     .admin-whatsapp-conversation-open time { grid-column: 3; grid-row: 1; font-size: 9px; }
     .admin-whatsapp-conversation-open .admin-whatsapp-record-status { grid-column: 2 / span 2; grid-row: 2; }

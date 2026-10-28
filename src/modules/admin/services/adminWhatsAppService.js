@@ -17,7 +17,16 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
 const REQUEST_METRIC_DAYS = 30;
 const BOGOTA_TIME_ZONE = "America/Bogota";
-const SUPPORTED_TABS = ["summary", "conversations", "requests", "flows", "templates", "settings"];
+const SUPPORTED_TABS = [
+    "summary",
+    "conversations",
+    "requests",
+    "deliveries",
+    "flows",
+    "templates",
+    "settings",
+];
+const DELIVERY_STATUSES = ["Pending", "Processing", "Sent", "Failed", "Cancelled"];
 const REQUEST_STATUSES = {
     Pending: "Pendientes",
     Confirmed: "Confirmadas",
@@ -89,7 +98,9 @@ function parsePagination(query) {
             ? Object.keys(REQUEST_STATUSES)
             : tab === "conversations"
               ? CONVERSATION_STATUSES
-              : [];
+              : tab === "deliveries"
+                ? DELIVERY_STATUSES
+                : [];
     if (status && !supportedStatuses.includes(status)) {
         throw createServiceError("El estado seleccionado no es válido.", 400);
     }
@@ -108,6 +119,15 @@ function parsePagination(query) {
         const end = parseBogotaDate(dateTo, "final");
         if (start && end && start > end) {
             throw createServiceError("El rango de fechas no es válido.", 400);
+        }
+    }
+    if (tab === "deliveries") {
+        dateFrom = query.dateFrom || "";
+        dateTo = query.dateTo || "";
+        const start = parseBogotaDate(dateFrom, "inicial");
+        const end = parseBogotaDate(dateTo, "final");
+        if (start && end && start > end) {
+            throw createServiceError("El rango de fechas no es v\u00e1lido.", 400);
         }
     }
     return { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo };
@@ -252,7 +272,7 @@ function getDeliveryStatusLabel(status) {
     const labels = {
         Pending: "Pendiente",
         Processing: "En proceso",
-        Sent: "Enviado",
+        Sent: "Aceptado por proveedor",
         Failed: "Fallido",
         Cancelled: "Cancelado",
     };
@@ -376,6 +396,55 @@ function mapAppointmentRequest(request) {
     };
 }
 
+function getSafeDeliveryError(error) {
+    if (!error) return null;
+    const message = String(error).toLowerCase();
+    const code = String(error).match(/\b(?:code|error|http)\s*[:=]?\s*(\d{3,6})\b/i)?.[1] || null;
+    let description =
+        "El proveedor no pudo completar el envío. Verifica la configuración de la integración.";
+
+    if (/template|content sid/.test(message)) {
+        description = "La plantilla de WhatsApp no está configurada o no es válida.";
+    } else if (/sender|from number|whatsapp_from|not configured/.test(message)) {
+        description = "La configuración del remitente de WhatsApp está incompleta.";
+    } else if (/recipient|destination|international format/.test(message)) {
+        description = "El número de destino no tiene un formato válido.";
+    } else if (/timeout|temporar|unavailable|\b5\d\d\b/.test(message)) {
+        description = "El proveedor de mensajería no está disponible temporalmente.";
+    }
+
+    return { description, code };
+}
+
+function mapDeliveryRecord(notification) {
+    const record = notification.get({ plain: true });
+    return {
+        eventType: record.event_type,
+        eventLabel: EVENT_LABELS[record.event_type] || "Notificación de WhatsApp",
+        recipientName: getPatientName(record.patient),
+        contactNumber: maskPhoneNumber(record.recipient_address),
+        status: record.status,
+        statusLabel: getDeliveryStatusLabel(record.status),
+        occurredAt: record.sent_at || record.updated_at || record.created_at,
+        error: record.status === "Failed" ? getSafeDeliveryError(record.last_error) : null,
+    };
+}
+
+function buildDeliveryWhere(status, dateFrom, dateTo) {
+    const where = { channel: "WhatsApp" };
+    if (status) where.status = status;
+    if (dateFrom || dateTo) {
+        where.created_at = {};
+        if (dateFrom) where.created_at[Op.gte] = parseBogotaDate(dateFrom, "inicial");
+        if (dateTo) {
+            where.created_at[Op.lt] = new Date(
+                parseBogotaDate(dateTo, "final").getTime() + DAY_IN_MS,
+            );
+        }
+    }
+    return where;
+}
+
 /** Return administrator-only WhatsApp metrics and bounded, safe records. */
 export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
     const { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo } =
@@ -396,6 +465,7 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         todayConversations,
         sentToday,
         failedToday,
+        deliveryStatusCounts,
         recentMessages,
         recentRequests,
         recentEvents,
@@ -431,6 +501,9 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
                 updated_at: { [Op.gte]: today.start, [Op.lt]: today.end },
             },
         }),
+        tab === "deliveries"
+            ? countByField(Notification, "status", { channel: "WhatsApp" })
+            : Promise.resolve({}),
         WhatsAppMessage.findAll({
             attributes: ["direction", "message_type", "processing_status", "created_at"],
             include: [
@@ -502,6 +575,17 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         recentMessagePreviews,
         notificationAlertCount: Number(notificationAlertCount) || 0,
         activityPeriodDays: activityDays,
+        deliveryStatuses: addStatusLabels(deliveryStatusCounts, {
+            Pending: "Pendiente",
+            Processing: "En proceso",
+            Sent: "Aceptado por proveedor",
+            Failed: "Fallido",
+            Cancelled: "Cancelado",
+        }),
+        deliveryTotal: Object.values(deliveryStatusCounts).reduce(
+            (total, count) => total + (Number(count) || 0),
+            0,
+        ),
         flowUnavailableMessage: "No hay un catálogo de flujos del chatbot disponible.",
     };
 
@@ -605,6 +689,40 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
             id: Number(specialty.id),
             name: specialty.name,
         }));
+    }
+
+    if (tab === "deliveries") {
+        const result = await findPage(
+            Notification,
+            {
+                attributes: [
+                    "id",
+                    "recipient_address",
+                    "event_type",
+                    "status",
+                    "created_at",
+                    "updated_at",
+                    "sent_at",
+                    "last_error",
+                ],
+                include: [
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: ["first_name", "last_name"],
+                    },
+                ],
+                where: buildDeliveryWhere(status, dateFrom, dateTo),
+                order: [
+                    ["updated_at", "DESC"],
+                    ["id", "DESC"],
+                ],
+            },
+            page,
+        );
+        pagination = result.pagination;
+        rows = result.rows.map(mapDeliveryRecord);
+        dashboard.deliveryFilters = { status, dateFrom, dateTo };
     }
 
     return { ...dashboard, rows, pagination, search, status };
