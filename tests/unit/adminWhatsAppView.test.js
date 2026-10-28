@@ -40,8 +40,8 @@ function createOverviewData(overrides = {}) {
         recentRequests: [],
         recentSystemEvents: [],
         recentMessagePreviews: [],
+        chatbotFlows: [],
         notificationAlertCount: 0,
-        flowUnavailableMessage: "No hay un catálogo de flujos del chatbot disponible.",
         rows: [],
         pagination: { page: 1, pageSize: 8, totalItems: 0, totalPages: 1 },
         ...overrides,
@@ -144,5 +144,35 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).toMatch(/aria-labelledby="admin-whatsapp-tab-summary"/);
         expect(html).not.toMatch(/data-whatsapp-tab="deliveries"/);
         expect(html.match(/role="tab"/g)).toHaveLength(6);
+    });
+
+    test("renders only persisted chatbot draft data and keeps activation unavailable", () => {
+        const html = pug.renderFile("views/admin/whatsapp.pug", {
+            pageTitle: "WhatsApp y chatbot | SaludVital",
+            adminName: "Administradora",
+            whatsapp: createOverviewData({
+                selectedTab: "flows",
+                chatbotFlows: [
+                    {
+                        id: 9,
+                        version: 2,
+                        name: "Flujo configurado",
+                        description: "Definición almacenada",
+                        definition: {
+                            startStepId: "welcome",
+                            steps: [
+                                { id: "welcome", type: "message", text: "Hola", nextStepId: null },
+                            ],
+                        },
+                    },
+                ],
+            }),
+        });
+
+        expect(html).toContain("Flujo configurado");
+        expect(html).toContain("Versión 2 · 1 pasos");
+        expect(html).toContain("Borrador");
+        expect(html).toContain("No se modificarán conversaciones activas");
+        expect(html).not.toContain("Activar flujo");
     });
 });

@@ -1,0 +1,26 @@
+section.admin-whatsapp-flow-layout(aria-labelledby="chatbot-flows-title")
+    article.admin-whatsapp-card.admin-whatsapp-flow-list-card
+        header.admin-whatsapp-card-heading
+            div
+                h2#chatbot-flows-title Flujos de conversación
+                p Los cambios se guardan como borradores versionados.
+            button.admin-whatsapp-request-submit(type="button", data-chatbot-new-flow) Nuevo borrador
+        if whatsapp.chatbotFlows && whatsapp.chatbotFlows.length
+            ul.admin-whatsapp-flow-list
+                each flow in whatsapp.chatbotFlows
+                    li
+                        button.admin-whatsapp-flow-select(
+                            type="button",
+                            data-chatbot-edit-flow=flow.id
+                        )
+                            span.admin-whatsapp-record-copy
+                                strong= flow.name
+                                small= flow.description || "Sin descripción"
+                                small= "Versión " + flow.version + " · " + flow.definition.steps.length + " pasos"
+                            span.admin-whatsapp-record-status.is-pending Borrador
+        else
+            p.admin-whatsapp-empty No hay borradores de flujos guardados.
+        p.admin-whatsapp-flow-runtime-note Los borradores aún no se ejecutan en el chatbot. No se modificarán conversaciones activas.
+    article.admin-whatsapp-card(data-chatbot-flow-editor)
+        h2 Selecciona un borrador o crea uno nuevo
+        p Aquí puedes consultar o editar una versión de borrador. Abrir esta sección no ejecuta el flujo.

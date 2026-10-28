@@ -386,11 +386,7 @@ html(lang="es")
                                 disabled=whatsapp.pagination.page >= whatsapp.pagination.totalPages
                             ) Siguiente
                     else if whatsapp.selectedTab === "flows"
-                        section.admin-whatsapp-info-card
-                            span.admin-whatsapp-info-icon(aria-hidden="true") ◉
-                            h2 Flujos del chatbot
-                            p= whatsapp.flowUnavailableMessage
-                            p El proyecto actual no almacena definiciones, pasos ni transiciones de flujos.
+                        include partials/admin-whatsapp-flows.pug
                     else if whatsapp.selectedTab === "templates"
                         section.admin-whatsapp-info-card
                             h2 Plantillas de mensajes

@@ -70,6 +70,7 @@ function overviewData(tab = "summary", period = 7) {
                 occurredAt: "2026-10-28T15:00:00.000Z",
             },
         ],
+        chatbotFlows: [],
         deliveryStatuses: [
             { status: "Pending", label: "Pendiente", count: 0 },
             { status: "Processing", label: "En proceso", count: 0 },
@@ -80,7 +81,6 @@ function overviewData(tab = "summary", period = 7) {
         deliveryTotal: 2,
         deliveryFilters: { status: "", dateFrom: "", dateTo: "" },
         notificationAlertCount: 0,
-        flowUnavailableMessage: "No hay un catálogo de flujos del chatbot disponible.",
         rows: [],
         pagination: { page: 1, pageSize: 8, totalItems: 0, totalPages: 1 },
     };
@@ -110,8 +110,24 @@ try {
         window.failWhatsAppRequest = false;
         window.delayNextWhatsAppRequest = false;
         window.releaseWhatsAppRequest = null;
-        window.fetch = async (url) => {
+        window.fetch = async (url, options = {}) => {
+            window.lastRequestOptions = options;
             const requestUrl = new URL(url, "http://localhost");
+            if (requestUrl.pathname === "/api/admin/whatsapp/flows" && options.method === "POST") {
+                const body = JSON.parse(options.body);
+                window.savedChatbotFlow = body;
+                window.whatsappResponse.chatbotFlows = [
+                    {
+                        id: 1,
+                        version: 1,
+                        name: body.name,
+                        description: body.description,
+                        status: "Draft",
+                        definition: body.definition,
+                    },
+                ];
+                return { ok: true, json: async () => ({ id: 1 }) };
+            }
             if (requestUrl.pathname.endsWith("/conversations/12")) {
                 return {
                     ok: true,
@@ -365,7 +381,25 @@ try {
         window.failWhatsAppRequest = false;
     });
     await page.getByRole("button", { name: "Reintentar" }).click();
-    await page.getByText("El proyecto actual no almacena definiciones").waitFor();
+    await page.getByText("No hay borradores de flujos guardados.").waitFor();
+    await page.getByRole("button", { name: "Nuevo borrador" }).click();
+    await page.getByLabel("Nombre del flujo").fill("Prueba de borrador");
+    await page.getByLabel("Descripción").fill("Flujo de demostración guardado en prueba.");
+    await page.getByLabel("Pasos, preguntas y transiciones").fill(
+        JSON.stringify({
+            startStepId: "welcome",
+            steps: [{ id: "welcome", type: "message", text: "Hola" }],
+        }),
+    );
+    await page.getByRole("button", { name: "Guardar borrador" }).click();
+    await page.getByText("Borrador guardado correctamente.").waitFor();
+    const savedFlow = await page.evaluate(() => window.savedChatbotFlow);
+    if (savedFlow?.name !== "Prueba de borrador" || savedFlow.definition.steps.length !== 1) {
+        throw new Error("A valid chatbot draft must be submitted with its structured definition.");
+    }
+    if (await page.getByRole("button", { name: "Activar" }).count()) {
+        throw new Error("Draft-only flow management must not expose an activation control.");
+    }
     await page.getByRole("tab", { name: "Resumen" }).click();
     await page.locator(".admin-whatsapp-bar-item").nth(29).waitFor();
 
