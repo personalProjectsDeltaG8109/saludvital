@@ -246,33 +246,61 @@
 
 .admin-profile-tabs {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 16px;
-    padding: 6px;
-    border-radius: 12px;
-    background: #edf4fb;
+    padding: 7px;
+    border: 1px solid #e0eaf5;
+    border-radius: 14px;
+    background: linear-gradient(110deg, #f7faff, #eef7ff);
+    box-shadow: 0 5px 16px rgb(27 72 119 / 4%);
 }
 
-.admin-profile-tabs a {
+.admin-profile-tab {
+    display: flex;
     flex: 1;
-    padding: 11px 14px;
-    border-radius: 9px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 9px 13px;
+    border: 1px solid transparent;
+    border-radius: 10px;
     color: #123b73;
     font-size: 14px;
     font-weight: 600;
-    text-align: center;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
-.admin-profile-tabs a:first-child,
-.admin-profile-tabs a:hover {
+.admin-profile-tab:hover {
+    background: #e3f1ff;
+}
+
+.admin-profile-tab.is-active {
     color: #fff;
-    background: #0867cb;
+    border-color: #075fc9;
+    background: linear-gradient(110deg, #075fc9, #168de2);
+    box-shadow: 0 4px 10px rgb(7 95 201 / 20%);
 }
 
-.admin-profile-tabs a:focus-visible,
+.admin-profile-tab:focus-visible,
 .admin-profile-note a:focus-visible {
     outline: 3px solid rgb(22 141 226 / 40%);
     outline-offset: 3px;
+}
+
+.admin-profile-tab-icon {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    place-items: center;
+}
+
+.admin-profile-tab-icon svg {
+    width: 21px;
+    height: 21px;
 }
 
 .admin-profile-grid {
@@ -456,6 +484,10 @@
 .admin-profile-note {
     margin-top: 16px;
     scroll-margin-top: 20px;
+    padding: clamp(20px, 3vw, 32px);
+    border-color: #dce9f7;
+    background: linear-gradient(145deg, #fff 45%, #f4f9ff 100%);
+    box-shadow: 0 10px 28px rgb(20 69 120 / 7%);
 }
 
 .admin-profile-note p {
@@ -471,6 +503,161 @@
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
+}
+
+.admin-profile-panel-heading,
+.admin-profile-panel-title {
+    display: flex;
+    align-items: center;
+}
+
+.admin-profile-panel-heading {
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+
+.admin-profile-panel-title {
+    min-width: 0;
+    gap: 14px;
+}
+
+.admin-profile-panel-title h2 {
+    margin: 0 0 5px;
+    color: #092f78;
+    font-size: clamp(18px, 2vw, 22px);
+}
+
+.admin-profile-panel-title p {
+    margin: 0;
+    color: #607995;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.admin-profile-panel-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid #d6e9ff;
+    border-radius: 15px;
+    color: #0867cb;
+    background: linear-gradient(145deg, #f2f9ff, #e2f2ff);
+}
+
+.admin-profile-panel-icon.preferences {
+    border-color: #c9f0ec;
+    color: #07877f;
+    background: linear-gradient(145deg, #effdfa, #dcf7f3);
+}
+
+.admin-profile-panel-icon svg {
+    width: 27px;
+    height: 27px;
+}
+
+.admin-profile-security-card,
+.admin-profile-preference-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 18px;
+    border: 1px solid #e1ebf6;
+    border-radius: 13px;
+    background: rgb(255 255 255 / 88%);
+}
+
+.admin-profile-security-card-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 12px;
+    color: #0867cb;
+    background: #e8f3ff;
+}
+
+.admin-profile-security-card-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.admin-profile-security-copy,
+.admin-profile-preference-copy {
+    min-width: 0;
+}
+
+.admin-profile-security-copy h3,
+.admin-profile-preference-copy h3 {
+    margin: 0 0 6px;
+    color: #123b73;
+    font-size: 15px;
+}
+
+.admin-profile-security-copy p,
+.admin-profile-preference-copy p {
+    margin: 0 0 12px;
+    color: #607995;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.admin-profile-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 8px 13px;
+    border: 1px solid #c9e2ff;
+    border-radius: 9px;
+    color: #075fc9 !important;
+    background: #f2f8ff;
+    font-size: 13px !important;
+    text-decoration: none !important;
+}
+
+.admin-profile-action-link:hover {
+    background: #e5f2ff;
+}
+
+.admin-profile-preference-badge {
+    padding: 6px 10px;
+    border: 1px solid #c9f0ec;
+    border-radius: 999px;
+    color: #08766f;
+    background: #effdfa;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.admin-profile-preference-card {
+    margin-bottom: 14px;
+    border-color: #d8eeec;
+    background: linear-gradient(110deg, #fff, #f4fdfb);
+}
+
+.admin-profile-preference-copy p {
+    margin-bottom: 0;
+}
+
+.admin-profile-preference-form {
+    gap: 12px;
+    padding: 16px 18px;
+    border: 1px solid #e1ebf6;
+    border-radius: 13px;
+    background: #fff;
+}
+
+.admin-profile-preference-form .admin-profile-form-actions {
+    margin-top: 0;
+}
+
+.admin-profile-panel[hidden] {
+    display: none;
 }
 
 .admin-profile-preference-form {
@@ -541,14 +728,36 @@
     }
 
     .admin-profile-tabs {
-        gap: 2px;
-        overflow-x: auto;
+        gap: 4px;
+        padding: 5px;
     }
 
-    .admin-profile-tabs a {
-        min-width: max-content;
-        padding: 10px 11px;
-        font-size: 12px;
+    .admin-profile-tab {
+        flex-direction: column;
+        gap: 4px;
+        min-height: 58px;
+        padding: 7px 4px;
+        font-size: 11px;
+    }
+
+    .admin-profile-panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .admin-profile-panel-icon {
+        width: 44px;
+        height: 44px;
+    }
+
+    .admin-profile-preference-badge {
+        margin-left: 58px;
+    }
+
+    .admin-profile-security-card,
+    .admin-profile-preference-card,
+    .admin-profile-preference-form {
+        padding: 14px;
     }
 }
 

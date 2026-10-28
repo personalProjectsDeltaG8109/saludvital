@@ -26,10 +26,10 @@ describe("administrator profile page", () => {
         expect(html).toContain("Información personal");
         expect(html).toContain("Seguridad");
         expect(html).toContain("Correo electrónico");
-        expect(html).toContain("Verificado");
+        expect(html).toContain("Correo verificado");
         expect(html).toContain("Recuperar contraseña");
         expect(html).toContain("Preferencias");
-        expect(html).toContain("Mostrar notificaciones recientes de entrega de citas a pacientes");
+        expect(html).toContain("Mostrar avisos recientes de entrega de citas a pacientes");
         expect(html).toContain("Activa");
         expect(html).not.toMatch(/password_hash|passwordHash|verification_token|token=/i);
     });
@@ -51,8 +51,8 @@ describe("administrator profile page", () => {
 
         expect(html).toContain("Nombre no registrado");
         expect(html).toContain("admin@example.com");
-        expect(html).toContain("Pendiente de verificación");
-        expect(html).toContain("Confirma tu correo electrónico");
+        expect(html).toContain("Verificación pendiente");
+        expect(html).toContain("Confirma primero el correo electrónico de tu cuenta");
         expect(html).not.toContain("Recuperar contraseña");
     });
 });

@@ -112,16 +112,28 @@ try {
     }
 
     await page.setViewportSize({ width: 375, height: 812 });
-    const navigation = page.getByRole("navigation", { name: "Secciones del perfil" });
+    const navigation = page.getByRole("tablist", { name: "Secciones del perfil" });
+    const personalTab = navigation.getByRole("tab", { name: "Información personal" });
+    await personalTab.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("tabpanel", { name: "Seguridad de la cuenta" }).waitFor();
     await page.getByRole("link", { name: "Recuperar contraseña" }).waitFor();
-    await navigation.getByRole("link", { name: "Información personal" }).focus();
     if (
-        !(await navigation
-            .getByRole("link", { name: "Información personal" })
-            .evaluate((link) => link === document.activeElement))
+        !(
+            (await navigation
+                .getByRole("tab", { name: "Seguridad" })
+                .getAttribute("aria-selected")) === "true"
+        )
     ) {
-        throw new Error("Profile navigation must support keyboard focus.");
+        throw new Error("Arrow-key navigation must activate the selected profile tab.");
     }
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("tabpanel", { name: "Preferencias de notificaciones" }).waitFor();
+    if (await page.locator("#security-information").isVisible()) {
+        throw new Error("Only the selected profile section should be visible.");
+    }
+    await page.keyboard.press("Home");
+    await page.getByRole("tabpanel", { name: "Información personal" }).waitFor();
 
     await page.getByRole("button", { name: "Editar" }).focus();
     await page.keyboard.press("Enter");
@@ -159,6 +171,8 @@ try {
     await page.getByRole("heading", { name: "Laura Torres" }).waitFor();
     await page.getByText("laura.torres@example.com", { exact: true }).first().waitFor();
 
+    await navigation.getByRole("tab", { name: "Preferencias" }).click();
+    await page.getByRole("tabpanel", { name: "Preferencias de notificaciones" }).waitFor();
     const notificationPreference = page.locator("[data-admin-notifications-enabled]");
     await notificationPreference.uncheck();
     await page.getByRole("button", { name: "Guardar preferencias" }).click();
@@ -257,7 +271,7 @@ try {
     console.log(
         "PASS: administrator profile renders without overflow at mobile, tablet, and desktop widths.",
     );
-    console.log("PASS: profile section links can receive keyboard focus.");
+    console.log("PASS: profile tabs switch sections and support arrow-key navigation.");
     console.log(
         "PASS: notification preferences preserve edits on failure and confirm successful saves.",
     );

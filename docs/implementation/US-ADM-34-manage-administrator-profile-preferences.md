@@ -6,6 +6,7 @@
 - The preference does not change notification delivery to patients or WhatsApp monitoring metrics. Patient notification preferences remain patient-scoped.
 - Added an authenticated profile endpoint with strict field and boolean validation. Updates and their audit events share a database transaction; unchanged values do not create duplicate audit events.
 - Added an accessible Spanish control to the existing profile Preferences section, with success and error feedback. The selected value remains in place when saving fails.
+- Changed the profile section controls into keyboard-accessible tabs. Security and Preferences now open focused panels; the Security panel highlights email verification and the existing password-recovery flow.
 - Added a reversible migration for `users.admin_notifications_enabled`; no new model or dependency was needed.
 
 ## Validation
