@@ -7,7 +7,10 @@ if (whatsappPage) {
     let selectedTab = whatsappPage.dataset.selectedTab || "summary";
     let activityPeriod = Number(whatsappPage.dataset.activityPeriod) || 7;
     let pageNumber = Number(whatsappPage.dataset.currentPage) || 1;
+    let conversationSearch = whatsappPage.dataset.search || "";
+    let conversationStatus = whatsappPage.dataset.status || "";
     let activeRequest = 0;
+    let conversationSearchTimer;
 
     const labels = {
         Active: "Activa",
@@ -72,6 +75,12 @@ if (whatsappPage) {
         url.searchParams.set("tab", tab);
         url.searchParams.set("page", String(page));
         url.searchParams.set("period", String(period));
+        if (tab === "conversations") {
+            if (conversationSearch) url.searchParams.set("search", conversationSearch);
+            else url.searchParams.delete("search");
+            if (conversationStatus) url.searchParams.set("status", conversationStatus);
+            else url.searchParams.delete("status");
+        }
         window.history.replaceState({}, "", url);
     }
 
@@ -391,6 +400,29 @@ if (whatsappPage) {
 
     function renderRecord(record, tab) {
         const item = document.createElement("li");
+        if (tab === "conversations") {
+            const open = element("button", "admin-whatsapp-conversation-open");
+            open.type = "button";
+            open.dataset.conversationOpen = String(record.id);
+            open.setAttribute("aria-label", "Abrir conversación de " + record.patientName);
+            open.append(element("span", "admin-message-avatar", initials(record.patientName)));
+            const conversationCopy = element("span", "admin-whatsapp-record-copy");
+            conversationCopy.append(
+                element("strong", "", record.patientName),
+                element("small", "", record.contactNumber || "Número no disponible"),
+            );
+            open.append(conversationCopy);
+            open.append(
+                element(
+                    "span",
+                    "admin-whatsapp-record-status is-" + record.status.toLowerCase(),
+                    record.statusLabel || labels[record.status] || "Estado registrado",
+                ),
+                element("time", "", formatTime(record.lastActivityAt, true)),
+            );
+            item.append(open);
+            return item;
+        }
         item.append(element("span", "admin-message-avatar", initials(record.patientName)));
         const copy = element("span", "admin-whatsapp-record-copy");
         copy.append(element("strong", "", record.patientName));
@@ -430,6 +462,7 @@ if (whatsappPage) {
         );
         heading.append(headingCopy);
         panel.append(heading);
+        if (selectedTab === "conversations") panel.append(renderConversationFilters(data));
         if (data.rows.length) {
             const records = element("ul", "admin-whatsapp-record-list");
             data.rows.forEach((record) => records.append(renderRecord(record, selectedTab)));
@@ -454,6 +487,143 @@ if (whatsappPage) {
         pagination.append(previous, pageLabel, next);
         panel.append(pagination);
         pageNumber = data.pagination.page;
+    }
+
+    function renderConversationFilters(data) {
+        const form = element("form", "admin-whatsapp-conversation-filters");
+        form.dataset.conversationFilters = "";
+        form.setAttribute("role", "search");
+        const searchLabel = element("label", "admin-whatsapp-search-field");
+        searchLabel.append(element("span", "sr-only", "Buscar por nombre o número de contacto"));
+        const search = element("input");
+        search.type = "search";
+        search.name = "search";
+        search.maxLength = 100;
+        search.placeholder = "Buscar conversaciones...";
+        search.autocomplete = "off";
+        search.value = data.search || "";
+        searchLabel.append(search);
+
+        const statusLabel = element("label", "admin-whatsapp-status-filter");
+        statusLabel.append(element("span", "sr-only", "Filtrar por estado"));
+        const status = element("select");
+        status.name = "status";
+        [
+            ["", "Todos los estados"],
+            ["Active", "Activas"],
+            ["Completed", "Finalizadas"],
+            ["Expired", "Vencidas"],
+            ["Blocked", "Bloqueadas"],
+        ].forEach(([value, label]) => {
+            const option = element("option", "", label);
+            option.value = value;
+            option.selected = value === (data.status || "");
+            status.append(option);
+        });
+        statusLabel.append(status);
+        form.append(searchLabel, statusLabel);
+        return form;
+    }
+
+    function renderConversationDetail(data) {
+        const heading = element("header", "admin-whatsapp-conversation-heading");
+        const back = element("button", "admin-whatsapp-back-to-list", "Volver a conversaciones");
+        back.type = "button";
+        back.addEventListener("click", () => load("conversations", pageNumber));
+        const copy = element("div", "admin-whatsapp-record-copy");
+        copy.append(
+            element("strong", "", data.conversation.patientName),
+            element("small", "", data.conversation.contactNumber || "Número no disponible"),
+            element(
+                "span",
+                "admin-whatsapp-record-status is-" + data.conversation.status.toLowerCase(),
+                data.conversation.statusLabel,
+            ),
+        );
+        heading.append(back, copy);
+        panel.replaceChildren(heading);
+
+        if (!data.messages.length) {
+            addEmptyState(panel, "Esta conversación todavía no tiene mensajes registrados.");
+        } else {
+            const messages = element("ol", "admin-whatsapp-message-history");
+            messages.setAttribute("aria-label", "Historial de mensajes");
+            data.messages.forEach((message) => {
+                const item = element(
+                    "li",
+                    "admin-whatsapp-message is-" + message.direction.toLowerCase(),
+                );
+                const body = element(
+                    "p",
+                    "",
+                    message.contentExpired
+                        ? "El contenido de este mensaje ya no está disponible."
+                        : message.content || "Contenido no disponible.",
+                );
+                const details = element("div", "admin-whatsapp-message-meta");
+                details.append(
+                    element("span", "", labels[message.direction] || "Mensaje"),
+                    element("time", "", formatTime(message.occurredAt, true)),
+                );
+                item.append(body, details);
+                messages.append(item);
+            });
+            panel.append(messages);
+        }
+
+        const pagination = element("div", "admin-whatsapp-pagination");
+        const previous = element("button", "", "Mensajes anteriores");
+        previous.type = "button";
+        previous.disabled = data.pagination.page <= 1;
+        previous.addEventListener("click", () =>
+            loadConversation(data.conversation.id, data.pagination.page - 1),
+        );
+        const label = element(
+            "span",
+            "",
+            `Página ${data.pagination.page} de ${data.pagination.totalPages}`,
+        );
+        const next = element("button", "", "Mensajes siguientes");
+        next.type = "button";
+        next.disabled = data.pagination.page >= data.pagination.totalPages;
+        next.addEventListener("click", () =>
+            loadConversation(data.conversation.id, data.pagination.page + 1),
+        );
+        pagination.append(previous, label, next);
+        panel.append(pagination);
+    }
+
+    async function loadConversation(conversationId, requestedPage = 1) {
+        const requestId = ++activeRequest;
+        panel.setAttribute("aria-busy", "true");
+        panel.replaceChildren();
+        feedback.setAttribute("role", "status");
+        feedback.textContent = "Cargando conversación…";
+        feedback.classList.remove("is-error");
+        try {
+            const response = await fetch(
+                `${whatsappPage.dataset.whatsappEndpoint}/conversations/${encodeURIComponent(conversationId)}?page=${requestedPage}`,
+                { headers: { Accept: "application/json" }, cache: "no-store" },
+            );
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.message || "No fue posible cargar la conversación.");
+            if (requestId !== activeRequest) return;
+            renderConversationDetail(data);
+            feedback.textContent = "";
+        } catch (error) {
+            if (requestId !== activeRequest) return;
+            addEmptyState(panel, error.message || "No fue posible cargar la conversación.");
+            const retry = element("button", "admin-whatsapp-retry", "Reintentar");
+            retry.type = "button";
+            retry.addEventListener("click", () => loadConversation(conversationId, requestedPage));
+            panel.append(retry);
+            feedback.textContent = error.message || "No fue posible cargar la conversación.";
+            feedback.classList.add("is-error");
+            feedback.setAttribute("role", "alert");
+        } finally {
+            if (requestId === activeRequest) panel.setAttribute("aria-busy", "false");
+        }
     }
 
     function renderConfigurationList(items) {
@@ -553,6 +723,8 @@ if (whatsappPage) {
                 tab,
                 page: String(requestedPage),
                 period: String(requestedPeriod),
+                search: conversationSearch,
+                status: conversationStatus,
             });
             const response = await fetch(whatsappPage.dataset.whatsappEndpoint + "?" + params, {
                 headers: { Accept: "application/json" },
@@ -610,6 +782,43 @@ if (whatsappPage) {
         if (event.target.matches("[data-whatsapp-period]")) {
             load("summary", 1, Number(event.target.value));
         }
+    });
+    panel.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-conversation-open]");
+        if (button) loadConversation(button.dataset.conversationOpen);
+    });
+    panel.addEventListener("submit", (event) => {
+        if (!event.target.matches("[data-conversation-filters]")) return;
+        event.preventDefault();
+        const form = event.target;
+        conversationSearch = form.elements.search.value.trim();
+        conversationStatus = form.elements.status.value;
+        load("conversations", 1);
+    });
+    panel.addEventListener("input", (event) => {
+        if (
+            !event.target.matches("[name=search]") ||
+            !event.target.closest("[data-conversation-filters]")
+        )
+            return;
+        clearTimeout(conversationSearchTimer);
+        conversationSearchTimer = setTimeout(() => {
+            const form = event.target.form;
+            conversationSearch = form.elements.search.value.trim();
+            conversationStatus = form.elements.status.value;
+            load("conversations", 1);
+        }, 300);
+    });
+    panel.addEventListener("change", (event) => {
+        if (
+            !event.target.matches("[name=status]") ||
+            !event.target.closest("[data-conversation-filters]")
+        )
+            return;
+        const form = event.target.form;
+        conversationSearch = form.elements.search.value.trim();
+        conversationStatus = form.elements.status.value;
+        load("conversations", 1);
     });
     setTabs(selectedTab);
     panel.setAttribute("aria-busy", "false");

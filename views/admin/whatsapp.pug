@@ -14,7 +14,9 @@ html(lang="es")
         data-whatsapp-endpoint="/api/admin/whatsapp",
         data-selected-tab=whatsapp.selectedTab,
         data-current-page=whatsapp.pagination.page,
-        data-activity-period=whatsapp.activityPeriodDays
+        data-activity-period=whatsapp.activityPeriodDays,
+        data-search=whatsapp.search,
+        data-status=whatsapp.status
     )
         include partials/admin-shell.pug
         +adminSidebar("whatsapp")
@@ -148,28 +150,72 @@ html(lang="es")
                             div
                                 h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : "Solicitudes de citas"
                                 p(data-whatsapp-result-count)= whatsapp.pagination.totalItems.toLocaleString("es-CO") + " registros"
+                        if whatsapp.selectedTab === "conversations"
+                            form.admin-whatsapp-conversation-filters(
+                                data-conversation-filters,
+                                role="search"
+                            )
+                                label.admin-whatsapp-search-field(
+                                    for="whatsapp-conversation-search"
+                                )
+                                    span.sr-only Buscar por nombre o número de contacto
+                                    input#whatsapp-conversation-search(
+                                        type="search",
+                                        name="search",
+                                        value=whatsapp.search,
+                                        maxlength="100",
+                                        placeholder="Buscar conversaciones...",
+                                        autocomplete="off"
+                                    )
+                                label.admin-whatsapp-status-filter(
+                                    for="whatsapp-conversation-status"
+                                )
+                                    span.sr-only Filtrar por estado
+                                    select#whatsapp-conversation-status(name="status")
+                                        option(value="", selected=!whatsapp.status) Todos los estados
+                                        option(
+                                            value="Active",
+                                            selected=whatsapp.status === "Active"
+                                        ) Activas
+                                        option(
+                                            value="Completed",
+                                            selected=whatsapp.status === "Completed"
+                                        ) Finalizadas
+                                        option(
+                                            value="Expired",
+                                            selected=whatsapp.status === "Expired"
+                                        ) Vencidas
+                                        option(
+                                            value="Blocked",
+                                            selected=whatsapp.status === "Blocked"
+                                        ) Bloqueadas
                         if whatsapp.rows.length
                             ul.admin-whatsapp-record-list(data-whatsapp-record-list)
                                 each record in whatsapp.rows
                                     li
-                                        span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
-                                        span.admin-whatsapp-record-copy
-                                            strong= record.patientName
-                                            if whatsapp.selectedTab === "conversations"
-                                                small= "Última actividad: " + new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt))
-                                            else
+                                        if whatsapp.selectedTab === "conversations"
+                                            button.admin-whatsapp-conversation-open(
+                                                type="button",
+                                                data-conversation-open=record.id,
+                                                aria-label="Abrir conversación de " + record.patientName
+                                            )
+                                                span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
+                                                span.admin-whatsapp-record-copy
+                                                    strong= record.patientName
+                                                    small= record.contactNumber || "Número no disponible"
+                                                span.admin-whatsapp-record-status(
+                                                    class="is-" + record.status.toLowerCase()
+                                                )= record.statusLabel
+                                                time(datetime=record.lastActivityAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt))
+                                        else
+                                            span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
+                                            span.admin-whatsapp-record-copy
+                                                strong= record.patientName
                                                 small= record.specialty || "Especialidad por definir"
-                                        if whatsapp.selectedTab === "requests"
                                             span.admin-whatsapp-record-status(
                                                 class="is-" + record.status.toLowerCase()
                                             )= record.statusLabel
-                                        else
-                                            span.admin-whatsapp-record-status(
-                                                class=record.status === "Active" ? "is-new" : "is-closed"
-                                            )= record.status === "Active" ? "Activa" : record.status === "Blocked" ? "Bloqueada" : record.status === "Completed" ? "Finalizada" : record.status === "Expired" ? "Vencida" : "Estado registrado"
-                                        time(
-                                            datetime=record.lastActivityAt || record.createdAt || record.startedAt
-                                        )= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt || record.createdAt || record.startedAt))
+                                            time(datetime=record.createdAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt))
                         else
                             p.admin-whatsapp-empty(data-whatsapp-empty) No hay registros para esta sección.
                         .admin-whatsapp-pagination(data-whatsapp-pagination)
