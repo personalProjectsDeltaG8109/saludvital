@@ -15,6 +15,8 @@ import WhatsAppConversation from "./WhatsAppConversation.js";
 import WhatsAppMessage from "./WhatsAppMessage.js";
 import WhatsAppVerification from "./WhatsAppVerification.js";
 import WhatsAppAppointmentRequest from "./WhatsAppAppointmentRequest.js";
+import ChatbotFlow from "./ChatbotFlow.js";
+import ChatbotFlowVersion from "./ChatbotFlowVersion.js";
 import Consultation from "./Consultation.js";
 import Diagnosis from "./Diagnosis.js";
 import Prescription from "./Prescription.js";
@@ -323,6 +325,34 @@ WhatsAppMessage.belongsTo(WhatsAppConversation, {
     onDelete: "RESTRICT",
 });
 
+ChatbotFlow.hasMany(ChatbotFlowVersion, {
+    foreignKey: "flow_id",
+    as: "versions",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+ChatbotFlowVersion.belongsTo(ChatbotFlow, {
+    foreignKey: "flow_id",
+    as: "flow",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+ChatbotFlowVersion.belongsTo(User, {
+    foreignKey: "created_by",
+    as: "creator",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+User.hasMany(ChatbotFlowVersion, {
+    foreignKey: "created_by",
+    as: "createdChatbotFlowVersions",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
 /* WhatsApp identity verification associations. */
 Patient.hasMany(WhatsAppVerification, {
     foreignKey: "patient_id",
@@ -534,4 +564,6 @@ export {
     NotificationPreference,
     Notification,
     WhatsAppVerification,
+    ChatbotFlow,
+    ChatbotFlowVersion,
 };
