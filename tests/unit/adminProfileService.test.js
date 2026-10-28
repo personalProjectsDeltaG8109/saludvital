@@ -44,6 +44,7 @@ describe("administrator profile service", () => {
                 "email",
                 "email_verified_at",
                 "phone",
+                "profile_photo_url",
                 "is_active",
                 "created_at",
                 "last_login_at",
@@ -84,6 +85,24 @@ describe("administrator profile service", () => {
             profilePhotoUrl: null,
             createdAt: null,
             lastLoginAt: null,
+        });
+    });
+
+    test("uses the administrator's persisted photo before any linked role photo", async () => {
+        User.findByPk.mockResolvedValue({
+            display_name: "Laura Méndez",
+            email: "laura@example.com",
+            is_active: true,
+            profile_photo_url: "/uploads/profile-photos/admin.png",
+            rol: { name: "Administrator" },
+            doctor: {
+                display_name: "Other profile",
+                profile_photo_url: "/brand/patient/default.png",
+            },
+        });
+
+        await expect(getAdminProfile(7)).resolves.toMatchObject({
+            profilePhotoUrl: "/uploads/profile-photos/admin.png",
         });
     });
 

@@ -6,6 +6,8 @@ import { chromium } from "playwright";
 const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.css"), "utf8");
 const profileStyles = await readFile(path.resolve("public/css/admin-profile.css"), "utf8");
 const profileScript = await readFile(path.resolve("public/js/admin-profile.js"), "utf8");
+const profilePhotoScript = await readFile(path.resolve("public/js/admin-profile-photo.js"), "utf8");
+const validPng = await readFile(path.resolve("public/brand/logo-symbol.png"));
 const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
     adminName: "Laura Méndez",
@@ -18,6 +20,7 @@ const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
         isActive: true,
         createdAt: new Date("2025-01-15T10:00:00.000Z"),
         lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
+        profilePhotoUrl: null,
         initials: "LM",
     },
 });
@@ -26,13 +29,38 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
-    await page.setContent(html);
+    const htmlWithImagePolicy = html.replace(
+        '<meta charset="UTF-8">',
+        '<meta http-equiv="Content-Security-Policy" content="img-src \'self\' data:"><meta charset="UTF-8">',
+    );
+    await page.setContent(htmlWithImagePolicy);
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: profileStyles });
     await page.evaluate(() => {
         window.profileSaveMode = "error";
-        window.fetch = async () =>
-            window.profileSaveMode === "error"
+        window.photoSaveMode = "error";
+        window.photoRemoveConfirmed = true;
+        window.confirmCalls = 0;
+        window.confirm = () => {
+            window.confirmCalls += 1;
+            return window.photoRemoveConfirmed;
+        };
+        window.fetch = async (url, options = {}) => {
+            if (String(url).endsWith("/photo")) {
+                if (options.method === "DELETE") {
+                    return { ok: true, json: async () => ({ profilePhotoUrl: null }) };
+                }
+                return window.photoSaveMode === "error"
+                    ? { ok: false, json: async () => ({ message: "No pudimos guardar la foto." }) }
+                    : {
+                          ok: true,
+                          json: async () => ({
+                              profilePhotoUrl: "/uploads/profile-photos/new.png",
+                              message: "Tu foto de perfil se actualizó correctamente.",
+                          }),
+                      };
+            }
+            return window.profileSaveMode === "error"
                 ? { ok: false, json: async () => ({ message: "No pudimos guardar los cambios." }) }
                 : {
                       ok: true,
@@ -46,8 +74,10 @@ try {
                           },
                       }),
                   };
+        };
     });
     await page.addScriptTag({ content: profileScript });
+    await page.addScriptTag({ content: profilePhotoScript });
 
     for (const width of [320, 375, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
@@ -107,12 +137,91 @@ try {
     await page.getByRole("heading", { name: "Laura Torres" }).waitFor();
     await page.getByText("laura.torres@example.com", { exact: true }).first().waitFor();
 
+    const photoButton = page.getByRole("button", { name: "Opciones de foto de perfil" });
+    await photoButton.focus();
+    await page.keyboard.press("Enter");
+    const photoDialog = page.getByRole("dialog", { name: "Foto de perfil" });
+    await photoDialog.waitFor();
+    if (await photoDialog.getByRole("button", { name: "Eliminar foto" }).isVisible()) {
+        throw new Error("The remove-photo action must be hidden when no photo exists.");
+    }
+    await photoDialog.getByRole("button", { name: "Subir o cambiar foto" }).click();
+    await page.locator("[data-profile-photo-input]").setInputFiles({
+        name: "profile.svg",
+        mimeType: "image/svg+xml",
+        buffer: Buffer.from("<svg></svg>"),
+    });
+    await photoDialog
+        .getByRole("alert")
+        .getByText("Selecciona una foto JPG, PNG o WEBP.")
+        .waitFor();
+    await page.locator("[data-profile-photo-input]").setInputFiles({
+        name: "large.png",
+        mimeType: "image/png",
+        buffer: Buffer.alloc(2 * 1024 * 1024 + 1),
+    });
+    await photoDialog
+        .getByRole("alert")
+        .getByText("La foto debe pesar como máximo 2 MB.")
+        .waitFor();
+    await page.locator("[data-profile-photo-input]").setInputFiles({
+        name: "profile.png",
+        mimeType: "image/png",
+        buffer: validPng,
+    });
+    await photoDialog.locator("[data-photo-preview-container]:not([hidden])").waitFor();
+    const previewIsVisible = await page.locator("[data-photo-preview]").evaluate((image) => {
+        return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0;
+    });
+    if (!previewIsVisible) {
+        throw new Error("The selected image must render in the preview under the image CSP.");
+    }
+    await photoDialog.getByRole("button", { name: "Guardar foto" }).click();
+    await photoDialog.getByRole("alert").getByText("No pudimos guardar la foto.").waitFor();
+    if (await page.locator("[data-profile-avatar-image]").count()) {
+        throw new Error("A failed upload must preserve the current avatar.");
+    }
+    if ((await page.locator("[data-photo-preview]").getAttribute("src")) === null) {
+        throw new Error("The selected photo preview must remain available after upload failure.");
+    }
+
+    await page.evaluate(() => {
+        window.photoSaveMode = "success";
+    });
+    await photoDialog.getByRole("button", { name: "Guardar foto" }).click();
+    await page
+        .locator('[data-profile-avatar-image][src="/uploads/profile-photos/new.png"]')
+        .waitFor();
+    await photoButton.focus();
+    await page.keyboard.press("Enter");
+    await photoDialog.getByRole("button", { name: "Eliminar foto" }).waitFor();
+    await page.evaluate(() => {
+        window.photoRemoveConfirmed = false;
+    });
+    await photoDialog.getByRole("button", { name: "Eliminar foto" }).click();
+    await page.locator("[data-profile-avatar-image]").waitFor();
+    if ((await page.evaluate(() => window.confirmCalls)) !== 1) {
+        throw new Error("Photo removal must request explicit confirmation.");
+    }
+    await page.evaluate(() => {
+        window.photoRemoveConfirmed = true;
+    });
+    await photoDialog.getByRole("button", { name: "Eliminar foto" }).click();
+    await page.locator("[data-profile-initials]").getByText("LT").waitFor();
+    await page
+        .getByRole("status")
+        .getByText("Tu foto de perfil se eliminó correctamente.")
+        .waitFor();
+
     console.log(
         "PASS: administrator profile renders without overflow at mobile, tablet, and desktop widths.",
     );
     console.log("PASS: profile section links can receive keyboard focus.");
     console.log(
         "PASS: profile editor preserves input after failure and reflects successful saves.",
+    );
+    console.log(
+        "PASS: photo actions are available only from the avatar camera, preserve failed uploads, and remove with confirmation.",
     );
 } finally {
     await browser.close();

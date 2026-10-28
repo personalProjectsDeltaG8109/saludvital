@@ -39,7 +39,9 @@ export function toAdminProfile(user) {
         createdAt: user.created_at,
         lastLoginAt: user.last_login_at,
         profilePhotoUrl: normalizeProfilePhotoUrl(
-            user.doctor?.profile_photo_url || user.patient?.profile_photo_url,
+            user.profile_photo_url ||
+                user.doctor?.profile_photo_url ||
+                user.patient?.profile_photo_url,
         ),
         initials,
     };
@@ -55,6 +57,7 @@ export async function getAdminProfile(rawUserId) {
             "email",
             "email_verified_at",
             "phone",
+            "profile_photo_url",
             "is_active",
             "created_at",
             "last_login_at",

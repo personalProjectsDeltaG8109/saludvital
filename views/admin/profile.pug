@@ -33,15 +33,90 @@ html(lang="es")
                         p Gestiona y consulta la información asociada a tu cuenta.
 
                 section.admin-profile-hero(aria-labelledby="admin-profile-name")
-                    .admin-profile-avatar(aria-hidden="true")
-                        if profile.profilePhotoUrl
-                            img(src=profile.profilePhotoUrl, alt="")
-                        else
-                            span(data-profile-initials)= profile.initials
+                    .admin-profile-avatar-wrap
+                        .admin-profile-avatar(
+                            aria-hidden="true",
+                            data-profile-avatar,
+                            data-profile-avatar-initials=profile.initials
+                        )
+                            if profile.profilePhotoUrl
+                                img(src=profile.profilePhotoUrl, alt="", data-profile-avatar-image)
+                                span(data-profile-initials, hidden)= profile.initials
+                            else
+                                span(data-profile-initials)= profile.initials
+                        button.admin-profile-photo-trigger(
+                            type="button",
+                            aria-label="Opciones de foto de perfil",
+                            aria-haspopup="dialog",
+                            aria-expanded="false",
+                            aria-controls="admin-profile-photo-dialog",
+                            data-profile-photo-open
+                        )
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round",
+                                aria-hidden="true"
+                            )
+                                path(d="M4 7h3l2-2h6l2 2h3v12H4z")
+                                circle(cx="12", cy="13", r="3")
+                        input#admin-profile-photo-input(
+                            type="file",
+                            accept="image/jpeg,image/png,image/webp",
+                            hidden,
+                            data-profile-photo-input
+                        )
+                        dialog#admin-profile-photo-dialog.admin-profile-photo-dialog(
+                            aria-labelledby="admin-profile-photo-title",
+                            data-profile-photo-dialog
+                        )
+                            h2#admin-profile-photo-title Foto de perfil
+                            p.admin-profile-photo-feedback(
+                                role="status",
+                                aria-live="polite",
+                                data-photo-status
+                            )
+                            p.admin-profile-photo-error(
+                                role="alert",
+                                aria-live="assertive",
+                                data-photo-error,
+                                hidden
+                            )
+                            .admin-profile-photo-actions(data-photo-actions)
+                                button.admin-profile-photo-action(type="button", data-photo-upload) Subir o cambiar foto
+                                button.admin-profile-photo-action.is-danger(
+                                    type="button",
+                                    hidden=!profile.profilePhotoUrl,
+                                    data-photo-remove
+                                ) Eliminar foto
+                                button.admin-profile-photo-action(type="button", data-photo-close) Cancelar
+                            .admin-profile-photo-preview(data-photo-preview-container, hidden)
+                                img(
+                                    alt="Vista previa de la nueva foto de perfil",
+                                    data-photo-preview
+                                )
+                                .admin-profile-photo-preview-actions
+                                    button.admin-profile-photo-action(
+                                        type="button",
+                                        data-photo-preview-cancel
+                                    ) Cancelar
+                                    button.admin-profile-photo-action.is-primary(
+                                        type="button",
+                                        data-photo-save
+                                    ) Guardar foto
                     .admin-profile-identity
                         h2#admin-profile-name(data-profile-identity-name)= profile.displayName || "Nombre no registrado"
                         p(data-profile-identity-email)= profile.email
                         span.admin-profile-role= profile.role === "Administrator" ? "Administrador" : profile.role
+                        p.admin-profile-photo-page-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-photo-page-feedback,
+                            hidden
+                        )
 
                 nav.admin-profile-tabs(aria-label="Secciones del perfil")
                     a(href="#personal-information") Información personal
@@ -167,3 +242,4 @@ html(lang="es")
 
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-profile.js", defer)
+        script(src="/js/admin-profile-photo.js", defer)
