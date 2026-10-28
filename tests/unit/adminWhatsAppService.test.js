@@ -2,18 +2,22 @@ import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 const gte = Symbol("gte");
 const lt = Symbol("lt");
+const like = Symbol("like");
+const or = Symbol("or");
 
 jest.unstable_mockModule("sequelize", () => ({
     col: jest.fn((value) => value),
     fn: jest.fn((...values) => values),
-    Op: { gte, lt },
+    Op: { gte, lt, like, or },
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({}));
 jest.unstable_mockModule("../../src/models/Notification.js", () => ({
     default: { count: jest.fn(), findAll: jest.fn() },
 }));
 jest.unstable_mockModule("../../src/models/Patient.js", () => ({ default: {} }));
-jest.unstable_mockModule("../../src/models/Specialities.js", () => ({ default: {} }));
+jest.unstable_mockModule("../../src/models/Specialities.js", () => ({
+    default: { findAll: jest.fn() },
+}));
 jest.unstable_mockModule("../../src/models/Doctor.js", () => ({ default: {} }));
 jest.unstable_mockModule("../../src/models/WhatsAppAppointmentRequest.js", () => ({
     default: { count: jest.fn(), findAll: jest.fn(), findAndCountAll: jest.fn() },
@@ -32,6 +36,7 @@ const Notification = (await import("../../src/models/Notification.js")).default;
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
     .default;
 const WhatsAppConversation = (await import("../../src/models/WhatsAppConversation.js")).default;
+const Specialities = (await import("../../src/models/Specialities.js")).default;
 const WhatsAppMessage = (await import("../../src/models/WhatsAppMessage.js")).default;
 const { getAdminWhatsAppData } =
     await import("../../src/modules/admin/services/adminWhatsAppService.js");
@@ -58,6 +63,7 @@ describe("administrator WhatsApp overview service", () => {
         WhatsAppAppointmentRequest.findAndCountAll
             .mockReset()
             .mockResolvedValue({ count: 0, rows: [] });
+        Specialities.findAll.mockReset().mockResolvedValue([]);
         Notification.count.mockReset().mockResolvedValue(0);
         Notification.findAll.mockReset().mockResolvedValue([]);
         WhatsAppMessage.findAll.mockReset().mockResolvedValue([]);
@@ -116,7 +122,7 @@ describe("administrator WhatsApp overview service", () => {
         expect(result.recentRequests[0]).toMatchObject({
             patientName: "Laura Méndez",
             specialty: "Pediatría",
-            statusLabel: "Pendientes",
+            statusLabel: "Pendiente",
         });
         expect(result.recentSystemEvents[0]).toMatchObject({
             event: "Recordatorio de cita",
@@ -185,6 +191,105 @@ describe("administrator WhatsApp overview service", () => {
         expect(WhatsAppAppointmentRequest.findAndCountAll).toHaveBeenCalledTimes(2);
         expect(WhatsAppAppointmentRequest.findAndCountAll.mock.calls[0][0].offset).toBe(32);
         expect(WhatsAppAppointmentRequest.findAndCountAll.mock.calls[1][0].offset).toBe(16);
+    });
+
+    test("combines WhatsApp request filters and returns only masked contact data", async () => {
+        Specialities.findAll.mockResolvedValue([
+            { id: 4, name: "Pediatría" },
+            { id: 5, name: "Medicina General" },
+        ]);
+        WhatsAppAppointmentRequest.findAndCountAll.mockResolvedValueOnce({
+            count: 1,
+            rows: [
+                modelRecord({
+                    status: "Confirmed",
+                    created_at: new Date("2026-10-28T15:00:00Z"),
+                    updated_at: new Date("2026-10-28T16:00:00Z"),
+                    patient: {
+                        first_name: "Laura",
+                        last_name: "Mendez",
+                        phone: "+573001234567",
+                    },
+                    requestedSpecialty: { name: "Pediatría" },
+                }),
+            ],
+        });
+
+        const result = await getAdminWhatsAppData({
+            tab: "requests",
+            search: "Laura",
+            status: "Confirmed",
+            specialtyId: "4",
+            dateFrom: "2026-10-22",
+            dateTo: "2026-10-28",
+        });
+
+        const query = WhatsAppAppointmentRequest.findAndCountAll.mock.calls[0][0];
+        expect(query.where).toMatchObject({
+            status: "Confirmed",
+            requested_specialty_id: 4,
+            created_at: {
+                [gte]: new Date("2026-10-22T05:00:00Z"),
+                [lt]: new Date("2026-10-29T05:00:00Z"),
+            },
+        });
+        expect(query.where[or]).toEqual(
+            expect.arrayContaining([
+                { "$patient.first_name$": { [like]: "%Laura%" } },
+                { "$patient.phone$": { [like]: "%Laura%" } },
+            ]),
+        );
+        expect(query.order).toEqual([
+            ["created_at", "DESC"],
+            ["id", "DESC"],
+        ]);
+        expect(query.limit).toBe(8);
+        expect(result.rows[0]).toMatchObject({
+            patientName: "Laura Mendez",
+            contactNumber: "••••567",
+            specialty: "Pediatría",
+            statusLabel: "Confirmada",
+            updatedAt: new Date("2026-10-28T16:00:00Z"),
+        });
+        expect(JSON.stringify(result.rows)).not.toContain("+573001234567");
+        expect(result.requestSpecialties).toEqual([
+            { id: 4, name: "Pediatría" },
+            { id: 5, name: "Medicina General" },
+        ]);
+    });
+
+    test("rejects invalid WhatsApp request status and date ranges", async () => {
+        await expect(
+            getAdminWhatsAppData({ tab: "requests", status: "InProgress" }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        await expect(
+            getAdminWhatsAppData({
+                tab: "requests",
+                dateFrom: "2026-10-29",
+                dateTo: "2026-10-28",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        await expect(
+            getAdminWhatsAppData({ tab: "requests", dateFrom: "2026-02-30" }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    test("validates specialty identifiers and shows empty request results", async () => {
+        Specialities.findAll.mockResolvedValue([{ id: 4, name: "Pediatría" }]);
+        await expect(
+            getAdminWhatsAppData({ tab: "requests", specialtyId: "99" }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        WhatsAppAppointmentRequest.findAll.mockReset();
+        WhatsAppAppointmentRequest.findAll
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([]);
+
+        const result = await getAdminWhatsAppData({ tab: "requests", specialtyId: "4" });
+
+        expect(result.rows).toEqual([]);
+        expect(result.pagination).toMatchObject({ totalItems: 0, totalPages: 1 });
     });
 
     test("keeps unavailable chatbot state distinct from provider configuration", async () => {

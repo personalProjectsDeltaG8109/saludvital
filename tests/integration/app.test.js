@@ -63,6 +63,15 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("WhatsApp appointment request filters require an authenticated administrator", async () => {
+        const response = await request(app)
+            .get("/api/admin/whatsapp?tab=requests&status=Pending")
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("WhatsApp conversation history requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/whatsapp/conversations/1").redirects(0);
 

@@ -16,7 +16,12 @@ html(lang="es")
         data-current-page=whatsapp.pagination.page,
         data-activity-period=whatsapp.activityPeriodDays,
         data-search=whatsapp.search,
-        data-status=whatsapp.status
+        data-status=whatsapp.status,
+        data-request-search=whatsapp.requestFilters && whatsapp.requestFilters.search,
+        data-request-status=whatsapp.requestFilters && whatsapp.requestFilters.status,
+        data-request-specialty=whatsapp.requestFilters && whatsapp.requestFilters.specialtyId,
+        data-request-date-from=whatsapp.requestFilters && whatsapp.requestFilters.dateFrom,
+        data-request-date-to=whatsapp.requestFilters && whatsapp.requestFilters.dateTo
     )
         include partials/admin-shell.pug
         +adminSidebar("whatsapp")
@@ -189,6 +194,75 @@ html(lang="es")
                                             value="Blocked",
                                             selected=whatsapp.status === "Blocked"
                                         ) Bloqueadas
+                        else
+                            form.admin-whatsapp-request-filters(data-request-filters)
+                                label.admin-whatsapp-search-field(for="whatsapp-request-search")
+                                    span.sr-only Buscar por paciente o número de contacto
+                                    input#whatsapp-request-search(
+                                        type="search",
+                                        name="search",
+                                        value=whatsapp.requestFilters.search,
+                                        maxlength="100",
+                                        placeholder="Buscar por nombre o número...",
+                                        autocomplete="off"
+                                    )
+                                label.admin-whatsapp-request-control(for="whatsapp-request-status")
+                                    span Estado
+                                    select#whatsapp-request-status(name="status")
+                                        option(value="", selected=!whatsapp.requestFilters.status) Todos
+                                        option(
+                                            value="Pending",
+                                            selected=whatsapp.requestFilters.status === "Pending"
+                                        ) Pendientes
+                                        option(
+                                            value="Confirmed",
+                                            selected=whatsapp.requestFilters.status === "Confirmed"
+                                        ) Confirmadas
+                                        option(
+                                            value="Rejected",
+                                            selected=whatsapp.requestFilters.status === "Rejected"
+                                        ) Rechazadas
+                                        option(
+                                            value="Cancelled",
+                                            selected=whatsapp.requestFilters.status === "Cancelled"
+                                        ) Canceladas
+                                        option(
+                                            value="Expired",
+                                            selected=whatsapp.requestFilters.status === "Expired"
+                                        ) Vencidas
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-request-specialty"
+                                )
+                                    span Especialidad
+                                    select#whatsapp-request-specialty(name="specialtyId")
+                                        option(
+                                            value="",
+                                            selected=!whatsapp.requestFilters.specialtyId
+                                        ) Todas
+                                        each specialty in whatsapp.requestSpecialties
+                                            option(
+                                                value=specialty.id,
+                                                selected=Number(whatsapp.requestFilters.specialtyId) === specialty.id
+                                            )= specialty.name
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-request-date-from"
+                                )
+                                    span Fecha desde
+                                    input#whatsapp-request-date-from(
+                                        type="date",
+                                        name="dateFrom",
+                                        value=whatsapp.requestFilters.dateFrom
+                                    )
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-request-date-to"
+                                )
+                                    span Fecha hasta
+                                    input#whatsapp-request-date-to(
+                                        type="date",
+                                        name="dateTo",
+                                        value=whatsapp.requestFilters.dateTo
+                                    )
+                                button.admin-whatsapp-request-submit(type="submit") Buscar
                         if whatsapp.rows.length
                             ul.admin-whatsapp-record-list(data-whatsapp-record-list)
                                 each record in whatsapp.rows
@@ -211,11 +285,14 @@ html(lang="es")
                                             span.admin-message-avatar(aria-hidden="true")= record.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
                                             span.admin-whatsapp-record-copy
                                                 strong= record.patientName
+                                                small= record.contactNumber || "Número no disponible"
                                                 small= record.specialty || "Especialidad por definir"
+                                                if record.updatedAt
+                                                    small= "Actualizada: " + new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.updatedAt))
                                             span.admin-whatsapp-record-status(
                                                 class="is-" + record.status.toLowerCase()
                                             )= record.statusLabel
-                                            time(datetime=record.createdAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt))
+                                            time(datetime=record.createdAt)= new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt))
                         else
                             p.admin-whatsapp-empty(data-whatsapp-empty) No hay registros para esta sección.
                         .admin-whatsapp-pagination(data-whatsapp-pagination)

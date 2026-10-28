@@ -14,6 +14,7 @@ const MAX_PAGE = 10000;
 const MAX_SEARCH_LENGTH = 100;
 const MESSAGE_PAGE_SIZE = 40;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
 const REQUEST_METRIC_DAYS = 30;
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const SUPPORTED_TABS = ["summary", "conversations", "requests", "flows", "templates", "settings"];
@@ -23,6 +24,13 @@ const REQUEST_STATUSES = {
     Rejected: "Rechazadas",
     Cancelled: "Canceladas",
     Expired: "Vencidas",
+};
+const REQUEST_STATUS_LABELS = {
+    Pending: "Pendiente",
+    Confirmed: "Confirmada",
+    Rejected: "Rechazada",
+    Cancelled: "Cancelada",
+    Expired: "Vencida",
 };
 const SUPPORTED_ACTIVITY_DAYS = [7, 30];
 const CONVERSATION_STATUSES = ["Active", "Completed", "Expired", "Blocked"];
@@ -76,10 +84,70 @@ function parsePagination(query) {
         throw createServiceError("La búsqueda supera el máximo permitido.", 400);
     }
     const status = query.status || "";
-    if (status && !CONVERSATION_STATUSES.includes(status)) {
-        throw createServiceError("El estado de conversación no es válido.", 400);
+    const supportedStatuses =
+        tab === "requests"
+            ? Object.keys(REQUEST_STATUSES)
+            : tab === "conversations"
+              ? CONVERSATION_STATUSES
+              : [];
+    if (status && !supportedStatuses.includes(status)) {
+        throw createServiceError("El estado seleccionado no es válido.", 400);
     }
-    return { page, tab, activityDays, search, status };
+
+    let specialtyId = "";
+    let dateFrom = "";
+    let dateTo = "";
+    if (tab === "requests") {
+        specialtyId = query.specialtyId || "";
+        if (specialtyId && (!/^\d+$/.test(String(specialtyId)) || Number(specialtyId) < 1)) {
+            throw createServiceError("La especialidad seleccionada no es válida.", 400);
+        }
+        dateFrom = query.dateFrom || "";
+        dateTo = query.dateTo || "";
+        const start = parseBogotaDate(dateFrom, "inicial");
+        const end = parseBogotaDate(dateTo, "final");
+        if (start && end && start > end) {
+            throw createServiceError("El rango de fechas no es válido.", 400);
+        }
+    }
+    return { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo };
+}
+
+function parseBogotaDate(value, label) {
+    if (!value) return null;
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        throw createServiceError(`La fecha ${label} no es válida.`, 400);
+    }
+    const utcDate = new Date(`${value}T00:00:00.000Z`);
+    if (!Number.isFinite(utcDate.getTime()) || utcDate.toISOString().slice(0, 10) !== value) {
+        throw createServiceError(`La fecha ${label} no es válida.`, 400);
+    }
+    return new Date(utcDate.getTime() + BOGOTA_OFFSET_MS);
+}
+
+function buildRequestWhere({ search, status, specialtyId, dateFrom, dateTo }) {
+    const where = {};
+    if (status) where.status = status;
+    if (specialtyId) where.requested_specialty_id = Number(specialtyId);
+    if (dateFrom || dateTo) {
+        where.created_at = {};
+        if (dateFrom) where.created_at[Op.gte] = parseBogotaDate(dateFrom, "inicial");
+        if (dateTo) {
+            where.created_at[Op.lt] = new Date(
+                parseBogotaDate(dateTo, "final").getTime() + DAY_IN_MS,
+            );
+        }
+    }
+    if (search) {
+        const pattern = `%${search}%`;
+        where[Op.or] = [
+            { "$patient.first_name$": { [Op.like]: pattern } },
+            { "$patient.last_name$": { [Op.like]: pattern } },
+            { "$patient.phone$": { [Op.like]: pattern } },
+            { "$patient.notification_whatsapp_phone$": { [Op.like]: pattern } },
+        ];
+    }
+    return where;
 }
 
 function parseConversationId(value) {
@@ -297,16 +365,21 @@ function mapAppointmentRequest(request) {
     const record = request.get({ plain: true });
     return {
         patientName: getPatientName(record.patient),
+        contactNumber: maskPhoneNumber(
+            record.patient?.notification_whatsapp_phone || record.patient?.phone,
+        ),
         specialty: record.requestedSpecialty?.name || null,
         status: record.status,
-        statusLabel: REQUEST_STATUSES[record.status] || "Estado registrado",
+        statusLabel: REQUEST_STATUS_LABELS[record.status] || "Estado registrado",
         createdAt: record.created_at,
+        updatedAt: record.updated_at || null,
     };
 }
 
 /** Return administrator-only WhatsApp metrics and bounded, safe records. */
 export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
-    const { page, tab, activityDays, search, status } = parsePagination(query);
+    const { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo } =
+        parsePagination(query);
     const today = getPeriodRange(referenceDate, 1);
     const activityRange = getPeriodRange(referenceDate, activityDays);
     const requestsRange = getPeriodRange(referenceDate, REQUEST_METRIC_DAYS);
@@ -488,21 +561,50 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
     }
 
     if (tab === "requests") {
+        const specialties = await Specialities.findAll({
+            attributes: ["id", "name"],
+            order: [["name", "ASC"]],
+        });
+        if (
+            specialtyId &&
+            !specialties.some((specialty) => Number(specialty.id) === Number(specialtyId))
+        ) {
+            throw createServiceError("La especialidad seleccionada no existe.", 400);
+        }
         const result = await findPage(
             WhatsAppAppointmentRequest,
             {
-                attributes: ["id", "requested_start_at", "status", "created_at"],
+                attributes: ["id", "requested_start_at", "status", "created_at", "updated_at"],
                 include: [
-                    { model: Patient, as: "patient", attributes: ["first_name", "last_name"] },
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: [
+                            "first_name",
+                            "last_name",
+                            "phone",
+                            "notification_whatsapp_phone",
+                        ],
+                        required: Boolean(search),
+                    },
                     { model: Specialities, as: "requestedSpecialty", attributes: ["name"] },
                 ],
-                order: [["created_at", "DESC"]],
+                where: buildRequestWhere({ search, status, specialtyId, dateFrom, dateTo }),
+                order: [
+                    ["created_at", "DESC"],
+                    ["id", "DESC"],
+                ],
                 distinct: true,
             },
             page,
         );
         pagination = result.pagination;
         rows = result.rows.map(mapAppointmentRequest);
+        dashboard.requestFilters = { search, status, specialtyId, dateFrom, dateTo };
+        dashboard.requestSpecialties = specialties.map((specialty) => ({
+            id: Number(specialty.id),
+            name: specialty.name,
+        }));
     }
 
     return { ...dashboard, rows, pagination, search, status };
