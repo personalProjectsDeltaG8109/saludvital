@@ -13,58 +13,11 @@ html(lang="es")
         data-whatsapp-page,
         data-whatsapp-endpoint="/api/admin/whatsapp",
         data-selected-tab=whatsapp.selectedTab,
-        data-current-page=whatsapp.pagination.page
+        data-current-page=whatsapp.pagination.page,
+        data-activity-period=whatsapp.activityPeriodDays
     )
-        button.admin-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-admin-close)
-        aside#admin-sidebar.admin-sidebar(data-admin-sidebar)
-            .admin-brand
-                a(href="/admin/dashboard", aria-label="SaludVital, panel administrativo")
-                    img(src="/brand/logo-symbol.png", alt="")
-                    span
-                        strong SaludVital
-                        small Panel Administrativo
-                button.admin-sidebar-collapse(
-                    type="button",
-                    aria-label="Cerrar menú",
-                    data-admin-close
-                ) ×
-            nav.admin-navigation(aria-label="Navegación administrativa")
-                a.admin-nav-link(href="/admin/dashboard")
-                    span.admin-nav-icon(aria-hidden="true") ⌂
-                    span Dashboard
-                .admin-nav-section Gestión médica
-                a.admin-nav-link(href="/admin/users")
-                    span.admin-nav-icon(aria-hidden="true") ♙
-                    span Usuarios y roles
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ⚕
-                    span Médicos
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◈
-                    span Especialidades
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ▣
-                    span Citas médicas
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◷
-                    span Horarios y disponibilidad
-                .admin-nav-section Canales y comunicación
-                a.admin-nav-link.is-active(href="/admin/whatsapp", aria-current="page")
-                    span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
-                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
-                    span WhatsApp y chatbot
-                    i.admin-status-dot(aria-label="Estado del canal")
-                span.admin-nav-section.admin-nav-section-small Control y seguimiento
-                span.admin-nav-link.is-unavailable(aria-disabled="true")
-                    span.admin-nav-icon(aria-hidden="true") ◉
-                    span Auditoría
-                a.admin-nav-link(href="/admin/reports")
-                    span.admin-nav-icon(aria-hidden="true") ▥
-                    span Reportes e indicadores
-            form.admin-logout(action="/logout", method="POST")
-                button.admin-nav-link(type="submit")
-                    span.admin-nav-icon(aria-hidden="true") ⇥
-                    span Cerrar sesión
+        include partials/admin-shell.pug
+        +adminSidebar("whatsapp")
         .admin-main-shell
             header.admin-topbar
                 button.admin-menu-toggle(
@@ -126,25 +79,18 @@ html(lang="es")
                     span.admin-user-chevron(aria-hidden="true") ⌄
             main.admin-dashboard.admin-whatsapp-page
                 header.admin-whatsapp-heading
-                    a.admin-back-link(href="/admin/dashboard", aria-label="Volver al dashboard") ←
+                    span.admin-whatsapp-heading-icon(aria-hidden="true")
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
                     div
                         p.admin-eyebrow Canales y comunicación
                         h1 WhatsApp y chatbot
-                        p Supervisa el servicio, las conversaciones y las solicitudes de cita.
-                section.admin-whatsapp-status-card(aria-label="Estado del servicio de WhatsApp")
-                    span.admin-whatsapp-service-icon
-                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
-                    .admin-whatsapp-status-copy
-                        p Estado de la integración
-                        strong(
-                            class=whatsapp.summary.integrationStatus === "Configured" ? "is-configured" : "is-incomplete"
-                        )
-                            = whatsapp.summary.integrationStatus === "Configured" ? "Configuración completa" : "Revisar configuración"
-                        small Estado calculado según la configuración local del servicio.
-                    span.admin-whatsapp-service-badge(
-                        class=whatsapp.summary.integrationStatus === "Configured" ? "is-configured" : "is-incomplete"
+                        p Gestiona la atención automatizada, las conversaciones y las solicitudes de citas por WhatsApp.
+                    button.admin-whatsapp-settings-shortcut(
+                        type="button",
+                        data-whatsapp-tab-link="settings"
                     )
-                        = whatsapp.summary.integrationStatus === "Configured" ? "Configurado" : "Pendiente"
+                        span(aria-hidden="true") ⚙
+                        span Configuración e integración
                 nav.admin-whatsapp-tabs(role="tablist", aria-label="Secciones de WhatsApp")
                     button#admin-whatsapp-tab-summary.admin-whatsapp-tab(
                         type="button",
@@ -166,48 +112,41 @@ html(lang="es")
                         aria-selected=whatsapp.selectedTab === "requests" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="requests"
-                    ) Solicitudes de cita
+                    ) Solicitudes de citas
+                    button#admin-whatsapp-tab-flows.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "flows" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="flows"
+                    ) Flujos del chatbot
+                    button#admin-whatsapp-tab-templates.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "templates" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="templates"
+                    ) Plantillas de mensajes
+                    button#admin-whatsapp-tab-settings.admin-whatsapp-tab(
+                        type="button",
+                        role="tab",
+                        aria-selected=whatsapp.selectedTab === "settings" ? "true" : "false",
+                        aria-controls="admin-whatsapp-panel",
+                        data-whatsapp-tab="settings"
+                    ) Configuración
                 section#admin-whatsapp-panel.admin-whatsapp-panel(
+                    class=whatsapp.selectedTab === "summary" ? "is-summary-panel" : "",
                     role="tabpanel",
                     aria-labelledby="admin-whatsapp-tab-" + whatsapp.selectedTab,
                     tabindex="0",
                     data-whatsapp-panel
                 )
                     if whatsapp.selectedTab === "summary"
-                        .admin-whatsapp-count-grid
-                            article.admin-whatsapp-count-card
-                                span Conversaciones activas
-                                strong= whatsapp.summary.conversations.Active || 0
-                            article.admin-whatsapp-count-card
-                                span Solicitudes pendientes
-                                strong= whatsapp.summary.appointmentRequests.Pending || 0
-                            article.admin-whatsapp-count-card
-                                span Mensajes con error
-                                strong= whatsapp.summary.messages.Failed || 0
-                        section.admin-whatsapp-list-card
-                            header.admin-whatsapp-list-heading
-                                div
-                                    h2 Mensajes recientes
-                                    p Solo se muestran datos de estado; el contenido no se expone.
-                            if whatsapp.rows.length
-                                ul.admin-whatsapp-record-list
-                                    each message in whatsapp.rows
-                                        li
-                                            span.admin-message-avatar(aria-hidden="true")= message.patientName.split(" ").map((part) => part.charAt(0)).slice(0, 1).join("").toUpperCase()
-                                            span.admin-whatsapp-record-copy
-                                                strong= message.patientName
-                                                small= message.direction === "Inbound" ? "Mensaje recibido · " + message.messageType : "Mensaje enviado · " + message.messageType
-                                            span.admin-whatsapp-record-status(
-                                                class=message.processingStatus === "Failed" ? "is-error" : "is-ok"
-                                            )
-                                                = message.processingStatus === "Failed" ? "Error" : message.processingStatus === "Processed" ? "Procesado" : "En proceso"
-                                            time(datetime=message.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(message.occurredAt))
-                            else
-                                p.admin-whatsapp-empty No hay mensajes recientes.
-                    else
+                        include partials/admin-whatsapp-summary.pug
+                    else if whatsapp.selectedTab === "conversations" || whatsapp.selectedTab === "requests"
                         header.admin-whatsapp-list-heading
                             div
-                                h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : "Solicitudes de cita"
+                                h2= whatsapp.selectedTab === "conversations" ? "Conversaciones recientes" : "Solicitudes de citas"
                                 p(data-whatsapp-result-count)= whatsapp.pagination.totalItems.toLocaleString("es-CO") + " registros"
                         if whatsapp.rows.length
                             ul.admin-whatsapp-record-list(data-whatsapp-record-list)
@@ -223,12 +162,14 @@ html(lang="es")
                                         if whatsapp.selectedTab === "requests"
                                             span.admin-whatsapp-record-status(
                                                 class="is-" + record.status.toLowerCase()
-                                            )= ({ Pending: "Nueva", Confirmed: "Confirmada", Rejected: "Rechazada", Cancelled: "Cancelada", Expired: "Vencida" })[record.status] || "En revisión"
+                                            )= record.statusLabel
                                         else
                                             span.admin-whatsapp-record-status(
                                                 class=record.status === "Active" ? "is-new" : "is-closed"
-                                            )= record.status === "Active" ? "Activa" : record.status === "Blocked" ? "Bloqueada" : "Cerrada"
-                                        time(datetime=record.createdAt || record.startedAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.createdAt || record.startedAt))
+                                            )= record.status === "Active" ? "Activa" : record.status === "Blocked" ? "Bloqueada" : record.status === "Completed" ? "Finalizada" : record.status === "Expired" ? "Vencida" : "Estado registrado"
+                                        time(
+                                            datetime=record.lastActivityAt || record.createdAt || record.startedAt
+                                        )= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(record.lastActivityAt || record.createdAt || record.startedAt))
                         else
                             p.admin-whatsapp-empty(data-whatsapp-empty) No hay registros para esta sección.
                         .admin-whatsapp-pagination(data-whatsapp-pagination)
@@ -243,10 +184,50 @@ html(lang="es")
                                 data-page-next,
                                 disabled=whatsapp.pagination.page >= whatsapp.pagination.totalPages
                             ) Siguiente
-                    p.admin-whatsapp-feedback(
-                        role="status",
-                        aria-live="polite",
-                        data-whatsapp-feedback
-                    )
+                    else if whatsapp.selectedTab === "flows"
+                        section.admin-whatsapp-info-card
+                            span.admin-whatsapp-info-icon(aria-hidden="true") ◉
+                            h2 Flujos del chatbot
+                            p= whatsapp.flowUnavailableMessage
+                            p El proyecto actual no almacena definiciones, pasos ni transiciones de flujos.
+                    else if whatsapp.selectedTab === "templates"
+                        section.admin-whatsapp-info-card
+                            h2 Plantillas de mensajes
+                            p Solo se muestra la configuración local de las categorías utilizadas por las notificaciones.
+                            ul.admin-whatsapp-configuration-list
+                                each template in whatsapp.integrationConfiguration.templates
+                                    li
+                                        span= template.name
+                                        strong(
+                                            class=template.configured ? "is-configured" : "is-incomplete"
+                                        )= template.configured ? "Configurada" : "Sin configurar"
+                            p La aprobación del proveedor no se consulta en este sistema.
+                    else if whatsapp.selectedTab === "settings"
+                        section.admin-whatsapp-info-card
+                            h2 Configuración e integración
+                            p El estado describe la configuración local; no verifica conexión con Twilio.
+                            dl.admin-whatsapp-configuration-list
+                                div
+                                    dt Proveedor
+                                    dd= whatsapp.integrationConfiguration.provider
+                                div
+                                    dt Remitente configurado
+                                    dd= whatsapp.integrationConfiguration.senderConfigured ? "Sí" : "No"
+                                div
+                                    dt Credenciales disponibles
+                                    dd= whatsapp.integrationConfiguration.credentialsConfigured ? "Sí" : "No"
+                                div
+                                    dt Conexión con el proveedor
+                                    dd Estado no verificado
+                                div
+                                    dt Chatbot
+                                    dd Estado no disponible
+                            p No se muestran credenciales y esta vista no modifica la configuración.
+                p.admin-whatsapp-feedback(
+                    role="status",
+                    aria-live="polite",
+                    data-whatsapp-feedback
+                )
         script(src="/js/session-timeout.js", defer)
+        script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-whatsapp.js", defer)

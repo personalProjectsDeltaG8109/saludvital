@@ -49,6 +49,20 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("WhatsApp overview requires an authenticated administrator", async () => {
+        const response = await request(app).get("/admin/whatsapp").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("WhatsApp overview API requires an authenticated administrator", async () => {
+        const response = await request(app).get("/api/admin/whatsapp").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("specialty directory API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/specialties").redirects(0);
 
