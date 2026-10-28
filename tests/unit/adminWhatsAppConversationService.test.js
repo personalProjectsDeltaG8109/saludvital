@@ -30,6 +30,9 @@ jest.unstable_mockModule("../../src/models/WhatsAppMessage.js", () => ({
 jest.unstable_mockModule("../../src/modules/admin/services/adminDashboardService.js", () => ({
     getWhatsAppIntegrationStatus: jest.fn(() => "Configured"),
 }));
+jest.unstable_mockModule("../../src/modules/admin/services/adminChatbotFlowService.js", () => ({
+    getAdminChatbotFlows: jest.fn().mockResolvedValue([]),
+}));
 
 const Notification = (await import("../../src/models/Notification.js")).default;
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
