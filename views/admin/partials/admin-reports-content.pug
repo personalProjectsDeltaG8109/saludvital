@@ -40,7 +40,7 @@
             .admin-report-stat-copy
                 span Citas canceladas
                 strong= reports.summary.cancelledAppointments.toLocaleString("es-CO")
-                small= reports.summary.cancellationRate + "% del total"
+                small= reports.summary.cancellationRate === null ? "Sin datos" : reports.summary.cancellationRate + "% del total"
         article.admin-report-stat-card
             .admin-report-stat-icon.orange(aria-hidden="true")
                 svg(
@@ -181,7 +181,7 @@
                         path(d="M16 3v4M8 3v4M3 10h18")
                 div
                     span Tasa de cancelación
-                    strong= reports.summary.cancellationRate + "%"
+                    strong= reports.summary.cancellationRate === null ? "Sin datos" : reports.summary.cancellationRate + "%"
             article.admin-operational-item
                 .admin-report-stat-icon.green(aria-hidden="true")
                     img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
