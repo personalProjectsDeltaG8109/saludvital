@@ -46,6 +46,7 @@ import {
 import { getAdminWhatsAppData } from "../services/adminWhatsAppService.js";
 import { getAdminProfile } from "../services/adminProfileService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
+import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
 import {
     removeAdminProfilePhoto,
     updateAdminProfilePhoto,
@@ -752,7 +753,7 @@ adminRoutes.get("/admin/doctors/:doctorId", ...requireAdministrator, async (req,
 });
 adminRoutes.get("/api/admin/dashboard", ...requireAdministrator, async (req, res, next) => {
     try {
-        return res.json(await getAdminDashboardData(req.query));
+        return res.json(await getAdminDashboardData(req.query, req.auth.userId));
     } catch (error) {
         return next(error);
     }
@@ -856,7 +857,7 @@ adminRoutes.get("/admin/whatsapp", ...requireAdministrator, async (req, res, nex
 // Render the administrator dashboard with live, role-protected aggregates.
 adminRoutes.get("/admin/dashboard", ...requireAdministrator, async (req, res, next) => {
     try {
-        const dashboard = await getAdminDashboardData(req.query);
+        const dashboard = await getAdminDashboardData(req.query, req.auth.userId);
         return res.render("admin/dashboard", {
             pageTitle: "Panel administrativo | SaludVital",
             adminName: "Administrador",
@@ -889,6 +890,21 @@ adminRoutes.patch("/api/admin/profile", ...requireAdministrator, async (req, res
         return next(error);
     }
 });
+
+adminRoutes.patch(
+    "/api/admin/profile/preferences",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(await updateAdminProfilePreferences(req.auth.userId, req.body));
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.post("/api/admin/profile/photo", ...requireAdministrator, async (req, res, next) => {
     res.set("Cache-Control", "no-store");

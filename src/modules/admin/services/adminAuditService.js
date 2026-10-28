@@ -38,6 +38,7 @@ const ACTION_LABELS = {
     AdminUserProfileUpdated: "Actualización de perfil",
     AdminUserProfilePhotoUpdated: "Actualización de foto de perfil",
     AdminUserProfilePhotoRemoved: "Eliminación de foto de perfil",
+    AdminNotificationPreferencesUpdated: "Actualización de preferencias de notificaciones",
     UserPasswordReset: "Restablecimiento de contraseña",
 };
 
@@ -65,6 +66,8 @@ const EVENT_DESCRIPTIONS = {
     AdminUserProfileUpdated: "Se actualizó un perfil de usuario",
     AdminUserProfilePhotoUpdated: "Se actualizó la foto de perfil de un administrador",
     AdminUserProfilePhotoRemoved: "Se eliminó la foto de perfil de un administrador",
+    AdminNotificationPreferencesUpdated:
+        "Se actualizaron las preferencias de notificaciones de un administrador",
     UserPasswordReset: "Se restableció la contraseña de una cuenta",
 };
 

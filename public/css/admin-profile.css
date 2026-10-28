@@ -473,6 +473,34 @@
     text-underline-offset: 3px;
 }
 
+.admin-profile-preference-form {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.admin-profile-preference-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #244a79;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.admin-profile-preference-option input {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    margin-top: 1px;
+    accent-color: #0867cb;
+}
+
+.admin-profile-preference-option input:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 35%);
+    outline-offset: 3px;
+}
+
 @media (max-width: 720px) {
     .admin-profile-content {
         padding-top: 18px;

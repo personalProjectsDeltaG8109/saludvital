@@ -35,6 +35,11 @@ const User = database.define(
             type: DataTypes.STRING(255),
             allowNull: true,
         },
+        admin_notifications_enabled: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true,
+        },
         password_hash: {
             type: DataTypes.STRING(255),
             allowNull: false,

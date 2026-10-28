@@ -7,6 +7,10 @@ const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.
 const profileStyles = await readFile(path.resolve("public/css/admin-profile.css"), "utf8");
 const profileScript = await readFile(path.resolve("public/js/admin-profile.js"), "utf8");
 const profilePhotoScript = await readFile(path.resolve("public/js/admin-profile-photo.js"), "utf8");
+const profilePreferencesScript = await readFile(
+    path.resolve("public/js/admin-profile-preferences.js"),
+    "utf8",
+);
 const validPng = await readFile(path.resolve("public/brand/logo-symbol.png"));
 const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
@@ -21,6 +25,7 @@ const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
         createdAt: new Date("2025-01-15T10:00:00.000Z"),
         lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
         profilePhotoUrl: null,
+        adminNotificationsEnabled: true,
         initials: "LM",
     },
 });
@@ -38,6 +43,7 @@ try {
     await page.addStyleTag({ content: profileStyles });
     await page.evaluate(() => {
         window.profileSaveMode = "error";
+        window.preferenceSaveMode = "error";
         window.photoSaveMode = "error";
         window.photoRemoveConfirmed = true;
         window.confirmCalls = 0;
@@ -46,6 +52,21 @@ try {
             return window.photoRemoveConfirmed;
         };
         window.fetch = async (url, options = {}) => {
+            if (String(url).endsWith("/preferences")) {
+                return window.preferenceSaveMode === "error"
+                    ? {
+                          ok: false,
+                          json: async () => ({ message: "No pudimos guardar las preferencias." }),
+                      }
+                    : {
+                          ok: true,
+                          json: async () => ({
+                              showNotificationFeed: false,
+                              message:
+                                  "Tus preferencias de notificaciones se actualizaron correctamente.",
+                          }),
+                      };
+            }
             if (String(url).endsWith("/photo")) {
                 if (options.method === "DELETE") {
                     return { ok: true, json: async () => ({ profilePhotoUrl: null }) };
@@ -78,6 +99,7 @@ try {
     });
     await page.addScriptTag({ content: profileScript });
     await page.addScriptTag({ content: profilePhotoScript });
+    await page.addScriptTag({ content: profilePreferencesScript });
 
     for (const width of [320, 375, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
@@ -136,6 +158,25 @@ try {
         .waitFor();
     await page.getByRole("heading", { name: "Laura Torres" }).waitFor();
     await page.getByText("laura.torres@example.com", { exact: true }).first().waitFor();
+
+    const notificationPreference = page.locator("[data-admin-notifications-enabled]");
+    await notificationPreference.uncheck();
+    await page.getByRole("button", { name: "Guardar preferencias" }).click();
+    await page.getByRole("alert").getByText("No pudimos guardar las preferencias.").waitFor();
+    if (await notificationPreference.isChecked()) {
+        throw new Error("Failed preference saves must preserve the selected value.");
+    }
+    await page.evaluate(() => {
+        window.preferenceSaveMode = "success";
+    });
+    await page.getByRole("button", { name: "Guardar preferencias" }).click();
+    await page
+        .getByRole("status")
+        .getByText("Tus preferencias de notificaciones se actualizaron correctamente.")
+        .waitFor();
+    if (await notificationPreference.isChecked()) {
+        throw new Error("A successful preference save must reflect the persisted value.");
+    }
 
     const photoButton = page.getByRole("button", { name: "Opciones de foto de perfil" });
     await photoButton.focus();
@@ -217,6 +258,9 @@ try {
         "PASS: administrator profile renders without overflow at mobile, tablet, and desktop widths.",
     );
     console.log("PASS: profile section links can receive keyboard focus.");
+    console.log(
+        "PASS: notification preferences preserve edits on failure and confirm successful saves.",
+    );
     console.log(
         "PASS: profile editor preserves input after failure and reflects successful saves.",
     );

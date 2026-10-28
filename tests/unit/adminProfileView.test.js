@@ -16,6 +16,7 @@ describe("administrator profile page", () => {
                 createdAt: new Date("2025-01-15T10:00:00.000Z"),
                 lastLoginAt: new Date("2026-10-27T10:24:00.000Z"),
                 initials: "LM",
+                adminNotificationsEnabled: true,
             },
         });
 
@@ -28,6 +29,7 @@ describe("administrator profile page", () => {
         expect(html).toContain("Verificado");
         expect(html).toContain("Recuperar contraseña");
         expect(html).toContain("Preferencias");
+        expect(html).toContain("Mostrar notificaciones recientes de entrega de citas a pacientes");
         expect(html).toContain("Activa");
         expect(html).not.toMatch(/password_hash|passwordHash|verification_token|token=/i);
     });
@@ -43,6 +45,7 @@ describe("administrator profile page", () => {
                 role: "Administrator",
                 isActive: true,
                 initials: "A",
+                adminNotificationsEnabled: true,
             },
         });
 

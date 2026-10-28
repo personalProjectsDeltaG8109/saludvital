@@ -238,8 +238,30 @@ html(lang="es")
                     aria-labelledby="profile-preferences-title"
                 )
                     h2#profile-preferences-title Preferencias
-                    p Esta cuenta no tiene preferencias de perfil configuradas.
+                    p Configura qué avisos de entrega aparecen en tu panel administrativo.
+                    form.admin-profile-preference-form(
+                        data-profile-preferences-form,
+                        data-endpoint="/api/admin/profile/preferences"
+                    )
+                        label.admin-profile-preference-option(for="admin-notifications-enabled")
+                            input#admin-notifications-enabled(
+                                type="checkbox",
+                                checked=profile.adminNotificationsEnabled,
+                                data-admin-notifications-enabled
+                            )
+                            span Mostrar notificaciones recientes de entrega de citas a pacientes
+                        p.admin-profile-field-help Los cambios afectan el bloque y contador de notificaciones del panel. No modifican los envíos ni las métricas de monitoreo.
+                        p.admin-profile-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-preferences-success,
+                            hidden
+                        )
+                        p.admin-profile-error(role="alert", data-preferences-error, hidden)
+                        .admin-profile-form-actions
+                            button.admin-profile-save-button(type="submit", data-preferences-save) Guardar preferencias
 
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-profile.js", defer)
         script(src="/js/admin-profile-photo.js", defer)
+        script(src="/js/admin-profile-preferences.js", defer)
