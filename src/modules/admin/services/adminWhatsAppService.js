@@ -360,6 +360,12 @@ async function findPage(model, options, requestedPage) {
 }
 
 function getSafeIntegrationConfiguration() {
+    const metaConfigured = [
+        process.env.META_WHATSAPP_ACCESS_TOKEN,
+        process.env.META_WHATSAPP_PHONE_NUMBER_ID,
+        process.env.META_WHATSAPP_API_VERSION,
+    ].every((value) => Boolean(value?.trim()));
+
     return {
         provider: "Meta WhatsApp Cloud API",
         senderConfigured: Boolean(process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim()),
@@ -369,6 +375,35 @@ function getSafeIntegrationConfiguration() {
             process.env.META_WHATSAPP_APP_SECRET?.trim() &&
             process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim(),
         ),
+        providers: {
+            whatsapp: {
+                name: "Meta WhatsApp Cloud API",
+                configured: metaConfigured,
+                credentialsConfigured: Boolean(process.env.META_WHATSAPP_ACCESS_TOKEN?.trim()),
+                apiVersionConfigured: Boolean(process.env.META_WHATSAPP_API_VERSION?.trim()),
+                senderConfigured: Boolean(process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim()),
+                accountConfigured: Boolean(process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID?.trim()),
+                webhookConfigured: Boolean(
+                    process.env.META_WHATSAPP_APP_SECRET?.trim() &&
+                    process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim(),
+                ),
+                connectionStatus: "Unknown",
+            },
+            email: {
+                name: "Resend",
+                credentialsConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
+                senderConfigured: Boolean(process.env.RESEND_FROM_EMAIL?.trim()),
+                senderNameConfigured: Boolean(process.env.RESEND_FROM_NAME?.trim()),
+            },
+            sms: {
+                name: "Inalambria Express",
+                credentialsConfigured: Boolean(process.env.INALAMBRIA_API_KEY?.trim()),
+            },
+        },
+        notificationDeliveryEnabled: process.env.NOTIFICATION_DELIVERY_ENABLED === "true",
+        chatbotEnabled:
+            process.env.NODE_ENV !== "production" &&
+            process.env.WHATSAPP_CHATBOT_ENABLED !== "false",
         templates: getAdminWhatsAppTemplateConfiguration(),
     };
 }

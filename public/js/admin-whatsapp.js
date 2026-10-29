@@ -1167,35 +1167,283 @@ if (whatsappPage) {
             renderMessageTemplates(data);
             return;
         }
-        const card = element("section", "admin-whatsapp-info-card");
         const configuration = data.integrationConfiguration;
-        const details = [
-            ["Proveedor", configuration.provider],
-            ["Remitente configurado", configuration.senderConfigured ? "Sí" : "No"],
-            ["Credenciales disponibles", configuration.credentialsConfigured ? "Sí" : "No"],
-            ["Conexión con el proveedor", "Estado no verificado"],
-            ["Chatbot", "Estado no disponible"],
-        ];
-        const list = element("dl", "admin-whatsapp-configuration-list");
-        details.forEach(([name, value]) => {
-            list.append(element("dt", "", name), element("dd", "", value));
-        });
-        card.append(
-            element("h2", "", "Configuración e integración"),
+        const providers = configuration.providers || {};
+        const card = element("section", "admin-whatsapp-info-card");
+        const heading = element("div", "admin-whatsapp-configuration-heading");
+        const headingCopy = element("div", "admin-whatsapp-configuration-heading-copy");
+        headingCopy.append(
+            element("h2", "", "Configuraci\u00f3n e integraci\u00f3n"),
+            element("p", "", "Administra los canales que conectan a SaludVital con tus pacientes."),
+        );
+        heading.append(element("span", "admin-whatsapp-info-icon is-green", "\u2699"), headingCopy);
+        const overview = element("section", "admin-whatsapp-channel-overview");
+        const overviewHeading = element("header", "admin-whatsapp-channel-section-heading");
+        const overviewCopy = element("div");
+        overviewCopy.append(
+            element("h3", "", "Estado general de los canales"),
             element(
                 "p",
                 "",
-                "El estado describe la configuración local; no verifica conexión con Meta.",
+                "Resumen de la configuraci\u00f3n de los proveedores de comunicaci\u00f3n.",
             ),
-            list,
-            renderConfigurationList(configuration.templates),
+        );
+        overviewHeading.append(
+            overviewCopy,
+            createStatusBadge("Conexi\u00f3n no verificada", "is-warning"),
+        );
+        const channelDefinitions = [
+            {
+                key: "whatsapp",
+                accent: "is-green",
+                icon: "\u25c9",
+                title: providers.whatsapp?.name || configuration.provider,
+                configured: Boolean(providers.whatsapp?.configured),
+                description:
+                    "Mensajes de WhatsApp y respuestas del chatbot mediante Meta Cloud API.",
+            },
+            {
+                key: "email",
+                accent: "is-blue",
+                icon: "\u2709",
+                title: providers.email?.name || "Resend",
+                configured: Boolean(
+                    providers.email?.credentialsConfigured && providers.email?.senderConfigured,
+                ),
+                description:
+                    "Notificaciones y c\u00f3digos de verificaci\u00f3n por correo electr\u00f3nico.",
+            },
+            {
+                key: "sms",
+                accent: "is-purple",
+                icon: "\u25a4",
+                title: providers.sms?.name || "Inalambria Express",
+                configured: Boolean(providers.sms?.credentialsConfigured),
+                description: "Entrega de notificaciones por SMS.",
+            },
+        ];
+        const overviewGrid = element("div", "admin-whatsapp-provider-grid");
+        channelDefinitions.forEach((provider) => {
+            const providerCard = renderProviderCard(provider);
+            providerCard.addEventListener("click", () => selectChannel(provider.key));
+            providerCard.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    selectChannel(provider.key);
+                }
+            });
+            overviewGrid.append(providerCard);
+        });
+        overview.append(overviewHeading, overviewGrid);
+        const configurationSection = element("section", "admin-whatsapp-channel-configuration");
+        const configurationHeading = element("header", "admin-whatsapp-channel-section-heading");
+        const configurationCopy = element("div");
+        configurationCopy.append(
+            element("h3", "", "Configuraci\u00f3n por canal"),
+            element("p", "", "Consulta los ajustes disponibles para cada proveedor."),
+        );
+        configurationHeading.append(
+            configurationCopy,
+            element("span", "admin-whatsapp-config-readonly", "Solo lectura"),
+        );
+        const tabs = element("div", "admin-whatsapp-channel-tabs");
+        tabs.setAttribute("role", "tablist");
+        tabs.setAttribute("aria-label", "Configuraci\u00f3n por canal");
+        const tabPanel = element("div", "admin-whatsapp-channel-content");
+        tabPanel.id = "admin-whatsapp-channel-panel";
+        tabPanel.setAttribute("role", "tabpanel");
+        let activeChannel = "whatsapp";
+        const channelTabs = channelDefinitions.map((provider) => {
+            const tab = element("button", "admin-whatsapp-channel-tab", provider.title);
+            tab.type = "button";
+            tab.setAttribute("role", "tab");
+            tab.setAttribute("aria-controls", tabPanel.id);
+            tab.dataset.communicationChannel = provider.key;
+            tab.prepend(
+                element(
+                    "span",
+                    "admin-whatsapp-channel-tab-icon " + provider.accent,
+                    provider.icon,
+                ),
+            );
+            tab.addEventListener("click", () => selectChannel(provider.key));
+            tabs.append(tab);
+            return tab;
+        });
+        function selectChannel(channel) {
+            activeChannel = channel;
+            channelTabs.forEach((tab) => {
+                const isSelected = tab.dataset.communicationChannel === activeChannel;
+                tab.setAttribute("aria-selected", String(isSelected));
+                if (isSelected)
+                    tabPanel.setAttribute(
+                        "aria-labelledby",
+                        tab.id || (tab.id = "admin-whatsapp-channel-tab-" + activeChannel),
+                    );
+                tab.classList.toggle("is-active", isSelected);
+            });
+            tabPanel.replaceChildren(renderChannelConfiguration(channel, providers, configuration));
+        }
+        selectChannel(activeChannel);
+        configurationSection.append(configurationHeading, tabs, tabPanel);
+
+        const serviceStatusGrid = element("div", "admin-whatsapp-service-status-grid");
+        const chatbotCard = element("section", "admin-whatsapp-settings-summary is-chatbot");
+        const chatbotCopy = element("div", "admin-whatsapp-settings-summary-copy");
+        chatbotCopy.append(
+            element("strong", "", "Chatbot de WhatsApp"),
+            element(
+                "span",
+                "",
+                "Estado de configuraci\u00f3n; no equivale a una comprobaci\u00f3n operativa.",
+            ),
+        );
+        chatbotCard.append(
+            element("span", "admin-whatsapp-settings-summary-icon", "\u2726"),
+            chatbotCopy,
+            createStatusBadge(
+                configuration.chatbotEnabled ? "Habilitado" : "Deshabilitado",
+                Boolean(configuration.chatbotEnabled),
+            ),
+        );
+        const deliveryCard = element("section", "admin-whatsapp-settings-summary is-delivery");
+        const deliveryCopy = element("div", "admin-whatsapp-settings-summary-copy");
+        deliveryCopy.append(
+            element("strong", "", "Env\u00edo de notificaciones"),
+            element(
+                "span",
+                "",
+                configuration.notificationDeliveryEnabled
+                    ? "Habilitado en la aplicaci\u00f3n"
+                    : "Deshabilitado en la aplicaci\u00f3n",
+            ),
+        );
+        deliveryCard.append(
+            element("span", "admin-whatsapp-delivery-indicator", "\u25cf"),
+            deliveryCopy,
+            createStatusBadge(
+                configuration.notificationDeliveryEnabled ? "Habilitado" : "Deshabilitado",
+                Boolean(configuration.notificationDeliveryEnabled),
+            ),
+        );
+        serviceStatusGrid.append(chatbotCard, deliveryCard);
+        card.append(
+            heading,
+            overview,
+            configurationSection,
+            serviceStatusGrid,
             element(
                 "p",
-                "",
-                "No se muestran credenciales y esta vista no modifica la configuración.",
+                "admin-whatsapp-settings-security-note",
+                "Por seguridad, solo se indica si cada valor est\u00e1 configurado. No se muestran claves, tokens ni secretos. La vista no modifica ajustes ni prueba conexiones.",
             ),
         );
         panel.append(card);
+    }
+    function statusText(isConfigured) {
+        return isConfigured ? "Configurado" : "Sin configurar";
+    }
+    function createStatusBadge(label, status = "is-neutral") {
+        const statusClass =
+            status === true ? "is-positive" : status === false ? "is-neutral" : status;
+        return element("span", "admin-whatsapp-config-badge " + statusClass, label);
+    }
+    function renderProviderCard(provider) {
+        const card = element("article", "admin-whatsapp-provider-card " + provider.accent);
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        card.setAttribute("aria-label", "Ver configuraci\u00f3n de " + provider.title);
+        const heading = element("header", "admin-whatsapp-provider-heading");
+        const title = element("div", "admin-whatsapp-provider-title");
+        title.append(element("h3", "", provider.title), element("p", "", provider.description));
+        heading.append(
+            element("span", "admin-whatsapp-provider-icon " + provider.accent, provider.icon),
+            title,
+        );
+        const status = element("div", "admin-whatsapp-provider-status");
+        status.append(
+            createStatusBadge(
+                provider.configured ? "Configurado · sin verificar" : "Configuración incompleta",
+                provider.configured ? "is-warning" : "is-incomplete",
+            ),
+            element(
+                "span",
+                "admin-whatsapp-provider-status-caption",
+                provider.configured
+                    ? "Las credenciales están presentes; falta validar conexión."
+                    : "Revisa los ajustes requeridos en el servidor.",
+            ),
+        );
+        card.append(heading, status);
+        return card;
+    }
+    function renderChannelConfiguration(channel, providers, configuration) {
+        const panel = element("section", "admin-whatsapp-channel-detail");
+        const details = element("dl", "admin-whatsapp-provider-details");
+        let title;
+        let description;
+        let fields;
+        let icon;
+        let accent;
+        if (channel === "email") {
+            title = "Correo (Resend)";
+            description = "Canal para notificaciones y verificaci\u00f3n de cuenta.";
+            icon = "\u2709";
+            accent = "is-blue";
+            fields = [
+                ["Clave del proveedor", providers.email?.credentialsConfigured],
+                ["Direcci\u00f3n remitente", providers.email?.senderConfigured],
+                ["Nombre remitente", providers.email?.senderNameConfigured],
+                ["Conexi\u00f3n con Resend", null],
+            ];
+        } else if (channel === "sms") {
+            title = "SMS (Inalambria Express)";
+            description = "Canal de mensajes de texto.";
+            icon = "\u25a4";
+            accent = "is-purple";
+            fields = [
+                ["Clave del proveedor", providers.sms?.credentialsConfigured],
+                ["Conexi\u00f3n con Inalambria", null],
+            ];
+        } else {
+            title = "WhatsApp Cloud API";
+            description = "Canal de WhatsApp y recepci\u00f3n de eventos mediante webhook.";
+            icon = "\u25c9";
+            accent = "is-green";
+            fields = [
+                ["Token de acceso", providers.whatsapp?.credentialsConfigured],
+                ["Versión de API", providers.whatsapp?.apiVersionConfigured],
+                ["Identificador del n\u00famero", providers.whatsapp?.senderConfigured],
+                ["Cuenta de negocio (WABA)", providers.whatsapp?.accountConfigured],
+                ["Firma y verificaci\u00f3n del webhook", providers.whatsapp?.webhookConfigured],
+                ["Conexi\u00f3n con Meta", null],
+            ];
+        }
+        const heading = element("header", "admin-whatsapp-channel-detail-heading");
+        const titleCopy = element("div");
+        titleCopy.append(element("h4", "", title), element("p", "", description));
+        heading.append(element("span", "admin-whatsapp-provider-icon " + accent, icon), titleCopy);
+        fields.forEach(([label, isConfigured]) => {
+            const row = element("div");
+            row.append(element("dt", "", label));
+            const stateClass =
+                isConfigured === null
+                    ? "is-unverified"
+                    : isConfigured
+                      ? "is-configured"
+                      : "is-missing";
+            row.append(
+                element(
+                    "dd",
+                    "admin-whatsapp-setting-state " + stateClass,
+                    isConfigured === null ? "No verificada" : statusText(Boolean(isConfigured)),
+                ),
+            );
+            details.append(row);
+        });
+        panel.append(heading, details);
+        if (channel === "whatsapp") panel.append(renderConfigurationList(configuration.templates));
+        return panel;
     }
 
     function render(data) {
