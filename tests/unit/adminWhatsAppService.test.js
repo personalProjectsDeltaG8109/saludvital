@@ -371,7 +371,31 @@ describe("administrator WhatsApp overview service", () => {
                 dateTo: "2026-10-28",
             }),
         ).rejects.toMatchObject({ statusCode: 400 });
+        await expect(
+            getAdminWhatsAppData({ tab: "deliveries", providerStatus: "queued" }),
+        ).rejects.toMatchObject({ statusCode: 400 });
         expect(Notification.findAndCountAll).not.toHaveBeenCalled();
+    });
+
+    test("combines the Meta callback state with queue and inclusive date filters", async () => {
+        Notification.findAndCountAll.mockResolvedValueOnce({ count: 1, rows: [] });
+
+        await getAdminWhatsAppData({
+            tab: "deliveries",
+            status: "Sent",
+            providerStatus: "delivered",
+            dateFrom: "2026-10-22",
+            dateTo: "2026-10-28",
+        });
+
+        const query = Notification.findAndCountAll.mock.calls[0][0];
+        expect(query.where).toMatchObject({
+            channel: "WhatsApp",
+            status: "Sent",
+            provider_delivery_status: "delivered",
+        });
+        expect(query.where.created_at[gte]).toEqual(new Date("2026-10-22T05:00:00.000Z"));
+        expect(query.where.created_at[lt]).toEqual(new Date("2026-10-29T05:00:00.000Z"));
     });
 
     test("returns an empty paginated delivery list when no records match", async () => {

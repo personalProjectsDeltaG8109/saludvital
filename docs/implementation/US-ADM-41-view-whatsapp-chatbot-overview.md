@@ -14,9 +14,9 @@
 ## Existing limitations
 
 - The project has no chatbot runtime health check, flow-definition model, or persisted flow catalog. The interface reports chatbot status and flow availability as unknown or unavailable rather than supplying sample values.
-- WhatsApp template data consists of configured Twilio content identifiers for existing notification categories. The application cannot retrieve provider approval or delivery status, and this view does not reveal the identifiers or allow editing.
+- WhatsApp template data consists of configured Meta template names for existing notification categories. The application cannot retrieve provider approval or delivery status, and this view does not reveal identifiers or allow editing.
 - WhatsApp message records contain message content, but this overview intentionally returns only direction, message type, processing status, timestamp, and the linked patient's display name. Full conversation review is outside this story.
-- The provider configuration status reports whether local required settings are present; it does not verify that Twilio is reachable or that the credentials work.
+- The provider configuration status reports whether local required settings are present; it does not verify that Meta is reachable or that the credentials work.
 - No database schema or dependency changes were needed.
 
 ## Verification

@@ -2,10 +2,9 @@ import { afterEach, describe, expect, test } from "@jest/globals";
 import { getAdminWhatsAppTemplateConfiguration } from "../../src/modules/admin/services/adminWhatsAppTemplateService.js";
 
 const environmentKeys = [
-    "TWILIO_WHATSAPP_REMINDER_CONTENT_SID",
-    "TWILIO_WHATSAPP_CONTENT_SID",
-    "TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID",
-    "TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID",
+    "META_WHATSAPP_REMINDER_TEMPLATE_NAME",
+    "META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME",
+    "META_WHATSAPP_CANCELLATION_TEMPLATE_NAME",
 ];
 const originalEnvironment = Object.fromEntries(
     environmentKeys.map((key) => [key, process.env[key]]),
@@ -20,10 +19,9 @@ afterEach(() => {
 
 describe("administrator WhatsApp template configuration", () => {
     test("reports supported application templates and their local configuration only", () => {
-        process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID = "HX_PRIVATE_REMINDER";
-        delete process.env.TWILIO_WHATSAPP_CONTENT_SID;
-        delete process.env.TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID;
-        delete process.env.TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID;
+        process.env.META_WHATSAPP_REMINDER_TEMPLATE_NAME = "appointment_reminder";
+        delete process.env.META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME;
+        delete process.env.META_WHATSAPP_CANCELLATION_TEMPLATE_NAME;
 
         const templates = getAdminWhatsAppTemplateConfiguration();
 
@@ -41,17 +39,17 @@ describe("administrator WhatsApp template configuration", () => {
         expect(templates[0]).not.toHaveProperty("content");
         expect(templates[0]).not.toHaveProperty("language");
         expect(templates.slice(1).every((template) => !template.configured)).toBe(true);
-        expect(JSON.stringify(templates)).not.toContain("HX_PRIVATE_REMINDER");
+        expect(JSON.stringify(templates)).not.toContain("META_WHATSAPP_REMINDER_TEMPLATE_NAME");
         expect(JSON.stringify(templates)).not.toContain("Aprobada");
     });
 
-    test("uses the reminder fallback identifier supported by the delivery service", () => {
-        delete process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID;
-        process.env.TWILIO_WHATSAPP_CONTENT_SID = "HX_PRIVATE_FALLBACK";
+    test("reports provider template names only as configured state", () => {
+        delete process.env.META_WHATSAPP_REMINDER_TEMPLATE_NAME;
+        process.env.META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME = "reschedule_notice";
 
-        const [reminder] = getAdminWhatsAppTemplateConfiguration();
+        const templates = getAdminWhatsAppTemplateConfiguration();
 
-        expect(reminder.configured).toBe(true);
-        expect(JSON.stringify(reminder)).not.toContain("HX_PRIVATE_FALLBACK");
+        expect(templates[1].configured).toBe(true);
+        expect(JSON.stringify(templates)).not.toContain("reschedule_notice");
     });
 });

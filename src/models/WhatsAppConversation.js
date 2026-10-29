@@ -27,6 +27,26 @@ const WhatsAppConversation = database.define(
             type: DataTypes.STRING(191),
             allowNull: true,
         },
+        wa_contact_id: {
+            type: DataTypes.STRING(32),
+            allowNull: true,
+        },
+        chatbot_state: {
+            type: DataTypes.JSON,
+            allowNull: true,
+        },
+        identity_verified_until: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        identity_code_sent_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        chatbot_flow_version_id: {
+            type: DataTypes.INTEGER.UNSIGNED,
+            allowNull: true,
+        },
         status: {
             type: DataTypes.ENUM("Active", "Completed", "Expired", "Blocked"),
             allowNull: false,

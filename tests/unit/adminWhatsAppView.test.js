@@ -15,7 +15,7 @@ function createOverviewData(overrides = {}) {
             configurationStatus: "Incomplete",
         },
         integrationConfiguration: {
-            provider: "Twilio",
+            provider: "Meta WhatsApp Cloud API",
             status: "Incomplete",
             senderConfigured: false,
             credentialsConfigured: false,
@@ -153,7 +153,7 @@ describe("administrator WhatsApp overview view", () => {
             whatsapp: createOverviewData({
                 selectedTab: "templates",
                 integrationConfiguration: {
-                    provider: "Twilio",
+                    provider: "Meta WhatsApp Cloud API",
                     status: "Configured",
                     senderConfigured: true,
                     credentialsConfigured: true,
@@ -176,7 +176,7 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).toContain("Tipos compatibles");
         expect(html).toContain("Recordatorio de cita");
         expect(html).toContain("ID configurado");
-        expect(html).toContain("Aprobación en Twilio");
+        expect(html).toContain("Aprobación en Meta");
         expect(html).toContain("No consultada");
         expect(html).toContain("Buscar plantillas por nombre o propósito");
         expect(html).not.toContain("HX");

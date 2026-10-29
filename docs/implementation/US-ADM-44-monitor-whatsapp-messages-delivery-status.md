@@ -20,13 +20,13 @@
 - Reused persisted `Notification` records filtered to the WhatsApp channel. Status totals and the filtered list are queried from the database; list retrieval is paginated and ordered by update time and ID.
 - Added date and status validation and combined filters using the existing Sequelize query layer and `America/Bogota` calendar boundaries.
 - Added a minimal record projection and maps raw errors to safe Spanish diagnostic categories. Only a numeric provider error code may be included.
-- Reused the existing notification status enum. `Sent` is presented as “Aceptado por proveedor” because the current integration has no delivery-status callback.
+- Reused the existing notification status enum and added `provider_delivery_status` for Meta callback states. `Sent` remains “Aceptado por proveedor”; Meta's `sent`, `delivered`, `read`, and `failed` callback states are shown separately when recorded.
 - No schema, dependency, or provider integration change was needed.
 
 ## Limitations
 
-- The current Twilio integration stores a successful API submission as `Sent`; it does not persist provider delivery callbacks. Final recipient delivery therefore cannot be reported.
-- The `WhatsAppMessage` model has no message-ingestion or status-callback producer in the current code. This monitor covers persisted WhatsApp appointment notifications and cannot report chatbot conversation message delivery.
+- Final delivery states appear only after Meta sends a corresponding callback. A submitted message with no callback remains only “Aceptado por proveedor.”
+- Meta callback persistence covers appointment notifications correlated by provider message ID. Chatbot replies are persisted in conversation history, but their delivery callbacks are not exposed in this monitor unless they correlate with a notification record.
 - The supplied image depicts chatbot flow editing rather than message delivery monitoring. This implementation follows the written US-ADM-44 scope and the shared WhatsApp design.
 
 ## Verification
