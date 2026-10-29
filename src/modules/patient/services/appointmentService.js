@@ -721,6 +721,24 @@ export async function getReschedulableAppointments(userId) {
     );
 }
 
+/** Return a bounded, patient-safe appointment summary for WhatsApp. */
+export async function getPatientAppointmentsForWhatsApp(userId) {
+    userId = validatePositiveIntegerId(userId);
+    const patient = await getPatientByUserId(userId);
+    const appointments = await Appointment.findAll({
+        where: { patient_id: patient.id },
+        attributes: ["id", "start_at", "end_at"],
+        include: [
+            { model: AppointmentStatus, as: "status", required: true, attributes: ["name"] },
+            { model: Doctor, as: "doctor", required: true, attributes: ["display_name"] },
+            { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
+        ],
+        order: [["start_at", "DESC"]],
+        limit: 10,
+    });
+    return appointments;
+}
+
 /**
  * Create an appointment and its audit history atomically.
  */

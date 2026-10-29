@@ -28,7 +28,7 @@ const ChatbotFlowVersion = database.define(
             defaultValue: "",
         },
         status: {
-            type: DataTypes.ENUM("Draft"),
+            type: DataTypes.ENUM("Draft", "Published", "Archived"),
             allowNull: false,
             defaultValue: "Draft",
         },
@@ -38,7 +38,7 @@ const ChatbotFlowVersion = database.define(
         },
         created_by: {
             type: DataTypes.INTEGER.UNSIGNED,
-            allowNull: false,
+            allowNull: true,
         },
     },
     {

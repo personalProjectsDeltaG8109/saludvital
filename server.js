@@ -9,6 +9,10 @@ import {
     startNotificationScheduler,
     stopNotificationScheduler,
 } from "./src/modules/patient/services/notificationScheduler.js";
+import {
+    startWhatsAppRetentionScheduler,
+    stopWhatsAppRetentionScheduler,
+} from "./src/modules/patient/services/whatsappRetentionScheduler.js";
 
 // Start the application only after the database connection succeeds.
 async function startServer() {
@@ -21,6 +25,7 @@ async function startServer() {
         startEmailOutboxScheduler();
         // Process appointment notifications only when explicitly enabled in the environment.
         startNotificationScheduler();
+        startWhatsAppRetentionScheduler();
     });
 
     // Handle graceful shutdown requests from the operating system.
@@ -38,6 +43,7 @@ async function startServer() {
             // Stop scheduling email jobs and wait for the active batch.
             await stopEmailOutboxScheduler();
             await stopNotificationScheduler();
+            await stopWhatsAppRetentionScheduler();
 
             // Stop accepting requests before closing the database connection.
             await new Promise((resolve, reject) => {

@@ -156,7 +156,7 @@ function mapVersion(version) {
         version: Number(record.version_number),
         name: record.name,
         description: record.description || "",
-        status: "Draft",
+        status: record.status || "Draft",
         definition: record.definition,
         createdAt: record.created_at,
     };

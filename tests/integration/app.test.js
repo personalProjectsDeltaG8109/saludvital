@@ -1,7 +1,48 @@
 import request from "supertest";
+import { createHmac } from "node:crypto";
 import app from "../../app.js";
 
 describe("SaludVital application", () => {
+    test("Meta webhook verification requires the configured challenge token", async () => {
+        const previousToken = process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+        process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN = "webhook-test-token";
+        try {
+            const accepted = await request(app).get(
+                "/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=webhook-test-token&hub.challenge=challenge-123",
+            );
+            const rejected = await request(app).get(
+                "/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=wrong&hub.challenge=challenge-123",
+            );
+            expect(accepted.status).toBe(200);
+            expect(accepted.text).toBe("challenge-123");
+            expect(rejected.status).toBe(403);
+        } finally {
+            if (previousToken === undefined) delete process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+            else process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN = previousToken;
+        }
+    });
+
+    test("Meta webhook POST rejects invalid signatures and accepts a valid signed payload", async () => {
+        const previousSecret = process.env.META_WHATSAPP_APP_SECRET;
+        process.env.META_WHATSAPP_APP_SECRET = "webhook-app-secret";
+        const payload = { object: "whatsapp_business_account", entry: [] };
+        const rawBody = JSON.stringify(payload);
+        const signature = `sha256=${createHmac("sha256", "webhook-app-secret")
+            .update(rawBody)
+            .digest("hex")}`;
+        try {
+            const rejected = await request(app).post("/api/whatsapp/webhook").send(payload);
+            const accepted = await request(app)
+                .post("/api/whatsapp/webhook")
+                .set("x-hub-signature-256", signature)
+                .send(payload);
+            expect(rejected.status).toBe(401);
+            expect(accepted.status).toBe(200);
+        } finally {
+            if (previousSecret === undefined) delete process.env.META_WHATSAPP_APP_SECRET;
+            else process.env.META_WHATSAPP_APP_SECRET = previousSecret;
+        }
+    });
     test("GET / redirects to the login page", async () => {
         const response = await request(app).get("/");
 

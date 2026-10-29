@@ -14,6 +14,7 @@ import AuditLog from "./AuditLog.js";
 import WhatsAppConversation from "./WhatsAppConversation.js";
 import WhatsAppMessage from "./WhatsAppMessage.js";
 import WhatsAppVerification from "./WhatsAppVerification.js";
+import WhatsAppChatbotRuntimeSetting from "./WhatsAppChatbotRuntimeSetting.js";
 import WhatsAppAppointmentRequest from "./WhatsAppAppointmentRequest.js";
 import ChatbotFlow from "./ChatbotFlow.js";
 import ChatbotFlowVersion from "./ChatbotFlowVersion.js";
@@ -310,6 +311,13 @@ WhatsAppConversation.belongsTo(Patient, {
     onDelete: "SET NULL",
 });
 
+WhatsAppConversation.belongsTo(ChatbotFlowVersion, {
+    foreignKey: "chatbot_flow_version_id",
+    as: "chatbotFlowVersion",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+});
+
 // Associate each conversation with its messages.
 WhatsAppConversation.hasMany(WhatsAppMessage, {
     foreignKey: "conversation_id",
@@ -335,6 +343,13 @@ ChatbotFlow.hasMany(ChatbotFlowVersion, {
 ChatbotFlowVersion.belongsTo(ChatbotFlow, {
     foreignKey: "flow_id",
     as: "flow",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+WhatsAppChatbotRuntimeSetting.belongsTo(ChatbotFlowVersion, {
+    foreignKey: "active_flow_version_id",
+    as: "activeFlowVersion",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
@@ -564,6 +579,7 @@ export {
     NotificationPreference,
     Notification,
     WhatsAppVerification,
+    WhatsAppChatbotRuntimeSetting,
     ChatbotFlow,
     ChatbotFlowVersion,
 };

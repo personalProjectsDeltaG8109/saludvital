@@ -10,6 +10,7 @@ import patientRoutes from "./src/modules/patient/routes/patientRoutes.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
 import { authenticateTokenOptional } from "./src/middleware/authenticateToken.js";
 import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
+import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookRoutes.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFile);
@@ -21,9 +22,17 @@ app.set("views", path.join(currentDirectory, "views"));
 
 app.use(helmet());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json({ limit: "3mb" }));
+app.use(
+    express.json({
+        limit: "3mb",
+        verify(req, res, buffer) {
+            if (req.path === "/api/whatsapp/webhook") req.rawBody = Buffer.from(buffer);
+        },
+    }),
+);
 app.use(cookieParser());
 app.use(express.static(path.join(currentDirectory, "public")));
+app.use(whatsappWebhookRoutes);
 // Register location lookup endpoints and application routes.
 app.use(locationRoutes);
 // Register authentication and role-specific routes.
