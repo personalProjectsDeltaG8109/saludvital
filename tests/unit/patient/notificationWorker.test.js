@@ -119,14 +119,16 @@ describe("appointment notification worker", () => {
 
     // Do not retry permanent provider configuration or template failures.
     test("marks permanent provider configuration errors failed without retrying", async () => {
-        deliverNotification.mockRejectedValue(new Error("The Twilio sender is not configured."));
+        deliverNotification.mockRejectedValue(
+            new Error("The Meta WhatsApp sender is not configured."),
+        );
 
         await processNotificationBatch();
 
         expect(notification.update).toHaveBeenLastCalledWith({
             status: "Failed",
             scheduled_at: notification.scheduled_at,
-            last_error: "The Twilio sender is not configured.",
+            last_error: "The Meta WhatsApp sender is not configured.",
         });
     });
 
