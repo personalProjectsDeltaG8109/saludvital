@@ -22,7 +22,7 @@ function overviewData(tab = "summary", period = 7) {
             configurationStatus: "Incomplete",
         },
         integrationConfiguration: {
-            provider: "Twilio",
+            provider: "Meta WhatsApp Cloud API",
             status: "Incomplete",
             senderConfigured: false,
             credentialsConfigured: false,
@@ -245,6 +245,7 @@ try {
                     deliveryStatuses: window.whatsappResponse.deliveryStatuses,
                     deliveryFilters: {
                         status: requestUrl.searchParams.get("status") || "",
+                        providerStatus: requestUrl.searchParams.get("providerStatus") || "",
                         dateFrom: requestUrl.searchParams.get("dateFrom") || "",
                         dateTo: requestUrl.searchParams.get("dateTo") || "",
                     },
@@ -353,7 +354,10 @@ try {
     if ((await page.getByRole("tab").count()) !== 6) {
         throw new Error("The WhatsApp navigation must keep its six reference sections.");
     }
-    await page.getByLabel("Estado").selectOption("Failed");
+    await page.locator("[data-delivery-filters] select[name='status']").selectOption("Failed");
+    await page
+        .locator("[data-delivery-filters] select[name='providerStatus']")
+        .selectOption("delivered");
     await page.getByLabel("Fecha desde").fill("2026-10-22");
     await page.getByLabel("Fecha hasta").fill("2026-10-28");
     await page.getByRole("button", { name: "Filtrar" }).click();
@@ -361,6 +365,7 @@ try {
     const appliedDeliveryFilters = await page.evaluate(() => window.requestedDeliveryFilters);
     if (
         appliedDeliveryFilters.status !== "Failed" ||
+        appliedDeliveryFilters.providerStatus !== "delivered" ||
         appliedDeliveryFilters.dateFrom !== "2026-10-22" ||
         appliedDeliveryFilters.dateTo !== "2026-10-28"
     ) {

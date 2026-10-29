@@ -80,22 +80,16 @@ function toCount(value) {
 }
 
 export function getWhatsAppIntegrationStatus() {
-    const senderConfigured = Boolean(process.env.TWILIO_WHATSAPP_FROM?.trim());
-    const credentialsConfigured = Boolean(
-        process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim(),
-    );
-    const reminderTemplateConfigured = Boolean(
-        process.env.TWILIO_WHATSAPP_CONTENT_SID?.trim() ||
-        process.env.TWILIO_WHATSAPP_REMINDER_CONTENT_SID?.trim(),
-    );
-    const otherTemplatesConfigured = Boolean(
-        process.env.TWILIO_WHATSAPP_RESCHEDULE_CONTENT_SID?.trim() &&
-        process.env.TWILIO_WHATSAPP_CANCELLATION_CONTENT_SID?.trim(),
-    );
-    return senderConfigured &&
-        credentialsConfigured &&
-        reminderTemplateConfigured &&
-        otherTemplatesConfigured
+    const requiredSettings = [
+        process.env.META_WHATSAPP_ACCESS_TOKEN,
+        process.env.META_WHATSAPP_PHONE_NUMBER_ID,
+        process.env.META_WHATSAPP_API_VERSION,
+        process.env.META_WHATSAPP_TEMPLATE_LANGUAGE,
+        process.env.META_WHATSAPP_REMINDER_TEMPLATE_NAME,
+        process.env.META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME,
+        process.env.META_WHATSAPP_CANCELLATION_TEMPLATE_NAME,
+    ];
+    return requiredSettings.every((setting) => Boolean(setting?.trim()))
         ? "Configured"
         : "Incomplete";
 }

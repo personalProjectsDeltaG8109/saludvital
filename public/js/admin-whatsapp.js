@@ -18,6 +18,7 @@ if (whatsappPage) {
     };
     let deliveryFilters = {
         status: whatsappPage.dataset.deliveryStatus || "",
+        providerStatus: whatsappPage.dataset.providerDeliveryStatus || "",
         dateFrom: whatsappPage.dataset.deliveryDateFrom || "",
         dateTo: whatsappPage.dataset.deliveryDateTo || "",
     };
@@ -38,6 +39,8 @@ if (whatsappPage) {
         Sent: "Aceptado por proveedor",
         Processing: "En proceso",
         Failed: "Fallido",
+        delivered: "Entregado",
+        read: "Leído",
         Received: "Recibido",
         Processed: "Procesado",
         Inbound: "Mensaje recibido",
@@ -477,6 +480,9 @@ if (whatsappPage) {
                     ),
                 );
             }
+            if (record.providerDeliveryStatusLabel) {
+                copy.append(element("small", "", "Entrega: " + record.providerDeliveryStatusLabel));
+            }
         }
         if (tab === "requests") {
             copy.append(
@@ -543,6 +549,24 @@ if (whatsappPage) {
                     createCard(item.label, item.count, "Registros almacenados", "•", ""),
                 );
             });
+            const providerStatuses = (data.providerDeliveryStatuses || []).filter(
+                (item) => item.count > 0,
+            );
+            if (providerStatuses.length) {
+                providerStatuses.forEach((item) => {
+                    summary.append(
+                        createCard(item.label, item.count, "Estado informado por Meta", "•", ""),
+                    );
+                });
+            } else {
+                summary.append(
+                    element(
+                        "p",
+                        "admin-whatsapp-empty",
+                        "Meta aún no ha informado estados de entrega.",
+                    ),
+                );
+            }
             panel.append(summary);
         }
         const heading = element("header", "admin-whatsapp-list-heading");
@@ -672,6 +696,18 @@ if (whatsappPage) {
                 ["Failed", "Fallido"],
                 ["Cancelled", "Cancelado"],
             ]),
+            createFilterSelect(
+                "providerStatus",
+                "Estado informado por Meta",
+                filters.providerStatus,
+                [
+                    ["", "Todos"],
+                    ["sent", "Aceptado por Meta"],
+                    ["delivered", "Entregado"],
+                    ["read", "Leído"],
+                    ["failed", "Fallido en Meta"],
+                ],
+            ),
             createFilterInput("dateFrom", "Fecha desde", "date", filters.dateFrom),
             createFilterInput("dateTo", "Fecha hasta", "date", filters.dateTo),
         );
@@ -1002,7 +1038,7 @@ if (whatsappPage) {
             element("dd", "", "Configuración de la aplicación"),
             element("dt", "", "Idioma"),
             element("dd", "", "No informado"),
-            element("dt", "", "Aprobación en Twilio"),
+            element("dt", "", "Aprobación en Meta"),
             element("dd", "", "No consultada"),
         );
         card.append(header, details);
@@ -1149,7 +1185,7 @@ if (whatsappPage) {
             element(
                 "p",
                 "",
-                "El estado describe la configuración local; no verifica conexión con Twilio.",
+                "El estado describe la configuración local; no verifica conexión con Meta.",
             ),
             list,
             renderConfigurationList(configuration.templates),

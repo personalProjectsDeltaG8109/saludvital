@@ -29,6 +29,13 @@ const SUPPORTED_TABS = [
     "settings",
 ];
 const DELIVERY_STATUSES = ["Pending", "Processing", "Sent", "Failed", "Cancelled"];
+const PROVIDER_DELIVERY_STATUSES = ["sent", "delivered", "read", "failed"];
+const PROVIDER_DELIVERY_LABELS = {
+    sent: "Aceptado por Meta",
+    delivered: "Entregado",
+    read: "Leído",
+    failed: "Fallido en Meta",
+};
 const REQUEST_STATUSES = {
     Pending: "Pendientes",
     Confirmed: "Confirmadas",
@@ -95,6 +102,7 @@ function parsePagination(query) {
         throw createServiceError("La búsqueda supera el máximo permitido.", 400);
     }
     const status = query.status || "";
+    const providerStatus = query.providerStatus || "";
     const supportedStatuses =
         tab === "requests"
             ? Object.keys(REQUEST_STATUSES)
@@ -105,6 +113,12 @@ function parsePagination(query) {
                 : [];
     if (status && !supportedStatuses.includes(status)) {
         throw createServiceError("El estado seleccionado no es válido.", 400);
+    }
+    if (tab !== "deliveries" && providerStatus) {
+        throw createServiceError("El filtro de entrega no es válido para esta sección.", 400);
+    }
+    if (providerStatus && !PROVIDER_DELIVERY_STATUSES.includes(providerStatus)) {
+        throw createServiceError("El estado informado por Meta no es válido.", 400);
     }
 
     let specialtyId = "";
@@ -132,7 +146,17 @@ function parsePagination(query) {
             throw createServiceError("El rango de fechas no es v\u00e1lido.", 400);
         }
     }
-    return { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo };
+    return {
+        page,
+        tab,
+        activityDays,
+        search,
+        status,
+        providerStatus,
+        specialtyId,
+        dateFrom,
+        dateTo,
+    };
 }
 
 function parseBogotaDate(value, label) {
@@ -337,10 +361,13 @@ async function findPage(model, options, requestedPage) {
 
 function getSafeIntegrationConfiguration() {
     return {
-        provider: "Twilio",
-        senderConfigured: Boolean(process.env.TWILIO_WHATSAPP_FROM?.trim()),
-        credentialsConfigured: Boolean(
-            process.env.TWILIO_ACCOUNT_SID?.trim() && process.env.TWILIO_AUTH_TOKEN?.trim(),
+        provider: "Meta WhatsApp Cloud API",
+        senderConfigured: Boolean(process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim()),
+        credentialsConfigured: Boolean(process.env.META_WHATSAPP_ACCESS_TOKEN?.trim()),
+        businessAccountConfigured: Boolean(process.env.META_WHATSAPP_BUSINESS_ACCOUNT_ID?.trim()),
+        webhookConfigured: Boolean(
+            process.env.META_WHATSAPP_APP_SECRET?.trim() &&
+            process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN?.trim(),
         ),
         templates: getAdminWhatsAppTemplateConfiguration(),
     };
@@ -385,9 +412,11 @@ function getSafeDeliveryError(error) {
     let description =
         "El proveedor no pudo completar el envío. Verifica la configuración de la integración.";
 
-    if (/template|content sid/.test(message)) {
+    if (/template/.test(message)) {
         description = "La plantilla de WhatsApp no está configurada o no es válida.";
-    } else if (/sender|from number|whatsapp_from|not configured/.test(message)) {
+    } else if (/meta whatsapp delivery failed/.test(message)) {
+        description = "Meta informó que no pudo entregar el mensaje.";
+    } else if (/sender|from number|phone_number_id|not configured/.test(message)) {
         description = "La configuración del remitente de WhatsApp está incompleta.";
     } else if (/recipient|destination|international format/.test(message)) {
         description = "El número de destino no tiene un formato válido.";
@@ -407,14 +436,21 @@ function mapDeliveryRecord(notification) {
         contactNumber: maskPhoneNumber(record.recipient_address),
         status: record.status,
         statusLabel: getDeliveryStatusLabel(record.status),
+        providerDeliveryStatus: record.provider_delivery_status || null,
+        providerDeliveryStatusLabel:
+            PROVIDER_DELIVERY_LABELS[record.provider_delivery_status] || null,
         occurredAt: record.sent_at || record.updated_at || record.created_at,
-        error: record.status === "Failed" ? getSafeDeliveryError(record.last_error) : null,
+        error:
+            record.status === "Failed" || record.provider_delivery_status === "failed"
+                ? getSafeDeliveryError(record.last_error)
+                : null,
     };
 }
 
-function buildDeliveryWhere(status, dateFrom, dateTo) {
+function buildDeliveryWhere(status, providerStatus, dateFrom, dateTo) {
     const where = { channel: "WhatsApp" };
     if (status) where.status = status;
+    if (providerStatus) where.provider_delivery_status = providerStatus;
     if (dateFrom || dateTo) {
         where.created_at = {};
         if (dateFrom) where.created_at[Op.gte] = parseBogotaDate(dateFrom, "inicial");
@@ -429,8 +465,17 @@ function buildDeliveryWhere(status, dateFrom, dateTo) {
 
 /** Return administrator-only WhatsApp metrics and bounded, safe records. */
 export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
-    const { page, tab, activityDays, search, status, specialtyId, dateFrom, dateTo } =
-        parsePagination(query);
+    const {
+        page,
+        tab,
+        activityDays,
+        search,
+        status,
+        providerStatus,
+        specialtyId,
+        dateFrom,
+        dateTo,
+    } = parsePagination(query);
     const today = getPeriodRange(referenceDate, 1);
     const activityRange = getPeriodRange(referenceDate, activityDays);
     const requestsRange = getPeriodRange(referenceDate, REQUEST_METRIC_DAYS);
@@ -448,6 +493,7 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         sentToday,
         failedToday,
         deliveryStatusCounts,
+        providerDeliveryStatusCounts,
         recentMessages,
         recentRequests,
         recentEvents,
@@ -485,6 +531,9 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         }),
         tab === "deliveries"
             ? countByField(Notification, "status", { channel: "WhatsApp" })
+            : Promise.resolve({}),
+        tab === "deliveries"
+            ? countByField(Notification, "provider_delivery_status", { channel: "WhatsApp" })
             : Promise.resolve({}),
         WhatsAppMessage.findAll({
             attributes: ["direction", "message_type", "processing_status", "created_at"],
@@ -564,6 +613,10 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
             Failed: "Fallido",
             Cancelled: "Cancelado",
         }),
+        providerDeliveryStatuses: addStatusLabels(
+            providerDeliveryStatusCounts,
+            PROVIDER_DELIVERY_LABELS,
+        ),
         deliveryTotal: Object.values(deliveryStatusCounts).reduce(
             (total, count) => total + (Number(count) || 0),
             0,
@@ -687,6 +740,7 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
                     "updated_at",
                     "sent_at",
                     "last_error",
+                    "provider_delivery_status",
                 ],
                 include: [
                     {
@@ -695,7 +749,7 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
                         attributes: ["first_name", "last_name"],
                     },
                 ],
-                where: buildDeliveryWhere(status, dateFrom, dateTo),
+                where: buildDeliveryWhere(status, providerStatus, dateFrom, dateTo),
                 order: [
                     ["updated_at", "DESC"],
                     ["id", "DESC"],
@@ -705,10 +759,10 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         );
         pagination = result.pagination;
         rows = result.rows.map(mapDeliveryRecord);
-        dashboard.deliveryFilters = { status, dateFrom, dateTo };
+        dashboard.deliveryFilters = { status, providerStatus, dateFrom, dateTo };
     }
 
-    return { ...dashboard, rows, pagination, search, status };
+    return { ...dashboard, rows, pagination, search, status, providerStatus };
 }
 
 /** Return one persisted conversation and a bounded chronological message page. */

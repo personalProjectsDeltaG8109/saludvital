@@ -23,6 +23,7 @@ html(lang="es")
         data-request-date-from=whatsapp.requestFilters && whatsapp.requestFilters.dateFrom,
         data-request-date-to=whatsapp.requestFilters && whatsapp.requestFilters.dateTo,
         data-delivery-status=whatsapp.deliveryFilters && whatsapp.deliveryFilters.status,
+        data-provider-delivery-status=whatsapp.deliveryFilters && whatsapp.deliveryFilters.providerStatus,
         data-delivery-date-from=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateFrom,
         data-delivery-date-to=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateTo
     )
@@ -283,6 +284,14 @@ html(lang="es")
                                     article.admin-whatsapp-count-card
                                         span= item.label
                                         strong= item.count.toLocaleString("es-CO")
+                                if whatsapp.providerDeliveryStatuses && whatsapp.providerDeliveryStatuses.some((item) => item.count > 0)
+                                    each item in whatsapp.providerDeliveryStatuses
+                                        if item.count > 0
+                                            article.admin-whatsapp-count-card
+                                                span= item.label
+                                                strong= item.count.toLocaleString("es-CO")
+                                else
+                                    p.admin-whatsapp-empty Meta aún no ha informado estados de entrega.
                             form.admin-whatsapp-request-filters(data-delivery-filters)
                                 label.admin-whatsapp-request-control(
                                     for="whatsapp-delivery-status"
@@ -310,6 +319,31 @@ html(lang="es")
                                             value="Cancelled",
                                             selected=whatsapp.deliveryFilters.status === "Cancelled"
                                         ) Cancelado
+                                label.admin-whatsapp-request-control(
+                                    for="whatsapp-provider-delivery-status"
+                                )
+                                    span Estado informado por Meta
+                                    select#whatsapp-provider-delivery-status(name="providerStatus")
+                                        option(
+                                            value="",
+                                            selected=!whatsapp.deliveryFilters.providerStatus
+                                        ) Todos
+                                        option(
+                                            value="sent",
+                                            selected=whatsapp.deliveryFilters.providerStatus === "sent"
+                                        ) Aceptado por Meta
+                                        option(
+                                            value="delivered",
+                                            selected=whatsapp.deliveryFilters.providerStatus === "delivered"
+                                        ) Entregado
+                                        option(
+                                            value="read",
+                                            selected=whatsapp.deliveryFilters.providerStatus === "read"
+                                        ) Leído
+                                        option(
+                                            value="failed",
+                                            selected=whatsapp.deliveryFilters.providerStatus === "failed"
+                                        ) Fallido en Meta
                                 label.admin-whatsapp-request-control(
                                     for="whatsapp-delivery-date-from"
                                 )
@@ -365,6 +399,8 @@ html(lang="es")
                                                 strong= record.recipientName
                                                 small= record.contactNumber || "Número no disponible"
                                                 small= record.eventLabel
+                                                if record.providerDeliveryStatusLabel
+                                                    small= "Entrega: " + record.providerDeliveryStatusLabel
                                                 if record.error
                                                     small.admin-whatsapp-delivery-error= record.error.description + (record.error.code ? " (código " + record.error.code + ")" : "")
                                             span.admin-whatsapp-record-status(
@@ -392,7 +428,7 @@ html(lang="es")
                     else if whatsapp.selectedTab === "settings"
                         section.admin-whatsapp-info-card
                             h2 Configuración e integración
-                            p El estado describe la configuración local; no verifica conexión con Twilio.
+                            p El estado describe la configuración local; no verifica conexión con Meta.
                             dl.admin-whatsapp-configuration-list
                                 div
                                     dt Proveedor
