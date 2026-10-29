@@ -16,6 +16,10 @@ import {
     saveDoctorConsultationDraft,
     startDoctorConsultation,
 } from "../services/doctorConsultationService.js";
+import {
+    getCurrentDoctorAgendaDate,
+    getDoctorAgendaData,
+} from "../services/doctorAgendaService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
@@ -133,6 +137,17 @@ doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, 
     }
 });
 
+doctorRoutes.get("/api/doctor/agenda", ...requireDoctor, async (req, res, next) => {
+    try {
+        const agenda = await getDoctorAgendaData(req.auth.userId, req.query.date);
+        if (!agenda) return res.status(404).json({ message: "No se encontró el perfil médico." });
+        return res.json(agenda);
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
 doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) => {
     try {
         const dashboard = await getDoctorDashboardData(req.auth.userId);
@@ -152,29 +167,38 @@ doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) =
     }
 });
 
-doctorRoutes.get(
-    ["/doctor/appointments", "/doctor/agenda"],
-    ...requireDoctor,
-    async (req, res, next) => {
-        try {
-            const dashboard = await getDoctorAppointments(req.auth.userId, req.query);
-            if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
+doctorRoutes.get("/doctor/appointments", ...requireDoctor, async (req, res, next) => {
+    try {
+        const dashboard = await getDoctorAppointments(req.auth.userId, req.query);
+        if (!dashboard) return res.status(404).send("No se encontró el perfil médico.");
 
-            return res.render("doctor/appointments", {
-                pageTitle:
-                    req.path === "/doctor/agenda"
-                        ? "Agenda | SaludVital"
-                        : "Mis citas | SaludVital",
-                activeNav: req.path === "/doctor/agenda" ? "agenda" : "appointments",
-                bottomNavActive: "appointments",
-                appointmentsPath: req.path,
-                ...dashboard,
-            });
-        } catch (error) {
-            return next(error);
-        }
-    },
-);
+        return res.render("doctor/appointments", {
+            pageTitle: "Mis citas | SaludVital",
+            activeNav: "appointments",
+            bottomNavActive: "appointments",
+            appointmentsPath: req.path,
+            ...dashboard,
+        });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+doctorRoutes.get("/doctor/agenda", ...requireDoctor, async (req, res, next) => {
+    try {
+        const doctorHeader = await getDoctorHeaderData(req.auth.userId);
+        if (!doctorHeader) return res.status(404).send("No se encontró el perfil médico.");
+        return res.render("doctor/agenda", {
+            pageTitle: "Mi agenda | SaludVital",
+            activeNav: "agenda",
+            bottomNavActive: "agenda",
+            todayDate: getCurrentDoctorAgendaDate(),
+            ...doctorHeader,
+        });
+    } catch (error) {
+        return next(error);
+    }
+});
 
 doctorRoutes.get("/api/doctor/patients", ...requireDoctor, async (req, res, next) => {
     try {
