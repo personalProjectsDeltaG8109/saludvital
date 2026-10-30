@@ -56,6 +56,7 @@ import { getAdminReportsData, parseReportPeriod } from "../services/adminReports
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
 import { getAdminNotificationDashboard } from "../services/adminNotificationDashboardService.js";
+import { getAdminNotificationDetails } from "../services/adminNotificationDetailService.js";
 import {
     removeAdminProfilePhoto,
     updateAdminProfilePhoto,
@@ -920,6 +921,25 @@ adminRoutes.get("/api/admin/notifications", ...requireAdministrator, async (req,
             .json({ message: "No pudimos cargar las notificaciones. Inténtalo de nuevo." });
     }
 });
+
+adminRoutes.get(
+    "/api/admin/notifications/:notificationId",
+    ...requireAdministrator,
+    async (req, res) => {
+        res.set("Cache-Control", "no-store");
+        try {
+            const notification = await getAdminNotificationDetails(req.params.notificationId);
+            return res.json({ notification });
+        } catch (error) {
+            if (error.statusCode) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            return res.status(503).json({
+                message: "No pudimos cargar el detalle de la notificación. Inténtalo de nuevo.",
+            });
+        }
+    },
+);
 
 adminRoutes.get("/admin/notifications", ...requireAdministrator, (_req, res) => {
     return res.render("admin/notifications", {
