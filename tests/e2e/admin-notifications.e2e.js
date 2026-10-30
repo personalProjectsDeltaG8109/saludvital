@@ -232,14 +232,64 @@ try {
     for (const width of [320, 375, 430, 760, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         await page.waitForTimeout(30);
-        const dimensions = await page.evaluate(() => ({
-            viewportWidth: document.documentElement.clientWidth,
-            pageWidth: document.documentElement.scrollWidth,
-        }));
+        const dimensions = await page.evaluate(() => {
+            const rectangles = (selector) =>
+                [...document.querySelectorAll(selector)].map((element) => {
+                    const { left, right, top, bottom } = element.getBoundingClientRect();
+                    return { left, right, top, bottom };
+                });
+            const hasOverlap = (items) =>
+                items.some((item, index) =>
+                    items
+                        .slice(index + 1)
+                        .some(
+                            (other) =>
+                                item.left < other.right - 1 &&
+                                item.right > other.left + 1 &&
+                                item.top < other.bottom - 1 &&
+                                item.bottom > other.top + 1,
+                        ),
+                );
+
+            return {
+                viewportWidth: document.documentElement.clientWidth,
+                pageWidth: document.documentElement.scrollWidth,
+                metricCardsOverlap: hasOverlap(rectangles(".admin-notification-metric")),
+                channelTabsOverlap: hasOverlap(rectangles(".admin-notifications-channels button")),
+                headingPartsOverlap: hasOverlap(
+                    rectangles(
+                        ".admin-notifications-title, .admin-notifications-heading > .admin-notifications-settings",
+                    ),
+                ),
+            };
+        });
         if (dimensions.pageWidth > dimensions.viewportWidth) {
             throw new Error(
                 `Horizontal page overflow at ${width}px: ${JSON.stringify(dimensions)}.`,
             );
+        }
+        if (
+            dimensions.metricCardsOverlap ||
+            dimensions.channelTabsOverlap ||
+            dimensions.headingPartsOverlap
+        ) {
+            throw new Error(
+                `Notification layout overlaps at ${width}px: ${JSON.stringify(dimensions)}.`,
+            );
+        }
+
+        if (width <= 430) {
+            const settingsLink = await page
+                .locator(".admin-notifications-heading > .admin-notifications-settings")
+                .evaluate((element) => ({
+                    width: element.getBoundingClientRect().width,
+                    fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+                }));
+            if (settingsLink.width >= width - 20 || settingsLink.fontSize > 13) {
+                throw new Error(
+                    `The mobile settings link is oversized at ${width}px: ${JSON.stringify(settingsLink)}.`,
+                );
+            }
         }
     }
 
