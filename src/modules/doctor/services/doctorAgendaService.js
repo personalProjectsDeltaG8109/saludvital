@@ -214,6 +214,7 @@ export async function getDoctorAgendaData(userId, rawDate, now = new Date()) {
                     model: AppointmentStatus,
                     as: "status",
                     attributes: ["name"],
+                    where: { name: "Confirmed" },
                     required: true,
                 },
                 {

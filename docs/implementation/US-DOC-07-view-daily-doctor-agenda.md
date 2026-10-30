@@ -4,7 +4,7 @@
 
 - Added the protected /doctor/agenda page and /api/doctor/agenda endpoint using the existing Doctor authentication middleware.
 - The service resolves the doctor profile from the authenticated user ID. It never accepts a doctor ID from the browser.
-- Added a single-day agenda using persisted appointments, administrator-defined weekly availability, and active schedule exceptions. Date boundaries and the initial date use America/Bogota.
+- Added a single-day agenda using persisted confirmed appointments, administrator-defined weekly availability, and active schedule exceptions. Cancelled, attended, and in-progress appointments are excluded. Date boundaries and the initial date use America/Bogota.
 - Appointment cards show the patient name, available photo or initials, persisted status, time range, and specialty as the consultation type. Free-text appointment and exception reasons are omitted to avoid exposing unnecessary sensitive information.
 - Date controls support previous day, next day, a selected calendar date, and Today. Selecting a date queries only that day's records.
 - Appointments link to the existing authorized doctor appointment list filtered to that day. The project has no separate read-only appointment detail route.

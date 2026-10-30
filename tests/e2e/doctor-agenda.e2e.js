@@ -28,7 +28,7 @@ try {
     });
     await page.addStyleTag({
         content:
-            "html,body{margin:0;font-family:Arial,sans-serif;color:#123b73;background:#f4f9ff}.doctor-agenda-page{max-width:1100px;margin:auto}",
+            "*,*::before,*::after{box-sizing:border-box}html,body{margin:0;font-family:Arial,sans-serif;color:#123b73;background:#f4f9ff}.doctor-agenda-page{max-width:1100px;margin:auto}",
     });
     await page.evaluate((source) => {
         window.agendaRequestedDates = [];
@@ -97,7 +97,7 @@ try {
     assert.ok(
         (await page
             .locator(".doctor-agenda-appointment")
-            .evaluate((element) => element.getBoundingClientRect().height)) <= 64,
+            .evaluate((element) => element.getBoundingClientRect().height)) <= 40,
     );
     assert.equal(
         await page.locator(".doctor-agenda-appointment").getAttribute("href"),

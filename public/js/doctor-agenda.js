@@ -89,7 +89,7 @@ if (agendaRoot) {
         }
 
         data.appointments.forEach((appointment) => {
-            const duration = Math.max(20, appointment.endMinute - appointment.startMinute);
+            const duration = Math.max(0, appointment.endMinute - appointment.startMinute);
             const card = document.createElement("a");
             card.className = `doctor-agenda-appointment doctor-agenda-status-${appointment.status.toLowerCase().replace(/\s+/g, "-")}`;
             card.href = getAppointmentLink(data.selectedDate);
@@ -97,7 +97,7 @@ if (agendaRoot) {
             const hourHeight = Number.parseFloat(
                 getComputedStyle(timeline).getPropertyValue("--agenda-hour-height"),
             );
-            card.style.height = `${Math.max(48, (duration / 60) * hourHeight)}px`;
+            card.style.height = `${Math.max(38, (duration / 60) * hourHeight)}px`;
             card.setAttribute(
                 "aria-label",
                 `${appointment.startTime} a ${appointment.endTime}, ${appointment.patientName}, ${appointment.statusLabel}, ${appointment.reason}`,
@@ -106,8 +106,10 @@ if (agendaRoot) {
             content.append(
                 createElement("strong", "", `${appointment.startTime} – ${appointment.endTime}`),
             );
-            content.append(createElement("b", "", appointment.patientName));
-            content.append(createElement("span", "", appointment.reason));
+            const details = createElement("span", "doctor-agenda-appointment-detail");
+            details.append(createElement("b", "", appointment.patientName));
+            details.append(createElement("span", "", appointment.reason));
+            content.append(details);
             const status = createElement("span", "doctor-status", appointment.statusLabel);
             card.append(renderAvatar(appointment), content, status);
             timeline.append(card);

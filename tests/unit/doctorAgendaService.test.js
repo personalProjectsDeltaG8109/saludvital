@@ -65,6 +65,13 @@ describe("doctor daily agenda service", () => {
                 [Op.lt]: new Date("2026-10-30T05:00:00.000Z"),
             },
         });
+        expect(models.Appointment.findAll.mock.calls[0][0].include).toContainEqual(
+            expect.objectContaining({
+                as: "status",
+                where: { name: "Confirmed" },
+                required: true,
+            }),
+        );
         expect(result.appointments[0]).toMatchObject({
             patientName: "Ana Pérez",
             reason: "Medicina General",
