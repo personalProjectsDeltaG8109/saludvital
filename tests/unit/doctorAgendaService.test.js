@@ -14,6 +14,8 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 const models = await import("../../src/models/associations.js");
 const { getCurrentDoctorAgendaDate, getDoctorAgendaData } =
     await import("../../src/modules/doctor/services/doctorAgendaService.js");
+const { getDoctorAgendaViewData } =
+    await import("../../src/modules/doctor/services/doctorAgendaService.js");
 
 const NOW = new Date("2026-10-29T15:00:00.000Z");
 
@@ -116,5 +118,76 @@ describe("doctor daily agenda service", () => {
         models.Doctor.findOne.mockResolvedValue(null);
         await expect(getDoctorAgendaData(45, "2026-10-29", NOW)).resolves.toBeNull();
         expect(models.Appointment.findAll).not.toHaveBeenCalled();
+    });
+
+    test("returns a bounded Monday-to-Sunday week with appointments grouped by date", async () => {
+        models.Appointment.findAll.mockResolvedValue([
+            createAppointment(),
+            createAppointment({
+                id: 8,
+                start_at: new Date("2026-10-27T14:00:00.000Z"),
+                end_at: new Date("2026-10-27T14:30:00.000Z"),
+            }),
+        ]);
+
+        const result = await getDoctorAgendaViewData(45, "week", "2026-10-29", NOW);
+
+        expect(result).toMatchObject({
+            view: "week",
+            rangeStart: "2026-10-26",
+            rangeEnd: "2026-11-01",
+        });
+        expect(result.days).toHaveLength(7);
+        expect(result.days.find((day) => day.date === "2026-10-27").appointments).toHaveLength(1);
+        expect(result.days.find((day) => day.date === "2026-10-29").appointments).toHaveLength(1);
+        expect(models.Appointment.findAll.mock.calls[0][0].where).toMatchObject({
+            doctor_id: 12,
+            start_at: {
+                [Op.gte]: new Date("2026-10-26T05:00:00.000Z"),
+                [Op.lt]: new Date("2026-11-02T05:00:00.000Z"),
+            },
+        });
+    });
+
+    test("returns only daily confirmed appointment counts for the selected month", async () => {
+        models.Appointment.findAll.mockResolvedValue([
+            { start_at: new Date("2026-10-02T13:00:00.000Z") },
+            { start_at: new Date("2026-10-02T15:00:00.000Z") },
+        ]);
+
+        const result = await getDoctorAgendaViewData(45, "month", "2026-10-29", NOW);
+        const activeDays = result.days.filter((day) => day.appointmentCount > 0);
+
+        expect(result).toMatchObject({
+            view: "month",
+            rangeStart: "2026-10-01",
+            rangeEnd: "2026-10-31",
+        });
+        expect(result.days).toHaveLength(31);
+        expect(activeDays).toEqual([
+            expect.objectContaining({ date: "2026-10-02", appointmentCount: 2 }),
+        ]);
+        expect(models.Appointment.findAll.mock.calls[0][0]).toMatchObject({
+            where: {
+                doctor_id: 12,
+                start_at: {
+                    [Op.gte]: new Date("2026-10-01T05:00:00.000Z"),
+                    [Op.lt]: new Date("2026-11-01T05:00:00.000Z"),
+                },
+            },
+            attributes: ["start_at"],
+        });
+        expect(models.Appointment.findAll.mock.calls[0][0].include[0]).toMatchObject({
+            as: "status",
+            where: { name: "Confirmed" },
+            required: true,
+        });
+    });
+
+    test("rejects unsupported calendar views", async () => {
+        await expect(getDoctorAgendaViewData(45, "year", "2026-10-29", NOW)).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        expect(models.Doctor.findOne).not.toHaveBeenCalled();
     });
 });
