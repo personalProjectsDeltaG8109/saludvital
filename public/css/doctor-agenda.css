@@ -86,7 +86,26 @@
 .doctor-agenda-appointment-detail > span { overflow: hidden; color: #496487; font-size: 10px; text-overflow: ellipsis; }
 .doctor-agenda-appointment .doctor-status { margin-left: auto; flex: 0 0 auto; }
 .doctor-agenda-aside { display: grid; gap: 13px; }
-.doctor-agenda-day-details { display: contents; }
+.doctor-agenda-availability-cards { display: grid; gap: 12px; }
+.doctor-agenda-availability-card { min-width: 0; overflow: hidden; }
+.doctor-agenda-availability-card .doctor-panel-heading { padding: 16px 16px 10px; }
+.doctor-agenda-availability-card .doctor-panel-heading h2 { font-size: 16px; }
+.doctor-agenda-availability-content { display: grid; gap: 10px; padding: 0 14px 14px; }
+.doctor-agenda-availability-metrics { display: grid; gap: 7px; margin: 0; }
+.doctor-agenda-availability-metric { display: flex; min-height: 37px; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border: 1px solid #e8f0f8; border-radius: 9px; background: #fbfdff; }
+.doctor-agenda-availability-metric dt { color: #58708e; font-size: 11px; }
+.doctor-agenda-availability-metric dd { margin: 0; color: #123b73; font-size: 14px; font-weight: 800; }
+.doctor-agenda-availability-metric:last-child dd { color: #078257; }
+.doctor-agenda-availability-caption { margin: 0; color: #58708e; font-size: 11px; line-height: 1.4; }
+.doctor-agenda-availability-empty, .doctor-agenda-availability-error { margin: 0; padding: 9px 10px; border-radius: 9px; color: #5d718a; background: #f4f8fc; font-size: 11px; line-height: 1.45; }
+.doctor-agenda-availability-error { color: #9b3037; background: #fff4f4; }
+.doctor-agenda-availability-details { border-top: 1px solid #edf3fa; padding-top: 8px; }
+.doctor-agenda-availability-details summary { color: #0068cf; font-size: 11px; font-weight: 700; cursor: pointer; }
+.doctor-agenda-availability-details summary:focus-visible { outline: 3px solid #f4a900; outline-offset: 2px; }
+.doctor-agenda-availability-days { display: grid; gap: 8px; max-height: 220px; overflow: auto; margin: 8px 0 0; padding: 0 2px 0 16px; color: #58708e; font-size: 11px; }
+.doctor-agenda-availability-day { display: grid; gap: 3px; }
+.doctor-agenda-availability-day strong { color: #123b73; font-size: 12px; text-transform: capitalize; }
+.doctor-agenda-availability-exception { color: #a35216; }
 .doctor-agenda-next-card { overflow: hidden; border-color: #d8eaff; background: linear-gradient(145deg, #fff, #f3f9ff); }
 .doctor-agenda-next-card .doctor-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 17px 17px 12px; }
 .doctor-agenda-next-card .doctor-panel-heading h2 { font-size: 18px; }
@@ -154,6 +173,8 @@
     .doctor-agenda-layout { grid-template-columns: minmax(0, 1fr); }
     .doctor-agenda-aside { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .doctor-agenda-next-card { grid-column: 1 / -1; }
+    .doctor-agenda-availability-cards { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .doctor-agenda-availability-card:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 760px) {
     .doctor-agenda-page { --agenda-hour-height: 76px; }
@@ -186,6 +207,8 @@
     .doctor-agenda-appointment-detail > span { font-size: 9px; }
     .doctor-agenda-appointment .doctor-status { display: none; }
     .doctor-agenda-aside { grid-template-columns: minmax(0, 1fr); }
+    .doctor-agenda-availability-cards { grid-template-columns: minmax(0, 1fr); }
+    .doctor-agenda-availability-card:last-child { grid-column: auto; }
     .doctor-agenda-period-view { padding: 2px 12px 14px; }
     .doctor-agenda-week-grid { grid-template-columns: minmax(0, 1fr); }
     .doctor-agenda-month-grid { gap: 3px; }

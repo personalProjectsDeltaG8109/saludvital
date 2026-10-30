@@ -6,8 +6,8 @@ if (agendaRoot) {
     const calendar = agendaRoot.querySelector("[data-agenda-calendar]");
     const calendarLayout = agendaRoot.querySelector(".doctor-agenda-layout");
     const calendarAside = agendaRoot.querySelector("[data-agenda-aside]");
-    const dayDetails = agendaRoot.querySelector("[data-agenda-day-details]");
     const nextAppointmentCard = agendaRoot.querySelector("[data-agenda-next-appointment]");
+    const availabilityCards = agendaRoot.querySelectorAll("[data-agenda-availability]");
     const loadingState = agendaRoot.querySelector("[data-agenda-loading]");
     const feedback = agendaRoot.querySelector("[data-agenda-feedback]");
     const headingEyebrow = agendaRoot.querySelector("[data-agenda-eyebrow]");
@@ -21,8 +21,6 @@ if (agendaRoot) {
     const monthlyTitle = agendaRoot.querySelector("[data-agenda-month-title]");
     const monthlyGrid = agendaRoot.querySelector("[data-agenda-month-grid]");
     const monthlyEmpty = agendaRoot.querySelector("[data-agenda-month-empty]");
-    const periodsList = agendaRoot.querySelector("[data-agenda-periods]");
-    const exceptionsList = agendaRoot.querySelector("[data-agenda-exceptions]");
     let selectedView = agendaRoot.dataset.initialView || "day";
     let activeRequest = 0;
 
@@ -124,52 +122,6 @@ if (agendaRoot) {
             content.append(details);
             card.append(renderAvatar(appointment), content);
             dailyTimeline.append(card);
-        });
-    }
-
-    function renderPeriods(periods) {
-        periodsList.replaceChildren();
-        if (!periods.length) {
-            periodsList.append(
-                createElement(
-                    "li",
-                    "doctor-agenda-aside-empty",
-                    "No hay horario laboral configurado.",
-                ),
-            );
-            return;
-        }
-        periods.forEach((period) => {
-            const item = createElement("li", "doctor-agenda-period");
-            item.append(createElement("span", "doctor-agenda-period-icon", "◷"));
-            item.append(
-                createElement(
-                    "span",
-                    "doctor-agenda-period-copy",
-                    `${period.startTime} – ${period.endTime}`,
-                ),
-            );
-            periodsList.append(item);
-        });
-    }
-
-    function renderExceptions(exceptions) {
-        exceptionsList.replaceChildren();
-        if (!exceptions.length) {
-            exceptionsList.append(
-                createElement(
-                    "li",
-                    "doctor-agenda-aside-empty",
-                    "No hay excepciones para este día.",
-                ),
-            );
-            return;
-        }
-        exceptions.forEach((exception) => {
-            const item = createElement("li", "doctor-agenda-exception");
-            item.append(createElement("strong", "", exception.label));
-            item.append(createElement("span", "", `${exception.startTime} – ${exception.endTime}`));
-            exceptionsList.append(item);
         });
     }
 
@@ -318,6 +270,97 @@ if (agendaRoot) {
         }
     }
 
+    function formatMetric(value) {
+        return new Intl.NumberFormat("es-CO").format(value);
+    }
+
+    function renderAvailabilityDetails(container, days) {
+        if (!days.length) return;
+
+        const details = document.createElement("details");
+        details.className = "doctor-agenda-availability-details";
+        details.append(createElement("summary", "", "Ver horarios y excepciones"));
+        const list = createElement("ul", "doctor-agenda-availability-days");
+
+        days.forEach((day) => {
+            const item = createElement("li", "doctor-agenda-availability-day");
+            item.append(createElement("strong", "", formatAccessibleDate(day.date)));
+            if (day.workingPeriods.length) {
+                item.append(createElement("span", "", `Horario: ${day.workingPeriods.join(", ")}`));
+            } else {
+                item.append(createElement("span", "", "Sin horario disponible configurado."));
+            }
+            day.exceptions.forEach((exception) => {
+                const timeLabel = exception.allDay
+                    ? "Todo el día"
+                    : `${exception.startTime} – ${exception.endTime}`;
+                item.append(
+                    createElement(
+                        "span",
+                        "doctor-agenda-availability-exception",
+                        `${exception.label}: ${timeLabel}`,
+                    ),
+                );
+            });
+            list.append(item);
+        });
+
+        details.append(list);
+        container.append(details);
+    }
+
+    function renderAvailabilityCard(periodName, summary, appointmentDurationMinutes) {
+        const card = agendaRoot.querySelector(`[data-agenda-availability="${periodName}"]`);
+        card.replaceChildren();
+
+        if (!summary.hasSchedule) {
+            card.append(
+                createElement(
+                    "p",
+                    "doctor-agenda-availability-empty",
+                    "No hay horario disponible configurado para este período.",
+                ),
+            );
+        }
+
+        const metrics = createElement("dl", "doctor-agenda-availability-metrics");
+        [
+            ["Capacidad", summary.capacitySlots],
+            ["Cupos ocupados", summary.bookedSlots],
+            ["Cupos disponibles", summary.availableSlots],
+        ].forEach(([label, value]) => {
+            const metric = createElement("div", "doctor-agenda-availability-metric");
+            metric.append(
+                createElement("dt", "", label),
+                createElement("dd", "", formatMetric(value)),
+            );
+            metrics.append(metric);
+        });
+        card.append(metrics);
+        card.append(
+            createElement(
+                "p",
+                "doctor-agenda-availability-caption",
+                `Cupos calculados en intervalos de ${appointmentDurationMinutes} minutos.`,
+            ),
+        );
+        renderAvailabilityDetails(card, summary.days);
+    }
+
+    function renderAvailability(availability) {
+        renderAvailabilityCard(
+            "today",
+            availability.today,
+            availability.appointmentDurationMinutes,
+        );
+        renderAvailabilityCard("week", availability.week, availability.appointmentDurationMinutes);
+        renderAvailabilityCard(
+            "month",
+            availability.month,
+            availability.appointmentDurationMinutes,
+        );
+    }
+
     function renderAgenda(data) {
         const isDaily = selectedView === "day";
         const isWeekly = selectedView === "week";
@@ -328,7 +371,6 @@ if (agendaRoot) {
               ? "Agenda semanal"
               : "Agenda mensual";
         calendarAside.hidden = false;
-        dayDetails.hidden = !isDaily;
         calendarLayout.classList.remove("is-calendar-only");
         dailyTimeline.hidden = !isDaily || !data.timeline;
         dailyEmpty.hidden = !isDaily || Boolean(data.timeline);
@@ -338,8 +380,6 @@ if (agendaRoot) {
         if (isDaily) {
             renderNextAppointment(data.nextAppointment);
             renderDailyTimeline(data);
-            renderPeriods(data.workingPeriods);
-            renderExceptions(data.exceptions);
         } else if (isWeekly) {
             renderNextAppointment(data.nextAppointment);
             renderWeeklyView(data);
@@ -347,6 +387,7 @@ if (agendaRoot) {
             renderNextAppointment(data.nextAppointment);
             renderMonthlyView(data);
         }
+        renderAvailability(data.availability);
         updateViewButtons();
         calendar.setAttribute("aria-busy", "false");
     }
@@ -392,7 +433,15 @@ if (agendaRoot) {
             feedback.hidden = false;
             title.textContent = "No se pudo cargar la agenda";
             calendarAside.hidden = false;
-            dayDetails.hidden = true;
+            availabilityCards.forEach((card) => {
+                card.replaceChildren(
+                    createElement(
+                        "p",
+                        "doctor-agenda-availability-error",
+                        "No fue posible cargar la disponibilidad.",
+                    ),
+                );
+            });
             nextAppointmentCard.replaceChildren(
                 createElement(
                     "p",

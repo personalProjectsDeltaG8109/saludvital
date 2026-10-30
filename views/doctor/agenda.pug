@@ -129,21 +129,46 @@ html(lang="es")
                                     aria-live="polite"
                                 )
                                     p.doctor-agenda-aside-loading Cargando próxima cita…
-                            .doctor-agenda-day-details(data-agenda-day-details)
-                                section.doctor-panel.doctor-agenda-detail-card
+                            .doctor-agenda-availability-cards(
+                                data-agenda-availability-cards,
+                                aria-label="Resumen de disponibilidad"
+                            )
+                                section.doctor-panel.doctor-agenda-availability-card(
+                                    aria-labelledby="doctor-availability-today-title"
+                                )
                                     header.doctor-panel-heading
                                         div
-                                            p.doctor-eyebrow Organización del día
-                                            h2 Horario de trabajo
-                                    ul.doctor-agenda-period-list(data-agenda-periods)
-                                        li.doctor-agenda-aside-loading Cargando horario…
-                                section.doctor-panel.doctor-agenda-detail-card
+                                            p.doctor-eyebrow Horario configurado
+                                            h2#doctor-availability-today-title Mi disponibilidad de hoy
+                                    .doctor-agenda-availability-content(
+                                        data-agenda-availability="today",
+                                        aria-live="polite"
+                                    )
+                                        p.doctor-agenda-aside-loading Cargando disponibilidad…
+                                section.doctor-panel.doctor-agenda-availability-card(
+                                    aria-labelledby="doctor-availability-week-title"
+                                )
                                     header.doctor-panel-heading
                                         div
-                                            p.doctor-eyebrow Cambios de horario
-                                            h2 Excepciones del día
-                                    ul.doctor-agenda-exception-list(data-agenda-exceptions)
-                                        li.doctor-agenda-aside-loading Cargando excepciones…
+                                            p.doctor-eyebrow Semana seleccionada
+                                            h2#doctor-availability-week-title Mi disponibilidad de la semana
+                                    .doctor-agenda-availability-content(
+                                        data-agenda-availability="week",
+                                        aria-live="polite"
+                                    )
+                                        p.doctor-agenda-aside-loading Cargando disponibilidad…
+                                section.doctor-panel.doctor-agenda-availability-card(
+                                    aria-labelledby="doctor-availability-month-title"
+                                )
+                                    header.doctor-panel-heading
+                                        div
+                                            p.doctor-eyebrow Mes seleccionado
+                                            h2#doctor-availability-month-title Mi disponibilidad del mes
+                                    .doctor-agenda-availability-content(
+                                        data-agenda-availability="month",
+                                        aria-live="polite"
+                                    )
+                                        p.doctor-agenda-aside-loading Cargando disponibilidad…
                 include ./partials/start-consultation-dialog.pug
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)

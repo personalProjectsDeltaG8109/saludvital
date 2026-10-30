@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import { APPOINTMENT_SLOT_MINUTES } from "../../../config/appointmentScheduling.js";
 import {
     Appointment,
     AppointmentStatus,
@@ -268,6 +269,265 @@ function getTimelineRange(availability, exceptions, appointments) {
         Math.ceil(Math.max(...intervals.map(({ endMinute }) => endMinute)) / 60),
     );
     return { startHour, endHour: Math.max(startHour + 1, endHour) };
+}
+
+function normalizeDateOnly(value) {
+    return String(value).slice(0, 10);
+}
+
+function getPeriodWindows(periods) {
+    const windows = periods
+        .flatMap((dates) => {
+            if (!dates.length) return [];
+            const startDate = dates[0];
+            const endDate = addCalendarDays(parseCalendarDate(dates.at(-1)), 1);
+            return [{ startDate, endDate: formatCalendarDate(endDate) }];
+        })
+        .sort((first, second) => first.startDate.localeCompare(second.startDate));
+    const merged = [];
+
+    for (const window of windows) {
+        const previous = merged.at(-1);
+        if (previous && window.startDate <= previous.endDate) {
+            if (window.endDate > previous.endDate) previous.endDate = window.endDate;
+        } else {
+            merged.push({ ...window });
+        }
+    }
+    return merged;
+}
+
+function toBogotaDateTime(date, time) {
+    return new Date(`${date}T${String(time).slice(0, 5)}:00-05:00`);
+}
+
+function mergeIntervals(intervals) {
+    const sorted = intervals
+        .filter(({ start, end }) => end > start)
+        .sort((first, second) => first.start - second.start);
+    const merged = [];
+
+    for (const interval of sorted) {
+        const previous = merged.at(-1);
+        if (previous && interval.start <= previous.end) {
+            previous.end = Math.max(previous.end, interval.end);
+        } else {
+            merged.push({ ...interval });
+        }
+    }
+    return merged;
+}
+
+function subtractIntervals(intervals, blockedIntervals) {
+    return intervals.flatMap((interval) => {
+        const blocks = blockedIntervals
+            .filter((block) => block.start < interval.end && block.end > interval.start)
+            .sort((first, second) => first.start - second.start);
+        const available = [];
+        let cursor = interval.start;
+
+        for (const block of blocks) {
+            const blockStart = Math.max(block.start, interval.start);
+            const blockEnd = Math.min(block.end, interval.end);
+            if (blockStart > cursor) available.push({ start: cursor, end: blockStart });
+            cursor = Math.max(cursor, blockEnd);
+        }
+        if (cursor < interval.end) available.push({ start: cursor, end: interval.end });
+        return available;
+    });
+}
+
+function getExceptionInterval(exception, dayStart, dayEnd) {
+    return {
+        start: Math.max(new Date(exception.start_at).getTime(), dayStart),
+        end: Math.min(new Date(exception.end_at).getTime(), dayEnd),
+    };
+}
+
+function getApplicableSchedules(schedules, date) {
+    const selectedDate = parseCalendarDate(date);
+    const dayOfWeek = getWeekdayNumber(selectedDate);
+    return schedules.filter(
+        (schedule) =>
+            schedule.day_of_week === dayOfWeek &&
+            normalizeDateOnly(schedule.valid_from) <= date &&
+            (!schedule.valid_until || normalizeDateOnly(schedule.valid_until) >= date),
+    );
+}
+
+function getDayAvailability(date, schedules, exceptions, appointments) {
+    const { start: dayStart, end: dayEnd } = getDateRange(date);
+    const dayStartTime = dayStart.getTime();
+    const dayEndTime = dayEnd.getTime();
+    const daySchedules = getApplicableSchedules(schedules, date);
+    const dayExceptions = exceptions
+        .filter(
+            (exception) =>
+                new Date(exception.start_at) < dayEnd && new Date(exception.end_at) > dayStart,
+        )
+        .map((exception) => ({
+            ...exception,
+            ...getExceptionInterval(exception, dayStartTime, dayEndTime),
+        }));
+    const standardIntervals = daySchedules.map((schedule) => ({
+        start: toBogotaDateTime(date, schedule.start_time).getTime(),
+        end: toBogotaDateTime(date, schedule.end_time).getTime(),
+    }));
+    const additionalIntervals = dayExceptions
+        .filter(({ exception_type: type }) => type === "AdditionalAvailability")
+        .map(({ start, end }) => ({ start, end }));
+    const blockedIntervals = dayExceptions
+        .filter(({ exception_type: type }) => type === "Unavailable")
+        .map(({ start, end }) => ({ start, end }));
+    const baseIntervals = mergeIntervals([...standardIntervals, ...additionalIntervals]);
+    const usableIntervals = subtractIntervals(baseIntervals, blockedIntervals);
+    const slotDuration = APPOINTMENT_SLOT_MINUTES * 60 * 1000;
+    let capacitySlots = 0;
+    const occupiedSlots = new Set();
+
+    for (
+        let slotStart = dayStartTime;
+        slotStart + slotDuration <= dayEndTime;
+        slotStart += slotDuration
+    ) {
+        const slotEnd = slotStart + slotDuration;
+        const isUsable = usableIntervals.some(
+            (interval) => interval.start <= slotStart && interval.end >= slotEnd,
+        );
+        if (isUsable) capacitySlots += 1;
+        const isBooked = appointments.some(
+            (appointment) =>
+                new Date(appointment.start_at).getTime() < slotEnd &&
+                new Date(appointment.end_at).getTime() > slotStart,
+        );
+        if (isUsable && isBooked) occupiedSlots.add(slotStart);
+    }
+
+    return {
+        date,
+        hasSchedule: baseIntervals.length > 0,
+        capacitySlots,
+        bookedSlots: occupiedSlots.size,
+        workingPeriods: usableIntervals.map(
+            ({ start, end }) => `${formatTime(new Date(start))} – ${formatTime(new Date(end))}`,
+        ),
+        exceptions: dayExceptions.map((exception) => ({
+            label: EXCEPTION_TYPE_LABELS[exception.exception_type] || "Excepción de horario",
+            startTime: formatTime(new Date(exception.start)),
+            endTime: formatTime(new Date(exception.end)),
+            allDay: exception.start <= dayStartTime && exception.end >= dayEndTime,
+        })),
+    };
+}
+
+function summarizeAvailability(label, dates, schedules, exceptions, appointments) {
+    const days = dates.map((date) => getDayAvailability(date, schedules, exceptions, appointments));
+    const capacitySlots = days.reduce((total, day) => total + day.capacitySlots, 0);
+    const bookedSlots = days.reduce((total, day) => total + day.bookedSlots, 0);
+
+    return {
+        label,
+        capacitySlots,
+        bookedSlots,
+        availableSlots: Math.max(0, capacitySlots - bookedSlots),
+        hasSchedule: days.some((day) => day.hasSchedule),
+        days: days.filter((day) => day.hasSchedule || day.exceptions.length > 0),
+    };
+}
+
+/** Return read-only capacity summaries for the authenticated doctor's calendar periods. */
+export async function getDoctorAvailabilitySummary(userId, rawSelectedDate, now = new Date()) {
+    const selectedDate = rawSelectedDate
+        ? parseCalendarDate(rawSelectedDate)
+        : parseCalendarDate(getBogotaDateString(now));
+    const selectedDateString = formatCalendarDate(selectedDate);
+    const todayDates = [getBogotaDateString(now)];
+    const week = getCalendarPeriod(selectedDate, "week");
+    const month = getCalendarPeriod(selectedDate, "month");
+    const windows = getPeriodWindows([todayDates, week.dates, month.dates]);
+    const doctor = await Doctor.findOne({
+        where: { user_id: userId },
+        attributes: ["id"],
+    });
+    if (!doctor) return null;
+
+    const availabilityWindows = windows.map((window) => ({
+        valid_from: {
+            [Op.lte]: formatCalendarDate(addCalendarDays(parseCalendarDate(window.endDate), -1)),
+        },
+        [Op.or]: [{ valid_until: null }, { valid_until: { [Op.gte]: window.startDate } }],
+    }));
+    const recordWindows = windows.map((window) => ({
+        start_at: { [Op.lt]: getDateRange(window.endDate).start },
+        end_at: { [Op.gt]: getDateRange(window.startDate).start },
+    }));
+    const [schedules, exceptions, appointments] = await Promise.all([
+        DoctorAvailability.findAll({
+            where: {
+                doctor_id: doctor.id,
+                is_active: true,
+                [Op.or]: availabilityWindows,
+            },
+            attributes: [
+                "id",
+                "day_of_week",
+                "start_time",
+                "end_time",
+                "valid_from",
+                "valid_until",
+            ],
+        }),
+        DoctorScheduleException.findAll({
+            where: {
+                doctor_id: doctor.id,
+                is_active: true,
+                [Op.or]: recordWindows,
+            },
+            attributes: ["id", "start_at", "end_at", "exception_type"],
+        }),
+        Appointment.findAll({
+            where: {
+                doctor_id: doctor.id,
+                [Op.or]: recordWindows,
+            },
+            attributes: ["id", "start_at", "end_at"],
+            include: [
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    attributes: [],
+                    required: true,
+                    where: { name: { [Op.ne]: "Cancelled" } },
+                },
+            ],
+        }),
+    ]);
+
+    return {
+        appointmentDurationMinutes: APPOINTMENT_SLOT_MINUTES,
+        today: summarizeAvailability(
+            "Mi disponibilidad de hoy",
+            todayDates,
+            schedules,
+            exceptions,
+            appointments,
+        ),
+        week: summarizeAvailability(
+            "Mi disponibilidad de la semana",
+            week.dates,
+            schedules,
+            exceptions,
+            appointments,
+        ),
+        month: summarizeAvailability(
+            "Mi disponibilidad del mes",
+            month.dates,
+            schedules,
+            exceptions,
+            appointments,
+        ),
+        selectedDate: selectedDateString,
+    };
 }
 
 /** Return the signed-in doctor's agenda for one Bogota calendar day. */
