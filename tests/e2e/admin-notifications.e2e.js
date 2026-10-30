@@ -76,6 +76,45 @@ try {
             body: JSON.stringify(responseData(Number(url.searchParams.get("page")) || 1, rows)),
         });
     });
+    await page.route("http://localhost/api/admin/notifications/1", (route) =>
+        route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                notification: {
+                    id: 1,
+                    eventType: "Recordatorio de cita",
+                    channel: "WhatsApp",
+                    recipientName: "Paciente de prueba",
+                    maskedRecipient: "•••• 8332",
+                    applicationStatus: "Aceptada por el proveedor",
+                    providerStatus: "Entregado por Meta",
+                    providerReference: "••••1234",
+                    createdAt: "2026-10-30T15:00:00.000Z",
+                    scheduledAt: "2026-10-30T14:59:00.000Z",
+                    acceptedAt: "2026-10-30T15:00:00.000Z",
+                    updatedAt: "2026-10-30T15:01:00.000Z",
+                    attemptCount: 1,
+                    failure: null,
+                    appointment: {
+                        id: 12,
+                        status: "Confirmada",
+                        startAt: "2026-10-31T12:00:00.000Z",
+                        endAt: "2026-10-31T12:30:00.000Z",
+                    },
+                    events: [
+                        {
+                            type: "created",
+                            label: "Notificación registrada",
+                            occurredAt: "2026-10-30T14:59:00.000Z",
+                            description: '<img src=x onerror="alert(1)">',
+                        },
+                    ],
+                    eventHistoryNote: "Solo se muestran los datos registrados.",
+                },
+            }),
+        }),
+    );
     await page.goto("http://localhost/admin/notifications");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: notificationsStyles });
@@ -98,10 +137,30 @@ try {
         throw new Error("The message preview should be displayed literally as text.");
     }
     if ((await page.getByText("Ver detalles").count()) === 0) {
-        throw new Error("Notification detail summaries should be available as safe actions.");
+        throw new Error("Notification detail actions should be available.");
     }
     if ((await page.locator("[data-notifications-table-wrap]").isVisible()) !== false) {
         throw new Error("The desktop table should be hidden on phones.");
+    }
+
+    const detailButton = page.getByRole("button", { name: "Ver detalles de la notificación #1" });
+    await detailButton.click();
+    const detailDialog = page.locator("[data-notification-detail-dialog]");
+    await detailDialog.waitFor({ state: "visible" });
+    await page.getByText("Notificación registrada").waitFor();
+    if ((await detailDialog.locator("img").count()) !== 0) {
+        throw new Error("Notification event text must not be rendered as executable HTML.");
+    }
+    if ((await detailDialog.getByText('<img src=x onerror="alert(1)">').count()) !== 1) {
+        throw new Error("Notification detail event text should render literally.");
+    }
+    if ((await detailDialog.getByText("••••1234").count()) !== 1) {
+        throw new Error("The provider reference should be masked in the detail dialog.");
+    }
+    await page.keyboard.press("Escape");
+    await detailDialog.waitFor({ state: "hidden" });
+    if (!(await detailButton.evaluate((button) => button === document.activeElement))) {
+        throw new Error("Closing the detail dialog should restore focus to its opening button.");
     }
 
     await page.getByRole("button", { name: /WhatsApp/ }).click();
@@ -192,7 +251,7 @@ try {
     }
 
     console.log(
-        "PASS: notification filters, pagination, empty and error states, accessibility, and responsive widths.",
+        "PASS: notification details, filters, pagination, empty and error states, accessibility, and responsive widths.",
     );
 } finally {
     await browser.close();
