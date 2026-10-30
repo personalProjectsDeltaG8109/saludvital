@@ -387,31 +387,197 @@
     overflow-wrap: anywhere;
 }
 
-.admin-notifications-details {
-    min-width: 72px;
-    color: #075fc2;
-    font-size: 0.75rem;
-}
-
-.admin-notifications-details summary {
+.admin-notifications-details-button {
     min-height: 36px;
-    padding: 8px 5px;
-    border-radius: 7px;
+    padding: 7px 9px;
+    border: 1px solid #cfe0f2;
+    border-radius: 8px;
+    color: #075fc2;
+    background: #fff;
+    font: inherit;
+    font-size: 0.75rem;
     font-weight: 650;
     cursor: pointer;
 }
 
-.admin-notifications-details summary:focus-visible {
-    outline: 3px solid rgb(22 141 226 / 35%);
+.admin-notifications-details-button:hover {
+    border-color: #78b8f1;
+    background: #edf7ff;
+}
+
+.admin-notification-detail-dialog {
+    width: min(720px, calc(100vw - 32px));
+    max-width: 720px;
+    max-height: min(84vh, 900px);
+    padding: 0;
+    border: 1px solid #d8e6f4;
+    border-radius: 20px;
+    color: #173b72;
+    background: #f7fbff;
+    box-shadow: 0 24px 80px rgb(10 37 74 / 28%);
+}
+
+.admin-notification-detail-dialog::backdrop {
+    background: rgb(8 28 58 / 55%);
+    backdrop-filter: blur(3px);
+}
+
+.admin-notification-detail-dialog[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.admin-notification-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px 24px 16px;
+    border-bottom: 1px solid #e3edf7;
+    background: linear-gradient(120deg, #fff, #edf7ff);
+}
+
+.admin-notifications-eyebrow {
+    margin: 0 0 5px;
+    color: #587596;
+    font-size: 0.72rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.admin-notification-detail-header h2 {
+    margin: 0;
+    color: #071b7a;
+    font-size: 1.35rem;
+}
+
+.admin-notification-detail-close {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #d2e2f2;
+    border-radius: 11px;
+    color: #315274;
+    background: #fff;
+    font: inherit;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+.admin-notification-detail-dialog button:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 40%);
     outline-offset: 2px;
 }
 
-.admin-notifications-details p {
-    min-width: 180px;
-    margin: 5px 0;
-    color: #526b88;
-    line-height: 1.45;
+.admin-notification-detail-dialog [data-notification-detail-content] {
+    display: grid;
+    gap: 12px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 16px 24px 24px;
+}
+
+.admin-notification-detail-section,
+.admin-notification-detail-failure {
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid #e1ebf6;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.admin-notification-detail-section h3,
+.admin-notification-detail-failure h3 {
+    margin: 0 0 10px;
+    color: #102f66;
+    font-size: 0.98rem;
+}
+
+.admin-notification-detail-fields {
+    display: grid;
+    grid-template-columns: minmax(130px, 0.7fr) minmax(0, 1.3fr);
+    gap: 8px 14px;
+    margin: 0;
+    font-size: 0.84rem;
+}
+
+.admin-notification-detail-fields dt {
+    color: #667f9c;
+}
+
+.admin-notification-detail-fields dd {
+    min-width: 0;
+    margin: 0;
+    color: #173b72;
+    font-weight: 600;
     overflow-wrap: anywhere;
+}
+
+.admin-notification-detail-note,
+.admin-notification-detail-section p,
+.admin-notification-detail-failure p,
+.admin-notification-detail-failure small {
+    margin: 0 0 8px;
+    color: #617895;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.admin-notification-detail-events {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.admin-notification-detail-events li {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 14px;
+    padding: 12px 0;
+    border-top: 1px solid #edf2f8;
+}
+
+.admin-notification-detail-events li strong {
+    color: #173b72;
+    font-size: 0.84rem;
+}
+
+.admin-notification-detail-events li time {
+    color: #627b99;
+    font-size: 0.75rem;
+}
+
+.admin-notification-detail-events li p {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #70849d;
+    font-size: 0.76rem;
+}
+
+.admin-notification-detail-failure {
+    border-color: #ffd4d7;
+    background: #fff8f8;
+}
+
+.admin-notification-detail-failure h3 {
+    color: #b4232c;
+}
+
+.admin-notification-detail-loading,
+.admin-notification-detail-error {
+    margin: 0;
+    padding: 24px;
+    color: #526b88;
+}
+
+.admin-notification-detail-error {
+    color: #b4232c;
 }
 
 .admin-notifications-badge {
@@ -752,11 +918,39 @@
         text-align: right;
     }
 
-    .admin-notifications-mobile-item > .admin-notifications-details {
+    .admin-notifications-mobile-item > .admin-notifications-details-button {
         grid-column: 2 / -1;
         justify-self: end;
-        width: 100%;
-        text-align: right;
+    }
+
+    .admin-notification-detail-dialog {
+        width: calc(100vw - 20px);
+        max-height: 88vh;
+        border-radius: 16px;
+    }
+
+    .admin-notification-detail-header {
+        padding: 16px 16px 12px;
+    }
+
+    .admin-notification-detail-dialog [data-notification-detail-content] {
+        max-height: 76vh;
+        gap: 9px;
+        padding: 12px 14px 16px;
+    }
+
+    .admin-notification-detail-section,
+    .admin-notification-detail-failure {
+        padding: 12px;
+    }
+
+    .admin-notification-detail-fields {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 3px;
+    }
+
+    .admin-notification-detail-fields dd {
+        margin-bottom: 7px;
     }
 
     .admin-notifications-mobile-failure {

@@ -29,6 +29,16 @@ if (notificationsPage) {
     const previousButton = document.querySelector("[data-notifications-previous]");
     const nextButton = document.querySelector("[data-notifications-next]");
     const countLabel = document.querySelector("[data-notifications-count]");
+    const detailDialog = document.querySelector("[data-notification-detail-dialog]");
+    const detailCloseButton = document.querySelector("[data-notification-detail-close]");
+    const detailLoading = document.querySelector("[data-notification-detail-loading]");
+    const detailError = document.querySelector("[data-notification-detail-error]");
+    const detailContent = document.querySelector("[data-notification-detail-content]");
+    const detailFields = document.querySelector("[data-notification-detail-fields]");
+    const detailEvents = document.querySelector("[data-notification-detail-events]");
+    const detailAppointment = document.querySelector("[data-notification-detail-appointment]");
+    const detailFailure = document.querySelector("[data-notification-detail-failure]");
+    const detailNote = document.querySelector("[data-notification-detail-note]");
 
     let selectedChannel = "all";
     let currentPage = 1;
@@ -51,34 +61,149 @@ if (notificationsPage) {
         container.append(badge);
     }
 
-    function createDetailsDisclosure(notification) {
-        const details = document.createElement("details");
-        details.className = "admin-notifications-details";
+    function createDetailsButton(notification) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "admin-notifications-details-button";
+        button.textContent = "Ver detalles";
+        button.setAttribute("aria-label", `Ver detalles de la notificación #${notification.id}`);
+        button.addEventListener("click", () => openNotificationDetails(notification.id));
+        return button;
+    }
 
-        const summary = document.createElement("summary");
-        summary.textContent = "Ver detalles";
-        const statuses = document.createElement("p");
-        statuses.textContent = `Estado del sistema: ${notification.applicationStatus}. Estado del proveedor: ${notification.providerStatus}.`;
-        details.append(summary, statuses);
-
-        if (notification.failureSummary) {
-            const failure = document.createElement("p");
-            failure.textContent = notification.failureSummary;
-            details.append(failure);
-        }
-
-        return details;
+    function appendDetailField(list, label, value) {
+        if (value === null || value === undefined || value === "") return;
+        const term = document.createElement("dt");
+        term.textContent = label;
+        const description = document.createElement("dd");
+        description.textContent = value;
+        list.append(term, description);
     }
 
     function formatDate(value) {
-        if (!value) return "Fecha no disponible";
+        if (!value) return "No disponible";
         const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return "Fecha no disponible";
+        if (Number.isNaN(date.getTime())) return "No disponible";
         return new Intl.DateTimeFormat("es-CO", {
             dateStyle: "medium",
             timeStyle: "short",
             timeZone: "America/Bogota",
         }).format(date);
+    }
+
+    function renderNotificationEvents(events) {
+        detailEvents.replaceChildren();
+        for (const event of events || []) {
+            const item = document.createElement("li");
+            const heading = document.createElement("strong");
+            heading.textContent = event.label;
+            const time = document.createElement("time");
+            time.dateTime = event.occurredAt;
+            time.textContent = formatDate(event.occurredAt);
+            const description = document.createElement("p");
+            description.textContent = event.description || "Sin información adicional.";
+            item.append(heading, time, description);
+            detailEvents.append(item);
+        }
+        if (!events?.length) {
+            const emptyItem = document.createElement("li");
+            emptyItem.textContent = "No hay eventos de entrega disponibles.";
+            detailEvents.append(emptyItem);
+        }
+    }
+
+    function renderAppointmentReference(appointment) {
+        detailAppointment.replaceChildren();
+        if (!appointment) {
+            detailAppointment.hidden = true;
+            return;
+        }
+
+        detailAppointment.hidden = false;
+        const title = document.createElement("h3");
+        title.textContent = "Cita relacionada";
+        const summary = document.createElement("p");
+        summary.textContent = [
+            `Cita #${appointment.id}`,
+            appointment.status ? `Estado: ${appointment.status}` : null,
+            appointment.startAt ? `Inicio: ${formatDate(appointment.startAt)}` : null,
+            appointment.endAt ? `Fin: ${formatDate(appointment.endAt)}` : null,
+        ]
+            .filter(Boolean)
+            .join(" · ");
+        detailAppointment.append(title, summary);
+    }
+
+    function renderNotificationDetails(notification) {
+        detailFields.replaceChildren();
+        appendDetailField(detailFields, "Tipo", notification.eventType);
+        appendDetailField(detailFields, "Canal", notification.channel);
+        appendDetailField(detailFields, "Creada", formatDate(notification.createdAt));
+        appendDetailField(
+            detailFields,
+            "Destinatario",
+            `${notification.recipientName} · ${notification.maskedRecipient}`,
+        );
+        appendDetailField(detailFields, "Estado en SaludVital", notification.applicationStatus);
+        appendDetailField(detailFields, "Estado del proveedor", notification.providerStatus);
+        appendDetailField(detailFields, "Referencia del proveedor", notification.providerReference);
+        appendDetailField(detailFields, "Programada para", formatDate(notification.scheduledAt));
+        appendDetailField(
+            detailFields,
+            "Aceptada por el proveedor",
+            formatDate(notification.acceptedAt),
+        );
+        appendDetailField(detailFields, "Última actualización", formatDate(notification.updatedAt));
+        appendDetailField(detailFields, "Intentos de envío", String(notification.attemptCount));
+        renderNotificationEvents(notification.events);
+        renderAppointmentReference(notification.appointment);
+        detailFailure.replaceChildren();
+        if (notification.failure) {
+            detailFailure.hidden = false;
+            const heading = document.createElement("h3");
+            heading.textContent = "Información del fallo";
+            const description = document.createElement("p");
+            description.textContent = notification.failure.description;
+            detailFailure.append(heading, description);
+            if (notification.failure.providerCode) {
+                const code = document.createElement("small");
+                code.textContent = `Código del proveedor: ${notification.failure.providerCode}`;
+                detailFailure.append(code);
+            }
+        } else {
+            detailFailure.hidden = true;
+        }
+        detailNote.textContent = notification.eventHistoryNote;
+    }
+
+    async function openNotificationDetails(notificationId) {
+        detailDialog.showModal();
+        detailLoading.hidden = false;
+        detailError.hidden = true;
+        detailContent.hidden = true;
+        detailFields.replaceChildren();
+        detailEvents.replaceChildren();
+        detailAppointment.hidden = true;
+        detailFailure.hidden = true;
+
+        try {
+            const response = await fetch(
+                `/api/admin/notifications/${encodeURIComponent(notificationId)}`,
+                {
+                    headers: { Accept: "application/json" },
+                    cache: "no-store",
+                },
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos cargar este detalle.");
+            renderNotificationDetails(data.notification);
+            detailLoading.hidden = true;
+            detailContent.hidden = false;
+        } catch (error) {
+            detailLoading.hidden = true;
+            detailError.textContent = error.message || "No pudimos cargar este detalle.";
+            detailError.hidden = false;
+        }
     }
 
     function createTableRow(notification) {
@@ -107,7 +232,7 @@ if (notificationsPage) {
         row.append(statusCell);
 
         const actionCell = document.createElement("td");
-        actionCell.append(createDetailsDisclosure(notification));
+        actionCell.append(createDetailsButton(notification));
         row.append(actionCell);
         return row;
     }
@@ -145,7 +270,7 @@ if (notificationsPage) {
         providerStatus.textContent = notification.providerStatus;
         status.append(providerStatus);
         item.append(channelIcon, content, status);
-        item.append(createDetailsDisclosure(notification));
+        item.append(createDetailsButton(notification));
         if (notification.failureSummary) {
             const failureSummary = document.createElement("span");
             failureSummary.className =
@@ -305,6 +430,7 @@ if (notificationsPage) {
     document
         .querySelector("[data-notifications-retry]")
         .addEventListener("click", () => loadNotifications({ page: currentPage }));
+    detailCloseButton.addEventListener("click", () => detailDialog.close());
 
     const pageUrl = new URL(window.location.href);
     const initialPeriod = pageUrl.searchParams.get("period");

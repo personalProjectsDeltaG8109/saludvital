@@ -210,5 +210,53 @@ html(lang="es")
                                     aria-label="Página siguiente",
                                     data-notifications-next
                                 ) ›
+                dialog.admin-notification-detail-dialog(
+                    data-notification-detail-dialog,
+                    aria-labelledby="notification-detail-title",
+                    aria-describedby="notification-detail-note"
+                )
+                    header.admin-notification-detail-header
+                        div
+                            p.admin-notifications-eyebrow Historial de comunicación
+                            h2#notification-detail-title Detalle de la notificación
+                        button.admin-notification-detail-close(
+                            type="button",
+                            aria-label="Cerrar detalle",
+                            data-notification-detail-close,
+                            autofocus
+                        ) ×
+                    p.admin-notification-detail-loading(
+                        role="status",
+                        aria-live="polite",
+                        data-notification-detail-loading,
+                        hidden
+                    ) Cargando detalle de la notificación...
+                    p.admin-notification-detail-error(
+                        role="alert",
+                        data-notification-detail-error,
+                        hidden
+                    )
+                    div(data-notification-detail-content, hidden)
+                        section.admin-notification-detail-section(
+                            aria-labelledby="notification-detail-information-title"
+                        )
+                            h3#notification-detail-information-title Información registrada
+                            dl.admin-notification-detail-fields(data-notification-detail-fields)
+                        section.admin-notification-detail-section(
+                            data-notification-detail-appointment,
+                            hidden
+                        )
+                        section.admin-notification-detail-section(
+                            aria-labelledby="notification-detail-events-title"
+                        )
+                            h3#notification-detail-events-title Eventos disponibles
+                            p#notification-detail-note.admin-notification-detail-note(
+                                data-notification-detail-note
+                            )
+                            ol.admin-notification-detail-events(data-notification-detail-events)
+                        section.admin-notification-detail-failure(
+                            data-notification-detail-failure,
+                            hidden
+                        )
         script(src="/js/admin-dashboard.js", defer)
         script(src="/js/admin-notifications.js", defer)
