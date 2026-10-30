@@ -87,8 +87,8 @@ try {
         throw new Error(`Unexpected primary color: ${desktopColors.primary}`);
     }
 
-    // Verify the secondary text uses the accessible teal shade.
-    if (desktopColors.secondary !== "rgb(22, 197, 188)") {
+    // Verify the login eyebrow uses the accessible SaludVital teal shade.
+    if (desktopColors.secondary !== "rgb(7, 141, 145)") {
         throw new Error(`Unexpected secondary text color: ${desktopColors.secondary}`);
     }
 
@@ -136,6 +136,20 @@ try {
         // Verify that the login form and its main controls are available.
         await loginPage.locator('input[name="email"]').waitFor();
         await loginPage.locator('input[name="password"]').waitFor();
+
+        const passwordToggle = loginPage.getByRole("button", { name: "Mostrar contraseña" });
+        await passwordToggle.click();
+        if ((await loginPage.locator('input[name="password"]').getAttribute("type")) !== "text") {
+            throw new Error("The login password visibility control did not reveal the password.");
+        }
+        await loginPage.getByRole("button", { name: "Ocultar contraseña" }).click();
+
+        if (await loginPage.getByLabel("Recordarme").count()) {
+            throw new Error("The login page must not offer a persistent-session option.");
+        }
+
+        await loginPage.locator('a[href="/forgot-password"]').waitFor();
+        await loginPage.locator('a[href="/register"]').waitFor();
 
         const emailInput = loginPage.locator('input[name="email"]');
         const passwordInput = loginPage.locator('input[name="password"]');
