@@ -33,8 +33,13 @@
 .doctor-agenda-date-label { min-width: min(320px, 44vw); padding: 0 11px; color: #087cf0; }
 .doctor-agenda-date-label input { width: 100%; min-width: 0; border: 0; color: #123b73; background: transparent; font: inherit; font-size: 13px; font-weight: 700; }
 .doctor-agenda-date-label input:focus { outline: none; }
-.doctor-agenda-view-label { margin-left: auto; padding: 10px 18px; border-radius: 9px; color: #fff; background: #087cf0; font-size: 12px; font-weight: 700; }
+.doctor-agenda-view-switcher { display: inline-flex; margin-left: auto; overflow: hidden; border: 1px solid #d6e6f8; border-radius: 9px; background: #fff; }
+.doctor-agenda-view-button { min-width: 76px; min-height: 40px; padding: 0 13px; border: 0; border-right: 1px solid #e5eef8; color: #123b73; background: transparent; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.doctor-agenda-view-button:last-child { border-right: 0; }
+.doctor-agenda-view-button[aria-pressed="true"] { color: #fff; background: #087cf0; }
+.doctor-agenda-view-button:focus-visible { position: relative; z-index: 1; outline: 3px solid #f4a900; outline-offset: -3px; }
 .doctor-agenda-layout { display: grid; min-width: 0; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .9fr); align-items: start; gap: 16px; }
+.doctor-agenda-layout.is-calendar-only { grid-template-columns: minmax(0, 1fr); }
 .doctor-agenda-calendar { min-height: 460px; }
 .doctor-agenda-calendar .doctor-panel-heading { padding-bottom: 12px; }
 .doctor-agenda-calendar .doctor-panel-heading h2 { font-size: 19px; text-transform: capitalize; }
@@ -81,6 +86,31 @@
 .doctor-agenda-appointment-detail > span { overflow: hidden; color: #496487; font-size: 10px; text-overflow: ellipsis; }
 .doctor-agenda-appointment .doctor-status { margin-left: auto; flex: 0 0 auto; }
 .doctor-agenda-aside { display: grid; gap: 13px; }
+.doctor-agenda-period-view { padding: 4px 18px 20px; }
+.doctor-agenda-period-title { margin: 0 0 14px; color: #123b73; font-size: 16px; text-transform: capitalize; }
+.doctor-agenda-week-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.doctor-agenda-week-day { min-width: 0; padding: 12px; border: 1px solid #e7eff8; border-radius: 11px; background: #fbfdff; }
+.doctor-agenda-week-day h3 { margin: 0 0 8px; color: #123b73; font-size: 13px; font-weight: 750; text-transform: capitalize; }
+.doctor-agenda-week-appointments { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.doctor-agenda-week-appointment { display: flex; min-width: 0; align-items: flex-start; gap: 8px; padding: 8px; border-left: 3px solid #12b981; border-radius: 7px; color: #123b73; background: #e8f8f0; text-decoration: none; }
+.doctor-agenda-week-appointment:hover { background: #dbf4e8; }
+.doctor-agenda-week-appointment:focus-visible, .doctor-agenda-month-day:focus-visible { outline: 3px solid #f4a900; outline-offset: 2px; }
+.doctor-agenda-week-appointment time { flex: 0 0 auto; color: #267356; font-size: 10px; font-weight: 750; }
+.doctor-agenda-week-appointment-copy { display: grid; min-width: 0; gap: 2px; }
+.doctor-agenda-week-appointment-copy b, .doctor-agenda-week-appointment-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doctor-agenda-week-appointment-copy b { font-size: 11px; }
+.doctor-agenda-week-appointment-copy span { color: #5b718d; font-size: 10px; }
+.doctor-agenda-week-empty { margin: 0; color: #8191a6; font-size: 11px; }
+.doctor-agenda-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.doctor-agenda-month-weekday { padding: 6px 2px; color: #70839d; font-size: 10px; font-weight: 750; text-align: center; }
+.doctor-agenda-month-day { display: grid; min-width: 0; min-height: 66px; align-content: start; justify-items: center; gap: 5px; padding: 7px 3px; border: 1px solid #e7eff8; border-radius: 9px; color: #123b73; background: #fff; font: inherit; text-align: center; cursor: pointer; }
+.doctor-agenda-month-day.is-empty { min-height: 0; border-color: transparent; background: transparent; cursor: default; }
+.doctor-agenda-month-day:hover:not(.is-empty) { border-color: #168de2; background: #f4faff; }
+.doctor-agenda-month-day.is-today .doctor-agenda-month-day-number { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 50%; color: #fff; background: #087cf0; }
+.doctor-agenda-month-day.has-appointments { border-color: #c9ead9; background: #f2fbf6; }
+.doctor-agenda-month-day-number { font-size: 12px; font-weight: 750; }
+.doctor-agenda-month-count { color: #087e58; font-size: 9px; font-weight: 700; }
+.doctor-agenda-month-empty { margin: 12px 0 0; padding: 10px; border-radius: 8px; color: #657992; background: #f6f9fc; font-size: 12px; text-align: center; }
 .doctor-agenda-detail-card .doctor-panel-heading { padding: 17px 17px 10px; }
 .doctor-agenda-detail-card .doctor-panel-heading h2 { font-size: 17px; }
 .doctor-agenda-period-list, .doctor-agenda-exception-list { display: grid; gap: 8px; margin: 0; padding: 0 16px 16px; list-style: none; }
@@ -115,6 +145,8 @@
     .doctor-agenda-date-label { min-width: 0; flex: 1; }
     .doctor-agenda-today { padding: 0 11px; }
     .doctor-agenda-view-label { margin-left: 0; padding: 9px 12px; }
+    .doctor-agenda-view-switcher { width: 100%; margin-left: 0; }
+    .doctor-agenda-view-button { flex: 1; }
     .doctor-agenda-layout { gap: 12px; }
     .doctor-agenda-calendar { min-height: 350px; }
     .doctor-agenda-calendar .doctor-panel-heading { padding: 15px 14px 10px; }
@@ -130,6 +162,11 @@
     .doctor-agenda-appointment-detail > span { font-size: 9px; }
     .doctor-agenda-appointment .doctor-status { display: none; }
     .doctor-agenda-aside { grid-template-columns: minmax(0, 1fr); }
+    .doctor-agenda-period-view { padding: 2px 12px 14px; }
+    .doctor-agenda-week-grid { grid-template-columns: minmax(0, 1fr); }
+    .doctor-agenda-month-grid { gap: 3px; }
+    .doctor-agenda-month-day { min-height: 58px; padding: 5px 1px; }
+    .doctor-agenda-month-count { font-size: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
     .doctor-agenda-spinner { animation: none; }

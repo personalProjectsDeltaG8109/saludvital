@@ -4,13 +4,23 @@ if (agendaRoot) {
     const apiUrl = agendaRoot.dataset.agendaApiUrl;
     const dateInput = agendaRoot.querySelector("[data-agenda-date]");
     const calendar = agendaRoot.querySelector("[data-agenda-calendar]");
-    const timeline = agendaRoot.querySelector("[data-agenda-timeline]");
+    const calendarLayout = agendaRoot.querySelector(".doctor-agenda-layout");
+    const calendarAside = agendaRoot.querySelector("[data-agenda-aside]");
     const loadingState = agendaRoot.querySelector("[data-agenda-loading]");
-    const emptyState = agendaRoot.querySelector("[data-agenda-empty]");
     const feedback = agendaRoot.querySelector("[data-agenda-feedback]");
     const title = agendaRoot.querySelector("[data-agenda-title]");
+    const dailyTimeline = agendaRoot.querySelector("[data-agenda-timeline]");
+    const dailyEmpty = agendaRoot.querySelector("[data-agenda-empty]");
+    const weeklyView = agendaRoot.querySelector("[data-agenda-week-view]");
+    const weeklyTitle = agendaRoot.querySelector("[data-agenda-week-title]");
+    const weeklyGrid = agendaRoot.querySelector("[data-agenda-week-grid]");
+    const monthlyView = agendaRoot.querySelector("[data-agenda-month-view]");
+    const monthlyTitle = agendaRoot.querySelector("[data-agenda-month-title]");
+    const monthlyGrid = agendaRoot.querySelector("[data-agenda-month-grid]");
+    const monthlyEmpty = agendaRoot.querySelector("[data-agenda-month-empty]");
     const periodsList = agendaRoot.querySelector("[data-agenda-periods]");
     const exceptionsList = agendaRoot.querySelector("[data-agenda-exceptions]");
+    let selectedView = agendaRoot.dataset.initialView || "day";
     let activeRequest = 0;
 
     function createElement(tagName, className, text) {
@@ -49,30 +59,29 @@ if (agendaRoot) {
         return avatar;
     }
 
-    function renderTimeline(data) {
-        timeline.replaceChildren();
+    function renderDailyTimeline(data) {
+        dailyTimeline.replaceChildren();
         if (!data.timeline) return;
 
         const { startHour, endHour } = data.timeline;
         const totalMinutes = (endHour - startHour) * 60;
-        timeline.style.setProperty("--agenda-hours", String(endHour - startHour));
-        timeline.setAttribute("aria-label", `Agenda del ${data.dateLabel}`);
+        dailyTimeline.style.setProperty("--agenda-hours", String(endHour - startHour));
+        dailyTimeline.setAttribute("aria-label", `Agenda del ${data.dateLabel}`);
 
         data.workingPeriods.forEach((period) => {
             const block = createElement("div", "doctor-agenda-working-period");
             block.style.top = `${((period.startMinute - startHour * 60) / totalMinutes) * 100}%`;
             block.style.height = `${((period.endMinute - period.startMinute) / totalMinutes) * 100}%`;
             block.setAttribute("aria-hidden", "true");
-            timeline.append(block);
+            dailyTimeline.append(block);
         });
 
         data.exceptions.forEach((exception) => {
-            const block = createElement("div", "doctor-agenda-exception-band");
+            const block = createElement("div", "doctor-agenda-exception-band", exception.label);
             block.style.top = `${((exception.startMinute - startHour * 60) / totalMinutes) * 100}%`;
             block.style.height = `${((exception.endMinute - exception.startMinute) / totalMinutes) * 100}%`;
-            block.textContent = exception.label;
             block.setAttribute("aria-hidden", "true");
-            timeline.append(block);
+            dailyTimeline.append(block);
         });
 
         for (let hour = startHour; hour < endHour; hour += 1) {
@@ -85,17 +94,17 @@ if (agendaRoot) {
             }).format(new Date(Date.UTC(2020, 0, 1, hour)));
             row.append(createElement("span", "doctor-agenda-hour-label", label));
             row.append(createElement("span", "doctor-agenda-hour-rule"));
-            timeline.append(row);
+            dailyTimeline.append(row);
         }
 
         data.appointments.forEach((appointment) => {
             const duration = Math.max(0, appointment.endMinute - appointment.startMinute);
             const card = document.createElement("a");
-            card.className = `doctor-agenda-appointment doctor-agenda-status-${appointment.status.toLowerCase().replace(/\s+/g, "-")}`;
+            card.className = "doctor-agenda-appointment doctor-agenda-status-confirmed";
             card.href = getAppointmentLink(data.selectedDate);
             card.style.top = `${((appointment.startMinute - startHour * 60) / totalMinutes) * 100}%`;
             const hourHeight = Number.parseFloat(
-                getComputedStyle(timeline).getPropertyValue("--agenda-hour-height"),
+                getComputedStyle(dailyTimeline).getPropertyValue("--agenda-hour-height"),
             );
             card.style.height = `${Math.max(38, (duration / 60) * hourHeight)}px`;
             card.setAttribute(
@@ -110,9 +119,8 @@ if (agendaRoot) {
             details.append(createElement("b", "", appointment.patientName));
             details.append(createElement("span", "", appointment.reason));
             content.append(details);
-            const status = createElement("span", "doctor-status", appointment.statusLabel);
-            card.append(renderAvatar(appointment), content, status);
-            timeline.append(card);
+            card.append(renderAvatar(appointment), content);
+            dailyTimeline.append(card);
         });
     }
 
@@ -158,34 +166,147 @@ if (agendaRoot) {
             const item = createElement("li", "doctor-agenda-exception");
             item.append(createElement("strong", "", exception.label));
             item.append(createElement("span", "", `${exception.startTime} – ${exception.endTime}`));
-            if (exception.reason) item.append(createElement("small", "", exception.reason));
             exceptionsList.append(item);
         });
     }
 
-    function formatDateHeading(data) {
-        return data.dateLabel.charAt(0).toUpperCase() + data.dateLabel.slice(1);
+    function renderWeeklyView(data) {
+        weeklyGrid.replaceChildren();
+        weeklyTitle.textContent = data.periodLabel;
+        data.days.forEach((day) => {
+            const dayCard = createElement("section", "doctor-agenda-week-day");
+            dayCard.append(createElement("h3", "", day.dateLabel));
+            if (!day.appointments.length) {
+                dayCard.append(
+                    createElement("p", "doctor-agenda-week-empty", "Sin citas confirmadas"),
+                );
+            } else {
+                const appointmentList = createElement("ul", "doctor-agenda-week-appointments");
+                day.appointments.forEach((appointment) => {
+                    const item = createElement("li", "");
+                    const link = document.createElement("a");
+                    link.className = "doctor-agenda-week-appointment";
+                    link.href = getAppointmentLink(day.date);
+                    link.setAttribute(
+                        "aria-label",
+                        `${appointment.startTime}, ${appointment.patientName}, ${appointment.reason}, ${appointment.statusLabel}`,
+                    );
+                    link.append(createElement("time", "", appointment.startTime));
+                    const details = createElement("span", "doctor-agenda-week-appointment-copy");
+                    details.append(createElement("b", "", appointment.patientName));
+                    details.append(createElement("span", "", appointment.reason));
+                    link.append(details);
+                    item.append(link);
+                    appointmentList.append(item);
+                });
+                dayCard.append(appointmentList);
+            }
+            weeklyGrid.append(dayCard);
+        });
+    }
+
+    function getMonthWeekdayOffset(dateString) {
+        const weekday = new Date(`${dateString}T00:00:00.000Z`).getUTCDay();
+        return (weekday + 6) % 7;
+    }
+
+    function renderMonthlyView(data) {
+        monthlyGrid.replaceChildren();
+        monthlyTitle.textContent = data.periodLabel;
+        ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].forEach((label) => {
+            monthlyGrid.append(createElement("span", "doctor-agenda-month-weekday", label));
+        });
+        for (let index = 0; index < getMonthWeekdayOffset(data.rangeStart); index += 1) {
+            monthlyGrid.append(createElement("span", "doctor-agenda-month-day is-empty"));
+        }
+        data.days.forEach((day) => {
+            const cell = createElement("button", "doctor-agenda-month-day");
+            cell.type = "button";
+            cell.dataset.agendaDate = day.date;
+            if (day.isToday) cell.classList.add("is-today");
+            if (day.appointmentCount > 0) cell.classList.add("has-appointments");
+            cell.setAttribute(
+                "aria-label",
+                `${formatAccessibleDate(day.date)}: ${day.appointmentCount} citas confirmadas`,
+            );
+            cell.append(
+                createElement("span", "doctor-agenda-month-day-number", String(day.dayNumber)),
+            );
+            if (day.appointmentCount > 0) {
+                cell.append(
+                    createElement(
+                        "span",
+                        "doctor-agenda-month-count",
+                        `${day.appointmentCount} ${day.appointmentCount === 1 ? "cita" : "citas"}`,
+                    ),
+                );
+            }
+            cell.addEventListener("click", () => selectAgenda(day.date, "day"));
+            monthlyGrid.append(cell);
+        });
+        monthlyEmpty.hidden = data.days.some((day) => day.appointmentCount > 0);
+    }
+
+    function formatAccessibleDate(dateString) {
+        const date = new Date(`${dateString}T05:00:00.000Z`);
+        return new Intl.DateTimeFormat("es-CO", {
+            timeZone: "America/Bogota",
+            dateStyle: "full",
+        }).format(date);
     }
 
     function renderAgenda(data) {
-        title.textContent = formatDateHeading(data);
-        renderTimeline(data);
-        renderPeriods(data.workingPeriods);
-        renderExceptions(data.exceptions);
-        timeline.hidden = !data.timeline;
-        emptyState.hidden = Boolean(data.timeline);
+        const isDaily = selectedView === "day";
+        const isWeekly = selectedView === "week";
+        title.textContent = isDaily
+            ? data.dateLabel.charAt(0).toUpperCase() + data.dateLabel.slice(1)
+            : data.periodLabel;
+        calendarAside.hidden = !isDaily;
+        calendarLayout.classList.toggle("is-calendar-only", !isDaily);
+        dailyTimeline.hidden = !isDaily || !data.timeline;
+        dailyEmpty.hidden = !isDaily || Boolean(data.timeline);
+        weeklyView.hidden = !isWeekly;
+        monthlyView.hidden = isDaily || isWeekly;
+
+        if (isDaily) {
+            renderDailyTimeline(data);
+            renderPeriods(data.workingPeriods);
+            renderExceptions(data.exceptions);
+        } else if (isWeekly) {
+            renderWeeklyView(data);
+        } else {
+            renderMonthlyView(data);
+        }
+        updateViewButtons();
         calendar.setAttribute("aria-busy", "false");
+    }
+
+    function updateViewButtons() {
+        agendaRoot.querySelectorAll("[data-agenda-view]").forEach((button) => {
+            const isSelected = button.dataset.agendaView === selectedView;
+            button.setAttribute("aria-pressed", String(isSelected));
+        });
+    }
+
+    function updateAddressBar() {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", selectedView);
+        url.searchParams.set("date", dateInput.value);
+        window.history.pushState({ view: selectedView, date: dateInput.value }, "", url);
     }
 
     async function loadAgenda() {
         const requestId = ++activeRequest;
         loadingState.hidden = false;
-        timeline.hidden = true;
-        emptyState.hidden = true;
+        dailyTimeline.hidden = true;
+        dailyEmpty.hidden = true;
+        weeklyView.hidden = true;
+        monthlyView.hidden = true;
         feedback.hidden = true;
         calendar.setAttribute("aria-busy", "true");
         try {
-            const response = await fetch(`${apiUrl}?date=${encodeURIComponent(dateInput.value)}`, {
+            const query = new URLSearchParams({ view: selectedView, date: dateInput.value });
+            const response = await fetch(`${apiUrl}?${query.toString()}`, {
                 headers: { Accept: "application/json" },
             });
             const result = await response.json();
@@ -197,34 +318,64 @@ if (agendaRoot) {
             feedback.textContent = error.message || "Ocurrió un error al cargar la agenda.";
             feedback.hidden = false;
             title.textContent = "No se pudo cargar la agenda";
-            renderPeriods([]);
-            renderExceptions([]);
+            calendarAside.hidden = true;
+            calendarLayout.classList.add("is-calendar-only");
         } finally {
             if (requestId === activeRequest) loadingState.hidden = true;
         }
     }
 
-    function moveSelectedDate(days) {
-        const date = new Date(`${dateInput.value}T12:00:00`);
-        date.setDate(date.getDate() + days);
-        dateInput.value = [
-            date.getFullYear(),
-            String(date.getMonth() + 1).padStart(2, "0"),
-            String(date.getDate()).padStart(2, "0"),
-        ].join("-");
+    function selectAgenda(date, view, updateHistory = true) {
+        dateInput.value = date;
+        selectedView = view;
+        updateViewButtons();
+        if (updateHistory) updateAddressBar();
         loadAgenda();
+    }
+
+    function moveSelectedPeriod(direction) {
+        const selectedDate = new Date(`${dateInput.value}T00:00:00.000Z`);
+        if (selectedView === "day") {
+            selectedDate.setUTCDate(selectedDate.getUTCDate() + direction);
+        } else if (selectedView === "week") {
+            selectedDate.setUTCDate(selectedDate.getUTCDate() + direction * 7);
+        } else {
+            const selectedDay = selectedDate.getUTCDate();
+            selectedDate.setUTCDate(1);
+            selectedDate.setUTCMonth(selectedDate.getUTCMonth() + direction);
+            const lastDay = new Date(
+                Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth() + 1, 0),
+            ).getUTCDate();
+            selectedDate.setUTCDate(Math.min(selectedDay, lastDay));
+        }
+        selectAgenda(selectedDate.toISOString().slice(0, 10), selectedView);
     }
 
     agendaRoot
         .querySelector("[data-agenda-previous]")
-        .addEventListener("click", () => moveSelectedDate(-1));
+        .addEventListener("click", () => moveSelectedPeriod(-1));
     agendaRoot
         .querySelector("[data-agenda-next]")
-        .addEventListener("click", () => moveSelectedDate(1));
+        .addEventListener("click", () => moveSelectedPeriod(1));
     agendaRoot.querySelector("[data-agenda-today]").addEventListener("click", () => {
-        dateInput.value = agendaRoot.dataset.todayDate;
-        loadAgenda();
+        selectAgenda(agendaRoot.dataset.todayDate, selectedView);
     });
-    dateInput.addEventListener("change", loadAgenda);
+    agendaRoot.querySelectorAll("[data-agenda-view]").forEach((button) => {
+        button.addEventListener("click", () =>
+            selectAgenda(dateInput.value, button.dataset.agendaView),
+        );
+    });
+    dateInput.addEventListener("change", () => selectAgenda(dateInput.value, selectedView));
+    window.addEventListener("popstate", () => {
+        const url = new URL(window.location.href);
+        const view = ["day", "week", "month"].includes(url.searchParams.get("view"))
+            ? url.searchParams.get("view")
+            : "day";
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("date") || "")
+            ? url.searchParams.get("date")
+            : agendaRoot.dataset.todayDate;
+        selectAgenda(date, view, false);
+    });
+    updateViewButtons();
     loadAgenda();
 }

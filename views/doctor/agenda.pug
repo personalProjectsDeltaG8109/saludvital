@@ -18,7 +18,8 @@ html(lang="es")
                 main.doctor-content.doctor-agenda-page(
                     data-doctor-agenda,
                     data-agenda-api-url="/api/doctor/agenda",
-                    data-today-date=todayDate
+                    data-today-date=todayDate,
+                    data-initial-view=initialView
                 )
                     header.doctor-page-heading.doctor-agenda-heading
                         div
@@ -41,7 +42,7 @@ html(lang="es")
                                 )
                             input#doctor-agenda-date(
                                 type="date",
-                                value=todayDate,
+                                value=initialDate,
                                 data-agenda-date
                             )
                         button.doctor-agenda-today(type="button", data-agenda-today) Hoy
@@ -52,7 +53,22 @@ html(lang="es")
                         )
                             svg(viewBox="0 0 24 24", aria-hidden="true")
                                 path(d="m9 18 6-6-6-6")
-                        span.doctor-agenda-view-label Vista diaria
+                        .doctor-agenda-view-switcher(role="group", aria-label="Vista de agenda")
+                            button.doctor-agenda-view-button(
+                                type="button",
+                                data-agenda-view="day",
+                                aria-pressed=String(initialView === "day")
+                            ) Día
+                            button.doctor-agenda-view-button(
+                                type="button",
+                                data-agenda-view="week",
+                                aria-pressed=String(initialView === "week")
+                            ) Semana
+                            button.doctor-agenda-view-button(
+                                type="button",
+                                data-agenda-view="month",
+                                aria-pressed=String(initialView === "month")
+                            ) Mes
                     p.doctor-agenda-feedback(
                         role="status",
                         aria-live="polite",
@@ -81,7 +97,24 @@ html(lang="es")
                                         )
                                 h3(data-agenda-empty-title) No hay actividad para esta fecha
                                 p(data-agenda-empty-message) No encontramos citas ni horarios configurados.
-                        aside.doctor-agenda-aside(aria-label="Horario y excepciones")
+                            .doctor-agenda-period-view.doctor-agenda-week-view(
+                                data-agenda-week-view,
+                                hidden
+                            )
+                                h3.doctor-agenda-period-title(data-agenda-week-title)
+                                .doctor-agenda-week-grid(data-agenda-week-grid)
+                            .doctor-agenda-period-view.doctor-agenda-month-view(
+                                data-agenda-month-view,
+                                hidden
+                            )
+                                h3.doctor-agenda-period-title(data-agenda-month-title)
+                                .doctor-agenda-month-grid(data-agenda-month-grid)
+                                p.doctor-agenda-month-empty(data-agenda-month-empty, hidden)
+                                    | No hay citas confirmadas para este mes.
+                        aside.doctor-agenda-aside(
+                            aria-label="Horario y excepciones",
+                            data-agenda-aside
+                        )
                             section.doctor-panel.doctor-agenda-detail-card
                                 header.doctor-panel-heading
                                     div
