@@ -78,7 +78,6 @@ const html = pug.renderFile("views/doctor/profile.pug", {
                 fieldName: "phone",
                 rawValue: "+573101234567",
                 isEditable: true,
-                verificationStatus: "No registrado",
             },
             {
                 label: "Tel\u00e9fono alternativo",
@@ -86,7 +85,6 @@ const html = pug.renderFile("views/doctor/profile.pug", {
                 fieldName: "alternatePhone",
                 rawValue: "",
                 isEditable: true,
-                verificationStatus: "No registrado",
             },
         ],
         editableFields: {
@@ -152,6 +150,8 @@ try {
     assert.equal(await page.getByRole("button", { name: /Editar perfil/ }).count(), 1);
     assert.equal(await page.locator(".doctor-profile-section-nav a").count(), 1);
     assert.equal(await page.getByText("Solo administrador").count(), 11);
+    assert.equal(await page.getByText("No verificado").count(), 0);
+    assert.equal(await page.getByText("Verificado").count(), 1);
     assert.equal(
         await page
             .getByText("Los campos marcados solo pueden ser modificados por un administrador.")
@@ -282,7 +282,10 @@ try {
 
     for (const viewport of [
         { width: 390, height: 844 },
+        { width: 760, height: 1024 },
+        { width: 762, height: 1024 },
         { width: 768, height: 1024 },
+        { width: 900, height: 1024 },
         { width: 1366, height: 768 },
         { width: 1920, height: 1080 },
     ]) {
@@ -290,11 +293,40 @@ try {
         const dimensions = await page.evaluate(() => ({
             viewport: document.documentElement.clientWidth,
             document: document.documentElement.scrollWidth,
+            personalCard: document
+                .querySelector(".doctor-profile-grid > .doctor-profile-card")
+                ?.getBoundingClientRect(),
+            informationCards: document
+                .querySelector(".doctor-profile-side")
+                ?.getBoundingClientRect(),
+            overflowingBadges: [
+                ...document.querySelectorAll(
+                    ".doctor-profile-fields dd .doctor-profile-readonly-badge",
+                ),
+            ].filter(
+                (badge) =>
+                    badge.getBoundingClientRect().right >
+                    badge.parentElement.getBoundingClientRect().right + 1,
+            ).length,
         }));
         assert.ok(
             dimensions.document <= dimensions.viewport,
             `Horizontal overflow at ${viewport.width}px: ${JSON.stringify(dimensions)}`,
         );
+        if (viewport.width <= 900) {
+            assert.ok(
+                dimensions.informationCards.top >= dimensions.personalCard.bottom - 1,
+                `Profile cards should stack at ${viewport.width}px: ${JSON.stringify(dimensions)}`,
+            );
+            assert.equal(
+                dimensions.overflowingBadges,
+                0,
+                `Read-only badges should remain inside their fields at ${viewport.width}px`,
+            );
+        }
+        if (viewport.width === 762) {
+            await page.screenshot({ path: "test-results/doctor-profile-762.png", fullPage: true });
+        }
     }
 
     const accessibility = await new AxeBuilder({ page }).include("[data-doctor-profile]").analyze();

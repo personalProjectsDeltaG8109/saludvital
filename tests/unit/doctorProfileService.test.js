@@ -80,6 +80,8 @@ describe("doctor profile service", () => {
                 { label: "Teléfono alternativo", value: "No registrado" },
             ],
         });
+        const phoneFields = profile.contact.filter((field) => field.label.startsWith("Teléfono"));
+        expect(phoneFields.every((field) => !("verificationStatus" in field))).toBe(true);
         expect(profile.personalInformation.find((field) => field.label === "Nombres").value).toBe(
             "No registrado",
         );

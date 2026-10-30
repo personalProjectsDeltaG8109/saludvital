@@ -189,10 +189,11 @@ html(lang="es")
                                                         )
                                                     if field.isProtected
                                                         span.doctor-profile-readonly-badge Solo administrador
-                                                    span(
-                                                        class=field.verificationStatus === "Verificado" ? "doctor-profile-verification is-verified" : "doctor-profile-verification"
-                                                    )
-                                                        = field.verificationStatus
+                                                    if field.verificationStatus
+                                                        span(
+                                                            class=field.verificationStatus === "Verificado" ? "doctor-profile-verification is-verified" : "doctor-profile-verification"
+                                                        )
+                                                            = field.verificationStatus
 
                         .doctor-profile-edit-actions
                             button.doctor-profile-save-button(

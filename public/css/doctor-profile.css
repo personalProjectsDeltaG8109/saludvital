@@ -18,7 +18,7 @@
 .doctor-profile-photo-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .doctor-profile-photo-button:focus-visible, .doctor-profile-photo-close:focus-visible, .doctor-profile-photo-select:focus-visible { outline: 3px solid #f4a900; outline-offset: 2px; }
 .doctor-profile-photo-input { position: fixed; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; }
-.doctor-profile-photo-dialog { width: min(460px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 680px); padding: 22px; border: 1px solid #d8e8f8; border-radius: 20px; color: #123b73; background: #fff; box-shadow: 0 24px 80px rgb(10 40 85 / 28%); }
+.doctor-profile-photo-dialog { width: min(460px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 680px); padding: 22px; border: 1px solid #d8e8f8; border-radius: 20px; color: #123b73; background: #fff; box-shadow: 0 24px 80px rgb(10 40 85 / 28%); margin: auto;}
 .doctor-profile-photo-dialog::backdrop { background: rgb(9 30 66 / 48%); backdrop-filter: blur(3px); }
 .doctor-profile-photo-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .doctor-profile-photo-dialog-heading h2 { margin: 0; color: #102f89; font-size: 20px; }
@@ -63,10 +63,9 @@
 .doctor-profile-fields dt, .doctor-profile-contact-fields dt { margin: 0 0 5px; color: #537198; font-size: 11px; }
 .doctor-profile-fields dd, .doctor-profile-contact-fields dd { min-height: 40px; margin: 0; padding: 9px 11px; overflow-wrap: anywhere; border: 1px solid #d8e7f5; border-radius: 8px; color: #16427f; background: #f8fbff; font-size: 13px; }
 .doctor-profile-contact-fields dd { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
-.doctor-profile-fields .is-unavailable dd, .doctor-profile-contact-item:has(.doctor-profile-verification:not(.is-verified)) dd { color: #53667c; background: #f4f7fa; }
+.doctor-profile-fields .is-unavailable dd { color: #53667c; background: #f4f7fa; }
 .doctor-profile-contact-fields { display: grid; gap: 11px; margin: 0; padding: 6px 18px 18px; }
 .doctor-profile-contact-item { display: flex; min-width: 0; align-items: end; justify-content: space-between; gap: 10px; }
-.doctor-profile-contact-item > div { min-width: 0; flex: 1; }
 .doctor-profile-verification { flex: 0 0 auto; margin-bottom: 6px; padding: 5px 8px; border-radius: 7px; color: #4c627d; background: #eef2f6; font-size: 10px; font-weight: 700; }
 .doctor-profile-verification.is-verified { color: #08734f; background: #dcf8eb; }
 .doctor-profile-page .sv-sidebar { width: 238px; }
@@ -77,6 +76,9 @@
     .doctor-profile-summary { grid-template-columns: 116px minmax(0, 1fr); gap: 16px; }
     .doctor-profile-avatar { width: 110px; }
     .doctor-profile-summary-details { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 14px 0 0; border-top: 1px solid #d7e8f7; border-left: 0; }
+}
+@media (max-width: 900px) {
+    .doctor-profile-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 760px) {
     .doctor-profile-page .sv-sidebar { width: min(300px, 86vw); }

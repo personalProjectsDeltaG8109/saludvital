@@ -197,19 +197,13 @@ function mapDoctorProfile(doctor) {
                 ...createProfileField("Correo electrónico", user.email, true),
                 verificationStatus: formatVerificationStatus(user.email_verified_at),
             },
-            {
-                ...createProfileField("Teléfono principal", user.phone, false, "phone"),
-                verificationStatus: user.phone ? "No verificado" : PROFILE_UNAVAILABLE,
-            },
-            {
-                ...createProfileField(
-                    "Teléfono alternativo",
-                    doctor.alternate_phone,
-                    false,
-                    "alternatePhone",
-                ),
-                verificationStatus: doctor.alternate_phone ? "No verificado" : PROFILE_UNAVAILABLE,
-            },
+            createProfileField("Teléfono principal", user.phone, false, "phone"),
+            createProfileField(
+                "Teléfono alternativo",
+                doctor.alternate_phone,
+                false,
+                "alternatePhone",
+            ),
         ],
     };
 }
