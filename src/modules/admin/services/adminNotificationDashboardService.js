@@ -289,7 +289,10 @@ export async function getAdminNotificationDashboard(query = {}, referenceDate = 
             ],
             where: buildListWhere({ ...filters, range }),
             order: [
-                [fn("COALESCE", col("sent_at"), col("created_at")), "DESC"],
+                [
+                    fn("COALESCE", col("Notification.sent_at"), col("Notification.created_at")),
+                    "DESC",
+                ],
                 ["id", "DESC"],
             ],
             limit: PAGE_SIZE,

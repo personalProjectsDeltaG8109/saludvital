@@ -94,7 +94,10 @@ describe("administrator notification dashboard service", () => {
         expect(data.rows[0]).not.toHaveProperty("provider_message_id");
         expect(data.rows[0]).not.toHaveProperty("last_error");
         const listQuery = Notification.findAndCountAll.mock.calls[0][0];
-        expect(listQuery.order[0]).toEqual([expect.arrayContaining(["COALESCE"]), "DESC"]);
+        expect(listQuery.order[0]).toEqual([
+            ["COALESCE", "Notification.sent_at", "Notification.created_at"],
+            "DESC",
+        ]);
         expect(listQuery.order[1]).toEqual(["id", "DESC"]);
         expect(listQuery.attributes).not.toContain("payload");
         expect(listQuery.attributes).not.toContain("provider_message_id");
