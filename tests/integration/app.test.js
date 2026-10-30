@@ -76,6 +76,13 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("doctor profile page requires an authenticated doctor", async () => {
+        const response = await request(app).get("/doctor/profile").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor detail API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/doctors/1").redirects(0);
 
