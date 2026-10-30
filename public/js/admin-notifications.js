@@ -5,10 +5,13 @@ if (notificationsPage) {
     const loading = document.querySelector("[data-notifications-loading]");
     const errorPanel = document.querySelector("[data-notifications-error]");
     const errorMessage = document.querySelector("[data-notifications-error-message]");
+    const filterError = document.querySelector("[data-notifications-filter-error]");
     const resultsPanel = document.querySelector("[data-notifications-results]");
     const searchInput = document.querySelector("[data-notification-search]");
     const statusSelect = document.querySelector("[data-notification-status]");
     const periodSelect = document.querySelector("[data-notification-period]");
+    const startDateInput = document.querySelector("[data-notification-start-date]");
+    const endDateInput = document.querySelector("[data-notification-end-date]");
     const channelButtons = [...document.querySelectorAll("[data-notification-channel]")];
     const metricElements = Object.fromEntries(
         [...document.querySelectorAll("[data-notification-metric]")].map((element) => [
@@ -179,6 +182,14 @@ if (notificationsPage) {
         pagination.hidden = !totalItems;
     }
 
+    function updateDateInputs() {
+        const customRange = periodSelect.value === "custom";
+        startDateInput.disabled = !customRange;
+        endDateInput.disabled = !customRange;
+        startDateInput.required = customRange;
+        endDateInput.required = customRange;
+    }
+
     function updateUrl() {
         const url = new URL(window.location.href);
         url.searchParams.set("period", periodSelect.value);
@@ -186,6 +197,13 @@ if (notificationsPage) {
         url.searchParams.set("status", statusSelect.value);
         if (searchInput.value.trim()) url.searchParams.set("search", searchInput.value.trim());
         else url.searchParams.delete("search");
+        if (periodSelect.value === "custom") {
+            url.searchParams.set("startDate", startDateInput.value);
+            url.searchParams.set("endDate", endDateInput.value);
+        } else {
+            url.searchParams.delete("startDate");
+            url.searchParams.delete("endDate");
+        }
         url.searchParams.set("page", String(currentPage));
         window.history.replaceState({}, "", url);
     }
@@ -193,6 +211,26 @@ if (notificationsPage) {
     async function loadNotifications({ page = 1, showResults = false } = {}) {
         const sequence = ++requestSequence;
         currentPage = page;
+        if (periodSelect.value === "custom") {
+            if (!startDateInput.value || !endDateInput.value) {
+                loading.hidden = true;
+                resultsPanel.hidden = false;
+                filterError.textContent = "Selecciona las fechas inicial y final del rango.";
+                filterError.hidden = false;
+                dashboard.setAttribute("aria-busy", "false");
+                return;
+            }
+            if (startDateInput.value > endDateInput.value) {
+                loading.hidden = true;
+                resultsPanel.hidden = false;
+                filterError.textContent =
+                    "La fecha inicial no puede ser posterior a la fecha final.";
+                filterError.hidden = false;
+                dashboard.setAttribute("aria-busy", "false");
+                return;
+            }
+        }
+        filterError.hidden = true;
         loading.hidden = false;
         errorPanel.hidden = true;
         resultsPanel.hidden = true;
@@ -205,6 +243,10 @@ if (notificationsPage) {
             page: String(page),
             search: searchInput.value.trim(),
         });
+        if (periodSelect.value === "custom") {
+            parameters.set("startDate", startDateInput.value);
+            parameters.set("endDate", endDateInput.value);
+        }
 
         try {
             const response = await fetch(`/api/admin/notifications?${parameters}`, {
@@ -248,7 +290,16 @@ if (notificationsPage) {
         searchTimer = window.setTimeout(() => loadNotifications({ page: 1 }), 250);
     });
     statusSelect.addEventListener("change", () => loadNotifications({ page: 1 }));
-    periodSelect.addEventListener("change", () => loadNotifications({ page: 1 }));
+    periodSelect.addEventListener("change", () => {
+        updateDateInputs();
+        if (periodSelect.value !== "custom") {
+            startDateInput.value = "";
+            endDateInput.value = "";
+        }
+        loadNotifications({ page: 1 });
+    });
+    startDateInput.addEventListener("change", () => loadNotifications({ page: 1 }));
+    endDateInput.addEventListener("change", () => loadNotifications({ page: 1 }));
     previousButton.addEventListener("click", () => loadNotifications({ page: currentPage - 1 }));
     nextButton.addEventListener("click", () => loadNotifications({ page: currentPage + 1 }));
     document
@@ -260,9 +311,13 @@ if (notificationsPage) {
     const initialStatus = pageUrl.searchParams.get("status");
     const initialChannel = pageUrl.searchParams.get("channel");
     const initialSearch = pageUrl.searchParams.get("search");
+    const initialStartDate = pageUrl.searchParams.get("startDate");
+    const initialEndDate = pageUrl.searchParams.get("endDate");
     const initialPage = Number(pageUrl.searchParams.get("page"));
-    if (["7", "30", "90"].includes(initialPeriod)) periodSelect.value = initialPeriod;
-    if (["all", "pending", "delivered", "failed", "cancelled"].includes(initialStatus)) {
+    if (["7", "30", "90", "custom"].includes(initialPeriod)) periodSelect.value = initialPeriod;
+    if (
+        ["all", "pending", "accepted", "delivered", "failed", "cancelled"].includes(initialStatus)
+    ) {
         statusSelect.value = initialStatus;
     }
     if (["all", "Email", "WhatsApp", "SMS"].includes(initialChannel)) {
@@ -277,6 +332,10 @@ if (notificationsPage) {
         }
     }
     if (initialSearch) searchInput.value = initialSearch.slice(0, 100);
+    if (initialStartDate) startDateInput.value = initialStartDate;
+    if (initialEndDate) endDateInput.value = initialEndDate;
+    if (initialStartDate || initialEndDate) periodSelect.value = "custom";
+    updateDateInputs();
     loadNotifications({
         page: Number.isSafeInteger(initialPage) && initialPage > 0 ? initialPage : 1,
     });

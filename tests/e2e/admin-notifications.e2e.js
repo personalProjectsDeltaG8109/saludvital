@@ -124,6 +124,39 @@ try {
     await page.locator("[data-notifications-next]").click();
     await page.waitForTimeout(100);
     if (requests.at(-1).page !== "2") throw new Error("Next-page control should request page two.");
+    if (
+        requests.at(-1).channel !== "WhatsApp" ||
+        requests.at(-1).search !== "Laura" ||
+        requests.at(-1).status !== "delivered" ||
+        requests.at(-1).period !== "7"
+    ) {
+        throw new Error("Pagination should preserve all active notification filters.");
+    }
+
+    await page.locator("[data-notification-period]").selectOption("custom");
+    await page.locator("[data-notification-start-date]").fill("2026-10-01");
+    await page.locator("[data-notification-end-date]").fill("2026-10-30");
+    await page.locator("[data-notification-status]").selectOption("accepted");
+    await page.waitForTimeout(100);
+    const customRangeRequest = requests.at(-1);
+    if (
+        customRangeRequest.period !== "custom" ||
+        customRangeRequest.startDate !== "2026-10-01" ||
+        customRangeRequest.endDate !== "2026-10-30" ||
+        customRangeRequest.status !== "accepted" ||
+        customRangeRequest.page !== "1"
+    ) {
+        throw new Error("Custom dates and accepted status should be sent with the filters.");
+    }
+    await page.locator("[data-notifications-next]").click();
+    await page.waitForTimeout(100);
+    if (
+        requests.at(-1).page !== "2" ||
+        requests.at(-1).startDate !== "2026-10-01" ||
+        requests.at(-1).endDate !== "2026-10-30"
+    ) {
+        throw new Error("Pagination should preserve the custom date range.");
+    }
 
     await page.locator("[data-notification-search]").fill("sin resultados");
     await page.waitForTimeout(350);
