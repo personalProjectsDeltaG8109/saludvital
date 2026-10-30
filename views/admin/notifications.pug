@@ -1,0 +1,187 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-notifications.css")
+    body.admin-app.admin-notifications-page(data-notifications-page)
+        include partials/admin-shell.pug
+        +adminSidebar("notifications")
+        .admin-main-shell
+            +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
+            main.admin-dashboard.admin-notifications(aria-busy="false")
+                header.admin-notifications-heading
+                    .admin-notifications-title
+                        span.admin-notifications-heading-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                                path(d="M10 21h4")
+                        div
+                            h1 Notificaciones
+                            p Gestiona y consulta el historial de notificaciones enviadas desde el sistema
+                    a.admin-notifications-settings(href="/admin/whatsapp?tab=settings")
+                        span(aria-hidden="true") ⚙
+                        | Configuración de notificaciones
+
+                section.admin-notifications-loading(
+                    role="status",
+                    aria-live="polite",
+                    data-notifications-loading
+                )
+                    span.admin-notifications-spinner(aria-hidden="true")
+                    | Cargando notificaciones...
+                section.admin-notifications-error(role="alert", data-notifications-error, hidden)
+                    h2 No pudimos cargar las notificaciones
+                    p(data-notifications-error-message) Inténtalo de nuevo en unos momentos.
+                    button(type="button", data-notifications-retry) Reintentar
+
+                .admin-notifications-results(data-notifications-results, hidden)
+                    section.admin-notifications-metrics(aria-label="Resumen de notificaciones")
+                        article.admin-notification-metric
+                            span.admin-notification-metric-icon.is-blue(aria-hidden="true") ➤
+                            div
+                                p Total enviadas
+                                strong(data-notification-metric="totalSent") —
+                                small Aceptadas por el proveedor; puede faltar confirmación final
+                        article.admin-notification-metric
+                            span.admin-notification-metric-icon.is-green(aria-hidden="true") ✓
+                            div
+                                p Entregadas
+                                strong(data-notification-metric="delivered") —
+                                small Confirmadas por Meta como entregadas o leídas
+                        article.admin-notification-metric
+                            span.admin-notification-metric-icon.is-red(aria-hidden="true") !
+                            div
+                                p Fallidas
+                                strong(data-notification-metric="failed") —
+                                small Fallo del envío o entrega fallida reportada por Meta
+                        article.admin-notification-metric
+                            span.admin-notification-metric-icon.is-amber(aria-hidden="true") ◷
+                            div
+                                p Pendientes
+                                strong(data-notification-metric="pending") —
+                                small En cola, en proceso o sin confirmación final de entrega
+
+                    section.admin-notifications-history(
+                        aria-labelledby="admin-notifications-history-title"
+                    )
+                        header.admin-notifications-history-heading
+                            div
+                                h2#admin-notifications-history-title Historial de notificaciones
+                                p(data-notifications-count) —
+                            a.admin-notifications-settings-link(
+                                href="/admin/whatsapp?tab=settings"
+                            ) Configuración de canales
+                        nav.admin-notifications-channels(aria-label="Filtrar por canal")
+                            button.is-active(
+                                type="button",
+                                aria-pressed="true",
+                                data-notification-channel="all"
+                            ) Todas
+                            button(
+                                type="button",
+                                aria-pressed="false",
+                                data-notification-channel="Email"
+                            ) ✉ Correo electrónico
+                            button(
+                                type="button",
+                                aria-pressed="false",
+                                data-notification-channel="WhatsApp"
+                            ) WhatsApp
+                            button(
+                                type="button",
+                                aria-pressed="false",
+                                data-notification-channel="SMS"
+                            ) ▤ SMS
+                            button(
+                                type="button",
+                                aria-disabled="true",
+                                disabled,
+                                title="El modelo actual no persiste un canal interno de notificaciones."
+                            ) ⚙ Sistema
+                        form.admin-notifications-filters(role="search", data-notifications-filters)
+                            label.admin-notifications-search
+                                span.admin-notifications-sr-only Buscar notificaciones
+                                span(aria-hidden="true") ⌕
+                                input(
+                                    type="search",
+                                    name="search",
+                                    maxlength="100",
+                                    placeholder="Buscar por paciente o tipo de notificación...",
+                                    data-notification-search
+                                )
+                            label
+                                span.admin-notifications-sr-only Filtrar por estado
+                                select(
+                                    name="status",
+                                    aria-label="Filtrar notificaciones por estado",
+                                    data-notification-status
+                                )
+                                    option(value="all") Todos los estados
+                                    option(value="pending") Pendiente
+                                    option(value="delivered") Entregada o leída
+                                    option(value="failed") Fallida
+                                    option(value="cancelled") Cancelada
+                            label
+                                span.admin-notifications-sr-only Seleccionar período
+                                select(
+                                    name="period",
+                                    aria-label="Seleccionar período de notificaciones",
+                                    data-notification-period
+                                )
+                                    option(value="7") Últimos 7 días
+                                    option(value="30", selected) Últimos 30 días
+                                    option(value="90") Últimos 90 días
+                        p.admin-notifications-delivery-note(data-notifications-delivery-note)
+                            | “Entregadas” requiere confirmación de Meta. Resend e Inalambria informan aceptación, pero no una confirmación final de entrega.
+                        .admin-notifications-unavailable(role="status")
+                            strong Canal interno no disponible
+                            span La estructura actual no almacena notificaciones internas como un canal independiente.
+                        .admin-notifications-empty(role="status", data-notifications-empty, hidden)
+                            strong No hay notificaciones para estos filtros
+                            span Prueba con otro canal, estado o período.
+                        .admin-notifications-table-wrap(data-notifications-table-wrap)
+                            table.admin-notifications-table
+                                caption.admin-notifications-sr-only Historial de notificaciones del período seleccionado
+                                thead
+                                    tr
+                                        th(scope="col") Fecha
+                                        th(scope="col") Canal
+                                        th(scope="col") Destinatario
+                                        th(scope="col") Tipo
+                                        th(scope="col") Resumen
+                                        th(scope="col") Estado del sistema
+                                        th(scope="col") Estado de entrega
+                                tbody(data-notifications-table-body)
+                        ul.admin-notifications-mobile-list(
+                            data-notifications-mobile-list,
+                            aria-label="Historial de notificaciones"
+                        )
+                        footer.admin-notifications-pagination(data-notifications-pagination)
+                            p(data-notifications-pagination-label) —
+                            .admin-notifications-page-controls
+                                button(
+                                    type="button",
+                                    aria-label="Página anterior",
+                                    data-notifications-previous
+                                ) ‹
+                                span(data-notifications-page-label) —
+                                button(
+                                    type="button",
+                                    aria-label="Página siguiente",
+                                    data-notifications-next
+                                ) ›
+        script(src="/js/admin-dashboard.js", defer)
+        script(src="/js/admin-notifications.js", defer)

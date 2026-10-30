@@ -65,6 +65,23 @@ mixin adminSidebar(activePage)
                 span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
                     img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
                 span WhatsApp y chatbot
+            a.admin-nav-link(
+                href="/admin/notifications",
+                class=activePage === "notifications" ? "is-active" : null,
+                aria-current=activePage === "notifications" ? "page" : null
+            )
+                span.admin-nav-icon(aria-hidden="true")
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round"
+                    )
+                        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                        path(d="M10 21h4")
+                span Notificaciones
             .admin-nav-section.admin-nav-section-small Control y seguimiento
             a.admin-nav-link(
                 href="/admin/audit",
@@ -113,8 +130,8 @@ mixin adminTopbar(searchAction, searchPlaceholder)
                 strong SaludVital
                 small Panel Administrativo
         a.admin-notification-button.admin-mobile-notification(
-            href="/admin/dashboard#admin-notifications-title",
-            aria-label="Ver notificaciones recientes"
+            href="/admin/notifications",
+            aria-label="Ver el panel de notificaciones"
         )
             svg(
                 viewBox="0 0 24 24",
