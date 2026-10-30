@@ -18,6 +18,7 @@ html(lang="es")
                 main.doctor-content.doctor-agenda-page(
                     data-doctor-agenda,
                     data-agenda-api-url="/api/doctor/agenda",
+                    data-start-consultation-url="/api/doctor/appointments",
                     data-today-date=todayDate,
                     data-initial-view=initialView
                 )
@@ -115,21 +116,37 @@ html(lang="es")
                             aria-label="Horario y excepciones",
                             data-agenda-aside
                         )
-                            section.doctor-panel.doctor-agenda-detail-card
+                            section.doctor-panel.doctor-agenda-next-card(
+                                aria-labelledby="doctor-agenda-next-title"
+                            )
                                 header.doctor-panel-heading
                                     div
-                                        p.doctor-eyebrow Organización del día
-                                        h2 Horario de trabajo
-                                ul.doctor-agenda-period-list(data-agenda-periods)
-                                    li.doctor-agenda-aside-loading Cargando horario…
-                            section.doctor-panel.doctor-agenda-detail-card
-                                header.doctor-panel-heading
-                                    div
-                                        p.doctor-eyebrow Cambios de horario
-                                        h2 Excepciones del día
-                                ul.doctor-agenda-exception-list(data-agenda-exceptions)
-                                    li.doctor-agenda-aside-loading Cargando excepciones…
+                                        p.doctor-eyebrow Siguiente en tu agenda
+                                        h2#doctor-agenda-next-title Próxima cita
+                                    a.doctor-agenda-view-all(href="/doctor/appointments") Ver todas
+                                .doctor-agenda-next-content(
+                                    data-agenda-next-appointment,
+                                    aria-live="polite"
+                                )
+                                    p.doctor-agenda-aside-loading Cargando próxima cita…
+                            .doctor-agenda-day-details(data-agenda-day-details)
+                                section.doctor-panel.doctor-agenda-detail-card
+                                    header.doctor-panel-heading
+                                        div
+                                            p.doctor-eyebrow Organización del día
+                                            h2 Horario de trabajo
+                                    ul.doctor-agenda-period-list(data-agenda-periods)
+                                        li.doctor-agenda-aside-loading Cargando horario…
+                                section.doctor-panel.doctor-agenda-detail-card
+                                    header.doctor-panel-heading
+                                        div
+                                            p.doctor-eyebrow Cambios de horario
+                                            h2 Excepciones del día
+                                    ul.doctor-agenda-exception-list(data-agenda-exceptions)
+                                        li.doctor-agenda-aside-loading Cargando excepciones…
+                include ./partials/start-consultation-dialog.pug
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/doctor-agenda.js", defer)
+        script(src="/js/doctor-consultation-start.js", defer)

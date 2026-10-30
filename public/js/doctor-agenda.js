@@ -6,6 +6,8 @@ if (agendaRoot) {
     const calendar = agendaRoot.querySelector("[data-agenda-calendar]");
     const calendarLayout = agendaRoot.querySelector(".doctor-agenda-layout");
     const calendarAside = agendaRoot.querySelector("[data-agenda-aside]");
+    const dayDetails = agendaRoot.querySelector("[data-agenda-day-details]");
+    const nextAppointmentCard = agendaRoot.querySelector("[data-agenda-next-appointment]");
     const loadingState = agendaRoot.querySelector("[data-agenda-loading]");
     const feedback = agendaRoot.querySelector("[data-agenda-feedback]");
     const headingEyebrow = agendaRoot.querySelector("[data-agenda-eyebrow]");
@@ -256,6 +258,66 @@ if (agendaRoot) {
         }).format(date);
     }
 
+    function renderNextAppointment(appointment) {
+        nextAppointmentCard.replaceChildren();
+        if (!appointment) {
+            nextAppointmentCard.append(
+                createElement(
+                    "p",
+                    "doctor-agenda-next-empty",
+                    "No tienes próximas citas confirmadas.",
+                ),
+            );
+            return;
+        }
+
+        const summary = createElement("div", "doctor-agenda-next-summary");
+        const time = createElement("strong", "doctor-agenda-next-time", appointment.timeLabel);
+        const details = createElement("div", "doctor-agenda-next-copy");
+        details.append(
+            createElement("strong", "", appointment.patientName),
+            createElement("span", "", appointment.reason || "Consulta médica"),
+            createElement(
+                "span",
+                "doctor-agenda-next-date",
+                `${appointment.dateLabel} · ${appointment.timeLabel}`,
+            ),
+        );
+        summary.append(time, details);
+        nextAppointmentCard.append(summary);
+
+        if (appointment.canStart) {
+            const startButton = createElement(
+                "button",
+                "doctor-agenda-start-button",
+                "Iniciar consulta",
+            );
+            startButton.type = "button";
+            startButton.dataset.startConsultation = "";
+            startButton.dataset.appointmentId = String(appointment.id);
+            startButton.dataset.patientName = appointment.patientName;
+            startButton.dataset.appointmentTime = `${appointment.dateLabel} · ${appointment.timeLabel}`;
+            startButton.dataset.consultationReason = appointment.reason || "Consulta médica";
+            nextAppointmentCard.append(startButton);
+        } else if (appointment.status === "In Progress" && appointment.consultationId) {
+            const continueLink = createElement(
+                "a",
+                "doctor-agenda-start-button",
+                "Continuar consulta",
+            );
+            continueLink.href = `/doctor/consultations/${encodeURIComponent(appointment.consultationId)}`;
+            nextAppointmentCard.append(continueLink);
+        } else {
+            nextAppointmentCard.append(
+                createElement(
+                    "p",
+                    "doctor-agenda-next-note",
+                    "Finaliza la consulta activa antes de iniciar otra.",
+                ),
+            );
+        }
+    }
+
     function renderAgenda(data) {
         const isDaily = selectedView === "day";
         const isWeekly = selectedView === "week";
@@ -265,20 +327,24 @@ if (agendaRoot) {
             : isWeekly
               ? "Agenda semanal"
               : "Agenda mensual";
-        calendarAside.hidden = !isDaily;
-        calendarLayout.classList.toggle("is-calendar-only", !isDaily);
+        calendarAside.hidden = false;
+        dayDetails.hidden = !isDaily;
+        calendarLayout.classList.remove("is-calendar-only");
         dailyTimeline.hidden = !isDaily || !data.timeline;
         dailyEmpty.hidden = !isDaily || Boolean(data.timeline);
         weeklyView.hidden = !isWeekly;
         monthlyView.hidden = isDaily || isWeekly;
 
         if (isDaily) {
+            renderNextAppointment(data.nextAppointment);
             renderDailyTimeline(data);
             renderPeriods(data.workingPeriods);
             renderExceptions(data.exceptions);
         } else if (isWeekly) {
+            renderNextAppointment(data.nextAppointment);
             renderWeeklyView(data);
         } else {
+            renderNextAppointment(data.nextAppointment);
             renderMonthlyView(data);
         }
         updateViewButtons();
@@ -302,6 +368,9 @@ if (agendaRoot) {
     async function loadAgenda() {
         const requestId = ++activeRequest;
         loadingState.hidden = false;
+        nextAppointmentCard.replaceChildren(
+            createElement("p", "doctor-agenda-aside-loading", "Cargando próxima cita…"),
+        );
         dailyTimeline.hidden = true;
         dailyEmpty.hidden = true;
         weeklyView.hidden = true;
@@ -322,8 +391,15 @@ if (agendaRoot) {
             feedback.textContent = error.message || "Ocurrió un error al cargar la agenda.";
             feedback.hidden = false;
             title.textContent = "No se pudo cargar la agenda";
-            calendarAside.hidden = true;
-            calendarLayout.classList.add("is-calendar-only");
+            calendarAside.hidden = false;
+            dayDetails.hidden = true;
+            nextAppointmentCard.replaceChildren(
+                createElement(
+                    "p",
+                    "doctor-agenda-next-error",
+                    "No fue posible cargar la próxima cita.",
+                ),
+            );
         } finally {
             if (requestId === activeRequest) loadingState.hidden = true;
         }
