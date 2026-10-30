@@ -1,13 +1,13 @@
 import { describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
-    Doctor: { findOne: jest.fn() },
+    Doctor: { findOne: jest.fn(), update: jest.fn() },
     Specialities: {},
     User: {},
 }));
 
 const models = await import("../../src/models/associations.js");
-const { getDoctorProfile } =
+const { getDoctorProfile, validateDoctorProfileUpdateFields } =
     await import("../../src/modules/doctor/services/doctorProfileService.js");
 
 describe("doctor profile service", () => {
@@ -70,6 +70,13 @@ describe("doctor profile service", () => {
         expect(profile.personalInformation.find((field) => field.label === "Nombres").value).toBe(
             "No registrado",
         );
+        expect(
+            profile.personalInformation.find((field) => field.label === "Especialidad").isProtected,
+        ).toBe(true);
+        expect(
+            profile.personalInformation.find((field) => field.label === "Teléfono principal")
+                .isProtected,
+        ).toBe(false);
         expect(JSON.stringify(profile)).not.toMatch(/password|token|secret/i);
     });
 
@@ -83,5 +90,38 @@ describe("doctor profile service", () => {
         expect(models.Doctor.findOne).toHaveBeenCalledWith(
             expect.objectContaining({ where: { user_id: "42" } }),
         );
+    });
+
+    test.each([
+        "firstName",
+        "lastName",
+        "documentType",
+        "documentNumber",
+        "professionalRegistration",
+        "specialtyId",
+        "email",
+        "gender",
+        "dateOfBirth",
+    ])("rejects self-service updates to protected field %s", (field) => {
+        expect(() => validateDoctorProfileUpdateFields({ [field]: "attempted change" })).toThrow(
+            "solo pueden ser modificados por un administrador",
+        );
+        expect(models.Doctor.update).not.toHaveBeenCalled();
+    });
+
+    test("rejects mixed allowed and protected updates atomically", () => {
+        expect(() =>
+            validateDoctorProfileUpdateFields({ phone: "+573001234567", email: "new@example.co" }),
+        ).toThrow("solo pueden ser modificados por un administrador");
+        expect(models.Doctor.update).not.toHaveBeenCalled();
+    });
+
+    test("returns only explicitly allowed self-service fields", () => {
+        expect(
+            validateDoctorProfileUpdateFields({ phone: "+573001234567", city: "Pereira" }),
+        ).toEqual({
+            phone: "+573001234567",
+            city: "Pereira",
+        });
     });
 });
