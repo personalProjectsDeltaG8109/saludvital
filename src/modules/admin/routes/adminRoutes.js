@@ -55,6 +55,7 @@ import { getAdminProfile } from "../services/adminProfileService.js";
 import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
+import { getAdminNotificationDashboard } from "../services/adminNotificationDashboardService.js";
 import {
     removeAdminProfilePhoto,
     updateAdminProfilePhoto,
@@ -903,6 +904,28 @@ adminRoutes.get("/api/admin/whatsapp", ...requireAdministrator, async (req, res,
         }
         return next(error);
     }
+});
+
+adminRoutes.get("/api/admin/notifications", ...requireAdministrator, async (req, res) => {
+    try {
+        const notifications = await getAdminNotificationDashboard(req.query);
+        res.set("Cache-Control", "no-store");
+        return res.json(notifications);
+    } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ message: error.message });
+        }
+        return res
+            .status(503)
+            .json({ message: "No pudimos cargar las notificaciones. Inténtalo de nuevo." });
+    }
+});
+
+adminRoutes.get("/admin/notifications", ...requireAdministrator, (_req, res) => {
+    return res.render("admin/notifications", {
+        pageTitle: "Notificaciones | SaludVital",
+        adminName: "Administrador",
+    });
 });
 
 // Render read-only WhatsApp monitoring data for administrators.
