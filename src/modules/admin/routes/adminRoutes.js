@@ -57,6 +57,7 @@ import { updateAdminProfilePersonalInformation } from "../services/adminProfileE
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
 import { getAdminNotificationDashboard } from "../services/adminNotificationDashboardService.js";
 import { getAdminNotificationDetails } from "../services/adminNotificationDetailService.js";
+import { getAdminNotificationSettings } from "../services/adminNotificationSettingsService.js";
 import {
     removeAdminProfilePhoto,
     updateAdminProfilePhoto,
@@ -945,6 +946,15 @@ adminRoutes.get("/admin/notifications", ...requireAdministrator, (_req, res) => 
     return res.render("admin/notifications", {
         pageTitle: "Notificaciones | SaludVital",
         adminName: "Administrador",
+    });
+});
+
+adminRoutes.get("/admin/notifications/settings", ...requireAdministrator, (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    return res.render("admin/notification-settings", {
+        pageTitle: "Configuración de notificaciones | SaludVital",
+        adminName: "Administrador",
+        settings: getAdminNotificationSettings(),
     });
 });
 

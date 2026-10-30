@@ -1,0 +1,73 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#063f79")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/admin-dashboard.css")
+        link(rel="stylesheet", href="/css/admin-notifications.css")
+    body.admin-app.admin-notifications-page
+        include partials/admin-shell.pug
+        +adminSidebar("notifications")
+        .admin-main-shell
+            +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
+            main.admin-dashboard.admin-notifications.admin-notification-settings-page
+                header.admin-notifications-heading
+                    .admin-notifications-title
+                        span.admin-notifications-heading-icon(aria-hidden="true") ⚙
+                        div
+                            h1 Configuración de notificaciones
+                            p Consulta la configuración operativa de los canales de comunicación.
+                    a.admin-notifications-settings(href="/admin/notifications")
+                        span(aria-hidden="true") ←
+                        | Volver a notificaciones
+
+                section.admin-notification-settings-banner(
+                    aria-label="Estado general de notificaciones"
+                )
+                    div
+                        p.admin-notifications-eyebrow Estado general
+                        h2 Control global de entregas: #{ settings.deliveryLabel.toLowerCase() }
+                        p Este control habilita o pausa el procesamiento de notificaciones; no confirma que un servicio esté conectado.
+                    span.admin-notification-settings-state(
+                        class=settings.deliveryEnabled ? "is-enabled" : "is-disabled"
+                    )= settings.deliveryLabel
+
+                aside.admin-notification-settings-note(role="note")
+                    strong Vista de solo lectura
+                    p Los proveedores no ofrecen una comprobación de conexión común en esta aplicación. La presencia de credenciales no confirma que el servicio esté conectado. Para cambiar estos valores, actualiza el entorno de despliegue.
+                    p Esta pantalla no cambia las preferencias individuales de notificación de los pacientes.
+
+                section.admin-notification-settings-grid(aria-label="Configuración por canal")
+                    each channel in settings.channels
+                        article.admin-notification-settings-card
+                            header
+                                span.admin-notification-settings-icon(aria-hidden="true")
+                                    if channel.key === "whatsapp"
+                                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                                    else if channel.key === "email"
+                                        | ✉
+                                    else
+                                        | ▣
+                                div
+                                    p.admin-notifications-eyebrow Canal de comunicación
+                                    h2= channel.provider
+                                span.admin-notification-settings-state(
+                                    class=channel.configurationStatus === "configured" ? "is-configured" : "is-warning"
+                                )= channel.configurationLabel
+                            p.admin-notification-settings-operation= channel.operationLabel
+                            ul
+                                each setting in channel.settings
+                                    li
+                                        span= setting.label
+                                        strong(class=setting.configured ? "is-configured" : "is-missing")
+                                            | #{ setting.configured ? "Configurado" : "No configurado" }
+                            footer
+                                span Estado operativo
+                                strong= channel.operationLabel
+
+                p.admin-notification-settings-footnote
+                    | Los estados muestran configuración local y disponibilidad de envíos según el control global. No representan una confirmación de conexión ni de entrega por parte del proveedor.
