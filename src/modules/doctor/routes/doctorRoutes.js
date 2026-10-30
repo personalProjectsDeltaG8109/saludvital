@@ -18,7 +18,7 @@ import {
 } from "../services/doctorConsultationService.js";
 import {
     getCurrentDoctorAgendaDate,
-    getDoctorAgendaData,
+    getDoctorAgendaViewData,
 } from "../services/doctorAgendaService.js";
 
 const doctorRoutes = Router();
@@ -139,7 +139,11 @@ doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, 
 
 doctorRoutes.get("/api/doctor/agenda", ...requireDoctor, async (req, res, next) => {
     try {
-        const agenda = await getDoctorAgendaData(req.auth.userId, req.query.date);
+        const agenda = await getDoctorAgendaViewData(
+            req.auth.userId,
+            req.query.view,
+            req.query.date,
+        );
         if (!agenda) return res.status(404).json({ message: "No se encontró el perfil médico." });
         return res.json(agenda);
     } catch (error) {
@@ -193,6 +197,11 @@ doctorRoutes.get("/doctor/agenda", ...requireDoctor, async (req, res, next) => {
             activeNav: "agenda",
             bottomNavActive: "agenda",
             todayDate: getCurrentDoctorAgendaDate(),
+            initialDate:
+                typeof req.query.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(req.query.date)
+                    ? req.query.date
+                    : getCurrentDoctorAgendaDate(),
+            initialView: ["day", "week", "month"].includes(req.query.view) ? req.query.view : "day",
             ...doctorHeader,
         });
     } catch (error) {

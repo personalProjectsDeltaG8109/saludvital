@@ -59,6 +59,93 @@ function getDateRange(dateString) {
     return { start, end: new Date(start.getTime() + DAY_IN_MILLISECONDS) };
 }
 
+function formatCalendarDate(date) {
+    return date.toISOString().slice(0, 10);
+}
+
+function addCalendarDays(date, amount) {
+    const result = new Date(date);
+    result.setUTCDate(result.getUTCDate() + amount);
+    return result;
+}
+
+function getWeekStart(date) {
+    const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+    return addCalendarDays(date, -daysSinceMonday);
+}
+
+function getCalendarPeriod(date, view) {
+    if (view === "week") {
+        const startDate = getWeekStart(date);
+        const endDate = addCalendarDays(startDate, 7);
+        return {
+            startDate: formatCalendarDate(startDate),
+            endDate: formatCalendarDate(endDate),
+            dates: Array.from({ length: 7 }, (_, index) =>
+                formatCalendarDate(addCalendarDays(startDate, index)),
+            ),
+        };
+    }
+
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const startDate = new Date(Date.UTC(year, month, 1));
+    const endDate = new Date(Date.UTC(year, month + 1, 1));
+    const dayCount = Math.round((endDate - startDate) / DAY_IN_MILLISECONDS);
+
+    return {
+        startDate: formatCalendarDate(startDate),
+        endDate: formatCalendarDate(endDate),
+        dates: Array.from({ length: dayCount }, (_, index) =>
+            formatCalendarDate(addCalendarDays(startDate, index)),
+        ),
+    };
+}
+
+function formatDayLabel(dateString, options = { weekday: "short", day: "numeric" }) {
+    const { start } = getDateRange(dateString);
+    return new Intl.DateTimeFormat("es-CO", { timeZone: TIME_ZONE, ...options }).format(start);
+}
+
+function createAppointmentIncludes() {
+    return [
+        {
+            model: Patient,
+            as: "patient",
+            attributes: ["first_name", "last_name", "profile_photo_url"],
+            required: true,
+        },
+        {
+            model: AppointmentStatus,
+            as: "status",
+            attributes: ["name"],
+            where: { name: "Confirmed" },
+            required: true,
+        },
+        {
+            model: Specialities,
+            as: "specialty",
+            attributes: ["name"],
+            required: false,
+        },
+    ];
+}
+
+async function findConfirmedAppointments(doctorId, start, end) {
+    return Appointment.findAll({
+        where: {
+            doctor_id: doctorId,
+            start_at: { [Op.gte]: start, [Op.lt]: end },
+        },
+        attributes: ["id", "start_at", "end_at"],
+        include: createAppointmentIncludes(),
+        order: [
+            ["start_at", "ASC"],
+            ["id", "ASC"],
+        ],
+    });
+}
+
 function getWeekdayNumber(date) {
     const day = date.getUTCDay();
     return day === 0 ? 7 : day;
@@ -197,38 +284,7 @@ export async function getDoctorAgendaData(userId, rawDate, now = new Date()) {
     if (!doctor) return null;
 
     const [appointments, availabilityRecords, exceptionRecords] = await Promise.all([
-        Appointment.findAll({
-            where: {
-                doctor_id: doctor.id,
-                start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
-            },
-            attributes: ["id", "start_at", "end_at"],
-            include: [
-                {
-                    model: Patient,
-                    as: "patient",
-                    attributes: ["first_name", "last_name", "profile_photo_url"],
-                    required: true,
-                },
-                {
-                    model: AppointmentStatus,
-                    as: "status",
-                    attributes: ["name"],
-                    where: { name: "Confirmed" },
-                    required: true,
-                },
-                {
-                    model: Specialities,
-                    as: "specialty",
-                    attributes: ["name"],
-                    required: false,
-                },
-            ],
-            order: [
-                ["start_at", "ASC"],
-                ["id", "ASC"],
-            ],
-        }),
+        findConfirmedAppointments(doctor.id, dayStart, dayEnd),
         DoctorAvailability.findAll({
             where: {
                 doctor_id: doctor.id,
@@ -276,5 +332,89 @@ export async function getDoctorAgendaData(userId, rawDate, now = new Date()) {
             serializedExceptions,
             serializedAppointments,
         ),
+    };
+}
+
+/** Return bounded week or month summaries for the authenticated doctor's calendar. */
+export async function getDoctorAgendaViewData(userId, rawView, rawDate, now = new Date()) {
+    const view = rawView === undefined ? "day" : rawView;
+    if (!["day", "week", "month"].includes(view)) {
+        throw createServiceError("Selecciona una vista de agenda válida.", 400);
+    }
+
+    const selectedDate = rawDate
+        ? parseCalendarDate(rawDate)
+        : parseCalendarDate(getBogotaDateString(now));
+    const selectedDateString = formatCalendarDate(selectedDate);
+    if (view === "day") return getDoctorAgendaData(userId, selectedDateString, now);
+
+    const doctor = await Doctor.findOne({
+        where: { user_id: userId },
+        attributes: ["id"],
+    });
+    if (!doctor) return null;
+
+    const period = getCalendarPeriod(selectedDate, view);
+    const { start } = getDateRange(period.startDate);
+    const { start: end } = getDateRange(period.endDate);
+
+    if (view === "week") {
+        const appointments = await findConfirmedAppointments(doctor.id, start, end);
+        const appointmentsByDate = new Map(period.dates.map((date) => [date, []]));
+        appointments.forEach((appointment) => {
+            const appointmentDate = getBogotaDateString(new Date(appointment.start_at));
+            appointmentsByDate.get(appointmentDate)?.push(serializeAppointment(appointment));
+        });
+
+        return {
+            view,
+            selectedDate: selectedDateString,
+            rangeStart: period.startDate,
+            rangeEnd: formatCalendarDate(addCalendarDays(parseCalendarDate(period.endDate), -1)),
+            periodLabel: `${formatDayLabel(period.startDate)} – ${formatDayLabel(
+                formatCalendarDate(addCalendarDays(parseCalendarDate(period.endDate), -1)),
+            )}`,
+            days: period.dates.map((date) => ({
+                date,
+                dateLabel: formatDayLabel(date),
+                appointments: appointmentsByDate.get(date),
+            })),
+        };
+    }
+
+    const appointmentDates = await Appointment.findAll({
+        where: {
+            doctor_id: doctor.id,
+            start_at: { [Op.gte]: start, [Op.lt]: end },
+        },
+        attributes: ["start_at"],
+        include: [
+            {
+                model: AppointmentStatus,
+                as: "status",
+                attributes: [],
+                where: { name: "Confirmed" },
+                required: true,
+            },
+        ],
+    });
+    const appointmentCounts = new Map();
+    appointmentDates.forEach(({ start_at: startAt }) => {
+        const date = getBogotaDateString(new Date(startAt));
+        appointmentCounts.set(date, (appointmentCounts.get(date) || 0) + 1);
+    });
+
+    return {
+        view,
+        selectedDate: selectedDateString,
+        rangeStart: period.startDate,
+        rangeEnd: formatCalendarDate(addCalendarDays(parseCalendarDate(period.endDate), -1)),
+        periodLabel: formatDayLabel(period.startDate, { month: "long", year: "numeric" }),
+        days: period.dates.map((date) => ({
+            date,
+            dayNumber: Number(date.slice(-2)),
+            appointmentCount: appointmentCounts.get(date) || 0,
+            isToday: date === getBogotaDateString(now),
+        })),
     };
 }
