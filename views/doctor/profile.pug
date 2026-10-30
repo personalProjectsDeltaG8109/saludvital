@@ -1,0 +1,107 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-profile.css")
+    body.sv-dashboard.doctor-home-page.doctor-profile-page
+        .sv-layout
+            include ./partials/sidebar.pug
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.doctor-profile-content(
+                    aria-labelledby="doctor-profile-title",
+                    data-doctor-profile
+                )
+                    header.doctor-profile-heading
+                        div
+                            p.doctor-eyebrow Perfil profesional
+                            h2#doctor-profile-title Mi perfil
+                            p Consulta tu información personal, de contacto y de identificación.
+
+                    section.doctor-profile-summary(aria-label="Resumen del perfil médico")
+                        .doctor-profile-avatar(data-profile-avatar, data-initials=profile.initials)
+                            if profile.photoUrl
+                                img(
+                                    src=profile.photoUrl,
+                                    alt=`Fotografía de ${profile.fullName}`,
+                                    data-profile-photo
+                                )
+                            else
+                                span(aria-hidden="true")= profile.initials
+                        .doctor-profile-identity
+                            h3= profile.fullName
+                            p= profile.specialty
+                            p.doctor-profile-registration Registro profesional: #{ profile.professionalRegistration }
+                            span(
+                                class=profile.isActive ? "doctor-profile-status is-active" : "doctor-profile-status is-inactive"
+                            )
+                                span(aria-hidden="true")
+                                = profile.accountStatus
+                        dl.doctor-profile-summary-details
+                            div
+                                dt Correo electrónico
+                                dd= profile.contact[0].value
+                            div
+                                dt Teléfono principal
+                                dd= profile.contact[1].value
+                            div
+                                dt Miembro desde
+                                dd= profile.memberSince
+
+                    nav.doctor-profile-section-nav(aria-label="Secciones del perfil")
+                        a(href="#doctor-personal-information", aria-current="page")
+                            span(aria-hidden="true") ♙
+                            | Información personal
+
+                    p.doctor-profile-data-note Algunos datos aparecen como “No registrado” cuando no están disponibles en la información guardada de tu cuenta.
+
+                    .doctor-profile-grid
+                        section#doctor-personal-information.doctor-panel.doctor-profile-card(
+                            aria-labelledby="doctor-personal-title"
+                        )
+                            header.doctor-panel-heading
+                                h2#doctor-personal-title Datos personales
+                            dl.doctor-profile-fields
+                                each field in profile.personalInformation
+                                    div(class=field.value === "No registrado" ? "is-unavailable" : null)
+                                        dt= field.label
+                                        dd= field.value
+
+                        .doctor-profile-side
+                            section.doctor-panel.doctor-profile-card(
+                                aria-labelledby="doctor-address-title"
+                            )
+                                header.doctor-panel-heading
+                                    h2#doctor-address-title Dirección
+                                dl.doctor-profile-fields
+                                    each field in profile.address
+                                        div(class=field.value === "No registrado" ? "is-unavailable" : null)
+                                            dt= field.label
+                                            dd= field.value
+
+                            section.doctor-panel.doctor-profile-card(
+                                aria-labelledby="doctor-contact-title"
+                            )
+                                header.doctor-panel-heading
+                                    h2#doctor-contact-title Información de contacto
+                                dl.doctor-profile-contact-fields
+                                    each field in profile.contact
+                                        .doctor-profile-contact-item
+                                            dt= field.label
+                                            dd
+                                                = field.value
+                                                span(
+                                                    class=field.verificationStatus === "Verificado" ? "doctor-profile-verification is-verified" : "doctor-profile-verification"
+                                                )
+                                                    = field.verificationStatus
+
+                include ./partials/bottom-nav.pug
+        script(src="/js/patient-sidebar.js", defer)
+        script(src="/js/doctor-profile.js", defer)
