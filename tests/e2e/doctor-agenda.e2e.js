@@ -1,6 +1,7 @@
 ﻿import assert from "node:assert/strict";
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import AxeBuilder from "@axe-core/playwright";
 import { chromium } from "playwright";
 
 const script = await readFile(path.resolve("public/js/doctor-agenda.js"), "utf8");
@@ -24,7 +25,7 @@ const html = `
       <div class="doctor-agenda-empty" data-agenda-empty hidden><h3 data-agenda-empty-title></h3><p data-agenda-empty-message></p></div>
       <div class="doctor-agenda-period-view doctor-agenda-week-view" data-agenda-week-view hidden><h3 data-agenda-week-title></h3><div class="doctor-agenda-week-grid" data-agenda-week-grid></div></div>
       <div class="doctor-agenda-period-view doctor-agenda-month-view" data-agenda-month-view hidden><h3 data-agenda-month-title></h3><div class="doctor-agenda-month-grid" data-agenda-month-grid></div><p data-agenda-month-empty hidden>No hay citas confirmadas para este mes.</p></div>
-    </section><aside class="doctor-agenda-aside" data-agenda-aside><section class="doctor-panel doctor-agenda-next-card"><header class="doctor-panel-heading"><h2>Próxima cita</h2><a class="doctor-agenda-view-all" href="/doctor/appointments">Ver todas</a></header><div data-agenda-next-appointment></div></section><div class="doctor-agenda-day-details" data-agenda-day-details><section class="doctor-panel"><ul data-agenda-periods></ul></section><section class="doctor-panel"><ul data-agenda-exceptions></ul></section></div></aside>
+    </section><aside class="doctor-agenda-aside" data-agenda-aside><section class="doctor-panel doctor-agenda-next-card"><header class="doctor-panel-heading"><h2>Próxima cita</h2><a class="doctor-agenda-view-all" href="/doctor/appointments">Ver todas</a></header><div data-agenda-next-appointment></div></section><div class="doctor-agenda-availability-cards" data-agenda-availability-cards><section class="doctor-panel"><div data-agenda-availability="today"></div></section><section class="doctor-panel"><div data-agenda-availability="week"></div></section><section class="doctor-panel"><div data-agenda-availability="month"></div></section></div></aside>
   </div><dialog data-start-consultation-dialog><span data-start-consultation-patient></span><span data-start-consultation-time></span><span data-start-consultation-reason></span><p data-start-consultation-feedback></p><button type="button" data-close-start-consultation>Volver</button><button type="button" data-confirm-start-consultation>Iniciar consulta</button></dialog>
 </main></div></div></body>`;
 
@@ -32,7 +33,8 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     await mkdir("test-results", { recursive: true });
-    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
     await page.setContent(html);
     await page.addStyleTag({ content: appStyles });
     await page.addStyleTag({ content: patientStyles });
@@ -45,6 +47,45 @@ try {
     await page.evaluate((source) => {
         window.agendaRequests = [];
         window.agendaMode = "success";
+        const createAvailability = (hasSchedule = true) => ({
+            appointmentDurationMinutes: 30,
+            today: {
+                capacitySlots: hasSchedule ? 8 : 0,
+                bookedSlots: hasSchedule ? 3 : 0,
+                availableSlots: hasSchedule ? 5 : 0,
+                hasSchedule,
+                days: hasSchedule
+                    ? [
+                          {
+                              date: "2026-10-29",
+                              workingPeriods: ["7:00 a. m. – 11:00 a. m."],
+                              exceptions: [
+                                  {
+                                      label: "Horario no disponible",
+                                      startTime: "9:00 a. m.",
+                                      endTime: "9:30 a. m.",
+                                      allDay: false,
+                                  },
+                              ],
+                          },
+                      ]
+                    : [],
+            },
+            week: {
+                capacitySlots: hasSchedule ? 40 : 0,
+                bookedSlots: hasSchedule ? 15 : 0,
+                availableSlots: hasSchedule ? 25 : 0,
+                hasSchedule,
+                days: [],
+            },
+            month: {
+                capacitySlots: hasSchedule ? 160 : 0,
+                bookedSlots: hasSchedule ? 60 : 0,
+                availableSlots: hasSchedule ? 100 : 0,
+                hasSchedule,
+                days: [],
+            },
+        });
         window.fetch = async (url) => {
             const query = new URL(url, "http://localhost").searchParams;
             const date = query.get("date");
@@ -89,6 +130,7 @@ try {
                         rangeStart: days[0].date,
                         rangeEnd: days[6].date,
                         periodLabel: "26 oct - 1 nov",
+                        availability: createAvailability(),
                         nextAppointment: {
                             id: 7,
                             patientName: "Ana Pérez",
@@ -117,6 +159,7 @@ try {
                         rangeStart: "2026-10-01",
                         rangeEnd: "2026-10-31",
                         periodLabel: "octubre de 2026",
+                        availability: createAvailability(),
                         nextAppointment: {
                             id: 7,
                             patientName: "Ana Pérez",
@@ -140,6 +183,7 @@ try {
                         exceptions: [],
                         appointments: [],
                         nextAppointment: null,
+                        availability: createAvailability(false),
                         timeline: null,
                     }),
                 };
@@ -181,6 +225,7 @@ try {
                         status: "Confirmed",
                         canStart: true,
                     },
+                    availability: createAvailability(),
                     timeline: { startHour: 7, endHour: 17 },
                 }),
             };
@@ -197,6 +242,20 @@ try {
     await page.getByRole("button", { name: "Iniciar consulta" }).click();
     await page.locator("[data-start-consultation-dialog]").waitFor({ state: "visible" });
     await page.getByRole("button", { name: "Volver" }).click();
+    assert.equal(await page.locator("[data-agenda-availability]").count(), 3);
+    assert.equal(
+        await page.locator('[data-agenda-availability="today"] dd').first().textContent(),
+        "8",
+    );
+    await page.locator(".doctor-agenda-availability-details summary").first().click();
+    await page.getByText("Horario no disponible: 9:00 a. m. – 9:30 a. m.").waitFor();
+    assert.equal(await page.getByText("Editar").count(), 0);
+    const availabilityAccessibility = await new AxeBuilder({ page })
+        .include("[data-agenda-availability-cards]")
+        .analyze();
+    assert.deepEqual(availabilityAccessibility.violations, []);
+    await page.locator("[data-agenda-availability-cards]").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: "test-results/doctor-agenda-availability-mobile.png" });
     assert.equal(await page.locator("[data-agenda-view]").count(), 3);
     assert.equal(await page.locator(".doctor-agenda-appointment").count(), 1);
     assert.equal(
@@ -296,6 +355,10 @@ try {
     });
     await page.locator('[data-agenda-view="day"]').click();
     await page.locator("[data-agenda-empty]").waitFor({ state: "visible" });
+    await page
+        .locator('[data-agenda-availability="today"]')
+        .getByText("No hay horario disponible configurado para este período.")
+        .waitFor();
     await page.evaluate(() => {
         window.agendaMode = "error";
     });
