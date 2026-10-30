@@ -9,11 +9,11 @@ const html = `
 <main class="doctor-agenda-page" data-doctor-agenda data-agenda-api-url="/api/doctor/agenda" data-today-date="2026-10-29" data-initial-view="day">
   <header class="doctor-page-heading doctor-agenda-heading"><h1>Mi agenda</h1></header>
   <section class="doctor-agenda-toolbar" aria-label="Navegacion de fecha">
-    <button data-agenda-previous>Anterior</button><label class="doctor-agenda-date-label"><input type="date" value="2026-10-29" data-agenda-date></label><button data-agenda-today>Hoy</button><button data-agenda-next>Siguiente</button>
-    <div class="doctor-agenda-view-switcher" role="group" aria-label="Vista de agenda"><button data-agenda-view="day">Dia</button><button data-agenda-view="week">Semana</button><button data-agenda-view="month">Mes</button></div>
+    <button class="doctor-agenda-nav-button" data-agenda-previous>Anterior</button><label class="doctor-agenda-date-label"><input type="date" value="2026-10-29" data-agenda-date></label><button class="doctor-agenda-today" data-agenda-today>Hoy</button><button class="doctor-agenda-nav-button" data-agenda-next>Siguiente</button>
+    <div class="doctor-agenda-view-switcher" role="group" aria-label="Vista de agenda"><button class="doctor-agenda-view-button" data-agenda-view="day">Dia</button><button class="doctor-agenda-view-button" data-agenda-view="week">Semana</button><button class="doctor-agenda-view-button" data-agenda-view="month">Mes</button></div>
   </section>
   <p data-agenda-feedback hidden></p><div class="doctor-agenda-layout">
-    <section class="doctor-panel doctor-agenda-calendar" data-agenda-calendar><header class="doctor-panel-heading"><h2 data-agenda-title></h2></header><div data-agenda-loading>Cargando</div><div class="doctor-agenda-timeline" data-agenda-timeline hidden></div>
+    <section class="doctor-panel doctor-agenda-calendar" data-agenda-calendar><header class="doctor-panel-heading"><p data-agenda-eyebrow></p><h2 data-agenda-title></h2></header><div data-agenda-loading>Cargando</div><div class="doctor-agenda-timeline" data-agenda-timeline hidden></div>
       <div class="doctor-agenda-empty" data-agenda-empty hidden><h3 data-agenda-empty-title></h3><p data-agenda-empty-message></p></div>
       <div class="doctor-agenda-period-view doctor-agenda-week-view" data-agenda-week-view hidden><h3 data-agenda-week-title></h3><div class="doctor-agenda-week-grid" data-agenda-week-grid></div></div>
       <div class="doctor-agenda-period-view doctor-agenda-month-view" data-agenda-month-view hidden><h3 data-agenda-month-title></h3><div class="doctor-agenda-month-grid" data-agenda-month-grid></div><p data-agenda-month-empty hidden>No hay citas confirmadas para este mes.</p></div>
@@ -162,6 +162,8 @@ try {
 
     await page.locator('[data-agenda-view="week"]').click();
     await page.getByText("Sin citas confirmadas").first().waitFor();
+    assert.equal(await page.locator("[data-agenda-title]").textContent(), "Agenda semanal");
+    assert.equal(await page.locator("[data-agenda-week-title]").count(), 1);
     await page.locator("[data-agenda-next]").click();
     await page.waitForFunction(
         () =>
@@ -175,6 +177,8 @@ try {
 
     await page.locator('[data-agenda-view="month"]').click();
     await page.locator(".doctor-agenda-month-day.has-appointments").waitFor();
+    assert.equal(await page.locator("[data-agenda-title]").textContent(), "Agenda mensual");
+    assert.equal(await page.locator("[data-agenda-month-title]").count(), 1);
     await page.locator(".doctor-agenda-month-day.has-appointments").click();
     await page.waitForFunction(
         () =>
@@ -199,8 +203,35 @@ try {
             await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
             true,
         );
+        if (viewport.width === 390) {
+            const selectorBounds = await page.locator(".doctor-agenda-view-switcher").boundingBox();
+            const panelBounds = await page
+                .locator("[data-agenda-calendar] .doctor-panel-heading")
+                .boundingBox();
+            assert.ok(selectorBounds.y + selectorBounds.height <= panelBounds.y);
+        }
         await page.screenshot({
             path: `test-results/doctor-agenda-${viewport.width}.png`,
+            fullPage: true,
+        });
+    }
+    for (const view of ["week", "month"]) {
+        await page.locator(`[data-agenda-view="${view}"]`).click();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page
+            .locator(view === "week" ? "[data-agenda-week-title]" : "[data-agenda-month-title]")
+            .waitFor({ state: "visible" });
+        assert.equal(
+            await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+            true,
+        );
+        const selectorBounds = await page.locator(".doctor-agenda-view-switcher").boundingBox();
+        const panelBounds = await page
+            .locator("[data-agenda-calendar] .doctor-panel-heading")
+            .boundingBox();
+        assert.ok(selectorBounds.y + selectorBounds.height <= panelBounds.y);
+        await page.screenshot({
+            path: `test-results/doctor-agenda-${view}-mobile.png`,
             fullPage: true,
         });
     }

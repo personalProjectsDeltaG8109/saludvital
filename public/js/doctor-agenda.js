@@ -8,6 +8,7 @@ if (agendaRoot) {
     const calendarAside = agendaRoot.querySelector("[data-agenda-aside]");
     const loadingState = agendaRoot.querySelector("[data-agenda-loading]");
     const feedback = agendaRoot.querySelector("[data-agenda-feedback]");
+    const headingEyebrow = agendaRoot.querySelector("[data-agenda-eyebrow]");
     const title = agendaRoot.querySelector("[data-agenda-title]");
     const dailyTimeline = agendaRoot.querySelector("[data-agenda-timeline]");
     const dailyEmpty = agendaRoot.querySelector("[data-agenda-empty]");
@@ -258,9 +259,12 @@ if (agendaRoot) {
     function renderAgenda(data) {
         const isDaily = selectedView === "day";
         const isWeekly = selectedView === "week";
+        headingEyebrow.textContent = isDaily ? "Jornada" : "Vista de agenda";
         title.textContent = isDaily
             ? data.dateLabel.charAt(0).toUpperCase() + data.dateLabel.slice(1)
-            : data.periodLabel;
+            : isWeekly
+              ? "Agenda semanal"
+              : "Agenda mensual";
         calendarAside.hidden = !isDaily;
         calendarLayout.classList.toggle("is-calendar-only", !isDaily);
         dailyTimeline.hidden = !isDaily || !data.timeline;
