@@ -83,17 +83,21 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
-    test.each(["put", "patch"])(
-        "%s /api/doctor/profile is unavailable until self-service editing is implemented",
-        async (method) => {
-            const response = await request(app)[method]("/api/doctor/profile").send({
-                specialtyId: 999,
-                email: "changed@example.co",
-            });
+    test("doctor profile updates require an authenticated doctor", async () => {
+        const response = await request(app)
+            .put("/api/doctor/profile")
+            .send({
+                phone: "+573112223344",
+                alternatePhone: "",
+                address: "",
+                department: "",
+                city: "",
+            })
+            .redirects(0);
 
-            expect(response.status).toBe(404);
-        },
-    );
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
 
     test("doctor detail API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/doctors/1").redirects(0);

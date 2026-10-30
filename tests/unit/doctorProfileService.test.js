@@ -15,6 +15,10 @@ describe("doctor profile service", () => {
         models.Doctor.findOne.mockResolvedValue({
             display_name: "Carlos Ramírez",
             profile_photo_url: "/uploads/profile-photos/doctor.png",
+            alternate_phone: null,
+            address: null,
+            department: null,
+            municipality: null,
             created_at: new Date("2024-01-15T12:00:00.000Z"),
             specialty: { name: "Medicina General" },
             user: {
@@ -31,7 +35,16 @@ describe("doctor profile service", () => {
 
         expect(models.Doctor.findOne).toHaveBeenCalledWith({
             where: { user_id: "42" },
-            attributes: ["id", "display_name", "profile_photo_url", "created_at"],
+            attributes: [
+                "id",
+                "display_name",
+                "profile_photo_url",
+                "alternate_phone",
+                "address",
+                "department",
+                "municipality",
+                "created_at",
+            ],
             include: [
                 {
                     model: models.User,
