@@ -22,6 +22,7 @@ import {
     getDoctorAvailabilitySummary,
     getDoctorAgendaViewData,
 } from "../services/doctorAgendaService.js";
+import { getDoctorProfile } from "../services/doctorProfileService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
@@ -169,6 +170,23 @@ doctorRoutes.get("/doctor/dashboard", ...requireDoctor, async (req, res, next) =
             ...dashboard,
         });
     } catch (error) {
+        return next(error);
+    }
+});
+
+doctorRoutes.get("/doctor/profile", ...requireDoctor, async (req, res, next) => {
+    try {
+        const profile = await getDoctorProfile(req.auth.userId);
+        return res.render("doctor/profile", {
+            pageTitle: "Mi perfil | SaludVital",
+            activeNav: "profile",
+            bottomNavActive: "profile",
+            doctorName: profile.fullName,
+            doctorPhotoUrl: profile.photoUrl,
+            profile,
+        });
+    } catch (error) {
+        if (error.statusCode === 404) return res.status(404).render("errors/404");
         return next(error);
     }
 });
