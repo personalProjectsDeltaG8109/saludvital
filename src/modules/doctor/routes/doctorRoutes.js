@@ -3,6 +3,7 @@ import { authenticateToken, requireRole } from "../../../middleware/authenticate
 import {
     getDoctorAppointments,
     getDoctorDashboardData,
+    getDoctorNextAppointmentData,
 } from "../services/doctorDashboardService.js";
 import {
     getDoctorHeaderData,
@@ -139,13 +140,12 @@ doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, 
 
 doctorRoutes.get("/api/doctor/agenda", ...requireDoctor, async (req, res, next) => {
     try {
-        const agenda = await getDoctorAgendaViewData(
-            req.auth.userId,
-            req.query.view,
-            req.query.date,
-        );
+        const [agenda, nextAppointment] = await Promise.all([
+            getDoctorAgendaViewData(req.auth.userId, req.query.view, req.query.date),
+            getDoctorNextAppointmentData(req.auth.userId),
+        ]);
         if (!agenda) return res.status(404).json({ message: "No se encontró el perfil médico." });
-        return res.json(agenda);
+        return res.json({ ...agenda, nextAppointment });
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
