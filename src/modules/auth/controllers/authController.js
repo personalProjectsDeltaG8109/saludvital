@@ -92,10 +92,15 @@ const dashboardRoutes = {
 export function showLogin(req, res) {
     // Accept only a single string query parameter for the error message.
     const error = typeof req.query.error === "string" ? req.query.error : null;
+    const contactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER?.replace(/\D/g, "") || "";
+    const whatsappContactUrl = /^[1-9]\d{7,14}$/.test(contactNumber)
+        ? `https://wa.me/${contactNumber}?text=${encodeURIComponent("Hola, quisiera recibir información sobre SaludVital.")}`
+        : null;
 
     return res.status(200).render("auth/login", {
         pageTitle: "Iniciar sesión | SaludVital",
         error,
+        whatsappContactUrl,
     });
 }
 
