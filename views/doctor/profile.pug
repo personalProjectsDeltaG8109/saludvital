@@ -39,15 +39,37 @@ html(lang="es")
                     )
 
                     section.doctor-profile-summary(aria-label="Resumen del perfil médico")
-                        .doctor-profile-avatar(data-profile-avatar, data-initials=profile.initials)
-                            if profile.photoUrl
-                                img(
-                                    src=profile.photoUrl,
-                                    alt=`Fotografía de ${profile.fullName}`,
-                                    data-profile-photo
-                                )
-                            else
-                                span(aria-hidden="true")= profile.initials
+                        .doctor-profile-avatar-wrap
+                            .doctor-profile-avatar(
+                                data-profile-avatar,
+                                data-initials=profile.initials,
+                                data-photo-url=profile.photoUrl || ""
+                            )
+                                if profile.photoUrl
+                                    img(
+                                        src=profile.photoUrl,
+                                        alt=`Fotografía de ${profile.fullName}`,
+                                        data-profile-photo
+                                    )
+                                else
+                                    span(aria-hidden="true")= profile.initials
+                            button.doctor-profile-photo-button(
+                                type="button",
+                                aria-label="Cambiar foto de perfil",
+                                aria-haspopup="dialog",
+                                data-profile-photo-open
+                            )
+                                svg(viewBox="0 0 24 24", aria-hidden="true")
+                                    path(
+                                        d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"
+                                    )
+                                    circle(cx="12", cy="13", r="3")
+                            input#doctor-profile-photo-input.doctor-profile-photo-input(
+                                type="file",
+                                accept="image/jpeg,image/png,image/webp",
+                                aria-label="Seleccionar foto de perfil",
+                                data-profile-photo-input
+                            )
                         .doctor-profile-identity
                             h3= profile.fullName
                             p= profile.specialty
@@ -184,6 +206,42 @@ html(lang="es")
                                 hidden
                             ) Cancelar
 
+                    dialog.doctor-profile-photo-dialog(
+                        aria-labelledby="doctor-photo-dialog-title",
+                        data-profile-photo-dialog
+                    )
+                        header.doctor-profile-photo-dialog-heading
+                            div
+                                p.doctor-eyebrow Foto de perfil
+                                h2#doctor-photo-dialog-title Actualiza tu fotografía
+                            button.doctor-profile-photo-close(
+                                type="button",
+                                aria-label="Cerrar",
+                                data-photo-close
+                            ) ×
+                        p.doctor-profile-photo-message(
+                            role="status",
+                            aria-live="polite",
+                            data-photo-status
+                        ) Selecciona una imagen JPG, PNG o WebP de máximo 2 MB.
+                        p.doctor-profile-photo-error(role="alert", data-photo-error, hidden)
+                        .doctor-profile-photo-preview(data-photo-preview-container, hidden)
+                            img(alt="Vista previa de la nueva foto", data-photo-preview)
+                        .doctor-profile-photo-actions(data-photo-actions)
+                            button.doctor-profile-photo-select(type="button", data-photo-upload) Seleccionar foto
+                        .doctor-profile-photo-dialog-footer
+                            button.doctor-profile-cancel-button(
+                                type="button",
+                                data-photo-preview-cancel,
+                                hidden
+                            ) Cancelar
+                            button.doctor-profile-save-button(
+                                type="button",
+                                data-photo-save,
+                                hidden
+                            ) Guardar foto
+
                 include ./partials/bottom-nav.pug
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/doctor-profile.js", defer)
+        script(src="/js/doctor-profile-photo.js", defer)

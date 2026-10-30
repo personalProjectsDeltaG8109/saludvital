@@ -13,6 +13,24 @@
 .doctor-profile-contact-fields input { flex: 1 1 100%; }
 .doctor-profile-summary { display: grid; grid-template-columns: 148px minmax(220px, 1fr) minmax(260px, .9fr); align-items: center; gap: 22px; padding: 20px 24px; border: 1px solid #dcebf9; border-radius: 18px; background: linear-gradient(110deg, #fff 45%, #f1f8ff); box-shadow: 0 8px 24px rgb(26 76 130 / 5%); }
 .doctor-profile-avatar { display: grid; width: 138px; aspect-ratio: 1; place-items: center; overflow: hidden; border: 4px solid #fff; border-radius: 50%; color: #1267bf; background: #e3f2ff; box-shadow: 0 0 0 1px #d9eaf8; font-size: 38px; font-weight: 800; }
+.doctor-profile-avatar-wrap { position: relative; width: 138px; }
+.doctor-profile-photo-button { position: absolute; right: 1px; bottom: 1px; display: grid; width: 38px; height: 38px; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: #075bc7; box-shadow: 0 3px 10px rgb(10 61 130 / 24%); cursor: pointer; }
+.doctor-profile-photo-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.doctor-profile-photo-button:focus-visible, .doctor-profile-photo-close:focus-visible, .doctor-profile-photo-select:focus-visible { outline: 3px solid #f4a900; outline-offset: 2px; }
+.doctor-profile-photo-input { position: fixed; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; }
+.doctor-profile-photo-dialog { width: min(460px, calc(100vw - 28px)); max-width: none; max-height: min(90vh, 680px); padding: 22px; border: 1px solid #d8e8f8; border-radius: 20px; color: #123b73; background: #fff; box-shadow: 0 24px 80px rgb(10 40 85 / 28%); }
+.doctor-profile-photo-dialog::backdrop { background: rgb(9 30 66 / 48%); backdrop-filter: blur(3px); }
+.doctor-profile-photo-dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.doctor-profile-photo-dialog-heading h2 { margin: 0; color: #102f89; font-size: 20px; }
+.doctor-profile-photo-dialog-heading .doctor-eyebrow { margin: 0 0 4px; color: #0870d5; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.doctor-profile-photo-close { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #d5e5f5; border-radius: 10px; color: #16427f; background: #f5f9fe; font-size: 24px; line-height: 1; cursor: pointer; }
+.doctor-profile-photo-message, .doctor-profile-photo-error { margin: 14px 0; color: #4f6889; font-size: 13px; line-height: 1.5; }
+.doctor-profile-photo-error { color: #9b2d2d; }
+.doctor-profile-photo-preview { display: grid; min-height: 240px; place-items: center; overflow: hidden; border: 1px dashed #b5d4f1; border-radius: 14px; background: #f3f8fe; }
+.doctor-profile-photo-preview img { width: min(220px, 70vw); aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 5px 20px rgb(15 57 112 / 18%); }
+.doctor-profile-photo-actions { display: flex; justify-content: center; padding: 8px 0; }
+.doctor-profile-photo-select { min-height: 42px; padding: 0 18px; border: 1px solid #b9d8f5; border-radius: 10px; color: #0758b7; background: #f5faff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.doctor-profile-photo-dialog-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
 .doctor-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .doctor-profile-identity { min-width: 0; }
 .doctor-profile-identity h3 { margin: 0; color: #102f89; font-size: clamp(22px, 2.2vw, 29px); letter-spacing: -.035em; }
@@ -68,6 +86,9 @@
     .doctor-profile-heading h2 { font-size: 28px; }
     .doctor-profile-heading p:last-child { font-size: 13px; }
     .doctor-profile-summary { grid-template-columns: 74px minmax(0, 1fr); gap: 12px; padding: 15px; border-radius: 15px; }
+    .doctor-profile-avatar-wrap, .doctor-profile-avatar { width: 74px; }
+    .doctor-profile-photo-button { right: -3px; bottom: -3px; width: 30px; height: 30px; }
+    .doctor-profile-photo-button svg { width: 15px; height: 15px; }
     .doctor-profile-avatar { width: 70px; font-size: 23px; }
     .doctor-profile-identity h3 { font-size: 18px; }
     .doctor-profile-identity > p { font-size: 13px; }
@@ -83,5 +104,7 @@
     .doctor-profile-contact-fields { padding: 5px 14px 15px; }
     .doctor-profile-contact-item { align-items: center; }
     .doctor-profile-edit-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .doctor-profile-photo-dialog { padding: 18px; }
+    .doctor-profile-photo-preview { min-height: 190px; }
     .doctor-profile-fields dd, .doctor-profile-contact-fields dd { min-height: 38px; }
 }

@@ -23,6 +23,7 @@ import {
     getDoctorAgendaViewData,
 } from "../services/doctorAgendaService.js";
 import { getDoctorProfile, updateDoctorProfile } from "../services/doctorProfileService.js";
+import { updateDoctorProfilePhoto } from "../services/doctorProfilePhotoService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
@@ -194,6 +195,24 @@ doctorRoutes.get("/doctor/profile", ...requireDoctor, async (req, res, next) => 
 doctorRoutes.put("/api/doctor/profile", ...requireDoctor, async (req, res, next) => {
     try {
         return res.json(await updateDoctorProfile(req.auth.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+doctorRoutes.post("/api/doctor/profile/photo", ...requireDoctor, async (req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    try {
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body) ||
+            Object.keys(req.body).some((field) => field !== "photo")
+        ) {
+            return res.status(400).json({ message: "La solicitud de foto no es válida." });
+        }
+        return res.json(await updateDoctorProfilePhoto(req.auth.userId, req.body?.photo));
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
