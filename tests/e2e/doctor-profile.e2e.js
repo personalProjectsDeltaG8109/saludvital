@@ -27,17 +27,17 @@ const html = pug.renderFile("views/doctor/profile.pug", {
         professionalRegistration: "No registrado",
         memberSince: "15 ene 2024",
         personalInformation: [
-            { label: "Nombres", value: "No registrado" },
-            { label: "Apellidos", value: "No registrado" },
-            { label: "Nombre completo", value: "Carlos Ramírez" },
-            { label: "Tipo de documento", value: "No registrado" },
-            { label: "Número de documento", value: "No registrado" },
-            { label: "Registro profesional", value: "No registrado" },
-            { label: "Especialidad", value: "Medicina General" },
-            { label: "Correo electrónico", value: "carlos@example.co" },
+            { label: "Nombres", value: "No registrado", isProtected: true },
+            { label: "Apellidos", value: "No registrado", isProtected: true },
+            { label: "Nombre completo", value: "Carlos Ramírez", isProtected: true },
+            { label: "Tipo de documento", value: "No registrado", isProtected: true },
+            { label: "Número de documento", value: "No registrado", isProtected: true },
+            { label: "Registro profesional", value: "No registrado", isProtected: true },
+            { label: "Especialidad", value: "Medicina General", isProtected: true },
+            { label: "Correo electrónico", value: "carlos@example.co", isProtected: true },
             { label: "Teléfono principal", value: "+57 310 123 4567" },
-            { label: "Género", value: "No registrado" },
-            { label: "Fecha de nacimiento", value: "No registrado" },
+            { label: "Género", value: "No registrado", isProtected: true },
+            { label: "Fecha de nacimiento", value: "No registrado", isProtected: true },
         ],
         address: [
             { label: "Dirección", value: "No registrado" },
@@ -48,6 +48,7 @@ const html = pug.renderFile("views/doctor/profile.pug", {
             {
                 label: "Correo electrónico",
                 value: "carlos@example.co",
+                isProtected: true,
                 verificationStatus: "Verificado",
             },
             {
@@ -79,9 +80,17 @@ try {
     assert.equal(await page.getByRole("heading", { name: "Información de contacto" }).count(), 1);
     assert.equal(await page.getByRole("button", { name: /Editar perfil/ }).count(), 0);
     assert.equal(await page.locator(".doctor-profile-section-nav a").count(), 1);
+    assert.equal(await page.getByText("Solo administrador").count(), 11);
     assert.equal(
-        await page.locator(".doctor-profile-fields dd").first().textContent(),
-        "No registrado",
+        await page
+            .getByText("Los campos marcados solo pueden ser modificados por un administrador.")
+            .count(),
+        1,
+    );
+    assert.ok(
+        (await page.locator(".doctor-profile-fields dd").first().textContent()).startsWith(
+            "No registrado",
+        ),
     );
 
     for (const viewport of [

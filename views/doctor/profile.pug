@@ -68,11 +68,20 @@ html(lang="es")
                         )
                             header.doctor-panel-heading
                                 h2#doctor-personal-title Datos personales
+                            p#doctor-protected-note.doctor-profile-protection-note
+                                | Los campos marcados solo pueden ser modificados por un administrador.
                             dl.doctor-profile-fields
                                 each field in profile.personalInformation
-                                    div(class=field.value === "No registrado" ? "is-unavailable" : null)
+                                    div(
+                                        class=[field.value === "No registrado" ? "is-unavailable" : null, field.isProtected ? "is-protected" : null]
+                                    )
                                         dt= field.label
-                                        dd= field.value
+                                        dd(
+                                            aria-describedby=field.isProtected ? "doctor-protected-note" : null
+                                        )
+                                            = field.value
+                                            if field.isProtected
+                                                span.doctor-profile-readonly-badge Solo administrador
 
                         .doctor-profile-side
                             section.doctor-panel.doctor-profile-card(
@@ -93,10 +102,16 @@ html(lang="es")
                                     h2#doctor-contact-title Información de contacto
                                 dl.doctor-profile-contact-fields
                                     each field in profile.contact
-                                        .doctor-profile-contact-item
+                                        .doctor-profile-contact-item(
+                                            class=field.isProtected ? "is-protected" : null
+                                        )
                                             dt= field.label
-                                            dd
+                                            dd(
+                                                aria-describedby=field.isProtected ? "doctor-protected-note" : null
+                                            )
                                                 = field.value
+                                                if field.isProtected
+                                                    span.doctor-profile-readonly-badge Solo administrador
                                                 span(
                                                     class=field.verificationStatus === "Verificado" ? "doctor-profile-verification is-verified" : "doctor-profile-verification"
                                                 )

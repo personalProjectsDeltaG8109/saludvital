@@ -30,8 +30,13 @@
 .doctor-profile-card .doctor-panel-heading h2 { font-size: 19px; }
 .doctor-profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 14px; margin: 0; padding: 6px 18px 19px; }
 .doctor-profile-fields > div { min-width: 0; }
+.doctor-profile-protection-note { margin: 0 18px 8px; color: #244f7e; font-size: 12px; line-height: 1.45; }
+.doctor-profile-fields .is-protected dd,
+.doctor-profile-contact-item.is-protected dd { border-color: #b9d7f4; background: #eff7ff; }
+.doctor-profile-readonly-badge { display: inline-block; margin-left: 7px; padding: 3px 6px; border-radius: 6px; color: #294c71; background: #dcecff; font-size: 9px; font-weight: 700; white-space: nowrap; }
 .doctor-profile-fields dt, .doctor-profile-contact-fields dt { margin: 0 0 5px; color: #537198; font-size: 11px; }
 .doctor-profile-fields dd, .doctor-profile-contact-fields dd { min-height: 40px; margin: 0; padding: 9px 11px; overflow-wrap: anywhere; border: 1px solid #d8e7f5; border-radius: 8px; color: #16427f; background: #f8fbff; font-size: 13px; }
+.doctor-profile-contact-fields dd { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
 .doctor-profile-fields .is-unavailable dd, .doctor-profile-contact-item:has(.doctor-profile-verification:not(.is-verified)) dd { color: #53667c; background: #f4f7fa; }
 .doctor-profile-contact-fields { display: grid; gap: 11px; margin: 0; padding: 6px 18px 18px; }
 .doctor-profile-contact-item { display: flex; min-width: 0; align-items: end; justify-content: space-between; gap: 10px; }
@@ -65,6 +70,7 @@
     .doctor-profile-card .doctor-panel-heading { padding: 15px 14px 9px; }
     .doctor-profile-card .doctor-panel-heading h2 { font-size: 17px; }
     .doctor-profile-fields { grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 5px 14px 15px; }
+    .doctor-profile-protection-note { margin: 0 14px 8px; }
     .doctor-profile-contact-fields { padding: 5px 14px 15px; }
     .doctor-profile-contact-item { align-items: center; }
     .doctor-profile-fields dd, .doctor-profile-contact-fields dd { min-height: 38px; }
