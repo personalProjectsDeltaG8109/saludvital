@@ -281,7 +281,9 @@ try {
     );
 
     for (const viewport of [
+        { width: 320, height: 720 },
         { width: 390, height: 844 },
+        { width: 430, height: 932 },
         { width: 760, height: 1024 },
         { width: 762, height: 1024 },
         { width: 768, height: 1024 },
@@ -308,11 +310,33 @@ try {
                     badge.getBoundingClientRect().right >
                     badge.parentElement.getBoundingClientRect().right + 1,
             ).length,
+            bottomNavigation: (() => {
+                const navigation = document.querySelector(".sv-bottom-nav");
+                const links = [...(navigation?.querySelectorAll("a") || [])];
+                return {
+                    columns: getComputedStyle(navigation).gridTemplateColumns.split(" ").length,
+                    widths: links.map((link) => link.getBoundingClientRect().width),
+                    rightEdges: links.map((link) => link.getBoundingClientRect().right),
+                };
+            })(),
         }));
         assert.ok(
             dimensions.document <= dimensions.viewport,
             `Horizontal overflow at ${viewport.width}px: ${JSON.stringify(dimensions)}`,
         );
+        if (viewport.width <= 760) {
+            assert.equal(dimensions.bottomNavigation.columns, 5);
+            assert.equal(dimensions.bottomNavigation.widths.length, 5);
+            assert.ok(
+                Math.max(...dimensions.bottomNavigation.widths) -
+                    Math.min(...dimensions.bottomNavigation.widths) <
+                    1,
+                `Doctor navigation items should have equal widths at ${viewport.width}px`,
+            );
+            assert.ok(
+                dimensions.bottomNavigation.rightEdges.every((edge) => edge <= viewport.width),
+            );
+        }
         if (viewport.width <= 900) {
             assert.ok(
                 dimensions.informationCards.top >= dimensions.personalCard.bottom - 1,
