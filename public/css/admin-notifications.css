@@ -236,7 +236,7 @@
 
 .admin-notifications-filters {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) minmax(155px, 190px) minmax(155px, 190px);
+    grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(125px, 1fr));
     gap: 10px;
     padding: 12px;
     border: 1px solid #e7eef7;
@@ -247,6 +247,13 @@
 .admin-notifications-filters label,
 .admin-notifications-search {
     min-width: 0;
+}
+
+.admin-notifications-date-filter {
+    display: grid;
+    gap: 4px;
+    color: #526b88;
+    font-size: 0.72rem;
 }
 
 .admin-notifications-search {
@@ -279,11 +286,27 @@
     padding-left: 38px;
 }
 
+.admin-notifications-filters input[type="date"] {
+    padding: 8px;
+}
+
+.admin-notifications-filters input:disabled {
+    color: #879bb3;
+    background: #f3f7fb;
+    cursor: not-allowed;
+}
+
 .admin-notifications-delivery-note {
     margin: 12px 2px;
     color: #5e7593;
     font-size: 0.78rem;
     line-height: 1.5;
+}
+
+.admin-notifications-filter-error {
+    margin: 8px 2px;
+    color: #b4232c;
+    font-size: 0.82rem;
 }
 
 .admin-notifications-unavailable,
@@ -539,6 +562,14 @@
 
     .admin-notifications-table {
         min-width: 860px;
+    }
+
+    .admin-notifications-filters {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-notifications-search {
+        grid-column: 1 / -1;
     }
 }
 

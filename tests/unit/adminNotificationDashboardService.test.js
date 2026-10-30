@@ -10,6 +10,7 @@ const and = Symbol("and");
 jest.unstable_mockModule("sequelize", () => ({
     col: jest.fn((value) => value),
     fn: jest.fn((...values) => values),
+    where: jest.fn((...values) => values),
     Op: { gte, lt, in: inValues, like, or, and },
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
@@ -69,16 +70,16 @@ describe("administrator notification dashboard service", () => {
         expect(data.summary).toEqual({ totalSent: 6, delivered: 3, failed: 2, pending: 5 });
         expect(data.period).toMatchObject({ days: 30, timeZone: "America/Bogota" });
         expect(data.deliverySemantics.delivered).toMatch(/Meta/);
-        expect(Notification.findAll).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: {
+        expect(Notification.findAll.mock.calls[0][0].where).toEqual({
+            [and]: [
+                {
                     created_at: {
                         [gte]: new Date("2026-10-01T05:00:00.000Z"),
                         [lt]: new Date("2026-10-31T05:00:00.000Z"),
                     },
                 },
-            }),
-        );
+            ],
+        });
     });
 
     test("masks destinations and excludes message payload, provider IDs, and error data", async () => {
@@ -127,8 +128,60 @@ describe("administrator notification dashboard service", () => {
         );
         expect(listQuery.limit).toBe(8);
         expect(listQuery.offset).toBe(8);
-        expect(data.filters).toEqual({ channel: "WhatsApp", status: "delivered", search: "Maria" });
+        expect(Notification.findAll.mock.calls[0][0].where[and]).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ channel: "WhatsApp" }),
+                expect.objectContaining({
+                    provider_delivery_status: { [inValues]: ["delivered", "read"] },
+                }),
+            ]),
+        );
+        expect(data.filters).toEqual({
+            period: 7,
+            channel: "WhatsApp",
+            status: "delivered",
+            search: "Maria",
+            startDate: null,
+            endDate: null,
+        });
         expect(data.pagination).toMatchObject({ page: 2, totalItems: 19, totalPages: 3 });
+    });
+
+    test("applies the inclusive Bogota custom date range to list and summary queries", async () => {
+        const data = await getAdminNotificationDashboard({
+            period: "custom",
+            startDate: "2026-10-29",
+            endDate: "2026-10-30",
+            channel: "Email",
+            status: "accepted",
+            search: "recordatorio",
+            page: "3",
+        });
+        const expectedDateCondition = {
+            created_at: {
+                [gte]: new Date("2026-10-29T05:00:00.000Z"),
+                [lt]: new Date("2026-10-31T05:00:00.000Z"),
+            },
+        };
+
+        expect(Notification.findAll.mock.calls[0][0].where[and]).toEqual(
+            expect.arrayContaining([expect.objectContaining(expectedDateCondition)]),
+        );
+        const listQuery = Notification.findAndCountAll.mock.calls[0][0];
+        expect(listQuery.where[and]).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining(expectedDateCondition),
+                expect.objectContaining({ channel: "Email" }),
+                expect.objectContaining({ status: "Sent" }),
+            ]),
+        );
+        expect(listQuery.offset).toBe(16);
+        expect(data.period).toMatchObject({
+            days: null,
+            startDate: "2026-10-29",
+            endDate: "2026-10-30",
+            timeZone: "America/Bogota",
+        });
     });
 
     test("returns zero metrics and a useful empty page when there are no records", async () => {
@@ -142,12 +195,34 @@ describe("administrator notification dashboard service", () => {
         expect(data.pagination).toMatchObject({ page: 1, totalItems: 0, totalPages: 1 });
     });
 
+    test("corrects an out-of-range page to the last matching page", async () => {
+        Notification.findAndCountAll
+            .mockResolvedValueOnce({ count: 17, rows: [] })
+            .mockResolvedValueOnce({ count: 17, rows: [notificationRow()] });
+
+        const data = await getAdminNotificationDashboard({ page: "9", channel: "SMS" });
+
+        expect(data.pagination).toMatchObject({ page: 3, totalItems: 17, totalPages: 3 });
+        expect(Notification.findAndCountAll).toHaveBeenCalledTimes(2);
+        expect(Notification.findAndCountAll.mock.calls[1][0].offset).toBe(16);
+        expect(Notification.findAndCountAll.mock.calls[1][0].where[and]).toEqual(
+            expect.arrayContaining([expect.objectContaining({ channel: "SMS" })]),
+        );
+    });
+
     test.each([
         [{ period: "14" }, "período"],
         [{ channel: "System" }, "canal"],
         [{ status: "unknown" }, "estado"],
         [{ page: "0" }, "página"],
         [{ search: "x".repeat(101) }, "100 caracteres"],
+        [{ period: "custom" }, "ambas fechas"],
+        [{ startDate: "2026-10-01" }, "ambas fechas"],
+        [{ startDate: "2026-02-30", endDate: "2026-03-01" }, "fecha inicial"],
+        [{ startDate: "2026-11-01", endDate: "2026-10-01" }, "posterior"],
+        [{ startDate: "2025-01-01", endDate: "2026-10-30" }, "366 días"],
+        [{ status: ["delivered"] }, "filtros"],
+        [{ page: ["2"] }, "número de página"],
     ])("rejects unsupported filters %j", async (query, expectedMessage) => {
         await expect(getAdminNotificationDashboard(query)).rejects.toMatchObject({
             statusCode: 400,

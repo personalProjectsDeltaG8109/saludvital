@@ -119,7 +119,7 @@ html(lang="es")
                                     type="search",
                                     name="search",
                                     maxlength="100",
-                                    placeholder="Buscar por paciente o tipo de notificación...",
+                                    placeholder="Buscar paciente, teléfono, correo o tipo...",
                                     data-notification-search
                                 )
                             label
@@ -131,6 +131,7 @@ html(lang="es")
                                 )
                                     option(value="all") Todos los estados
                                     option(value="pending") Pendiente
+                                    option(value="accepted") Aceptada por el proveedor
                                     option(value="delivered") Entregada o leída
                                     option(value="failed") Fallida
                                     option(value="cancelled") Cancelada
@@ -144,6 +145,30 @@ html(lang="es")
                                     option(value="7") Últimos 7 días
                                     option(value="30", selected) Últimos 30 días
                                     option(value="90") Últimos 90 días
+                                    option(value="custom") Rango personalizado
+                            label.admin-notifications-date-filter
+                                span Fecha inicial
+                                input(
+                                    type="date",
+                                    name="startDate",
+                                    aria-label="Fecha inicial",
+                                    data-notification-start-date,
+                                    disabled
+                                )
+                            label.admin-notifications-date-filter
+                                span Fecha final
+                                input(
+                                    type="date",
+                                    name="endDate",
+                                    aria-label="Fecha final",
+                                    data-notification-end-date,
+                                    disabled
+                                )
+                        p.admin-notifications-filter-error(
+                            role="alert",
+                            data-notifications-filter-error,
+                            hidden
+                        )
                         p.admin-notifications-delivery-note(data-notifications-delivery-note)
                             | “Entregadas” requiere confirmación de Meta. Resend e Inalambria informan aceptación, pero no una confirmación final de entrega.
                         p.admin-notifications-delivery-note
