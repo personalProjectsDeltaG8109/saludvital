@@ -48,6 +48,25 @@ if (notificationsPage) {
         container.append(badge);
     }
 
+    function createDetailsDisclosure(notification) {
+        const details = document.createElement("details");
+        details.className = "admin-notifications-details";
+
+        const summary = document.createElement("summary");
+        summary.textContent = "Ver detalles";
+        const statuses = document.createElement("p");
+        statuses.textContent = `Estado del sistema: ${notification.applicationStatus}. Estado del proveedor: ${notification.providerStatus}.`;
+        details.append(summary, statuses);
+
+        if (notification.failureSummary) {
+            const failure = document.createElement("p");
+            failure.textContent = notification.failureSummary;
+            details.append(failure);
+        }
+
+        return details;
+    }
+
     function formatDate(value) {
         if (!value) return "Fecha no disponible";
         const date = new Date(value);
@@ -74,29 +93,19 @@ if (notificationsPage) {
         row.append(recipientCell);
 
         appendTextCell(row, notification.eventType);
-        appendTextCell(row, notification.summary);
+        appendTextCell(row, notification.messagePreview, "admin-notifications-message");
 
-        const applicationStatusCell = document.createElement("td");
-        appendBadge(
-            applicationStatusCell,
-            notification.applicationStatus,
-            notification.applicationTone,
-        );
-        row.append(applicationStatusCell);
-
-        const deliveryCell = document.createElement("td");
-        appendBadge(deliveryCell, notification.deliveryStatus, notification.tone);
+        const statusCell = document.createElement("td");
+        appendBadge(statusCell, notification.applicationStatus, notification.applicationTone);
         const providerStatus = document.createElement("small");
         providerStatus.className = "admin-notifications-provider-status";
         providerStatus.textContent = notification.providerStatus;
-        deliveryCell.append(providerStatus);
-        if (notification.failureSummary) {
-            const failureSummary = document.createElement("small");
-            failureSummary.className = "admin-notifications-failure";
-            failureSummary.textContent = notification.failureSummary;
-            deliveryCell.append(failureSummary);
-        }
-        row.append(deliveryCell);
+        statusCell.append(providerStatus);
+        row.append(statusCell);
+
+        const actionCell = document.createElement("td");
+        actionCell.append(createDetailsDisclosure(notification));
+        row.append(actionCell);
         return row;
     }
 
@@ -118,18 +127,26 @@ if (notificationsPage) {
         const recipientName = document.createElement("strong");
         recipientName.textContent = notification.recipientName;
         const description = document.createElement("span");
-        description.textContent = `${notification.eventType} · ${notification.summary}`;
+        description.textContent = notification.eventType;
+        const preview = document.createElement("span");
+        preview.textContent = notification.messagePreview;
         const metadata = document.createElement("small");
         metadata.textContent = `${notification.channel} · ${notification.maskedRecipient} · ${formatDate(notification.occurredAt)}`;
-        content.append(recipientName, description, metadata);
+        content.append(recipientName, description, preview, metadata);
 
         const status = document.createElement("div");
         status.className = "admin-notifications-mobile-status";
-        appendBadge(status, notification.deliveryStatus, notification.tone);
+        appendBadge(status, notification.applicationStatus, notification.applicationTone);
+        const providerStatus = document.createElement("small");
+        providerStatus.className = "admin-notifications-provider-status";
+        providerStatus.textContent = notification.providerStatus;
+        status.append(providerStatus);
         item.append(channelIcon, content, status);
+        item.append(createDetailsDisclosure(notification));
         if (notification.failureSummary) {
             const failureSummary = document.createElement("span");
-            failureSummary.className = "admin-notifications-failure";
+            failureSummary.className =
+                "admin-notifications-failure admin-notifications-mobile-failure";
             failureSummary.textContent = notification.failureSummary;
             item.append(failureSummary);
         }

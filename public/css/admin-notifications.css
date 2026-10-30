@@ -357,6 +357,40 @@
     color: #7388a3;
 }
 
+.admin-notifications-message {
+    max-width: 280px;
+    color: #24466f;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.admin-notifications-details {
+    min-width: 72px;
+    color: #075fc2;
+    font-size: 0.75rem;
+}
+
+.admin-notifications-details summary {
+    min-height: 36px;
+    padding: 8px 5px;
+    border-radius: 7px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.admin-notifications-details summary:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 35%);
+    outline-offset: 2px;
+}
+
+.admin-notifications-details p {
+    min-width: 180px;
+    margin: 5px 0;
+    color: #526b88;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
 .admin-notifications-badge {
     display: inline-flex;
     align-items: center;
@@ -683,6 +717,19 @@
 
     .admin-notifications-mobile-status {
         justify-self: end;
+        max-width: 125px;
+        text-align: right;
+    }
+
+    .admin-notifications-mobile-item > .admin-notifications-details {
+        grid-column: 2 / -1;
+        justify-self: end;
+        width: 100%;
+        text-align: right;
+    }
+
+    .admin-notifications-mobile-failure {
+        grid-column: 2 / -1;
     }
 
     .admin-notifications-pagination {
