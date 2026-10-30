@@ -34,6 +34,22 @@ const Doctor = database.define(
             type: DataTypes.STRING(255),
             allowNull: true,
         },
+        alternate_phone: {
+            type: DataTypes.STRING(20),
+            allowNull: true,
+        },
+        address: {
+            type: DataTypes.STRING(150),
+            allowNull: true,
+        },
+        department: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        municipality: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
     },
     {
         tableName: "doctors",

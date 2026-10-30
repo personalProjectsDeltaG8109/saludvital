@@ -22,7 +22,7 @@ import {
     getDoctorAvailabilitySummary,
     getDoctorAgendaViewData,
 } from "../services/doctorAgendaService.js";
-import { getDoctorProfile } from "../services/doctorProfileService.js";
+import { getDoctorProfile, updateDoctorProfile } from "../services/doctorProfileService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
@@ -187,6 +187,15 @@ doctorRoutes.get("/doctor/profile", ...requireDoctor, async (req, res, next) => 
         });
     } catch (error) {
         if (error.statusCode === 404) return res.status(404).render("errors/404");
+        return next(error);
+    }
+});
+
+doctorRoutes.put("/api/doctor/profile", ...requireDoctor, async (req, res, next) => {
+    try {
+        return res.json(await updateDoctorProfile(req.auth.userId, req.body));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);
     }
 });
