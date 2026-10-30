@@ -15,6 +15,17 @@ html(lang="es")
             section.login-panel(aria-labelledby="login-title")
                 include ./partials/login-mobile
                 include ./partials/login-form
+                if whatsappContactUrl
+                    a.login-mobile-whatsapp(
+                        href=whatsappContactUrl,
+                        target="_blank",
+                        rel="noopener noreferrer"
+                    )
+                        img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="40", height="40")
+                        span
+                            strong ¿Prefieres agendar por WhatsApp?
+                            small Solicita tu cita médica de manera fácil desde nuestro canal oficial.
+                        span.login-mobile-whatsapp-action Solicitar cita →
 
         if whatsappContactUrl
             aside.whatsapp-widget(aria-label="Contacto por WhatsApp")

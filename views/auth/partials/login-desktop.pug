@@ -1,19 +1,52 @@
 section.login-visual(aria-label="SaludVital, tu salud siempre conectada")
-    img.login-visual-background(
-        src="/brand/login/background-login.png",
-        alt="",
-        aria-hidden="true"
-    )
     .login-visual-content
         img.login-brand-logo(
-            src="/brand/logo-primary.png",
+            src="/brand/login/logo-login-mobile.png",
             alt="SaludVital",
             width="300",
             height="100"
         )
-        p.login-eyebrow Tu salud, siempre conectada
-        h2 Tu bienestar es nuestra prioridad.
-        p.login-intro Gestiona tus citas médicas y mantente en contacto con tu equipo de salud desde un solo lugar.
+        .login-hero-copy
+            h2.login-hero-title
+                | Tu salud,
+                br
+                span nuestra prioridad.
+            p.login-intro Accede a tu cuenta, gestiona tus citas médicas o solicita una cita fácilmente por WhatsApp.
+        .login-benefits(aria-label="Beneficios de SaludVital")
+            .login-benefit
+                span.login-benefit-icon(aria-hidden="true")
+                    img(src="/brand/calendar-svgrepo-com.svg", alt="")
+                .login-benefit-copy
+                    strong Agenda tus citas
+                    span de forma rápida y sencilla.
+            .login-benefit
+                span.login-benefit-icon(aria-hidden="true")
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8"
+                    )
+                        path(d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
+                        path(d="M10 21h4")
+                .login-benefit-copy
+                    strong Recibe recordatorios
+                    span y notificaciones.
+            .login-benefit
+                span.login-benefit-icon(aria-hidden="true")
+                    svg(
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8"
+                    )
+                        path(
+                            d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"
+                        )
+                        path(d="M3 12h5l2-3 3 6 2-3h6")
+                .login-benefit-copy
+                    strong Tu salud siempre
+                    span en buenas manos.
         img.login-doctor-illustration(
             src="/brand/login/girl.png",
             alt="",
@@ -21,10 +54,19 @@ section.login-visual(aria-label="SaludVital, tu salud siempre conectada")
             width="600",
             height="400"
         )
-        .login-benefits
-            p
-                span(aria-hidden="true") ✓
-                | Agenda tus citas de forma rápida y sencilla.
-            p
-                span(aria-hidden="true") ✓
-                | Recibe recordatorios y mantén tu salud en buenas manos.
+
+        a.login-whatsapp-banner(
+            href=whatsappContactUrl,
+            target="_blank",
+            rel="noopener noreferrer",
+            aria-label="Solicitar cita por WhatsApp"
+        )
+            span.login-whatsapp-mark(aria-hidden="true")
+                img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="44", height="44")
+            span.login-whatsapp-copy
+                strong ¿Prefieres agendar por WhatsApp?
+                span Solicita tu cita médica de manera fácil y rápida desde nuestro canal oficial.
+            span.login-whatsapp-action
+                img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="26", height="26")
+                | Solicitar cita
+                span(aria-hidden="true") →
