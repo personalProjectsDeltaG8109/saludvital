@@ -4,12 +4,16 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const script = await readFile(path.resolve("public/js/doctor-agenda.js"), "utf8");
+const consultationScript = await readFile(
+    path.resolve("public/js/doctor-consultation-start.js"),
+    "utf8",
+);
 const styles = await readFile(path.resolve("public/css/doctor-agenda.css"), "utf8");
 const patientStyles = await readFile(path.resolve("public/css/patient-dashboard.css"), "utf8");
 const doctorStyles = await readFile(path.resolve("public/css/doctor-dashboard.css"), "utf8");
 const appStyles = await readFile(path.resolve("public/css/app.css"), "utf8");
 const html = `
-<body class="sv-dashboard doctor-home-page patient-home-page"><div class="sv-layout"><div class="sv-main"><main class="doctor-content doctor-agenda-page" data-doctor-agenda data-agenda-api-url="/api/doctor/agenda" data-today-date="2026-10-29" data-initial-view="day">
+<body class="sv-dashboard doctor-home-page patient-home-page"><div class="sv-layout"><div class="sv-main"><main class="doctor-content doctor-agenda-page" data-doctor-agenda data-agenda-api-url="/api/doctor/agenda" data-start-consultation-url="/api/doctor/appointments" data-today-date="2026-10-29" data-initial-view="day">
   <header class="doctor-page-heading doctor-agenda-heading"><div><p class="doctor-eyebrow">Agenda medica</p><h1>Mi agenda</h1></div></header>
   <section class="doctor-agenda-toolbar" aria-label="Navegacion de fecha">
     <button class="doctor-agenda-nav-button" aria-label="Anterior" data-agenda-previous><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><label class="doctor-agenda-date-label"><input type="date" value="2026-10-29" data-agenda-date></label><button class="doctor-agenda-today" data-agenda-today>Hoy</button><button class="doctor-agenda-nav-button" aria-label="Siguiente" data-agenda-next><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
@@ -20,8 +24,8 @@ const html = `
       <div class="doctor-agenda-empty" data-agenda-empty hidden><h3 data-agenda-empty-title></h3><p data-agenda-empty-message></p></div>
       <div class="doctor-agenda-period-view doctor-agenda-week-view" data-agenda-week-view hidden><h3 data-agenda-week-title></h3><div class="doctor-agenda-week-grid" data-agenda-week-grid></div></div>
       <div class="doctor-agenda-period-view doctor-agenda-month-view" data-agenda-month-view hidden><h3 data-agenda-month-title></h3><div class="doctor-agenda-month-grid" data-agenda-month-grid></div><p data-agenda-month-empty hidden>No hay citas confirmadas para este mes.</p></div>
-    </section><aside class="doctor-agenda-aside" data-agenda-aside><section class="doctor-panel"><ul data-agenda-periods></ul></section><section class="doctor-panel"><ul data-agenda-exceptions></ul></section></aside>
-  </div>
+    </section><aside class="doctor-agenda-aside" data-agenda-aside><section class="doctor-panel doctor-agenda-next-card"><header class="doctor-panel-heading"><h2>Próxima cita</h2><a class="doctor-agenda-view-all" href="/doctor/appointments">Ver todas</a></header><div data-agenda-next-appointment></div></section><div class="doctor-agenda-day-details" data-agenda-day-details><section class="doctor-panel"><ul data-agenda-periods></ul></section><section class="doctor-panel"><ul data-agenda-exceptions></ul></section></div></aside>
+  </div><dialog data-start-consultation-dialog><span data-start-consultation-patient></span><span data-start-consultation-time></span><span data-start-consultation-reason></span><p data-start-consultation-feedback></p><button type="button" data-close-start-consultation>Volver</button><button type="button" data-confirm-start-consultation>Iniciar consulta</button></dialog>
 </main></div></div></body>`;
 
 const browser = await chromium.launch({ headless: true });
@@ -85,6 +89,15 @@ try {
                         rangeStart: days[0].date,
                         rangeEnd: days[6].date,
                         periodLabel: "26 oct - 1 nov",
+                        nextAppointment: {
+                            id: 7,
+                            patientName: "Ana Pérez",
+                            reason: "Medicina General",
+                            dateLabel: "30 de octubre",
+                            timeLabel: "9:00 a. m.",
+                            status: "Confirmed",
+                            canStart: true,
+                        },
                         days,
                     }),
                 };
@@ -104,6 +117,15 @@ try {
                         rangeStart: "2026-10-01",
                         rangeEnd: "2026-10-31",
                         periodLabel: "octubre de 2026",
+                        nextAppointment: {
+                            id: 7,
+                            patientName: "Ana Pérez",
+                            reason: "Medicina General",
+                            dateLabel: "30 de octubre",
+                            timeLabel: "9:00 a. m.",
+                            status: "Confirmed",
+                            canStart: true,
+                        },
                         days,
                     }),
                 };
@@ -117,6 +139,7 @@ try {
                         workingPeriods: [],
                         exceptions: [],
                         appointments: [],
+                        nextAppointment: null,
                         timeline: null,
                     }),
                 };
@@ -149,6 +172,15 @@ try {
                             endTime: "8:30 a. m.",
                         },
                     ],
+                    nextAppointment: {
+                        id: 7,
+                        patientName: "Ana Pérez",
+                        reason: "Medicina General",
+                        dateLabel: "30 de octubre",
+                        timeLabel: "9:00 a. m.",
+                        status: "Confirmed",
+                        canStart: true,
+                    },
                     timeline: { startHour: 7, endHour: 17 },
                 }),
             };
@@ -157,8 +189,14 @@ try {
         scriptElement.textContent = source;
         document.body.append(scriptElement);
     }, script);
+    await page.addScriptTag({ content: consultationScript });
 
     await page.getByText("Ana PÃ©rez").waitFor();
+    await page.locator("[data-agenda-next-appointment]").getByText("Ana Pérez").waitFor();
+    await page.getByRole("link", { name: "Ver todas" }).waitFor();
+    await page.getByRole("button", { name: "Iniciar consulta" }).click();
+    await page.locator("[data-start-consultation-dialog]").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Volver" }).click();
     assert.equal(await page.locator("[data-agenda-view]").count(), 3);
     assert.equal(await page.locator(".doctor-agenda-appointment").count(), 1);
     assert.equal(

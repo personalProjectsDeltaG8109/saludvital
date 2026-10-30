@@ -128,6 +128,62 @@ async function getDoctorForUser(userId) {
     });
 }
 
+async function getNextAppointmentRecords(doctorId, now) {
+    const [appointment, activeConsultation] = await Promise.all([
+        Appointment.findOne({
+            where: { doctor_id: doctorId, start_at: { [Op.gte]: now } },
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                },
+                {
+                    model: AppointmentStatus,
+                    as: "status",
+                    attributes: ["name"],
+                    required: true,
+                    where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
+                },
+                {
+                    model: Specialities,
+                    as: "specialty",
+                    attributes: ["name"],
+                    required: false,
+                },
+            ],
+            order: [["start_at", "ASC"]],
+        }),
+        Consultation.findOne({
+            where: { doctor_id: doctorId, status: "InProgress" },
+            attributes: ["id", "appointment_id"],
+            raw: true,
+        }),
+    ]);
+    return { appointment, activeConsultation };
+}
+
+function serializeNextAppointment(appointment, activeConsultation, includePatientPhoto = false) {
+    if (!appointment) return null;
+    const status = appointment.status?.name;
+    return {
+        ...serializeAppointment(appointment, { includePatientPhoto }),
+        reason: appointment.specialty?.name || "Consulta médica",
+        consultationId:
+            status === "In Progress" && activeConsultation?.appointment_id === appointment.id
+                ? activeConsultation.id
+                : null,
+        canStart: status === "Confirmed" && !activeConsultation,
+    };
+}
+
+export async function getDoctorNextAppointmentData(userId, now = new Date()) {
+    const doctor = await getDoctorForUser(userId);
+    if (!doctor) return null;
+    const { appointment, activeConsultation } = await getNextAppointmentRecords(doctor.id, now);
+    return serializeNextAppointment(appointment, activeConsultation);
+}
+
 async function getCompletedConsultations(doctorId, start, end) {
     return Consultation.findAll({
         where: {
@@ -180,65 +236,36 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
     const activeSince = new Date(now);
     activeSince.setUTCFullYear(activeSince.getUTCFullYear() - 1);
 
-    const [
-        todayAppointments,
-        nextAppointment,
-        activePatientRows,
-        weeklyConsultations,
-        activeConsultation,
-    ] = await Promise.all([
-        Appointment.findAll({
-            where: {
-                doctor_id: doctor.id,
-                start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
-            },
-            include: [
-                {
-                    model: Patient,
-                    as: "patient",
-                    attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+    const [todayAppointments, nextAppointmentRecords, activePatientRows, weeklyConsultations] =
+        await Promise.all([
+            Appointment.findAll({
+                where: {
+                    doctor_id: doctor.id,
+                    start_at: { [Op.gte]: dayStart, [Op.lt]: dayEnd },
                 },
-                {
-                    model: AppointmentStatus,
-                    as: "status",
-                    attributes: ["name"],
-                    required: true,
-                    where: { name: "Confirmed" },
-                },
-            ],
-            order: [["start_at", "ASC"]],
-        }),
-        Appointment.findOne({
-            where: {
-                doctor_id: doctor.id,
-                start_at: { [Op.gte]: now },
-            },
-            include: [
-                {
-                    model: Patient,
-                    as: "patient",
-                    attributes: ["id", "first_name", "last_name", "profile_photo_url"],
-                },
-                {
-                    model: AppointmentStatus,
-                    as: "status",
-                    attributes: ["name"],
-                    required: true,
-                    where: { name: { [Op.in]: ["Confirmed", "In Progress"] } },
-                },
-            ],
-            order: [["start_at", "ASC"]],
-        }),
-        getActivePatientRows(doctor.id, activeSince),
-        getCompletedConsultations(doctor.id, week.start, week.end),
-        Consultation.findOne({
-            where: { doctor_id: doctor.id, status: "InProgress" },
-            attributes: ["id"],
-            raw: true,
-        }),
-    ]);
+                include: [
+                    {
+                        model: Patient,
+                        as: "patient",
+                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                    },
+                    {
+                        model: AppointmentStatus,
+                        as: "status",
+                        attributes: ["name"],
+                        required: true,
+                        where: { name: "Confirmed" },
+                    },
+                ],
+                order: [["start_at", "ASC"]],
+            }),
+            getNextAppointmentRecords(doctor.id, now),
+            getActivePatientRows(doctor.id, activeSince),
+            getCompletedConsultations(doctor.id, week.start, week.end),
+        ]);
 
     const distinctPatients = new Map();
+    const activeConsultation = nextAppointmentRecords.activeConsultation;
     for (const appointment of activePatientRows) {
         distinctPatients.set(appointment.patient.id, appointment.patient);
     }
@@ -270,16 +297,11 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
                 appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
             canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
         })),
-        nextAppointment: nextAppointment
-            ? {
-                  ...serializeAppointment(nextAppointment, { includePatientPhoto: true }),
-                  consultationId:
-                      nextAppointment.status?.name === "In Progress"
-                          ? activeConsultation?.id
-                          : null,
-                  canStart: nextAppointment.status?.name === "Confirmed" && !activeConsultation,
-              }
-            : null,
+        nextAppointment: serializeNextAppointment(
+            nextAppointmentRecords.appointment,
+            activeConsultation,
+            true,
+        ),
     };
 }
 
