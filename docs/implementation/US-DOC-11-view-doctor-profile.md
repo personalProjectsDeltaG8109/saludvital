@@ -6,6 +6,7 @@
 - Reused persisted doctor, user, and specialty fields. The query explicitly excludes credentials and free-text professional information.
 - Added profile navigation to the shared doctor sidebar, mobile navigation, and top bar.
 - Added responsive profile sections for personal, address, and contact information. Missing fields display “No registrado”; no values are inferred from unrelated fields.
+- Contact verification is shown only for persisted verification data. Email verification is available; phone verification is not stored, so phone fields have no verification badge.
 - No migration or dependency was needed. The current schema lacks structured identity, address, alternate phone, registration number, gender, and birth date fields; these are presented as unavailable.
 - Editing and photo management remain in their separate user stories.
 

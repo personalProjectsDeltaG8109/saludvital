@@ -99,6 +99,16 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("doctor profile photo uploads require an authenticated doctor", async () => {
+        const response = await request(app)
+            .post("/api/doctor/profile/photo")
+            .send({ photo: "data:image/png;base64,aW1hZ2U=" })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor detail API requires an authenticated administrator", async () => {
         const response = await request(app).get("/api/admin/doctors/1").redirects(0);
 

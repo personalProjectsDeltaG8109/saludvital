@@ -295,10 +295,13 @@ a.doctor-metric-card:hover { transform: translateY(-2px); border-color: #9bcfff;
     .doctor-patient-row { min-height: 62px; gap: 10px; }
     .doctor-patient-row strong { font-size: 12px; }
     .doctor-patient-label { font-size: 10px; }
-    .doctor-home-page .sv-bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .doctor-home-page .sv-bottom-nav { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .doctor-home-page .sv-bottom-nav a { gap: 2px; padding: 2px 0; font-size: clamp(.5rem, 2.1vw, .65rem); }
+    .doctor-home-page .sv-bottom-nav svg { width: 18px; height: 18px; }
 }
 
 @media (max-width: 380px) {
+    .doctor-home-page .sv-bottom-nav a { font-size: 8px; }
     .doctor-metric-card { gap: 7px; padding: 8px; }
     .metric-icon { width: 34px; height: 34px; }
     .metric-copy strong { font-size: 18px; }
