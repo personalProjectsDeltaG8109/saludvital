@@ -146,6 +146,8 @@ html(lang="es")
                                     option(value="90") Últimos 90 días
                         p.admin-notifications-delivery-note(data-notifications-delivery-note)
                             | “Entregadas” requiere confirmación de Meta. Resend e Inalambria informan aceptación, pero no una confirmación final de entrega.
+                        p.admin-notifications-delivery-note
+                            | Las vistas previas se limitan a datos no clínicos. El texto de las plantillas de WhatsApp no se conserva en SaludVital.
                         .admin-notifications-unavailable(role="status")
                             strong Canal interno no disponible
                             span La estructura actual no almacena notificaciones internas como un canal independiente.
@@ -153,7 +155,7 @@ html(lang="es")
                             strong No hay notificaciones para estos filtros
                             span Prueba con otro canal, estado o período.
                         .admin-notifications-table-wrap(data-notifications-table-wrap)
-                            table.admin-notifications-table
+                            table.admin-notifications-table(data-notifications-table)
                                 caption.admin-notifications-sr-only Historial de notificaciones del período seleccionado
                                 thead
                                     tr
@@ -161,9 +163,9 @@ html(lang="es")
                                         th(scope="col") Canal
                                         th(scope="col") Destinatario
                                         th(scope="col") Tipo
-                                        th(scope="col") Resumen
-                                        th(scope="col") Estado del sistema
-                                        th(scope="col") Estado de entrega
+                                        th(scope="col") Mensaje
+                                        th(scope="col") Estado
+                                        th(scope="col") Acciones
                                 tbody(data-notifications-table-body)
                         ul.admin-notifications-mobile-list(
                             data-notifications-mobile-list,

@@ -24,15 +24,14 @@ const html = pug
 const notification = {
     id: 1,
     eventType: "Recordatorio de cita",
-    summary: "Recordatorio de cita médica",
+    messagePreview: '<img src=x onerror="alert(1)">',
     channel: "WhatsApp",
     recipientName: "Paciente de prueba",
     maskedRecipient: "••• 8332",
     occurredAt: "2026-10-30T15:00:00.000Z",
     applicationStatus: "Aceptado por el proveedor",
+    applicationTone: "success",
     providerStatus: "Entregado por Meta",
-    deliveryStatus: "Entregada",
-    tone: "success",
     failureSummary: null,
 };
 
@@ -85,6 +84,21 @@ try {
 
     if ((await page.locator("[data-notifications-mobile-list]").isVisible()) !== true) {
         throw new Error("The mobile notification list should be visible at phone width.");
+    }
+    if (
+        (await page.locator("[data-notifications-table] th").allTextContents()).join("|") !==
+        "Fecha|Canal|Destinatario|Tipo|Mensaje|Estado|Acciones"
+    ) {
+        throw new Error("The notification history should expose the expected columns.");
+    }
+    if ((await page.locator(".admin-notifications-message img").count()) !== 0) {
+        throw new Error("Untrusted message preview text must not be rendered as HTML.");
+    }
+    if ((await page.getByText('<img src=x onerror="alert(1)">').count()) === 0) {
+        throw new Error("The message preview should be displayed literally as text.");
+    }
+    if ((await page.getByText("Ver detalles").count()) === 0) {
+        throw new Error("Notification detail summaries should be available as safe actions.");
     }
     if ((await page.locator("[data-notifications-table-wrap]").isVisible()) !== false) {
         throw new Error("The desktop table should be hidden on phones.");

@@ -36,6 +36,8 @@ function notificationRow(overrides = {}) {
         payload: { appointmentReason: "Sensitive free text" },
         provider_message_id: "private-provider-id",
         last_error: "private error details",
+        payloadDate: "31 de octubre de 2026",
+        payloadTime: "7:30 a. m.",
         ...overrides,
     };
     return { get: () => row };
@@ -92,6 +94,11 @@ describe("administrator notification dashboard service", () => {
         expect(data.rows[0]).not.toHaveProperty("provider_message_id");
         expect(data.rows[0]).not.toHaveProperty("last_error");
         const listQuery = Notification.findAndCountAll.mock.calls[0][0];
+        expect(listQuery.order[0]).toEqual([
+            ["COALESCE", "Notification.sent_at", "Notification.created_at"],
+            "DESC",
+        ]);
+        expect(listQuery.order[1]).toEqual(["id", "DESC"]);
         expect(listQuery.attributes).not.toContain("payload");
         expect(listQuery.attributes).not.toContain("provider_message_id");
         expect(listQuery.attributes).not.toContain("last_error");
@@ -164,5 +171,34 @@ describe("administrator notification dashboard service", () => {
 
         expect(data.rows[0].maskedRecipient).toBe("p•••@example.com");
         expect(data.rows[0].providerStatus).toBe("Sin confirmación final del proveedor");
+    });
+
+    test("does not reconstruct provider-managed WhatsApp template content", async () => {
+        Notification.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [notificationRow({ channel: "WhatsApp" })],
+        });
+
+        const data = await getAdminNotificationDashboard();
+
+        expect(data.rows[0].messagePreview).toBe(
+            "Plantilla de WhatsApp administrada por el proveedor; texto no almacenado.",
+        );
+    });
+
+    test("builds an appointment preview from the persisted non-clinical date and time", async () => {
+        Notification.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [notificationRow({ channel: "Email" })],
+        });
+
+        const data = await getAdminNotificationDashboard();
+
+        expect(data.rows[0].messagePreview).toBe(
+            "SaludVital: Te recordamos tu cita el 31 de octubre de 2026 a las 7:30 a. m.",
+        );
+        const selectedAttributes = Notification.findAndCountAll.mock.calls[0][0].attributes;
+        expect(selectedAttributes).not.toContain("payload");
+        expect(selectedAttributes).not.toContain("last_error");
     });
 });

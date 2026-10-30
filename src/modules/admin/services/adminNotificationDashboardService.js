@@ -21,13 +21,6 @@ const EVENT_LABELS = {
     appointment_cancellation: "Cancelación de cita",
 };
 
-const EVENT_SUMMARIES = {
-    appointment_confirmation: "Aviso de confirmación de cita",
-    appointment_reminder: "Recordatorio de cita médica",
-    appointment_reschedule: "Aviso de cambio en una cita",
-    appointment_cancellation: "Aviso de cancelación de cita",
-};
-
 const APPLICATION_STATUS_LABELS = {
     Pending: "En cola",
     Processing: "En proceso",
@@ -189,6 +182,32 @@ function providerLabel(status, channel) {
     return "No disponible";
 }
 
+function payloadText(value, fallback) {
+    return typeof value === "string" && value.trim() ? value.trim().slice(0, 80) : fallback;
+}
+
+function messagePreviewFor(row) {
+    if (row.channel === "WhatsApp") {
+        // Meta template text is provider-managed and is not stored with this notification.
+        return "Plantilla de WhatsApp administrada por el proveedor; texto no almacenado.";
+    }
+
+    const date = payloadText(row.payloadDate, "día programado");
+    const time = payloadText(row.payloadTime, "hora programada");
+    const appointmentTime = `el ${date} a las ${time}`;
+    const ending = time.endsWith(".") ? "" : ".";
+    const previews = {
+        appointment_reminder: `SaludVital: Te recordamos tu cita ${appointmentTime}${ending}`,
+        appointment_reschedule: `SaludVital: Tu cita fue reprogramada para ${appointmentTime}${ending}`,
+        appointment_cancellation: `SaludVital: Tu cita del ${date} fue cancelada.`,
+    };
+
+    return (
+        previews[row.event_type] ||
+        "Vista previa no disponible; el contenido del mensaje no está almacenado."
+    );
+}
+
 function toHistoryItem(notification) {
     const row = notification.get({ plain: true });
     const patientName = [row.patient?.first_name, row.patient?.last_name].filter(Boolean).join(" ");
@@ -207,7 +226,7 @@ function toHistoryItem(notification) {
     return {
         id: row.id,
         eventType: EVENT_LABELS[row.event_type] || "Notificación del sistema",
-        summary: EVENT_SUMMARIES[row.event_type] || "Actualización generada por el sistema",
+        messagePreview: messagePreviewFor(row),
         channel: CHANNEL_LABELS[row.channel] || "Canal no disponible",
         recipientName: patientName || "Contacto sin nombre registrado",
         maskedRecipient: maskRecipient(row.recipient_address),
@@ -256,6 +275,9 @@ export async function getAdminNotificationDashboard(query = {}, referenceDate = 
                 "sent_at",
                 "created_at",
                 "updated_at",
+                // Select only appointment date/time for the safe preview.
+                [fn("JSON_UNQUOTE", fn("JSON_EXTRACT", col("payload"), "$.date")), "payloadDate"],
+                [fn("JSON_UNQUOTE", fn("JSON_EXTRACT", col("payload"), "$.time")), "payloadTime"],
             ],
             include: [
                 {
@@ -267,7 +289,10 @@ export async function getAdminNotificationDashboard(query = {}, referenceDate = 
             ],
             where: buildListWhere({ ...filters, range }),
             order: [
-                ["updated_at", "DESC"],
+                [
+                    fn("COALESCE", col("Notification.sent_at"), col("Notification.created_at")),
+                    "DESC",
+                ],
                 ["id", "DESC"],
             ],
             limit: PAGE_SIZE,
