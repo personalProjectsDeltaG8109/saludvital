@@ -1,4 +1,5 @@
 import database from "../../../../config/database.js";
+import { Op } from "sequelize";
 import { Notification, NotificationPreference, Patient } from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
@@ -102,11 +103,34 @@ function toHistoryItem(notification) {
         channelKey: notification.channel,
         status: notification.status,
         date: notification.sent_at || notification.scheduled_at,
+        readAt: notification.read_at,
         details: historyDetails[eventKey] || "Tienes una actualización de SaludVital.",
     };
 }
 
-export async function getPatientNotificationSettings(userId) {
+function getEnabledChannelStates(storedPreferences) {
+    const storedValuesByChannel = new Map();
+    storedPreferences.forEach((preference) => {
+        const channelValues = storedValuesByChannel.get(preference.channel) || [];
+        channelValues.push(preference.is_enabled);
+        storedValuesByChannel.set(preference.channel, channelValues);
+    });
+
+    const states = Object.fromEntries(
+        notificationChannels.map((channel) => {
+            const storedValues = storedValuesByChannel.get(channel) || [];
+            const isEnabled = storedValues.length
+                ? storedValues.some(Boolean)
+                : channel === DEFAULT_ENABLED_CHANNEL;
+            return [channel, isEnabled];
+        }),
+    );
+
+    if (!Object.values(states).some(Boolean)) states[DEFAULT_ENABLED_CHANNEL] = true;
+    return states;
+}
+
+export async function getPatientNotificationSettings(userId, { markVisibleAsRead = false } = {}) {
     const patient = await Patient.findOne({
         where: { user_id: userId },
         attributes: [
@@ -134,22 +158,40 @@ export async function getPatientNotificationSettings(userId) {
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
         Notification.findAll({
             where: { patient_id: patient.id },
+            attributes: [
+                "id",
+                "event_type",
+                "channel",
+                "status",
+                "scheduled_at",
+                "sent_at",
+                "read_at",
+            ],
             order: [["scheduled_at", "DESC"]],
             limit: 20,
         }),
     ]);
 
-    const preferenceLookup = new Map(
-        storedPreferences.map((item) => [`${item.channel}:${item.event_type}`, item.is_enabled]),
-    );
+    if (markVisibleAsRead) {
+        const visibleIds = notifications
+            .slice(0, 2)
+            .filter((notification) => !notification.read_at)
+            .map((notification) => notification.id);
+        if (visibleIds.length) {
+            const readAt = new Date();
+            await Notification.update(
+                { read_at: readAt },
+                { where: { patient_id: patient.id, id: { [Op.in]: visibleIds }, read_at: null } },
+            );
+            notifications.forEach((notification) => {
+                if (visibleIds.includes(notification.id)) notification.read_at = readAt;
+            });
+        }
+    }
+
+    const channelStates = getEnabledChannelStates(storedPreferences);
     let preferences = notificationChannels.flatMap((channel) => {
-        const storedChannelPreferences = notificationEvents
-            .map((event) => preferenceLookup.get(`${channel}:${event.key}`))
-            .filter((value) => value !== undefined);
-        // Treat legacy event-level settings as one channel choice during migration.
-        const isEnabled = storedChannelPreferences.length
-            ? storedChannelPreferences.some(Boolean)
-            : channel === DEFAULT_ENABLED_CHANNEL;
+        const isEnabled = channelStates[channel];
 
         return notificationEvents.map((event) => ({
             channel,
@@ -261,4 +303,100 @@ export async function updatePatientNotificationPreferences(userId, updates, cont
     });
 
     return { preferences: updates, notificationContacts };
+}
+
+export async function getPatientUnreadNotificationCount(userId) {
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) return 0;
+    return Notification.count({ where: { patient_id: patient.id, read_at: null } });
+}
+
+export async function getPatientChannelStates(patientId) {
+    const storedPreferences = await NotificationPreference.findAll({
+        where: { patient_id: patientId },
+        attributes: ["channel", "is_enabled"],
+    });
+    return getEnabledChannelStates(storedPreferences);
+}
+
+export async function updatePatientNotificationChannel(userId, channel, isEnabled) {
+    if (!notificationChannels.includes(channel) || typeof isEnabled !== "boolean") {
+        const error = new Error("La configuración del canal no es válida.");
+        error.status = 400;
+        throw error;
+    }
+
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) {
+        const error = new Error("No se encontró el perfil del paciente.");
+        error.status = 404;
+        throw error;
+    }
+
+    const storedPreferences = await NotificationPreference.findAll({
+        where: { patient_id: patient.id },
+        attributes: ["channel", "event_type", "is_enabled"],
+    });
+    const channelStates = getEnabledChannelStates(storedPreferences);
+    channelStates[channel] = isEnabled;
+
+    if (!Object.values(channelStates).some(Boolean)) {
+        const error = new Error(
+            "Mantén al menos un canal activo para recibir avisos sobre tus citas.",
+        );
+        error.status = 400;
+        throw error;
+    }
+
+    const preferences = notificationChannels.flatMap((preferenceChannel) =>
+        notificationEvents.map((event) => ({
+            patient_id: patient.id,
+            channel: preferenceChannel,
+            event_type: event.key,
+            is_enabled: channelStates[preferenceChannel],
+        })),
+    );
+
+    await database.transaction(async (transaction) => {
+        for (const preference of preferences) {
+            await NotificationPreference.upsert(preference, { transaction });
+        }
+    });
+
+    return { channelStates };
+}
+
+export async function markPatientNotificationsAsRead(userId, notificationIds) {
+    if (
+        !Array.isArray(notificationIds) ||
+        notificationIds.length === 0 ||
+        notificationIds.length > 20 ||
+        notificationIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
+        new Set(notificationIds).size !== notificationIds.length
+    ) {
+        const error = new Error("La selección de notificaciones no es válida.");
+        error.status = 400;
+        throw error;
+    }
+
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) {
+        const error = new Error("No se encontró el perfil del paciente.");
+        error.status = 404;
+        throw error;
+    }
+
+    await Notification.update(
+        { read_at: new Date() },
+        {
+            where: {
+                patient_id: patient.id,
+                id: { [Op.in]: notificationIds },
+                read_at: null,
+            },
+        },
+    );
+    return {
+        unreadCount: await Notification.count({ where: { patient_id: patient.id, read_at: null } }),
+    };
 }

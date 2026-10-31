@@ -7,6 +7,21 @@
     overflow-y: auto;
 }
 
+.notifications-unread-label {
+    display: inline-block;
+    margin-right: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: #dff7ec;
+    color: #087443;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.notifications-read-status:empty {
+    display: none;
+}
+
 .notifications-content {
     width: min(100%, 1500px);
     margin: 0 auto;

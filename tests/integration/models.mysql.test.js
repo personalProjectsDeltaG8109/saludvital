@@ -168,6 +168,7 @@ describe("MySQL model integration", () => {
                 "status",
                 "scheduled_at",
                 "sent_at",
+                "read_at",
                 "attempt_count",
                 "provider_message_id",
                 "last_error",

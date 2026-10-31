@@ -264,7 +264,8 @@ html(lang="es")
                                                     td(colspan="4") No tienes próximas citas confirmadas.
                         .sv-panel-column
                             section.sv-panel.sv-notifications(
-                                aria-labelledby="notifications-title"
+                                aria-labelledby="notifications-title",
+                                data-dashboard-notifications
                             )
                                 .sv-panel-heading
                                     h2#notifications-title Notificaciones
@@ -276,19 +277,57 @@ html(lang="es")
                                     span
                                         strong Notificaciones por WhatsApp
                                         small Recibe confirmaciones, recordatorios y novedades.
-                                    span.sv-toggle(aria-label="Activadas")
+                                    label.sv-switch-control
+                                        input(
+                                            type="checkbox",
+                                            role="switch",
+                                            aria-label="Activar notificaciones por WhatsApp",
+                                            checked=notificationChannelStates.WhatsApp,
+                                            data-dashboard-channel-toggle="WhatsApp"
+                                        )
+                                        span(
+                                            class=notificationChannelStates.WhatsApp ? "sv-toggle is-active" : "sv-toggle",
+                                            aria-hidden="true"
+                                        )
                                 .sv-preference
                                     span.sv-preference-icon.pref-blue(aria-hidden="true") SMS
                                     span
                                         strong Notificaciones por SMS
                                         small Recibe recordatorios de tus citas.
-                                    span.sv-toggle(aria-label="Activadas")
+                                    label.sv-switch-control
+                                        input(
+                                            type="checkbox",
+                                            role="switch",
+                                            aria-label="Activar notificaciones por SMS",
+                                            checked=notificationChannelStates.SMS,
+                                            data-dashboard-channel-toggle="SMS"
+                                        )
+                                        span(
+                                            class=notificationChannelStates.SMS ? "sv-toggle is-active" : "sv-toggle",
+                                            aria-hidden="true"
+                                        )
                                 .sv-preference
                                     span.sv-preference-icon.pref-purple(aria-hidden="true") Correo
                                     span
                                         strong Notificaciones por correo electrónico
                                         small Recibe confirmaciones y actualizaciones.
-                                    span.sv-toggle(aria-label="Activadas")
+                                    label.sv-switch-control
+                                        input(
+                                            type="checkbox",
+                                            role="switch",
+                                            aria-label="Activar notificaciones por correo electrónico",
+                                            checked=notificationChannelStates.Email,
+                                            data-dashboard-channel-toggle="Email"
+                                        )
+                                        span(
+                                            class=notificationChannelStates.Email ? "sv-toggle is-active" : "sv-toggle",
+                                            aria-hidden="true"
+                                        )
+                                p.sv-notification-feedback(
+                                    role="status",
+                                    aria-live="polite",
+                                    data-dashboard-notification-feedback
+                                )
                             section.sv-panel.sv-profile(aria-labelledby="profile-title")
                                 .sv-panel-heading
                                     h2#profile-title Mi perfil
@@ -353,3 +392,4 @@ html(lang="es")
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/patient-appointments.js", defer)
+        script(src="/js/patient-dashboard-notifications.js", defer)
