@@ -19,7 +19,9 @@ jest.unstable_mockModule("../../../config/environment.js", () => ({
 
 jest.unstable_mockModule("../../../src/modules/auth/services/authService.js", () => ({
     authenticateUser: jest.fn(),
+    clearLoginFailures: jest.fn(),
     AuthenticationError: class AuthenticationError extends Error {},
+    LoginTemporarilyLockedError: class LoginTemporarilyLockedError extends Error {},
     EmailVerificationRequiredError: class EmailVerificationRequiredError extends Error {},
 }));
 

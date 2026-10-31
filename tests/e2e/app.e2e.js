@@ -313,6 +313,48 @@ try {
         console.log(`PASS: login accessibility at ${viewport.name}.`);
     }
 
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+        const response = await loginPage.request.post(`${baseUrl}/login`, {
+            form: {
+                email: `missing-lock-${attempt}@example.test`,
+                password: "WrongPassword123!",
+            },
+        });
+
+        if (response.status() !== 401) {
+            throw new Error(
+                `Unexpected login response before the IP threshold: ${response.status()}.`,
+            );
+        }
+    }
+
+    await loginPage.goto(`${baseUrl}/login`);
+    await loginPage.locator('input[name="email"]').fill("blocked@example.test");
+    await loginPage.locator('input[name="password"]').fill("WrongPassword123!");
+    await loginPage.locator('button[type="submit"]').click();
+    await loginPage.locator("[data-login-lock-countdown]").waitFor();
+
+    if (
+        !(await loginPage.locator('input[name="email"]').isDisabled()) ||
+        !(await loginPage.locator('input[name="password"]').isDisabled()) ||
+        !(await loginPage.locator('button[type="submit"]').isDisabled())
+    ) {
+        throw new Error("Login controls remained active while the IP lock was in effect.");
+    }
+
+    await loginPage.locator("[data-login-lock-countdown]").evaluate((element) => {
+        element.dataset.lockUntil = String(Date.now() + 1200);
+    });
+    await loginPage.locator('input[name="email"]:not(:disabled)').waitFor({ timeout: 3000 });
+
+    if (!(await loginPage.getByRole("alert").textContent()).includes("El bloqueo terminó")) {
+        throw new Error("The login lock message was not updated when its countdown expired.");
+    }
+
+    console.log(
+        "PASS: login controls are disabled during the lock and enabled after countdown expiry.",
+    );
+
     await loginPage.close();
 
     // Verify patient registration across responsive viewports.

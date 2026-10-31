@@ -1,9 +1,10 @@
 import bcrypt from "bcrypt";
+import database from "../../../../config/database.js";
 import { Rol, User } from "../../../models/associations.js";
 
-// Identify accounts that must verify their email before signing in.
-// Represent an authentication attempt blocked by an unverified email.
-// Represent an authentication attempt blocked by an unverified email.
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
+
 export class EmailVerificationRequiredError extends Error {
     constructor(message) {
         super(message);
@@ -12,21 +13,27 @@ export class EmailVerificationRequiredError extends Error {
     }
 }
 
-// Keep authentication errors generic to avoid revealing account existence.
 export class AuthenticationError extends Error {
     constructor() {
-        super("Invalido el email o contraseña.");
+        super("Inválido el correo electrónico o la contraseña.");
         this.name = "AuthenticationError";
         this.statusCode = 401;
     }
 }
 
-// Authenticate an active user and retrieve the role stored in the database.
+export class LoginTemporarilyLockedError extends Error {
+    constructor(lockedUntil) {
+        super("Demasiados intentos fallidos. El inicio de sesión está bloqueado temporalmente.");
+        this.name = "LoginTemporarilyLockedError";
+        this.statusCode = 429;
+        this.lockedUntil = lockedUntil;
+    }
+}
+
+// Authenticate an active user while serializing updates to its lockout counter.
 export async function authenticateUser(email, password) {
-    // Normalize the email before searching for the account.
     const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    // Reject missing or invalid credentials before querying the database.
     if (
         !normalizedEmail ||
         normalizedEmail.length > 80 ||
@@ -36,50 +43,118 @@ export async function authenticateUser(email, password) {
         throw new AuthenticationError();
     }
 
-    // Retrieve the account together with its database-assigned role.
-    const user = await User.findOne({
-        where: {
-            email: normalizedEmail,
-            is_active: true,
-        },
-        include: [
-            {
-                model: Rol,
-                as: "rol",
-                attributes: ["id", "name"],
-                required: true,
+    const result = await database.transaction(async (transaction) => {
+        const user = await User.findOne({
+            where: {
+                email: normalizedEmail,
+                is_active: true,
             },
-        ],
+            include: [
+                {
+                    model: Rol,
+                    as: "rol",
+                    attributes: ["id", "name"],
+                    required: true,
+                },
+            ],
+            lock: transaction.LOCK.UPDATE,
+            transaction,
+        });
+
+        if (!user) {
+            return { outcome: "invalid" };
+        }
+
+        const now = new Date();
+        const lockExpiresAt = user.login_locked_until ? new Date(user.login_locked_until) : null;
+
+        if (lockExpiresAt && lockExpiresAt > now) {
+            return { outcome: "locked", lockedUntil: lockExpiresAt };
+        }
+
+        const failedAttempts = lockExpiresAt ? 0 : Number(user.failed_login_attempts || 0);
+
+        if (lockExpiresAt) {
+            await user.update(
+                {
+                    failed_login_attempts: 0,
+                    login_locked_until: null,
+                },
+                { transaction },
+            );
+        }
+
+        const passwordMatches = await bcrypt.compare(password, user.password_hash);
+
+        if (!passwordMatches) {
+            const nextFailedAttempts = failedAttempts + 1;
+            const loginLockedUntil =
+                nextFailedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS
+                    ? new Date(now.getTime() + LOGIN_LOCK_DURATION_MS)
+                    : null;
+
+            await user.update(
+                {
+                    failed_login_attempts: nextFailedAttempts,
+                    login_locked_until: loginLockedUntil,
+                },
+                { transaction },
+            );
+
+            if (loginLockedUntil) {
+                return { outcome: "locked", lockedUntil: loginLockedUntil };
+            }
+
+            return { outcome: "invalid" };
+        }
+
+        if (!user.email_verified_at) {
+            return { outcome: "unverified" };
+        }
+
+        await user.update(
+            {
+                last_login_at: now,
+            },
+            { transaction },
+        );
+
+        return {
+            outcome: "authenticated",
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.rol.name,
+            },
+        };
     });
 
-    // Use the same public error for missing accounts and incorrect passwords.
-    if (!user) {
-        throw new AuthenticationError();
-    }
-
-    // Verify the submitted password against the stored bcrypt hash.
-    const passwordMatches = await bcrypt.compare(password, user.password_hash);
-
-    if (!passwordMatches) {
-        throw new AuthenticationError();
-    }
-
-    // Require email verification before allowing authentication.
-    if (!user.email_verified_at) {
+    if (result.outcome === "unverified") {
         throw new EmailVerificationRequiredError(
             "Please verify your email address before signing in.",
         );
     }
 
-    // Update the last successful login timestamp.
-    await user.update({
-        last_login_at: new Date(),
-    });
+    if (result.outcome === "locked") {
+        throw new LoginTemporarilyLockedError(result.lockedUntil);
+    }
 
-    // Return only the data required by the authentication controller.
-    return {
-        id: user.id,
-        email: user.email,
-        role: user.rol.name,
-    };
+    if (result.outcome !== "authenticated") {
+        throw new AuthenticationError();
+    }
+
+    return result.user;
+}
+
+// Clear failed attempts only after the controller establishes the login session.
+export async function clearLoginFailures(userId) {
+    await User.update(
+        {
+            failed_login_attempts: 0,
+            login_locked_until: null,
+        },
+        {
+            where: { id: userId },
+        },
+    );
 }

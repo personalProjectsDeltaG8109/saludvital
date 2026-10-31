@@ -11,6 +11,16 @@
     if error
         p#login-error.login-error(role="alert")= error
 
+    if loginLockedUntil
+        p.login-lock-countdown(
+            role="status",
+            aria-live="polite",
+            data-login-lock-countdown,
+            data-lock-until=loginLockedUntil
+        )
+            | Podrás volver a intentarlo en
+            strong(data-login-lock-time) Calculando tiempo restante…
+
     form.login-form(action="/login", method="POST")
         div
             label(for="email") Correo electrónico
@@ -31,7 +41,8 @@
                     maxlength="80",
                     placeholder="Ingresa tu correo electrónico",
                     required,
-                    aria-describedby=error ? "login-error" : undefined
+                    disabled=Boolean(loginLockedUntil),
+                    aria-describedby=loginLockedUntil ? "login-error login-lock-countdown" : error ? "login-error" : undefined
                 )
 
         div
@@ -52,11 +63,14 @@
                     name="password",
                     autocomplete="current-password",
                     placeholder="Ingresa tu contraseña",
-                    required
+                    required,
+                    disabled=Boolean(loginLockedUntil),
+                    aria-describedby=loginLockedUntil ? "login-error login-lock-countdown" : undefined
                 )
                 button.login-password-toggle(
                     type="button",
                     data-password-toggle,
+                    disabled=Boolean(loginLockedUntil),
                     aria-label="Mostrar contraseña",
                     aria-pressed="false"
                 )
@@ -73,7 +87,7 @@
             .login-forgot-link
                 a(href="/forgot-password") ¿Olvidaste tu contraseña?
 
-        button.login-submit(type="submit")
+        button.login-submit(type="submit", disabled=Boolean(loginLockedUntil))
             | Iniciar sesión
             span(aria-hidden="true") →
 

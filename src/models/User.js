@@ -53,6 +53,15 @@ const User = database.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        failed_login_attempts: {
+            type: DataTypes.SMALLINT.UNSIGNED,
+            allowNull: false,
+            defaultValue: 0,
+        },
+        login_locked_until: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
 
         // Record when the account email was successfully verified.
         email_verified_at: {

@@ -140,6 +140,39 @@
     color: #991b1b;
 }
 
+.login-lock-countdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: -6px 0 18px;
+    border: 1px solid #f5cf87;
+    border-radius: 12px;
+    background: #fff8e8;
+    padding: 12px 14px;
+    color: #764b00;
+}
+
+.login-lock-countdown strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.login-form input:disabled,
+.login-password-toggle:disabled,
+.login-submit:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.login-form input:disabled {
+    background: #e8eef5;
+    color: #64748b;
+}
+
+.login-submit:disabled:hover {
+    transform: none;
+    background: var(--color-primary);
+}
+
 .login-form {
     display: grid;
     gap: 20px;
