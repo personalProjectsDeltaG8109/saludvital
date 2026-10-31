@@ -5,8 +5,8 @@
 - var roleLabel = "Paciente";
 - var mobileLogoSrc = "/brand/patient/logo-primary-background.png";
 - var notificationHref = "/patient/notifications";
-- var notificationLabel = "Notificaciones, 2 nuevas";
-- var notificationCount = 2;
+- var notificationLabel = locals.notificationLabel || "Notificaciones";
+- var notificationCount = Number.isSafeInteger(locals.notificationCount) ? locals.notificationCount : 0;
 - var profileHref = "/patient/profile";
 - var profileLabel = "Abrir mi perfil";
 - var profilePhotoUrl = typeof patientPhotoUrl !== "undefined" ? patientPhotoUrl : null;
