@@ -5,27 +5,17 @@ import database from "../../../../config/database.js";
 import AuditLog from "../../../models/AuditLog.js";
 import { EmailOutbox, PasswordResetToken, Rol, User } from "../../../models/associations.js";
 import { endUserSessions } from "./sessionActivity.js";
+import { isValidPassword } from "./passwordPolicy.js";
 
 // Keep password recovery tokens valid for 30 minutes.
 
 // Validate the password using the same policy as patient registration.
 function validatePassword(password, confirmation) {
-    if (typeof password !== "string" || typeof confirmation !== "string") {
+    if (typeof confirmation !== "string" || !isValidPassword(password)) {
         return false;
     }
 
-    if (
-        password.length < 10 ||
-        !/[A-Z]/.test(password) ||
-        (password.match(/[a-z]/g) || []).length < 3 ||
-        !/\d/.test(password) ||
-        !/[^A-Za-z0-9]/.test(password) ||
-        password !== confirmation
-    ) {
-        return false;
-    }
-
-    return true;
+    return password === confirmation;
 }
 
 // Hash reset tokens before storing or searching for them.
@@ -40,7 +30,7 @@ export async function requestPasswordReset(email) {
     // Invalid input receives the same public result as an unknown account.
     if (
         !normalizedEmail ||
-        normalizedEmail.length > 100 ||
+        normalizedEmail.length > 320 ||
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
     ) {
         return { requested: true };

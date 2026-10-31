@@ -18,7 +18,7 @@ export function normalizeProfileText(value, label, maxLength, required = false) 
 }
 
 export function normalizeProfileEmail(value) {
-    const email = normalizeProfileText(value, "El correo electrónico", 100, true)?.toLowerCase();
+    const email = normalizeProfileText(value, "El correo electrónico", 320, true)?.toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw validationError("Ingresa un correo electrónico válido.");
     }

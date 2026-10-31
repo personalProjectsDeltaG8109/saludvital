@@ -17,6 +17,7 @@ import {
     cancelPendingAppointmentReminders,
     enqueueAppointmentNotifications,
 } from "../../patient/services/notificationAutomationService.js";
+import { isValidPassword } from "../../auth/services/passwordPolicy.js";
 import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
 
 const PAGE_SIZE = 10;
@@ -395,18 +396,10 @@ function validateDoctorRegistration(payload) {
     if (!displayName || displayName.length > 120) {
         throw serviceError("Ingresa el nombre completo del médico (máximo 120 caracteres).");
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 100) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
         throw serviceError("Ingresa un correo electrónico válido.");
     }
-    if (
-        typeof password !== "string" ||
-        password.length < 10 ||
-        password.length > 128 ||
-        !/[A-Z]/.test(password) ||
-        (password.match(/[a-z]/g) || []).length < 3 ||
-        !/\d/.test(password) ||
-        !/[^A-Za-z0-9]/.test(password)
-    ) {
+    if (!isValidPassword(password)) {
         throw serviceError(
             "La contraseña debe tener al menos 10 caracteres e incluir mayúscula, tres minúsculas, número y símbolo.",
         );

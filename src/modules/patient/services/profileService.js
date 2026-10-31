@@ -35,7 +35,7 @@ function normalizePhone(value, label, required = true) {
     return phone;
 }
 
-function validateEmail(value, label, maxLength = 100, required = true) {
+function validateEmail(value, label, maxLength = 320, required = true) {
     const email = normalizeText(value, label, maxLength, required)?.toLowerCase();
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw profileError(`Ingresa un correo válido para ${label.toLowerCase()}.`);
