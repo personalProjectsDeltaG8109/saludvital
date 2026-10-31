@@ -4,6 +4,8 @@ import {
     authenticateUser,
     AuthenticationError,
     EmailVerificationRequiredError,
+    LoginTemporarilyLockedError,
+    clearLoginFailures,
 } from "../services/authService.js";
 
 import { randomUUID } from "node:crypto";
@@ -89,19 +91,40 @@ const dashboardRoutes = {
 /**
  * Render the login page with an optional error message.
  */
-export function showLogin(req, res) {
-    // Accept only a single string query parameter for the error message.
-    const error = typeof req.query.error === "string" ? req.query.error : null;
+function getLoginPageData(error, lockedUntil = null) {
     const contactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER?.replace(/\D/g, "") || "";
     const whatsappContactUrl = /^[1-9]\d{7,14}$/.test(contactNumber)
         ? `https://wa.me/${contactNumber}?text=${encodeURIComponent("Hola, quisiera recibir información sobre SaludVital.")}`
         : null;
 
-    return res.status(200).render("auth/login", {
+    return {
         pageTitle: "Iniciar sesión | SaludVital",
         error,
         whatsappContactUrl,
-    });
+        loginLockedUntil: lockedUntil ? new Date(lockedUntil).getTime() : null,
+    };
+}
+
+function renderLoginPage(res, statusCode, error, lockedUntil = null) {
+    if (lockedUntil) {
+        res.set("Cache-Control", "no-store");
+    }
+
+    return res.status(statusCode).render("auth/login", getLoginPageData(error, lockedUntil));
+}
+
+export function showLogin(req, res) {
+    const error = typeof req.query.error === "string" ? req.query.error : null;
+    return renderLoginPage(res, 200, error);
+}
+
+export function showLoginLocked(req, res, lockedUntil) {
+    return renderLoginPage(
+        res,
+        429,
+        "Has realizado demasiados intentos. Espera a que termine el bloqueo para volver a intentarlo.",
+        lockedUntil,
+    );
 }
 
 /**
@@ -315,12 +338,23 @@ export async function login(req, res, next) {
         // Associate the authenticated session with its account for future revocation.
         startSession(sessionId, user.id);
 
+        try {
+            await clearLoginFailures(user.id);
+        } catch (error) {
+            endSession(sessionId);
+            throw error;
+        }
+
         // Store the token in an HTTP-only authentication cookie.
         res.cookie("token", token, getAuthCookieOptions());
 
         // Redirect the user to the dashboard assigned to their role.
         return res.redirect(303, dashboard);
     } catch (error) {
+        if (error instanceof LoginTemporarilyLockedError) {
+            return showLoginLocked(req, res, error.lockedUntil);
+        }
+
         // Show a clear message when the email has not been verified.
         if (error instanceof EmailVerificationRequiredError) {
             return res.status(403).render("auth/login", {
@@ -332,8 +366,8 @@ export async function login(req, res, next) {
         // Display a generic message for invalid credentials.
         if (error instanceof AuthenticationError) {
             return res.status(401).render("auth/login", {
-                pageTitle: "Inicio de Sesion | SaludVital",
-                error: "Invalido el email o contraseña.",
+                pageTitle: "Inicio de sesión | SaludVital",
+                error: "Inválido el correo electrónico o la contraseña.",
             });
         }
 

@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 
 import {
     login,
+    showLoginLocked,
     logout,
     showLogin,
     showRegister,
@@ -20,17 +21,14 @@ import { authenticateToken } from "../../../middleware/authenticateToken.js";
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 5,
+    skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
 
     // Redirect users to the login page with an error message.
     handler: (req, res) => {
-        return res.redirect(
-            "/login?error=" +
-                encodeURIComponent(
-                    "Demasiados intentos de inicio de sesión. Por favor, inténtalo de nuevo más tarde.",
-                ),
-        );
+        const lockedUntil = req.rateLimit?.resetTime || new Date(Date.now() + 15 * 60 * 1000);
+        return showLoginLocked(req, res, lockedUntil);
     },
 });
 
