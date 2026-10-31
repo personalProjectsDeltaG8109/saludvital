@@ -36,7 +36,7 @@ export async function authenticateUser(email, password) {
 
     if (
         !normalizedEmail ||
-        normalizedEmail.length > 80 ||
+        normalizedEmail.length > 320 ||
         typeof password !== "string" ||
         password.length === 0
     ) {
