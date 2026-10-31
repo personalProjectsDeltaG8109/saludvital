@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
+import environment from "../../../../config/environment.js";
 import { EmailOutbox, PasswordResetToken, User } from "../../../models/associations.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService.js";
 
@@ -8,7 +9,7 @@ import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService.js
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS_MINUTES = [1, 5, 15, 30, 60];
 const LOCK_TIMEOUT_MINUTES = 5;
-const VERIFICATION_TOKEN_MINUTES = 30;
+const VERIFICATION_TOKEN_MINUTES = environment.unverifiedRegistrationRetentionMinutes;
 // Keep password reset tokens valid for 30 minutes.
 const PASSWORD_RESET_TOKEN_MINUTES = 30;
 
@@ -158,20 +159,36 @@ async function claimEmailOutboxJob() {
 async function prepareVerificationToken(userId) {
     const token = randomBytes(32).toString("hex");
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_MINUTES * 60 * 1000);
+    const now = new Date();
 
-    const user = await User.findByPk(userId);
+    return database.transaction(async (transaction) => {
+        const user = await User.findByPk(userId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
 
-    if (!user || !user.is_active || user.email_verified_at) {
-        throw new Error("The account is unavailable for email verification.");
-    }
+        if (!user || !user.is_active || user.email_verified_at) {
+            throw new Error("The account is unavailable for email verification.");
+        }
 
-    await user.update({
-        email_verification_token_hash: tokenHash,
-        email_verification_expires_at: expiresAt,
+        const expiresAt = new Date(
+            new Date(user.created_at).getTime() + VERIFICATION_TOKEN_MINUTES * 60 * 1000,
+        );
+
+        if (expiresAt <= now) {
+            throw new Error("The account is no longer eligible for email verification.");
+        }
+
+        await user.update(
+            {
+                email_verification_token_hash: tokenHash,
+                email_verification_expires_at: expiresAt,
+            },
+            { transaction },
+        );
+
+        return { email: user.email, token };
     });
-
-    return { email: user.email, token };
 }
 
 /**

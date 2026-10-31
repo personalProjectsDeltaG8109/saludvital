@@ -7,6 +7,7 @@ describe("Environment configuration", () => {
         expect(loadEnvironment({})).toEqual({
             nodeEnv: "development",
             port: 3000,
+            unverifiedRegistrationRetentionMinutes: 30,
             database: {
                 host: "localhost",
                 port: 3306,
@@ -38,6 +39,7 @@ describe("Environment configuration", () => {
         ).toEqual({
             nodeEnv: "production",
             port: 8080,
+            unverifiedRegistrationRetentionMinutes: 30,
             database: {
                 host: "127.0.0.1",
                 port: 3307,
@@ -71,6 +73,24 @@ describe("Environment configuration", () => {
         expect(() => loadEnvironment({ PORT: "70000" })).toThrow(
             "PORT must be an integer between 1 and 65535.",
         );
+    });
+
+    test.each(["invalid", "29", "525601", "30.5"])(
+        "rejects an invalid unverified registration retention period: %s",
+        (value) => {
+            expect(() =>
+                loadEnvironment({ UNVERIFIED_REGISTRATION_RETENTION_MINUTES: value }),
+            ).toThrow(
+                "UNVERIFIED_REGISTRATION_RETENTION_MINUTES must be an integer between 30 and 525600.",
+            );
+        },
+    );
+
+    test("accepts a configured unverified registration retention period", () => {
+        expect(
+            loadEnvironment({ UNVERIFIED_REGISTRATION_RETENTION_MINUTES: "45" })
+                .unverifiedRegistrationRetentionMinutes,
+        ).toBe(45);
     });
 
     // Reject database ports outside the valid TCP port range.
