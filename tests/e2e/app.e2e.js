@@ -12,6 +12,7 @@ const server = spawn(process.execPath, ["server.js"], {
         NODE_ENV: "test",
         DB_NAME: "saludvital_test",
         JWT_SECRET: "local-test-secret-not-for-production",
+        LOGIN_WHATSAPP_CONTACT_NUMBER: "573000000000",
         PORT: "3100",
     },
     stdio: "inherit",
@@ -76,7 +77,7 @@ try {
     const desktopColors = await desktop.evaluate(() => ({
         background: getComputedStyle(document.body).backgroundColor,
         primary: getComputedStyle(document.body).color,
-        secondary: getComputedStyle(document.querySelector("main p")).color,
+        secondary: getComputedStyle(document.querySelector(".login-hero-title span")).color,
     }));
 
     if (desktopColors.background !== "rgb(255, 255, 255)") {
@@ -87,8 +88,8 @@ try {
         throw new Error(`Unexpected primary color: ${desktopColors.primary}`);
     }
 
-    // Verify the secondary text uses the accessible teal shade.
-    if (desktopColors.secondary !== "rgb(22, 197, 188)") {
+    // Verify the priority text uses the SaludVital teal accent.
+    if (desktopColors.secondary !== "rgb(8, 127, 115)") {
         throw new Error(`Unexpected secondary text color: ${desktopColors.secondary}`);
     }
 
@@ -121,8 +122,11 @@ try {
         { name: "small mobile", width: 320, height: 720 },
         { name: "mobile", width: 375, height: 812 },
         { name: "tablet", width: 768, height: 1024 },
-        { name: "small desktop", width: 1024, height: 768 },
-        { name: "desktop", width: 1440, height: 900 },
+        { name: "Surface Pro portrait", width: 912, height: 1368 },
+        { name: "iPad Pro 13 portrait", width: 1032, height: 1376 },
+        { name: "small desktop", width: 1200, height: 800 },
+        { name: "iPad Pro 13 landscape", width: 1366, height: 1024 },
+        { name: "Surface Pro landscape", width: 1440, height: 960 },
     ];
 
     for (const viewport of loginViewports) {
@@ -136,6 +140,20 @@ try {
         // Verify that the login form and its main controls are available.
         await loginPage.locator('input[name="email"]').waitFor();
         await loginPage.locator('input[name="password"]').waitFor();
+
+        const passwordToggle = loginPage.getByRole("button", { name: "Mostrar contraseña" });
+        await passwordToggle.click();
+        if ((await loginPage.locator('input[name="password"]').getAttribute("type")) !== "text") {
+            throw new Error("The login password visibility control did not reveal the password.");
+        }
+        await loginPage.getByRole("button", { name: "Ocultar contraseña" }).click();
+
+        if (await loginPage.getByLabel("Recordarme").count()) {
+            throw new Error("The login page must not offer a persistent-session option.");
+        }
+
+        await loginPage.locator('a[href="/forgot-password"]').waitFor();
+        await loginPage.locator('a[href="/register"]').waitFor();
 
         const emailInput = loginPage.locator('input[name="email"]');
         const passwordInput = loginPage.locator('input[name="password"]');
@@ -163,6 +181,85 @@ try {
             throw new Error(
                 `Login page has horizontal overflow at ${viewport.name}: ${JSON.stringify(layout)}`,
             );
+        }
+
+        const responsiveComposition = await loginPage.evaluate(() => ({
+            visualDisplay: getComputedStyle(document.querySelector(".login-visual")).display,
+            mobileHeroDisplay: getComputedStyle(document.querySelector(".login-mobile-hero"))
+                .display,
+            formWidth: document.querySelector(".login-form-wrap").getBoundingClientRect().width,
+        }));
+
+        const usesStackedLayout = viewport.width < 1200;
+        if (
+            (usesStackedLayout &&
+                (responsiveComposition.visualDisplay !== "none" ||
+                    responsiveComposition.mobileHeroDisplay === "none")) ||
+            (!usesStackedLayout &&
+                (responsiveComposition.visualDisplay === "none" ||
+                    responsiveComposition.mobileHeroDisplay !== "none")) ||
+            responsiveComposition.formWidth > viewport.width
+        ) {
+            throw new Error(
+                `Login composition does not fit ${viewport.name}: ${JSON.stringify(responsiveComposition)}`,
+            );
+        }
+
+        if (viewport.width <= 430) {
+            const mobileLayout = await loginPage.evaluate(() => {
+                const brand = document.querySelector(".login-mobile-hero").getBoundingClientRect();
+                const form = document.querySelector(".login-form-wrap").getBoundingClientRect();
+
+                return {
+                    brandBottom: brand.bottom,
+                    formTop: form.top,
+                    formWidth: form.width,
+                    viewportWidth: window.innerWidth,
+                    visibleBrandCount: [...document.querySelectorAll(".login-brand-logo")].filter(
+                        (logo) => logo.getClientRects().length > 0,
+                    ).length,
+                    mobileWhatsAppCount: document.querySelectorAll(".login-mobile-whatsapp").length,
+                    desktopWhatsAppCount:
+                        document.querySelectorAll(".login-whatsapp-banner").length,
+                };
+            });
+
+            if (
+                mobileLayout.brandBottom > mobileLayout.formTop ||
+                mobileLayout.formWidth < mobileLayout.viewportWidth * 0.78 ||
+                mobileLayout.visibleBrandCount !== 1 ||
+                mobileLayout.mobileWhatsAppCount !== 1 ||
+                mobileLayout.desktopWhatsAppCount !== 1
+            ) {
+                throw new Error(
+                    `Login content is not stacked at ${viewport.name}: ${JSON.stringify(mobileLayout)}`,
+                );
+            }
+
+            if (viewport.width === 375) {
+                await loginPage.screenshot({
+                    path: "test-results/login-mobile-current.png",
+                    fullPage: true,
+                });
+            }
+        }
+
+        if (viewport.width === 1440) {
+            await loginPage.screenshot({
+                path: "test-results/login-desktop-current.png",
+                fullPage: true,
+            });
+        }
+
+        if (
+            viewport.name === "Surface Pro portrait" ||
+            viewport.name === "iPad Pro 13 portrait" ||
+            viewport.name === "iPad Pro 13 landscape"
+        ) {
+            await loginPage.screenshot({
+                path: `test-results/login-${viewport.name.toLowerCase().replaceAll(" ", "-")}.png`,
+                fullPage: true,
+            });
         }
 
         // Ensure visible images have loaded successfully.

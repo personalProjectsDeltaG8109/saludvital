@@ -51,10 +51,45 @@ describe("SaludVital application", () => {
     });
 
     test("GET /login renders the login page", async () => {
-        const response = await request(app).get("/login");
+        const previousContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+        delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
 
-        expect(response.status).toBe(200);
-        expect(response.text).toContain("SaludVital");
+        try {
+            const response = await request(app).get("/login");
+
+            expect(response.status).toBe(200);
+            expect(response.text).toContain("SaludVital");
+            expect(response.text).toContain('href="/forgot-password"');
+            expect(response.text).toContain('href="/register"');
+            expect(response.text).toContain("data-password-toggle");
+            expect(response.text).not.toContain("Recordarme");
+            expect(response.text).not.toContain("whatsapp-float");
+        } finally {
+            if (previousContactNumber === undefined) {
+                delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+            } else {
+                process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = previousContactNumber;
+            }
+        }
+    });
+
+    test("GET /login uses the configured public WhatsApp contact number", async () => {
+        const previousContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+        process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = "+57 (300) 123-4567";
+
+        try {
+            const response = await request(app).get("/login");
+
+            expect(response.status).toBe(200);
+            expect(response.text).toContain("https://wa.me/573001234567?");
+            expect(response.text).not.toContain("+57 (300) 123-4567");
+        } finally {
+            if (previousContactNumber === undefined) {
+                delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+            } else {
+                process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = previousContactNumber;
+            }
+        }
     });
 
     test("GET /health returns 404 when no health route is configured", async () => {

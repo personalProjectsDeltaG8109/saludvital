@@ -1,9 +1,14 @@
-//- Center the larger brand logo on mobile screens.
-.mb-8.flex.justify-center(class="lg:hidden")
-    img.h-24.w-auto.object-contain(
-        class="max-w-[240px]",
+header.login-mobile-hero(aria-label="SaludVital")
+    img.login-brand-logo.login-mobile-logo(
         src="/brand/login/logo-login-mobile.png",
         alt="SaludVital",
-        width="200",
+        width="240",
         height="80"
+    )
+    img.login-mobile-illustration(
+        src="/brand/login/girl.png",
+        alt="",
+        aria-hidden="true",
+        width="600",
+        height="400"
     )

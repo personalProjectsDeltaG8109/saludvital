@@ -1,70 +1,87 @@
-//- Shared login form for desktop and mobile layouts.
-.w-full
-    //- Login heading.
-    h1#login-title.text-2xl.font-bold.tracking-tight.text-primary(class="sm:text-3xl")
-        | Bienvenido de nuevo
+.login-form-wrap
+    img.login-form-logo(
+        src="/brand/login/logo-login-mobile.png",
+        alt="SaludVital",
+        width="280",
+        height="94"
+    )
+    h1#login-title ¡Bienvenido de nuevo!
+    p.login-subtitle Inicia sesión para acceder a tu cuenta de salud.
 
-    p.mt-2.text-sm.leading-6.text-slate-600
-        | Inicia sesión para acceder a tu cuenta de salud.
-
-    //- Authentication error.
     if error
-        p#login-error.mt-4.rounded-xl.border.border-red-200.bg-red-50.p-3.text-sm.text-red-800(
-            role="alert"
-        )= error
+        p#login-error.login-error(role="alert")= error
 
-    //- Login form.
-    form.mt-10.space-y-5(action="/login", method="POST")
-        //- Email field.
+    form.login-form(action="/login", method="POST")
         div
-            label.mb-2.block.text-sm.font-semibold.text-primary(for="email") Correo electrónico
+            label(for="email") Correo electrónico
+            .login-input-wrap
+                svg.login-input-icon(
+                    aria-hidden="true",
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="1.8"
+                )
+                    rect(x="3", y="5", width="18", height="14", rx="2")
+                    path(d="m3 7 9 6 9-6")
+                input#email(
+                    type="email",
+                    name="email",
+                    autocomplete="username",
+                    maxlength="80",
+                    placeholder="Ingresa tu correo electrónico",
+                    required,
+                    aria-describedby=error ? "login-error" : undefined
+                )
 
-            input#email.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900.outline-none.transition(
-                class="placeholder:text-slate-400 focus:border-secondary focus:ring-2 focus:ring-secondary/20",
-                type="email",
-                name="email",
-                autocomplete="username",
-                maxlength="80",
-                placeholder="Ingresa tu correo electrónico",
-                required,
-                aria-describedby=error ? "login-error" : undefined
-            )
-
-        //- Password field.
         div
-            .mb-2.flex.flex-wrap.items-center.justify-between.gap-2
-                label.block.text-sm.font-semibold.text-primary(for="password") Contraseña
+            .login-password-heading
+                label(for="password") Contraseña
+            .login-password-field
+                svg.login-input-icon(
+                    aria-hidden="true",
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="1.8"
+                )
+                    rect(x="4", y="10", width="16", height="11", rx="2")
+                    path(d="M8 10V7a4 4 0 0 1 8 0v3")
+                input#password(
+                    type="password",
+                    name="password",
+                    autocomplete="current-password",
+                    placeholder="Ingresa tu contraseña",
+                    required
+                )
+                button.login-password-toggle(
+                    type="button",
+                    data-password-toggle,
+                    aria-label="Mostrar contraseña",
+                    aria-pressed="false"
+                )
+                    svg(
+                        aria-hidden="true",
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8"
+                    )
+                        path(d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z")
+                        circle(cx="12", cy="12", r="3")
+                    span.sr-only(data-password-toggle-label) Mostrar contraseña
+            .login-forgot-link
+                a(href="/forgot-password") ¿Olvidaste tu contraseña?
 
-                a.text-sm.font-semibold.text-primary(class="hover:underline", href="/forgot-password") ¿Olvidaste tu contraseña?
+        button.login-submit(type="submit")
+            | Iniciar sesión
+            span(aria-hidden="true") →
 
-            input#password.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900.outline-none.transition(
-                class="placeholder:text-slate-400 focus:border-secondary focus:ring-2 focus:ring-secondary/20",
-                type="password",
-                name="password",
-                autocomplete="current-password",
-                placeholder="Ingresa tu contraseña",
-                required
-            )
+    .login-register
+        span o
+        p ¿Aún no tienes una cuenta?
+        a(href="/register") Crear una cuenta
 
-        //- Centered primary action.
-        .flex.justify-center.pt-2
-            button.w-full.max-w-xs.rounded-full.bg-primary.px-4.py-2.font-semibold.text-white.shadow-md.transition(
-                class="hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2",
-                type="submit"
-            ) Iniciar sesión
-
-    //- Registration section.
-    .mt-7.border-t.border-slate-200.pt-6
-        p.text-center.text-sm.text-slate-600
-            | ¿Aún no tienes una cuenta?
-
-        a.mx-auto.mt-3.flex.w-full.max-w-xs.items-center.justify-center.rounded-full.border.border-secondary.bg-white.px-4.py-2.font-semibold.text-primary.transition(
-            class="hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2",
-            href="/register"
-        ) Crear una cuenta
-
-    //- Security notice.
-    p.mt-5.text-center.text-xs.leading-5.text-slate-500
-        span.font-semibold.text-primary Acceso seguro
-        |
-        | · Tu información de salud está protegida.
+    p.login-security-note
+        span(aria-hidden="true") ◈
+        | Tu información de salud está protegida.
