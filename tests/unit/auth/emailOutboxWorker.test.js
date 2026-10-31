@@ -95,7 +95,9 @@ describe("Email outbox worker", () => {
             user_id: 42,
             event_type: "password_reset",
             attempts: 0,
-            update: jest.fn().mockResolvedValue(undefined),
+            update: jest.fn(async (values) => {
+                Object.assign(job, values);
+            }),
         };
 
         EmailOutbox.findOne.mockResolvedValue(job);
@@ -143,6 +145,84 @@ describe("Email outbox worker", () => {
         expect(job.update).toHaveBeenCalledWith(expect.objectContaining({ status: "processing" }), {
             transaction,
         });
+    });
+
+    test("expires verification tokens 30 minutes after registration", async () => {
+        const createdAt = new Date(Date.now() - 2 * 60 * 1000);
+        const user = {
+            id: 43,
+            email: "new-patient@example.com",
+            is_active: true,
+            email_verified_at: null,
+            created_at: createdAt,
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const job = {
+            id: 9,
+            user_id: user.id,
+            event_type: "email_verification",
+            attempts: 0,
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+        User.findByPk.mockResolvedValue(user);
+
+        await expect(processNextEmailOutboxJob()).resolves.toEqual({
+            processed: true,
+            status: "sent",
+        });
+
+        const verificationData = user.update.mock.calls[0][0];
+        expect(verificationData.email_verification_expires_at).toEqual(
+            new Date(createdAt.getTime() + 30 * 60 * 1000),
+        );
+        expect(verificationData.email_verification_token_hash).toMatch(/^[a-f0-9]{64}$/);
+        expect(sendVerificationEmail).toHaveBeenCalledWith(
+            user.email,
+            expect.stringContaining("/verify-email?token="),
+        );
+    });
+
+    test("does not send a verification link after the registration retention expires", async () => {
+        const user = {
+            id: 44,
+            email: "expired-patient@example.com",
+            is_active: true,
+            email_verified_at: null,
+            created_at: new Date(Date.now() - 31 * 60 * 1000),
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const job = {
+            id: 10,
+            user_id: user.id,
+            event_type: "email_verification",
+            attempts: 1,
+            update: jest.fn(async (values) => {
+                Object.assign(job, values);
+            }),
+        };
+        const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+        User.findByPk.mockResolvedValue(user);
+
+        try {
+            await expect(processNextEmailOutboxJob()).resolves.toEqual({
+                processed: true,
+                status: "retry_scheduled",
+            });
+            expect(sendVerificationEmail).not.toHaveBeenCalled();
+            expect(user.update).not.toHaveBeenCalled();
+            expect(job.update).toHaveBeenCalledWith(
+                expect.objectContaining({ status: "pending" }),
+                { transaction },
+            );
+        } finally {
+            consoleError.mockRestore();
+        }
     });
 
     // Reject invalid reset URL configuration before touching reset tokens.

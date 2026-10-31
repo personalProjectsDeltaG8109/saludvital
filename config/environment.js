@@ -22,6 +22,21 @@ export function loadEnvironment(env = process.env) {
         throw new Error("PORT must be an integer between 1 and 65535.");
     }
 
+    const unverifiedRegistrationRetentionMinutes =
+        env.UNVERIFIED_REGISTRATION_RETENTION_MINUTES === undefined
+            ? 30
+            : Number(env.UNVERIFIED_REGISTRATION_RETENTION_MINUTES);
+
+    if (
+        !Number.isInteger(unverifiedRegistrationRetentionMinutes) ||
+        unverifiedRegistrationRetentionMinutes < 30 ||
+        unverifiedRegistrationRetentionMinutes > 525600
+    ) {
+        throw new Error(
+            "UNVERIFIED_REGISTRATION_RETENTION_MINUTES must be an integer between 30 and 525600.",
+        );
+    }
+
     // Normalize the database connection settings.
     const database = {
         host: env.DB_HOST || "localhost",
@@ -61,6 +76,7 @@ export function loadEnvironment(env = process.env) {
     return {
         nodeEnv,
         port,
+        unverifiedRegistrationRetentionMinutes,
         database,
         jwt,
     };
