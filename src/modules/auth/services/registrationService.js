@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
 import { resolveLocation } from "./locationService.js";
+import { isValidPassword } from "./passwordPolicy.js";
 
 // Represent expected registration failures with safe, user-facing messages.
 export class RegistrationError extends Error {
@@ -65,7 +66,7 @@ function validateRegistration(data) {
         department: 100,
         municipality: 100,
         address: 150,
-        email: 100,
+        email: 320,
         allergies: 255,
         existing_conditions: 255,
     };
@@ -138,15 +139,9 @@ function validateRegistration(data) {
     // letters, one digit, and one special character.
     const password = data.password;
 
-    if (
-        password.length < 10 ||
-        !/[A-Z]/.test(password) ||
-        (password.match(/[a-z]/g) || []).length < 3 ||
-        !/\d/.test(password) ||
-        !/[^A-Za-z0-9]/.test(password)
-    ) {
+    if (!isValidPassword(password)) {
         throw new RegistrationError(
-            "La contraseña debe tener al menos 10 caracteres e incluir una letra mayúscula, tres letras minúsculas, un número y un carácter especial.",
+            "La contraseña debe tener entre 10 y 50 caracteres e incluir una letra mayúscula, tres letras minúsculas, un número y un carácter especial.",
         );
     }
 

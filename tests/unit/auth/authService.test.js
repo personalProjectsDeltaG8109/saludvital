@@ -86,6 +86,15 @@ describe("Authentication service", () => {
         expect(result).not.toHaveProperty("password_hash");
     });
 
+    test("accepts an account email longer than the former login limit", async () => {
+        const email = `${"a".repeat(110)}@example.com`;
+
+        await expect(authenticateUser(email, "CorrectPassword123!")).resolves.toBeDefined();
+        expect(User.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { email, is_active: true } }),
+        );
+    });
+
     test("clears failures after the login controller establishes a session", async () => {
         user.failed_login_attempts = 4;
         user.login_locked_until = new Date("2026-10-30T12:05:00.000Z");
@@ -184,7 +193,7 @@ describe("Authentication service", () => {
         ["empty password", "patient@example.com", ""],
         ["missing password", "patient@example.com", undefined],
         ["non-string password", "patient@example.com", 12345],
-        ["oversized email", "a".repeat(81), "Password123!"],
+        ["oversized email", "a".repeat(321), "Password123!"],
     ])(
         "rejects invalid credentials without starting a transaction: %s",
         async (_name, email, password) => {

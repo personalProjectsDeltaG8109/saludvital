@@ -70,7 +70,7 @@ html(lang="es")
                                 type="email",
                                 name="email",
                                 required,
-                                maxlength="100",
+                                maxlength="320",
                                 autocomplete="email"
                             )
                         label(for="doctor-password") Contraseña inicial *
@@ -79,10 +79,10 @@ html(lang="es")
                                 name="password",
                                 required,
                                 minlength="10",
-                                maxlength="128",
+                                maxlength="50",
                                 autocomplete="new-password"
                             )
-                            small Debe tener 10 caracteres como mínimo, con mayúscula, minúsculas, número y símbolo.
+                            small Debe tener entre 10 y 50 caracteres, con mayúscula, minúsculas, número y símbolo.
                     p.doctors-feedback(role="status", aria-live="polite", data-form-feedback)
                     .doctor-form-actions
                         a.doctors-secondary-button(href="/admin/doctors") Cancelar

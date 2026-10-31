@@ -74,6 +74,45 @@ describe("Admin doctor management service", () => {
         expect(database.transaction).not.toHaveBeenCalled();
     });
 
+    test("rejects an initial password longer than 50 characters", async () => {
+        await expect(
+            createAdminDoctor(1, {
+                email: "doctor@example.com",
+                password: `InitialPass1!${"x".repeat(40)}`,
+                displayName: "Dr. Example",
+                specialtyId: 2,
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(database.transaction).not.toHaveBeenCalled();
+    });
+
+    test("accepts account emails longer than the former 100-character limit", async () => {
+        const transaction = {};
+        const email = `${"a".repeat(110)}@example.com`;
+        database.transaction.mockImplementation((callback) => callback(transaction));
+        Rol.findOne.mockResolvedValue({ id: 3 });
+        Specialities.findOne.mockResolvedValue({ id: 2 });
+        User.findOne.mockResolvedValue(null);
+        User.findByPk.mockResolvedValue({ id: 1, email: "admin@example.com" });
+        bcrypt.hash.mockResolvedValue("secure-hash");
+        User.create.mockResolvedValue({ id: 7 });
+        Doctor.create.mockResolvedValue({ id: 12 });
+        EmailOutbox.create.mockResolvedValue({});
+        AuditLog.create.mockResolvedValue({});
+
+        await createAdminDoctor(1, {
+            email,
+            password: "InitialPass1!",
+            displayName: "Dr. Example",
+            specialtyId: 2,
+        });
+
+        expect(User.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email }),
+            expect.objectContaining({ transaction }),
+        );
+    });
+
     test("rejects a duplicate account email", async () => {
         database.transaction.mockImplementation((callback) => callback({}));
         Rol.findOne.mockResolvedValue({ id: 3 });

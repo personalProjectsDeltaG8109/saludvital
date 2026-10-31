@@ -129,6 +129,16 @@ describe("Patient registration service", () => {
         expect(database.transaction).not.toHaveBeenCalled();
     });
 
+    test("accepts an account email longer than the previous 100-character limit", async () => {
+        const email = `${"a".repeat(110)}@example.com`;
+
+        await expect(registerPatient({ ...validData, email })).resolves.toBeDefined();
+        expect(User.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email }),
+            expect.anything(),
+        );
+    });
+
     // Reject municipalities that do not belong to the selected department.
     test.each([
         ["Antioquia with Pereira", "05", "66001"],
@@ -260,7 +270,7 @@ describe("Patient registration service", () => {
         ["department", { department: "D".repeat(101) }],
         ["municipality", { municipality: "M".repeat(101) }],
         ["address", { address: "A".repeat(151) }],
-        ["email", { email: `${"a".repeat(101)}@example.com` }],
+        ["email", { email: `${"a".repeat(321)}@example.com` }],
         ["allergies", { allergies: "A".repeat(256) }],
         ["existing conditions", { existing_conditions: "C".repeat(256) }],
         ["phone with 6 digits", { phone: "1".repeat(6) }],
@@ -280,6 +290,8 @@ describe("Patient registration service", () => {
         ["missing lowercase", "SECUREPASS123!"],
         ["missing a digit", "SecurePassword!"],
         ["missing a special character", "SecurePassword123"],
+        ["more than 50 characters", `SecurePass123!${"x".repeat(40)}`],
+        ["more than 72 UTF-8 bytes", `Abc1!${"é".repeat(34)}`],
     ])("rejects a weak password: %s", async (_description, password) => {
         await expect(
             registerPatient({

@@ -131,7 +131,7 @@ html(lang="es")
                                         type="email",
                                         name="email",
                                         autocomplete="email",
-                                        maxlength="100",
+                                        maxlength="320",
                                         required
                                     )
 
@@ -217,10 +217,11 @@ html(lang="es")
                                         name="password",
                                         autocomplete="new-password",
                                         minlength="10",
+                                        maxlength="50",
                                         required
                                     )
                                     p.mt-1.text-xs.leading-5.text-slate-500
-                                        | Mínimo 10 caracteres, con mayúscula, minúsculas, número y carácter especial.
+                                        | Entre 10 y 50 caracteres, con mayúscula, minúsculas, número y carácter especial.
 
                                 //- Display a live password strength indicator.
                                 .mt-3(aria-live="polite")
@@ -241,6 +242,7 @@ html(lang="es")
                                         name="password_confirmation",
                                         autocomplete="new-password",
                                         minlength="10",
+                                        maxlength="50",
                                         required
                                     )
                                 //- Display password confirmation feedback accessibly.
