@@ -1,5 +1,8 @@
 import { describe, expect, test } from "@jest/globals";
-import { isValidPassword } from "../../../src/modules/auth/services/passwordPolicy.js";
+import {
+    isPasswordWithinSupportedLength,
+    isValidPassword,
+} from "../../../src/modules/auth/services/passwordPolicy.js";
 
 describe("new password policy", () => {
     test("accepts passwords within the length and bcrypt byte limits", () => {
@@ -19,5 +22,11 @@ describe("new password policy", () => {
     test("rejects non-string values", () => {
         expect(isValidPassword(null)).toBe(false);
         expect(isValidPassword(123)).toBe(false);
+    });
+
+    test("enforces supported login lengths without applying new-password complexity rules", () => {
+        expect(isPasswordWithinSupportedLength("LegacyPass1!")).toBe(true);
+        expect(isPasswordWithinSupportedLength("x".repeat(51))).toBe(false);
+        expect(isPasswordWithinSupportedLength(`a${"é".repeat(36)}`)).toBe(false);
     });
 });

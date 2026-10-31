@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { Rol, User } from "../../../models/associations.js";
+import { isPasswordWithinSupportedLength } from "./passwordPolicy.js";
 
 const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCK_DURATION_MS = 15 * 60 * 1000;
@@ -37,7 +38,7 @@ export async function authenticateUser(email, password) {
     if (
         !normalizedEmail ||
         normalizedEmail.length > 320 ||
-        typeof password !== "string" ||
+        !isPasswordWithinSupportedLength(password) ||
         password.length === 0
     ) {
         throw new AuthenticationError();

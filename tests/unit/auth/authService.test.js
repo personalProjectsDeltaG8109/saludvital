@@ -194,6 +194,8 @@ describe("Authentication service", () => {
         ["missing password", "patient@example.com", undefined],
         ["non-string password", "patient@example.com", 12345],
         ["oversized email", "a".repeat(321), "Password123!"],
+        ["password longer than 50 characters", "patient@example.com", "x".repeat(51)],
+        ["password longer than bcrypt's byte limit", "patient@example.com", `a${"é".repeat(36)}`],
     ])(
         "rejects invalid credentials without starting a transaction: %s",
         async (_name, email, password) => {
