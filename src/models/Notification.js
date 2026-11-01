@@ -48,6 +48,10 @@ const Notification = database.define(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        read_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         attempt_count: {
             type: DataTypes.INTEGER.UNSIGNED,
             allowNull: false,

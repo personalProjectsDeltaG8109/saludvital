@@ -118,6 +118,26 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("patient notification read updates require an authenticated patient", async () => {
+        const response = await request(app)
+            .patch("/api/patient/notifications/read")
+            .send({ ids: [1] })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("patient notification channel updates require an authenticated patient", async () => {
+        const response = await request(app)
+            .patch("/api/patient/notifications/channel")
+            .send({ channel: "SMS", isEnabled: false })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor profile updates require an authenticated doctor", async () => {
         const response = await request(app)
             .put("/api/doctor/profile")

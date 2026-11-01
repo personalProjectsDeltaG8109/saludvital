@@ -207,8 +207,13 @@ html(lang="es")
                                             th Estado
                                     tbody
                                         each notification, index in history
-                                            tr(class=index > 1 ? "is-history-extra" : null)
+                                            tr(
+                                                class=[index > 1 ? "is-history-extra" : "", notification.readAt ? "" : "is-unread"].filter(Boolean).join(" "),
+                                                data-notification-id=notification.id
+                                            )
                                                 td(data-label="Fecha y hora")
+                                                    if !notification.readAt
+                                                        span.notifications-unread-label Nueva
                                                     time(datetime=notification.date.toISOString())= notification.date.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
                                                 td(data-label="Tipo")
                                                     span.notifications-history-kind= notification.eventLabel
@@ -236,5 +241,10 @@ html(lang="es")
                                 span.notifications-empty-icon(aria-hidden="true") ♧
                                 strong Aún no tienes notificaciones
                                 p Aquí aparecerán las confirmaciones y recordatorios de tus citas.
+                        p.notifications-read-status(
+                            role="status",
+                            aria-live="polite",
+                            data-notification-read-status
+                        )
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)

@@ -10,7 +10,9 @@ import {
     AppointmentHistory,
 } from "../../../models/associations.js";
 import {
+    markPatientNotificationsRead,
     listPatientNotifications,
+    savePatientNotificationChannel,
     savePatientNotificationPreferences,
 } from "../controllers/notificationController.js";
 import {
@@ -30,6 +32,8 @@ import {
 } from "../controllers/appointmentController.js";
 import { getReschedulableAppointments } from "../services/appointmentService.js";
 import {
+    getPatientChannelStates,
+    getPatientUnreadNotificationCount,
     getPatientNotificationSettings,
     notificationEvents,
 } from "../services/notificationService.js";
@@ -52,9 +56,14 @@ async function getPatientHeader(userId) {
         where: { user_id: userId },
         attributes: ["first_name", "last_name", "profile_photo_url"],
     });
+    const notificationCount = patient ? await getPatientUnreadNotificationCount(userId) : 0;
     return {
         patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
         patientPhotoUrl: patient?.profile_photo_url || null,
+        notificationCount,
+        notificationLabel: notificationCount
+            ? `Notificaciones, ${notificationCount} sin leer`
+            : "Notificaciones",
     };
 }
 
@@ -63,6 +72,20 @@ patientRoutes.get(
     authenticateToken,
     requireRole("Patient"),
     listPatientNotifications,
+);
+
+patientRoutes.patch(
+    "/api/patient/notifications/read",
+    authenticateToken,
+    requireRole("Patient"),
+    markPatientNotificationsRead,
+);
+
+patientRoutes.patch(
+    "/api/patient/notifications/channel",
+    authenticateToken,
+    requireRole("Patient"),
+    savePatientNotificationChannel,
 );
 
 patientRoutes.patch(
@@ -278,6 +301,10 @@ patientRoutes.get(
                 upcomingAppointments: upcomingAppointments.map((appointment) =>
                     appointment.get({ plain: true }),
                 ),
+                notificationChannelStates: patient
+                    ? await getPatientChannelStates(patient.id)
+                    : { WhatsApp: false, SMS: true, Email: false },
+                ...(await getPatientHeader(req.auth.userId)),
             });
         } catch (error) {
             return next(error);
@@ -398,10 +425,7 @@ patientRoutes.get(
                 specialties: [
                     ...new Set(appointments.map((item) => item.specialty?.name).filter(Boolean)),
                 ],
-                patientName: patient?.first_name
-                    ? `${patient.first_name} ${patient.last_name}`
-                    : "Paciente",
-                patientPhotoUrl: patient?.profile_photo_url || null,
+                ...(await getPatientHeader(req.auth.userId)),
                 previewMode,
                 previewAvailable: process.env.NODE_ENV !== "production",
             });
@@ -464,7 +488,9 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
-            const notificationSettings = await getPatientNotificationSettings(req.auth.userId);
+            const notificationSettings = await getPatientNotificationSettings(req.auth.userId, {
+                markVisibleAsRead: true,
+            });
             return res.render("patient/notifications", {
                 pageTitle: "Notificaciones | SaludVital",
                 activeNav: "notifications",
@@ -668,6 +694,7 @@ patientRoutes.get(
                     "Aquí puedes gestionar tu perfil y mantener tu información actualizada.",
                 patientName: `${profile.patient.first_name} ${profile.patient.last_name}`,
                 patientPhotoUrl: profile.patient.profile_photo_url,
+                ...(await getPatientHeader(req.auth.userId)),
                 ...profile,
                 departments,
                 currentDepartmentCode: currentDepartment?.code || "",

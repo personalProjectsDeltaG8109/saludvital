@@ -826,7 +826,7 @@
     height: 22px;
     padding: 3px;
     border-radius: 20px;
-    background: #00b77a;
+    background: #b7c4d5;
 }
 
 .sv-toggle:after {
@@ -834,10 +834,54 @@
     width: 16px;
     height: 16px;
     display: block;
-    margin-left: auto;
+    margin-left: 0;
     border-radius: 50%;
     background: #fff;
     box-shadow: 0 1px 3px #003d322a;
+}
+
+.sv-toggle.is-active {
+    background: #00b77a;
+}
+
+.sv-toggle.is-active:after {
+    margin-left: auto;
+}
+
+.sv-switch-control {
+    position: relative;
+    display: inline-flex;
+    width: 38px;
+    min-height: 32px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.sv-switch-control input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.sv-switch-control input:focus-visible + .sv-toggle {
+    outline: 3px solid #1578e8;
+    outline-offset: 3px;
+}
+
+.sv-switch-control input:disabled + .sv-toggle {
+    opacity: .6;
+}
+
+.sv-notification-feedback {
+    min-height: 1.1rem;
+    margin: 6px 0 0;
+    color: var(--sv-muted);
+    font-size: 11px;
+}
+
+.sv-notification-feedback.is-error {
+    color: #b42318;
 }
 
 .sv-preference {

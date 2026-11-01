@@ -208,11 +208,57 @@
         render();
     });
 
-    historyToggle?.addEventListener("click", () => {
+    const readStatus = document.querySelector("[data-notification-read-status]");
+
+    async function markRowsAsRead(rows) {
+        const unreadRows = rows.filter((row) => row.classList.contains("is-unread"));
+        const ids = unreadRows.map((row) => Number(row.dataset.notificationId));
+        if (!ids.length) return;
+
+        try {
+            const response = await fetch("/api/patient/notifications/read", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                credentials: "same-origin",
+                body: JSON.stringify({ ids }),
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.message || "No se pudieron actualizar las notificaciones.");
+            }
+            unreadRows.forEach((row) => row.classList.remove("is-unread"));
+            updateNotificationBell(payload.data.unreadCount);
+            if (readStatus) readStatus.textContent = "Notificaciones marcadas como leídas.";
+        } catch {
+            if (readStatus) {
+                readStatus.textContent =
+                    "No se pudo actualizar el estado de lectura. Inténtalo de nuevo.";
+            }
+        }
+    }
+
+    function updateNotificationBell(unreadCount) {
+        const bell = document.querySelector(".sv-bell");
+        const count = bell?.querySelector("span");
+        if (!bell) return;
+        bell.setAttribute(
+            "aria-label",
+            unreadCount ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones",
+        );
+        if (count) {
+            count.textContent = unreadCount ? String(unreadCount) : "";
+            count.hidden = unreadCount === 0;
+        }
+    }
+
+    historyToggle?.addEventListener("click", async () => {
         if (!historyTable) return;
         const isExpanded = historyTable.classList.toggle("is-expanded");
         historyToggle.setAttribute("aria-expanded", String(isExpanded));
         historyToggle.textContent = isExpanded ? "Ver menos" : "Ver todas";
+        if (isExpanded) {
+            await markRowsAsRead([...historyTable.querySelectorAll("tr[data-notification-id]")]);
+        }
     });
 
     render();
