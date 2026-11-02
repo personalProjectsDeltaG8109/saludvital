@@ -22,6 +22,15 @@ function optionalText(value) {
     return typeof value === "string" ? value.trim() || null : value;
 }
 
+// Keep human names readable while rejecting identifiers and markup.
+function normalizePersonName(value) {
+    return value.trim().replace(/\s+/gu, " ");
+}
+
+function hasSupportedNameCharacters(value) {
+    return /^\p{L}[\p{L}\p{M}]*(?:[ '\u2019-]\p{L}[\p{L}\p{M}]*)*$/u.test(value);
+}
+
 // Validate the registration data before writing anything to the database.
 function validateRegistration(data) {
     const requiredFields = [
@@ -58,6 +67,22 @@ function validateRegistration(data) {
         }
     }
 
+    const firstName = normalizePersonName(data.first_name);
+    const lastName = normalizePersonName(data.last_name);
+    const normalizedNames = { first_name: firstName, last_name: lastName };
+
+    if (!hasSupportedNameCharacters(firstName)) {
+        throw new RegistrationError(
+            "El nombre solo puede contener letras, espacios, guiones y apóstrofes.",
+        );
+    }
+
+    if (!hasSupportedNameCharacters(lastName)) {
+        throw new RegistrationError(
+            "Los apellidos solo pueden contener letras, espacios, guiones y apóstrofes.",
+        );
+    }
+
     const textLimits = {
         first_name: 50,
         last_name: 50,
@@ -74,7 +99,7 @@ function validateRegistration(data) {
     const optionalFields = new Set(["address", "allergies", "existing_conditions"]);
 
     for (const [field, maxLength] of Object.entries(textLimits)) {
-        const value = data[field];
+        const value = normalizedNames[field] ?? data[field];
 
         if (value !== undefined && value !== null) {
             if (typeof value !== "string") {
@@ -167,8 +192,8 @@ function validateRegistration(data) {
         );
     }
 
-    // Return canonical names from the trusted catalog instead of user input.
-    return location;
+    // Return normalized names with the canonical location for persistence.
+    return { location, firstName, lastName };
 }
 
 // Create a patient account and profile atomically.
@@ -178,7 +203,7 @@ export async function registerPatient(data) {
     }
 
     // Validate all registration fields and resolve the official location names.
-    const location = validateRegistration(data);
+    const { location, firstName, lastName } = validateRegistration(data);
     const email = data.email.trim().toLowerCase();
     const documentType = data.document_type;
     const documentNumber = data.document_number.trim();
@@ -243,8 +268,8 @@ export async function registerPatient(data) {
             const patient = await Patient.create(
                 {
                     user_id: user.id,
-                    first_name: data.first_name.trim(),
-                    last_name: data.last_name.trim(),
+                    first_name: firstName,
+                    last_name: lastName,
                     phone: data.phone.trim(),
                     date_of_birth: data.date_of_birth,
                     document_type: documentType,
