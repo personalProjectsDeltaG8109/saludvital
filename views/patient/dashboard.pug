@@ -333,56 +333,9 @@ html(lang="es")
                                     aria-live="polite",
                                     data-dashboard-notification-feedback
                                 )
-                            section.sv-panel.sv-profile(aria-labelledby="profile-title")
-                                .sv-panel-heading
-                                    h2#profile-title Mi perfil
-                                    a(href="/patient/profile") Editar
-                                .sv-profile-content
-                                    .sv-profile-details
-                                        p
-                                            | ♙
-                                            span= patientName
-                                        p
-                                            | ▣
-                                            span= patient ? patient.document_type + " " + patient.document_number : "Documento no registrado"
-                                        p
-                                            | ✉
-                                            span= patient && patient.user ? patient.user.email : "Correo no registrado"
-                                        p
-                                            | ▯
-                                            span= patient && patient.phone ? (patient.phone.startsWith("+") ? patient.phone : "+57 " + patient.phone) : "Teléfono no registrado"
-                                        p
-                                            | ⌖
-                                            span= patient ? patient.municipality + ", " + patient.department : "Ubicación no registrada"
-                                    .sv-profile-person
-                                        if patientPhotoUrl
-                                            button.sv-profile-photo-trigger(
-                                                type="button",
-                                                aria-label="Ver mi foto de perfil ampliada",
-                                                data-open-home-profile-photo
-                                            )
-                                                img(src=patientPhotoUrl, alt="", loading="lazy")
-                                        else
-                                            span.sv-profile-photo-fallback(aria-hidden="true")= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
-                                        small Paciente
                     form.sv-mobile-logout(action="/logout", method="POST")
                         button(type="submit") Cerrar sesión
                 include partials/bottom-nav
-                if patientPhotoUrl
-                    dialog.sv-profile-photo-dialog(
-                        aria-label="Foto de perfil ampliada",
-                        data-home-profile-photo
-                    )
-                        button.sv-profile-photo-close(
-                            type="button",
-                            aria-label="Cerrar foto",
-                            data-close-home-profile-photo
-                        ) ×
-                        img.profile-avatar-image(
-                            src=patientPhotoUrl,
-                            alt="Foto de perfil de " + patientName,
-                            data-home-profile-photo-image
-                        )
                 if nextAppointment && nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
                     dialog.doctor-photo-viewer-dialog(
                         aria-label="Foto del médico ampliada",

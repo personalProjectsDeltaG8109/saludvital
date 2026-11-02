@@ -2,13 +2,37 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
+import pug from "pug";
 
 const dashboardStyles = await readFile(path.resolve("public/css/patient-dashboard.css"), "utf8");
 const appStyles = await readFile(path.resolve("public/css/app.css"), "utf8");
+const appointmentStyles = await readFile(
+    path.resolve("public/css/patient-appointments.css"),
+    "utf8",
+);
 const dashboardScript = await readFile(
     path.resolve("public/js/patient-dashboard-notifications.js"),
     "utf8",
 );
+const dashboardHtml = pug.renderFile("views/patient/dashboard.pug", {
+    pageTitle: "Panel del paciente | SaludVital",
+    activeNav: "home",
+    patientName: "Paciente de prueba",
+    patientPhotoUrl: null,
+    nextAppointment: null,
+    upcomingAppointments: [],
+    notificationChannelStates: { WhatsApp: true, SMS: true, Email: false },
+    homeHref: "/patient/dashboard",
+    sidebarId: "patient-sidebar",
+    notificationHref: "/patient/notifications",
+    notificationLabel: "Notificaciones",
+    notificationCount: 2,
+    profileHref: "/patient/profile",
+    profileLabel: "Abrir mi perfil",
+    roleLabel: "Paciente",
+    displayName: "Paciente de prueba",
+    topbarMessage: "Gestiona tus citas.",
+});
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -115,8 +139,30 @@ try {
         throw new Error(`Accessibility violations: ${JSON.stringify(accessibility.violations)}`);
     }
 
+    await page.setContent(dashboardHtml);
+    await page.addStyleTag({ content: appStyles });
+    await page.addStyleTag({ content: dashboardStyles });
+    await page.addStyleTag({ content: appointmentStyles });
+
+    if (await page.locator(".sv-profile").count()) {
+        throw new Error("The patient dashboard must not render a profile summary card.");
+    }
+    if (!(await page.locator('a[href="/patient/profile"]').count())) {
+        throw new Error("The patient's profile page must remain available from navigation.");
+    }
+
+    for (const width of [390, 760, 762, 768, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const hasDashboardOverflow = await page.evaluate(
+            () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        );
+        if (hasDashboardOverflow) {
+            throw new Error(`Patient dashboard has horizontal overflow at ${width}px.`);
+        }
+    }
+
     console.log(
-        "PASS: patient dashboard channel switches, validation feedback, responsive widths, and axe-core.",
+        "PASS: patient dashboard profile removal, navigation, channel switches, responsive widths, and axe-core.",
     );
 } finally {
     await browser.close();
