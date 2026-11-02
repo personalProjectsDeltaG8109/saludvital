@@ -1,6 +1,7 @@
 - var safeDisplayName = typeof displayName === "string" && displayName.trim() ? displayName.trim() : "Usuario";
 - var safeProfilePhotoUrl = typeof profilePhotoUrl !== "undefined" ? profilePhotoUrl : null;
 - var safeRoleLabel = typeof roleLabel === "string" && roleLabel.trim() ? roleLabel.trim() : "Usuario";
+- var safeNotificationCountUrl = typeof notificationCountUrl === "string" ? notificationCountUrl : null;
 
 mixin topbarUserContent
     span.sv-avatar(aria-hidden="true")
@@ -41,7 +42,11 @@ header.sv-topbar
         p= topbarMessage
     .sv-topbar-actions
         if notificationHref
-            a.sv-bell(href=notificationHref, aria-label=notificationLabel)
+            a.sv-bell(
+                href=notificationHref,
+                aria-label=notificationLabel,
+                data-notification-count-url=safeNotificationCountUrl
+            )
                 +notificationBellIcon
         else if showNotificationBell
             button.sv-bell(type="button", aria-label=notificationLabel, disabled)

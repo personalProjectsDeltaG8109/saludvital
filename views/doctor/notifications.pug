@@ -1,0 +1,69 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/doctor-dashboard.css")
+        link(rel="stylesheet", href="/css/doctor-notifications.css")
+    body.sv-dashboard.doctor-home-page
+        .sv-layout
+            include ./partials/sidebar.pug
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            .sv-main
+                include ./partials/topbar.pug
+                main.doctor-content.doctor-subpage-content.doctor-notifications-page(
+                    data-notification-list,
+                    data-current-page=notifications.page
+                )
+                    header.doctor-page-heading
+                        div
+                            h1 Notificaciones
+                            p Actualizaciones de tus citas asignadas.
+                    section.doctor-panel(aria-labelledby="doctor-notifications-heading")
+                        .doctor-notifications-header
+                            div
+                                h2#doctor-notifications-heading Actividad de citas
+                                p Revisa las nuevas citas, reprogramaciones y cancelaciones.
+                            p.doctor-notification-unread(aria-live="polite", data-unread-count)= `${notifications.unreadCount} sin leer`
+                        if notifications.items.length
+                            ul.doctor-notification-list
+                                each item in notifications.items
+                                    li.doctor-notification-item(
+                                        class=item.isRead ? "is-read" : "is-unread"
+                                    )
+                                        span.doctor-notification-icon(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24")
+                                                path(
+                                                    d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                                )
+                                        .doctor-notification-copy
+                                            strong= item.label
+                                            if item.appointmentAtLabel
+                                                p Cita: #{ item.appointmentAtLabel }
+                                            p.doctor-notification-time= item.occurredAtLabel
+                                        if item.isRead
+                                            span.doctor-notification-read Leída
+                                        else
+                                            button.doctor-notification-read-button(
+                                                type="button",
+                                                data-mark-notification-read=item.id
+                                            ) Marcar como leída
+                        else
+                            .doctor-notification-empty(role="status")
+                                strong No tienes notificaciones de citas
+                                p Las nuevas citas, reprogramaciones y cancelaciones aparecerán aquí.
+                        if notifications.totalPages > 1
+                            nav.doctor-notification-pagination(
+                                aria-label="Paginación de notificaciones"
+                            )
+                                if notifications.page > 1
+                                    a(href=`/doctor/notifications?page=${notifications.page - 1}`) Anterior
+                                span Página #{ notifications.page } de #{ notifications.totalPages }
+                                if notifications.page < notifications.totalPages
+                                    a(href=`/doctor/notifications?page=${notifications.page + 1}`) Siguiente
+                include ./partials/bottom-nav.pug
+        script(src="/js/session-timeout.js", defer)
+        script(src="/js/patient-sidebar.js", defer)

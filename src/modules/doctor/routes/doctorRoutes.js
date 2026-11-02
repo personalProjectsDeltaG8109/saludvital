@@ -25,9 +25,72 @@ import {
 } from "../services/doctorAgendaService.js";
 import { getDoctorProfile, updateDoctorProfile } from "../services/doctorProfileService.js";
 import { updateDoctorProfilePhoto } from "../services/doctorProfilePhotoService.js";
+import {
+    getDoctorNotifications,
+    getDoctorUnreadNotificationCount,
+    markDoctorNotificationRead,
+} from "../services/doctorNotificationService.js";
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
+
+doctorRoutes.get(
+    "/api/doctor/notifications/unread-count",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json({
+                unreadCount: await getDoctorUnreadNotificationCount(req.auth.userId),
+            });
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+doctorRoutes.get("/api/doctor/notifications", ...requireDoctor, async (req, res, next) => {
+    try {
+        return res.json(await getDoctorNotifications(req.auth.userId, req.query));
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
+
+doctorRoutes.post(
+    "/api/doctor/notifications/:eventId/read",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(await markDoctorNotificationRead(req.auth.userId, req.params.eventId));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+doctorRoutes.get("/doctor/notifications", ...requireDoctor, async (req, res, next) => {
+    try {
+        const [header, notifications] = await Promise.all([
+            getDoctorHeaderData(req.auth.userId),
+            getDoctorNotifications(req.auth.userId, req.query),
+        ]);
+        return res.render("doctor/notifications", {
+            pageTitle: "Notificaciones | SaludVital",
+            activeNav: "notifications",
+            bottomNavActive: "notifications",
+            notifications,
+            ...header,
+        });
+    } catch (error) {
+        if (error.statusCode === 404) return res.status(404).render("errors/404");
+        return next(error);
+    }
+});
 
 doctorRoutes.get("/api/doctor/consultations/active", ...requireDoctor, async (req, res, next) => {
     try {

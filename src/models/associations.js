@@ -25,6 +25,7 @@ import PrescriptionItem from "./PrescriptionItem.js";
 import EmergencyContact from "./EmergencyContact.js";
 import PasswordResetToken from "./PasswordResetToken.js";
 import EmailOutbox from "./EmailOutbox.js";
+import DoctorAppointmentNotificationRead from "./DoctorAppointmentNotificationRead.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(User, {
@@ -189,6 +190,34 @@ AppointmentHistory.belongsTo(User, {
     as: "actor",
     onUpdate: "CASCADE",
     onDelete: "SET NULL",
+});
+
+Doctor.hasMany(DoctorAppointmentNotificationRead, {
+    foreignKey: "doctor_id",
+    as: "appointmentNotificationReads",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+DoctorAppointmentNotificationRead.belongsTo(Doctor, {
+    foreignKey: "doctor_id",
+    as: "doctor",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+AppointmentHistory.hasMany(DoctorAppointmentNotificationRead, {
+    foreignKey: "appointment_history_id",
+    as: "doctorReadStates",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+DoctorAppointmentNotificationRead.belongsTo(AppointmentHistory, {
+    foreignKey: "appointment_history_id",
+    as: "appointmentHistory",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
 });
 
 // Associate each doctor with their regular availability blocks.
@@ -563,6 +592,7 @@ export {
     Rol,
     User,
     EmailOutbox,
+    DoctorAppointmentNotificationRead,
     PasswordResetToken,
     Patient,
     EmergencyContact,
