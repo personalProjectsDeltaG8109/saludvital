@@ -37,11 +37,53 @@ html(lang="es")
                         div
                             span Motivo agendado
                             strong= appointment.reason || "No especificado"
-                    nav.consultation-progress(aria-label="Pasos de la consulta")
-                        button.is-active(type="button", data-step-indicator="0") 1. Atención
-                        button(type="button", data-step-indicator="1") 2. Diagnóstico
-                        button(type="button", data-step-indicator="2") 3. Tratamiento
-                        button(type="button", data-step-indicator="3") 4. Finalizar
+                    nav.consultation-progress(aria-label="Progreso de la consulta")
+                        button.is-active(
+                            type="button",
+                            data-step-indicator="0",
+                            data-step-title="Atención",
+                            aria-current="step"
+                        )
+                            span.consultation-step-number(aria-hidden="true") 01
+                            span.consultation-step-label
+                                strong Atención
+                                small(data-step-state) Paso actual
+                        button(
+                            type="button",
+                            data-step-indicator="1",
+                            data-step-title="Diagnóstico",
+                            disabled
+                        )
+                            span.consultation-step-number(aria-hidden="true") 02
+                            span.consultation-step-label
+                                strong Diagnóstico
+                                small(data-step-state) Pendiente
+                        button(
+                            type="button",
+                            data-step-indicator="2",
+                            data-step-title="Tratamiento",
+                            disabled
+                        )
+                            span.consultation-step-number(aria-hidden="true") 03
+                            span.consultation-step-label
+                                strong Tratamiento
+                                small(data-step-state) Pendiente
+                        button(
+                            type="button",
+                            data-step-indicator="3",
+                            data-step-title="Finalizar",
+                            disabled
+                        )
+                            span.consultation-step-number(aria-hidden="true") 04
+                            span.consultation-step-label
+                                strong Finalizar
+                                small(data-step-state) Pendiente
+                    p.consultation-step-announcement(
+                        role="status",
+                        aria-live="polite",
+                        data-step-announcement
+                    )
+                        | Paso 1 de 4: Atención. Paso actual.
                     p.consultation-feedback(
                         role="status",
                         aria-live="polite",
@@ -49,7 +91,7 @@ html(lang="es")
                     )
                     form.consultation-form(data-consultation-form, novalidate)
                         section.consultation-step(data-consultation-step="0")
-                            h2 Atención
+                            h2(tabindex="-1") Atención
                             p#consultation-form-guidance.consultation-form-guidance
                                 | Los campos marcados con * son obligatorios para finalizar. Puedes guardar un borrador antes de completarlos.
                             label(for="consultation-symptoms") Motivo de consulta
@@ -158,7 +200,7 @@ html(lang="es")
                                 button(type="button", data-save-draft) Guardar borrador
                                 button(type="button", data-next-step) Siguiente
                         section.consultation-step(hidden, data-consultation-step="1")
-                            h2 Diagnóstico
+                            h2(tabindex="-1") Diagnóstico
                             p Agrega uno o varios diagnósticos y sus observaciones opcionales.
                             .consultation-inline-fields
                                 label(for="diagnosis-entry") Diagnóstico
@@ -187,7 +229,7 @@ html(lang="es")
                                 button(type="button", data-save-draft) Guardar borrador
                                 button(type="button", data-next-step) Siguiente
                         section.consultation-step(hidden, data-consultation-step="2")
-                            h2 Tratamiento y órdenes
+                            h2(tabindex="-1") Tratamiento y órdenes
                             h3 Medicamentos (opcional)
                             p.consultation-form-guidance
                                 | Si agregas un medicamento, completa su nombre, dosis, frecuencia y duración.
@@ -265,7 +307,7 @@ html(lang="es")
                                 button(type="button", data-save-draft) Guardar borrador
                                 button(type="button", data-next-step) Revisar resumen
                         section.consultation-step(hidden, data-consultation-step="3")
-                            h2 Resumen de la consulta
+                            h2(tabindex="-1") Resumen de la consulta
                             p Revisa los datos registrados antes de finalizar.
                             dl.consultation-summary(data-consultation-summary)
                             .consultation-actions

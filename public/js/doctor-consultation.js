@@ -213,17 +213,35 @@
         renderEntries();
     }
 
-    function showStep(index) {
+    function showStep(index, focusHeading = true) {
         currentStep = Math.max(0, Math.min(index, steps.length - 1));
         steps.forEach((step, stepIndex) => {
             step.hidden = stepIndex !== currentStep;
         });
         indicators.forEach((indicator, stepIndex) => {
+            const isCurrentStep = stepIndex === currentStep;
+            const isPreviousStep = stepIndex < currentStep;
+            const stateLabel = isCurrentStep
+                ? "Paso actual"
+                : isPreviousStep
+                  ? "Paso anterior"
+                  : "Pendiente";
+
             indicator.classList.toggle("is-active", stepIndex === currentStep);
-            indicator.setAttribute("aria-current", stepIndex === currentStep ? "step" : "false");
+            indicator.classList.toggle("is-previous", isPreviousStep);
+            indicator.disabled = stepIndex > currentStep;
+            if (isCurrentStep) indicator.setAttribute("aria-current", "step");
+            else indicator.removeAttribute("aria-current");
+            indicator.querySelector("[data-step-state]").textContent = stateLabel;
+            indicator.setAttribute(
+                "aria-label",
+                `Paso ${stepIndex + 1} de ${steps.length}: ${indicator.dataset.stepTitle}. ${stateLabel}.`,
+            );
         });
+        document.querySelector("[data-step-announcement]").textContent =
+            `Paso ${currentStep + 1} de ${steps.length}: ${indicators[currentStep].dataset.stepTitle}. Paso actual.`;
         if (currentStep === 3) renderSummary();
-        steps[currentStep].querySelector("h2")?.focus?.();
+        if (focusHeading) steps[currentStep].querySelector("h2")?.focus();
     }
 
     function renderSummary() {
@@ -287,9 +305,11 @@
         .forEach((button) => button.addEventListener("click", () => showStep(currentStep - 1)));
     indicators.forEach((button, index) =>
         button.addEventListener("click", () => {
-            if (index <= currentStep) showStep(index);
+            if (!button.disabled) showStep(index);
         }),
     );
+
+    showStep(0, false);
 
     document.querySelector("[data-add-diagnosis]").addEventListener("click", () => {
         const diagnosisInput = document.querySelector("[data-diagnosis-input]");
