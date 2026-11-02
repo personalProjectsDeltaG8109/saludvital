@@ -18,8 +18,9 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Specialities: {},
 }));
 
+const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
-const { getActiveDoctorConsultationId, startDoctorConsultation } =
+const { getActiveDoctorConsultationId, saveDoctorConsultationDraft, startDoctorConsultation } =
     await import("../../src/modules/doctor/services/doctorConsultationService.js");
 
 describe("start doctor consultation", () => {
@@ -95,5 +96,98 @@ describe("start doctor consultation", () => {
 
         await expect(startDoctorConsultation(45, "7")).rejects.toMatchObject({ statusCode: 409 });
         expect(models.Consultation.create).not.toHaveBeenCalled();
+    });
+
+    test.each([
+        ["consultation reason", { symptoms: "x".repeat(5001) }],
+        ["patient condition", { patientFeeling: "x".repeat(5001) }],
+        ["medical evaluation", { clinicalNotes: "x".repeat(10001) }],
+        ["diagnosis", { diagnoses: [{ diagnosis: "x".repeat(501) }] }],
+        ["diagnosis notes", { diagnoses: [{ diagnosis: "Test", notes: "x".repeat(5001) }] }],
+        [
+            "medication name",
+            {
+                prescriptionItems: [
+                    {
+                        medicationName: "x".repeat(151),
+                        dosage: "1 mg",
+                        frequency: "Daily",
+                        duration: "5 days",
+                    },
+                ],
+            },
+        ],
+        [
+            "medication dosage",
+            {
+                prescriptionItems: [
+                    {
+                        medicationName: "Test",
+                        dosage: "x".repeat(101),
+                        frequency: "Daily",
+                        duration: "5 days",
+                    },
+                ],
+            },
+        ],
+        [
+            "medication frequency",
+            {
+                prescriptionItems: [
+                    {
+                        medicationName: "Test",
+                        dosage: "1 mg",
+                        frequency: "x".repeat(101),
+                        duration: "5 days",
+                    },
+                ],
+            },
+        ],
+        [
+            "medication duration",
+            {
+                prescriptionItems: [
+                    {
+                        medicationName: "Test",
+                        dosage: "1 mg",
+                        frequency: "Daily",
+                        duration: "x".repeat(101),
+                    },
+                ],
+            },
+        ],
+        [
+            "medication instructions",
+            {
+                prescriptionItems: [
+                    {
+                        medicationName: "Test",
+                        dosage: "1 mg",
+                        frequency: "Daily",
+                        duration: "5 days",
+                        instructions: "x".repeat(5001),
+                    },
+                ],
+            },
+        ],
+        ["medical order line", { medicalOrders: ["x".repeat(1001)] }],
+        ["medical order count", { medicalOrders: Array.from({ length: 31 }, () => "Order") }],
+    ])("rejects draft values beyond the supported %s limit", async (_fieldName, overrides) => {
+        const payload = {
+            symptoms: "Reason",
+            patientFeeling: "Stable",
+            clinicalNotes: "Evaluation",
+            recommendations: "",
+            medicalOrders: [],
+            vitalSigns: null,
+            diagnoses: [],
+            prescriptionItems: [],
+            ...overrides,
+        };
+
+        await expect(saveDoctorConsultationDraft(45, 88, payload)).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        expect(database.transaction).not.toHaveBeenCalled();
     });
 });
