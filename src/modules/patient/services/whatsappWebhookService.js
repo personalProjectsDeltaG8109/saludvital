@@ -604,7 +604,8 @@ async function handleSelection(conversation, contactId, text, userId, state) {
                 "Escribe una fecha válida con formato AAAA-MM-DD.",
             );
         const doctorId = state.doctorId;
-        const slots = await getAvailableTimeSlots(doctorId, text, userId);
+        const purpose = state.step === "reschedule_date" ? "reschedule" : "booking";
+        const slots = await getAvailableTimeSlots(doctorId, text, userId, { purpose });
         if (!slots.length)
             return sendResponse(
                 conversation,

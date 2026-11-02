@@ -66,6 +66,7 @@ export async function listAvailableTimeSlots(req, res, next) {
             req.params.doctorId,
             req.query.date,
             req.auth.userId,
+            { purpose: req.query.purpose || "booking" },
         );
 
         return res.status(200).json({

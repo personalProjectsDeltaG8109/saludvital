@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../../config/database.js", () => ({
     default: { transaction: jest.fn() },
@@ -11,6 +12,7 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => {
     const model = () => ({
         count: jest.fn(),
         create: jest.fn(),
+        findAll: jest.fn(),
         findByPk: jest.fn(),
         findOne: jest.fn(),
     });
@@ -48,7 +50,7 @@ const {
 const { cancelPendingAppointmentReminders, enqueueAppointmentNotifications } =
     await import("../../../src/modules/patient/services/notificationAutomationService.js");
 const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
-const { reschedulePatientAppointment } =
+const { getReschedulableAppointments, reschedulePatientAppointment } =
     await import("../../../src/modules/patient/services/appointmentService.js");
 
 describe("appointment rescheduling", () => {
@@ -60,8 +62,12 @@ describe("appointment rescheduling", () => {
         jest.setSystemTime(new Date("2026-11-01T15:00:00.000Z"));
         jest.clearAllMocks();
         database.transaction.mockImplementation(async (callback) => callback(transaction));
-        Patient.findOne.mockResolvedValue({ id: 12 });
-        Specialities.findOne.mockResolvedValue({ id: 5, is_active: true });
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "1990-05-15" });
+        Specialities.findOne.mockResolvedValue({
+            id: 5,
+            name: "Medicina General",
+            is_active: true,
+        });
         Doctor.findByPk.mockImplementation(async (id) => ({ id }));
         Doctor.findOne.mockResolvedValue({ id: 8, specialty_id: 5 });
         Appointment.count.mockResolvedValue(0);
@@ -84,6 +90,7 @@ describe("appointment rescheduling", () => {
             reason: "Seguimiento",
             update: jest.fn(),
         };
+        Appointment.findOne.mockReset();
         Appointment.findOne
             .mockResolvedValueOnce({ id: 17, doctor_id: 6, specialty_id: 3 })
             .mockResolvedValueOnce(appointment)
@@ -178,6 +185,103 @@ describe("appointment rescheduling", () => {
         expect(appointment.update).not.toHaveBeenCalled();
         expect(AppointmentHistory.create).not.toHaveBeenCalled();
         expect(AuditLog.create).not.toHaveBeenCalled();
+    });
+
+    test("rejects a replacement slot with less than five hours' notice", async () => {
+        await expect(
+            reschedulePatientAppointment({
+                userId: 81,
+                appointmentId: 17,
+                date: "2026-11-01",
+                time: "14:30",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        expect(appointment.update).not.toHaveBeenCalled();
+    });
+
+    test("accepts a replacement slot at the exact five-hour notice boundary", async () => {
+        await reschedulePatientAppointment({
+            userId: 81,
+            appointmentId: 17,
+            date: "2026-11-01",
+            time: "15:00",
+        });
+
+        expect(appointment.update).toHaveBeenCalledWith(
+            expect.objectContaining({ start_at: new Date("2026-11-01T20:00:00.000Z") }),
+            { transaction },
+        );
+    });
+
+    test("keeps administrator edits on the existing thirty-minute notice rule", async () => {
+        await reschedulePatientAppointment({
+            userId: 81,
+            actorUserId: 5,
+            actorSnapshot: "Administrator 5",
+            appointmentId: 17,
+            date: "2026-11-01",
+            time: "10:30",
+        });
+
+        expect(appointment.update).toHaveBeenCalledWith(
+            expect.objectContaining({ start_at: new Date("2026-11-01T15:30:00.000Z") }),
+            { transaction },
+        );
+    });
+
+    test("rejects patient rescheduling when the original appointment is less than 24 hours away", async () => {
+        appointment.start_at = new Date("2026-11-02T14:59:59.000Z");
+
+        await expect(
+            reschedulePatientAppointment({
+                userId: 81,
+                appointmentId: 17,
+                date: "2026-11-01",
+                time: "15:00",
+            }),
+        ).rejects.toMatchObject({ statusCode: 409 });
+
+        expect(appointment.update).not.toHaveBeenCalled();
+    });
+
+    test("allows patient rescheduling at the exact 24-hour original-appointment boundary", async () => {
+        appointment.start_at = new Date("2026-11-02T15:00:00.000Z");
+
+        await reschedulePatientAppointment({
+            userId: 81,
+            appointmentId: 17,
+            date: "2026-11-01",
+            time: "20:00",
+        });
+
+        expect(appointment.update).toHaveBeenCalled();
+    });
+
+    test("lists patient appointments only when at least 24 hours remain", async () => {
+        Appointment.findAll.mockResolvedValue([]);
+
+        await getReschedulableAppointments(81);
+
+        const query = Appointment.findAll.mock.calls[0][0];
+        expect(query.where.start_at[Op.gt]).toEqual(new Date("2026-11-02T15:00:00.000Z"));
+    });
+
+    test("rejects rescheduling an adult patient to Pediatrics on their 18th birthday", async () => {
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "2008-11-03" });
+        Specialities.findOne.mockResolvedValue({ id: 5, name: "Pediatría", is_active: true });
+
+        await expect(
+            reschedulePatientAppointment({
+                userId: 81,
+                appointmentId: 17,
+                specialtyId: 5,
+                date: "2026-11-03",
+                time: "10:00",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        expect(appointment.update).not.toHaveBeenCalled();
     });
 
     test("preserves the appointment when the requested slot has a conflict", async () => {
