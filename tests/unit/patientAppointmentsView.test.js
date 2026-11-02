@@ -18,7 +18,6 @@ function renderAppointmentsPage() {
         specialty: { name: "Medicina General" },
         doctor: { display_name: "Doctor de prueba" },
         doctor_label: "Doctor de prueba",
-        site_label: "Sede SaludVital",
         history: [],
     };
 
@@ -58,5 +57,15 @@ describe("patient appointments view", () => {
         expect(html).toContain('class="appointment-status status-in-progress">En curso</span>');
         expect(html).not.toMatch(/<option[^>]*value="In Progress"/);
         expect(html.match(/class="appointment-stat stat-/g)).toHaveLength(4);
+    });
+
+    test("does not show an unsupported clinic location in the list or appointment details", () => {
+        const html = renderAppointmentsPage();
+
+        expect(html).not.toContain("Sede");
+        expect(html).toContain("Medicina General");
+        expect(html).toContain("Doctor de prueba");
+        expect(html).toContain("Fecha y hora");
+        expect(html).toContain("Estado actual");
     });
 });

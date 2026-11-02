@@ -52,11 +52,10 @@ html(lang="es")
                                     table.reschedule-table
                                         thead
                                             tr
-                                                th(aria-label="Seleccionar")
+                                                th Seleccionar
                                                 th Fecha y hora
                                                 th Especialidad
                                                 th Médico
-                                                th Sede
                                                 th Estado
                                         tbody
                                             each appointment in appointments
@@ -71,7 +70,6 @@ html(lang="es")
                                                     data-reschedules-used=reschedulesUsed,
                                                     data-specialty=specialtyName,
                                                     data-doctor-name=doctorName,
-                                                    data-site=appointment.site_label || "Sede SaludVital",
                                                     data-start-at=startAt.toISOString(),
                                                     class=appointment.id === selectedAppointmentId ? "is-selected" : null
                                                 )
@@ -89,7 +87,6 @@ html(lang="es")
                                                     td(data-label="Especialidad")
                                                         strong= specialtyName
                                                     td(data-label="Médico")= doctorName
-                                                    td(data-label="Sede")= appointment.site_label || "Sede SaludVital"
                                                     td(data-label="Estado")
                                                         span.reschedule-status Confirmada
                             section.reschedule-panel(aria-labelledby="reschedule-date-title")
@@ -139,9 +136,6 @@ html(lang="es")
                                         p
                                             span(aria-hidden="true") ◷
                                             span(data-summary-time) Selecciona un horario
-                                        p
-                                            span(aria-hidden="true") ◉
-                                            span(data-summary-site) Sede
                             .reschedule-actions
                                 a.reschedule-cancel(href="/patient/dashboard") Cancelar
                                 button.reschedule-submit(type="submit", disabled) Confirmar reprogramación

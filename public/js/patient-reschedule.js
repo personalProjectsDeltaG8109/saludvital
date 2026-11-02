@@ -24,7 +24,6 @@
     const summarySpecialty = document.querySelector("[data-summary-specialty]");
     const summaryDate = document.querySelector("[data-summary-date]");
     const summaryTime = document.querySelector("[data-summary-time]");
-    const summarySite = document.querySelector("[data-summary-site]");
     const rescheduleLimitNote = document.querySelector("[data-reschedule-limit-note]");
     const stepItems = [...document.querySelectorAll("[data-reschedule-step]")];
     const maxReschedules = 3;
@@ -87,7 +86,6 @@
         if (!selectedRow) {
             summaryDoctor.textContent = "Selecciona una cita";
             summarySpecialty.textContent = "Especialidad";
-            summarySite.textContent = "Sede";
             summaryDate.textContent = "Selecciona una fecha";
             summaryTime.textContent = "Selecciona un horario";
             rescheduleLimitNote.textContent = "";
@@ -98,7 +96,6 @@
 
         summaryDoctor.textContent = selectedRow.dataset.doctorName;
         summarySpecialty.textContent = selectedRow.dataset.specialty;
-        summarySite.textContent = selectedRow.dataset.site;
         summaryDate.textContent = selectedDate ? formatDate(selectedDate) : "Selecciona una fecha";
         summaryTime.textContent = selectedTime ? formatTime(selectedTime) : "Selecciona un horario";
         const remainingReschedules =
@@ -127,7 +124,6 @@
         setMessage("Selecciona una cita para consultar horarios.");
         summaryDoctor.textContent = "Selecciona una cita";
         summarySpecialty.textContent = "Especialidad";
-        summarySite.textContent = "Sede";
         summaryDate.textContent = "Selecciona una fecha";
         summaryTime.textContent = "Selecciona un horario";
         rescheduleLimitNote.textContent = "";
