@@ -275,8 +275,7 @@
     outline-offset: 4px;
 }
 
-.sv-avatar,
-.sv-profile-person>span {
+.sv-avatar {
     width: 45px;
     height: 45px;
     display: grid;
@@ -314,7 +313,6 @@
     object-position: center;
 }
 
-.sv-profile-photo-dialog .profile-avatar-image,
 .profile-image-dialog .profile-avatar-image {
     width: min(280px, calc(100dvh - 110px), 100%);
     height: min(280px, calc(100dvh - 110px), 100%);
@@ -537,7 +535,7 @@
 }
 
 .sv-panel-column:last-child {
-    grid-template-rows: minmax(0, 1.15fr) minmax(0, .85fr);
+    grid-template-rows: minmax(0, 1fr);
 }
 
 .sv-panel-heading {
@@ -914,110 +912,6 @@
     padding-bottom: 10px;
 }
 
-.sv-profile-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.sv-profile-details p {
-    margin: 0 0 8px;
-    display: flex;
-    gap: 10px;
-    color: #0878d3;
-    font-size: 14px;
-}
-
-.sv-profile-details p:last-child {
-    margin-bottom: 0;
-}
-
-.sv-profile-details p span {
-    color: #334f76;
-}
-
-.sv-profile-person {
-    display: grid;
-    justify-items: center;
-    gap: 8px;
-}
-
-.sv-profile-person>span {
-    width: 74px;
-    height: 74px;
-    font-size: 20px;
-}
-
-/* Make the patient's dashboard portrait open a centered, responsive viewer. */
-.sv-profile-photo-trigger,
-.sv-profile-photo-fallback {
-    width: 74px;
-    height: 74px;
-    padding: 0;
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    border: 3px solid #dceefa;
-    border-radius: 50%;
-    color: #fff;
-    background: linear-gradient(145deg, #9fc5e7, #4b82b4);
-    font-size: 20px;
-    font-weight: 700;
-}
-
-.sv-profile-photo-trigger {
-    cursor: zoom-in;
-}
-
-.sv-profile-photo-dialog {
-    width: min(340px, calc(100vw - 32px));
-    max-width: none;
-    max-height: calc(100dvh - 32px);
-    position: fixed;
-    inset: 50% auto auto 50%;
-    margin: 0;
-    padding: 48px 16px 16px;
-    overflow: hidden;
-    border: 1px solid #ffffff50;
-    border-radius: 16px;
-    background: #071c36;
-    box-shadow: 0 20px 70px #082f5580;
-    transform: translate(-50%, -50%);
-}
-
-.sv-profile-photo-dialog::backdrop {
-    background: #071c36c9;
-    backdrop-filter: blur(4px);
-}
-
-.sv-profile-photo-dialog>img {
-    aspect-ratio: 1;
-}
-
-.sv-profile-photo-close {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 34px;
-    height: 34px;
-    border: 1px solid #ffffff50;
-    border-radius: 50%;
-    color: #fff;
-    background: #ffffff20;
-    font-size: 1.4rem;
-    cursor: pointer;
-}
-
-.sv-profile-person small {
-    padding: 6px 18px;
-    border-radius: 18px;
-    color: #0783e6;
-    background: #e4f5ff;
-    font-size: 12px;
-    font-weight: 650;
-}
-
 .sv-bottom-nav,
 .sv-mobile-logout,
 .sv-mobile-menu-toggle,
@@ -1056,9 +950,6 @@
         font-size: 12px;
     }
 
-    .sv-profile-person {
-        display: none;
-    }
 }
 
 @media (max-height: 760px) and (min-width: 761px) {
@@ -1441,8 +1332,7 @@
     }
 
     .sv-history,
-    .sv-notifications,
-    .sv-profile {
+    .sv-notifications {
         display: none;
     }
 
@@ -1572,10 +1462,6 @@
         grid-template-rows: minmax(205px, auto) minmax(205px, auto);
     }
 
-    .sv-panel-column:last-child {
-        grid-template-rows: minmax(250px, auto) minmax(190px, auto);
-    }
-
     .sv-panel {
         overflow: visible;
     }
@@ -1640,7 +1526,7 @@
     }
 }
 
-/* Give the appointment actions and profile details enough room on desktop. */
+/* Give appointment actions enough room on taller desktop screens. */
 @media (min-width: 761px) and (min-height: 881px) {
     .sv-content {
         grid-template-rows: minmax(120px, 18vh) minmax(108px, 15vh) minmax(0, 1fr);
@@ -1648,10 +1534,6 @@
 
     .sv-panel-column:first-child {
         grid-template-rows: minmax(0, 1.04fr) minmax(0, .96fr);
-    }
-
-    .sv-panel-column:last-child {
-        grid-template-rows: minmax(0, 1.08fr) minmax(0, .92fr);
     }
 
     .sv-appointment-content {
@@ -1676,27 +1558,6 @@
         min-height: 38px;
     }
 
-    .sv-profile-content {
-        min-width: 0;
-        align-items: flex-start;
-    }
-
-    .sv-profile-details {
-        min-width: 0;
-        flex: 1;
-    }
-
-    .sv-profile-details p {
-        min-width: 0;
-        align-items: flex-start;
-        line-height: 1.25;
-        overflow-wrap: anywhere;
-    }
-
-    .sv-profile-details p span {
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
 }
 
 @media (max-width: 760px) and (max-height: 740px) {
@@ -1870,14 +1731,6 @@
 
 .sv-preference small {
     font-size: var(--sv-text-xs);
-}
-
-.sv-profile-details p {
-    font-size: var(--sv-text-md);
-}
-
-.sv-profile-person small {
-    font-size: var(--sv-text-sm);
 }
 
 @media (max-width: 760px) {
