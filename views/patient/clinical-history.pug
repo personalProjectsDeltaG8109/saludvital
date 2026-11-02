@@ -21,7 +21,7 @@ html(lang="es")
                     section.clinical-history-hero(aria-labelledby="clinical-history-title")
                         .clinical-history-hero-copy
                             h2#clinical-history-title Historial clínico
-                            p Consulta el registro de tus atenciones médicas, diagnósticos, tratamientos y documentos.
+                            p Consulta el registro de tus atenciones médicas, diagnósticos y tratamientos.
 
                     if previewMode
                         p.clinical-preview-note Vista previa: los registros mostrados son ficticios y solo sirven para revisar el diseño.
@@ -54,14 +54,6 @@ html(lang="es")
                             span.clinical-stat-copy
                                 strong= totals.treatments
                                 small Tratamientos asignados
-                        article.clinical-stat.stat-documents
-                            span.clinical-stat-icon(aria-hidden="true")
-                                svg(viewBox="0 0 24 24")
-                                    path(d="M7 3h8l5 5v13H4V3h3Zm8 0v5h5m-11 4h8m-8 4h8")
-                            span.clinical-stat-copy
-                                strong= totals.documents
-                                small Documentos médicos
-
                     .clinical-history-layout
                         section.clinical-list-panel(aria-labelledby="clinical-list-title")
                             .clinical-panel-heading
@@ -101,8 +93,8 @@ html(lang="es")
                                             data-consultation-card,
                                             data-consultation-id=consultation.id,
                                             data-search-text=[specialty, consultation.doctor_label, consultation.date_label].join(" ").toLowerCase(),
-                                            data-has-diagnosis=diagnoses.length > 0,
-                                            data-has-treatment=treatmentCount > 0,
+                                            data-has-diagnosis=diagnoses.length > 0 ? "true" : "false",
+                                            data-has-treatment=treatmentCount > 0 ? "true" : "false",
                                             aria-pressed=index === 0 ? "true" : "false",
                                             aria-expanded=index === 0 ? "true" : "false"
                                         )
@@ -230,13 +222,6 @@ html(lang="es")
                                                 aria-selected="false",
                                                 data-detail-tab="treatments"
                                             ) Tratamientos
-                                            button(
-                                                type="button",
-                                                role="tab",
-                                                aria-selected="false",
-                                                data-detail-tab="documents"
-                                            ) Documentos
-
                                         .clinical-detail-content(
                                             role="tabpanel",
                                             data-detail-panel="summary"
@@ -306,35 +291,20 @@ html(lang="es")
                                                             p= [treatment.dosage, treatment.frequency, treatment.duration].filter(Boolean).join(" · ")
                                                             if treatment.instructions
                                                                 small= treatment.instructions
-                                            else
-                                                p.clinical-tab-empty No hay tratamientos registrados para esta consulta.
-
-                                        .clinical-detail-content(
-                                            role="tabpanel",
-                                            data-detail-panel="documents",
-                                            hidden
-                                        )
                                             if consultation.medical_orders && consultation.medical_orders.length
                                                 article.clinical-record-item
-                                                    span.clinical-record-icon.icon-document(
+                                                    span.clinical-record-icon.icon-treatment(
                                                         aria-hidden="true"
                                                     )
+                                                        | Rx
                                                     div
                                                         h3 Órdenes médicas
                                                         ul
                                                             each order in consultation.medical_orders
                                                                 li= order
-                                            else if consultation.documents && consultation.documents.length
-                                                each document in consultation.documents
-                                                    article.clinical-record-item
-                                                        span.clinical-record-icon.icon-document(
-                                                            aria-hidden="true"
-                                                        ) ▤
-                                                        div
-                                                            h3= typeof document === "string" ? document : document.name
-                                                            p Documento de esta consulta
-                                            else
-                                                p.clinical-tab-empty Aún no hay documentos médicos disponibles para esta consulta.
+                                            if !treatmentItems.length && !(consultation.medical_orders && consultation.medical_orders.length)
+                                                p.clinical-tab-empty No hay tratamientos registrados para esta consulta.
+
                             else
                                 .clinical-detail-placeholder
                                     span.clinical-empty-icon(aria-hidden="true")
