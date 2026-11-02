@@ -46,7 +46,6 @@ const patientRoutes = Router();
 const appointmentStats = [
     { key: "all", label: "Total de citas", status: null },
     { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
-    { key: "in-progress", label: "En curso", status: "In Progress" },
     { key: "attended", label: "Atendidas", status: "Attended" },
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
 ];
