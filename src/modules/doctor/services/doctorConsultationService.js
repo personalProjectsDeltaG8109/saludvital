@@ -179,20 +179,20 @@ function normalizeDraft(payload, { completing = false } = {}) {
         throw createServiceError("La información de la consulta no es válida.", 400);
     }
 
-    const symptoms = normalizeText(payload.symptoms, "El motivo de consulta", 5000, completing);
+    const symptoms = normalizeText(payload.symptoms, "El motivo de consulta", 500, completing);
     const patientFeeling = normalizeText(
         payload.patientFeeling,
         "Cómo se siente el paciente",
-        5000,
+        500,
         completing,
     );
     const clinicalNotes = normalizeText(
         payload.clinicalNotes,
         "La evaluación médica",
-        10000,
+        1500,
         completing,
     );
-    const recommendations = normalizeText(payload.recommendations, "Las recomendaciones", 10000);
+    const recommendations = normalizeText(payload.recommendations, "Las recomendaciones", 500);
     const vitalSigns = payload.vitalSigns ?? null;
     if (vitalSigns !== null && (typeof vitalSigns !== "object" || Array.isArray(vitalSigns))) {
         throw createServiceError("Los signos vitales no son válidos.", 400);
@@ -211,30 +211,37 @@ function normalizeDraft(payload, { completing = false } = {}) {
         throw createServiceError("Completa todos los signos vitales antes de finalizar.", 400);
     }
     const vitalRanges = {
-        heartRate: [0, 300],
+        heartRate: [1, 300],
         temperature: [25, 45],
-        weight: [0, 500],
-        height: [0, 3],
+        weight: [0.1, 500],
+        height: [0.1, 3],
         bmi: [0, 150],
     };
+    const vitalDecimalPlaces = { heartRate: 0, temperature: 1, weight: 1, height: 2, bmi: 2 };
     const vitalSignLabels = {
-        bloodPressure: "presión arterial (formato 120/80)",
-        heartRate: "frecuencia cardiaca (0 a 300 lpm)",
+        bloodPressure: "presión arterial (formato 120/80, valores mayores que cero)",
+        heartRate: "frecuencia cardiaca (1 a 300 lpm)",
         temperature: "temperatura (25 a 45 °C)",
-        weight: "peso (0 a 500 kg)",
-        height: "estatura en metros (0 a 3 m)",
+        weight: "peso (0,1 a 500 kg)",
+        height: "estatura en metros (0,1 a 3 m)",
         bmi: "IMC (0 a 150)",
     };
     const invalidVitalSigns = vitalSigns
         ? Object.entries(vitalSigns).filter(([key, value]) => {
               if (!Object.prototype.hasOwnProperty.call(vitalSignLabels, key)) return true;
               if (value === null || value === "") return false;
-              if (key === "bloodPressure")
-                  return typeof value !== "string" || !/^\d{2,3}\/\d{2,3}$/.test(value);
+              if (key === "bloodPressure") {
+                  if (typeof value !== "string" || !/^\d{2,3}\/\d{2,3}$/.test(value)) return true;
+                  const [systolic, diastolic] = value.split("/").map(Number);
+                  return systolic === 0 || diastolic === 0;
+              }
+              const decimalPlaces = vitalDecimalPlaces[key];
+              const scaledValue = Number(value) * 10 ** decimalPlaces;
               return (
                   !Number.isFinite(Number(value)) ||
                   Number(value) < vitalRanges[key][0] ||
-                  Number(value) > vitalRanges[key][1]
+                  Number(value) > vitalRanges[key][1] ||
+                  Math.abs(scaledValue - Math.round(scaledValue)) > 1e-8
               );
           })
         : [];
@@ -253,8 +260,8 @@ function normalizeDraft(payload, { completing = false } = {}) {
         if (!entry || typeof entry !== "object")
             throw createServiceError("Hay un diagnóstico no válido.", 400);
         return {
-            diagnosis: normalizeText(entry.diagnosis, "El diagnóstico", 500, true),
-            notes: normalizeText(entry.notes, "Las notas del diagnóstico", 5000),
+            diagnosis: normalizeText(entry.diagnosis, "El diagnóstico", 200, true),
+            notes: normalizeText(entry.notes, "Las notas del diagnóstico", 200),
         };
     });
     const prescriptionItems = payload.prescriptionItems ?? [];
@@ -269,7 +276,7 @@ function normalizeDraft(payload, { completing = false } = {}) {
             dosage: normalizeText(item.dosage, "La dosis", 100, true),
             frequency: normalizeText(item.frequency, "La frecuencia", 100, true),
             duration: normalizeText(item.duration, "La duración", 100, true),
-            instructions: normalizeText(item.instructions, "Las instrucciones", 5000),
+            instructions: normalizeText(item.instructions, "Las instrucciones", 1000),
         };
     });
 
@@ -277,7 +284,7 @@ function normalizeDraft(payload, { completing = false } = {}) {
     if (
         !Array.isArray(medicalOrders) ||
         medicalOrders.length > 30 ||
-        medicalOrders.some((order) => typeof order !== "string" || order.trim().length > 1000)
+        medicalOrders.some((order) => typeof order !== "string" || order.trim().length > 300)
     ) {
         throw createServiceError("Las órdenes médicas no son válidas.", 400);
     }
