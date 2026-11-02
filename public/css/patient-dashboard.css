@@ -788,9 +788,24 @@
     overflow: hidden;
     border-radius: 12px;
     color: #fff;
-    font-size: 9px;
-    font-weight: 700;
-    text-align: center;
+}
+
+.sv-preference-icon img,
+.sv-preference-icon svg {
+    width: 22px;
+    height: 22px;
+}
+
+.sv-preference-icon img {
+    filter: brightness(0) invert(1);
+}
+
+.sv-preference-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .pref-green {
