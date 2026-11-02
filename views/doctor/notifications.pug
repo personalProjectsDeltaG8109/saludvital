@@ -6,6 +6,7 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/patient-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-dashboard.css")
         link(rel="stylesheet", href="/css/doctor-notifications.css")
     body.sv-dashboard.doctor-home-page
@@ -27,23 +28,43 @@ html(lang="es")
                             div
                                 h2#doctor-notifications-heading Actividad de citas
                                 p Revisa las nuevas citas, reprogramaciones y cancelaciones.
-                            p.doctor-notification-unread(aria-live="polite", data-unread-count)= `${notifications.unreadCount} sin leer`
+                            .doctor-notification-header-actions
+                                p.doctor-notification-unread(aria-live="polite", data-unread-count)= `${notifications.unreadCount} sin leer`
+                                if notifications.unreadCount > 0
+                                    button.doctor-notification-read-all-button(
+                                        type="button",
+                                        data-mark-all-notifications-read
+                                    ) Marcar todas como leídas
+                        p.doctor-notification-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-notification-feedback
+                        )
                         if notifications.items.length
                             ul.doctor-notification-list
                                 each item in notifications.items
                                     li.doctor-notification-item(
                                         class=item.isRead ? "is-read" : "is-unread"
                                     )
-                                        span.doctor-notification-icon(aria-hidden="true")
-                                            svg(viewBox="0 0 24 24")
-                                                path(
-                                                    d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
-                                                )
-                                        .doctor-notification-copy
-                                            strong= item.label
-                                            if item.appointmentAtLabel
-                                                p Cita: #{ item.appointmentAtLabel }
-                                            p.doctor-notification-time= item.occurredAtLabel
+                                        button.doctor-notification-details-button(
+                                            type="button",
+                                            aria-label=`Ver detalles: ${item.label}`,
+                                            data-notification-details,
+                                            data-label=item.label,
+                                            data-event-type=item.label,
+                                            data-occurred-at=item.occurredAtLabel,
+                                            data-appointment-at=item.appointmentAtLabel || ""
+                                        )
+                                            span.doctor-notification-icon(aria-hidden="true")
+                                                svg(viewBox="0 0 24 24")
+                                                    path(
+                                                        d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                                    )
+                                            span.doctor-notification-copy
+                                                strong= item.label
+                                                if item.appointmentAtLabel
+                                                    span Cita: #{ item.appointmentAtLabel }
+                                                span.doctor-notification-time= item.occurredAtLabel
                                         if item.isRead
                                             span.doctor-notification-read Leída
                                         else
@@ -64,6 +85,28 @@ html(lang="es")
                                 span Página #{ notifications.page } de #{ notifications.totalPages }
                                 if notifications.page < notifications.totalPages
                                     a(href=`/doctor/notifications?page=${notifications.page + 1}`) Siguiente
+                    dialog.doctor-notification-dialog(
+                        aria-labelledby="doctor-notification-dialog-title",
+                        data-notification-details-dialog
+                    )
+                        .doctor-notification-dialog-header
+                            h2#doctor-notification-dialog-title Detalle de notificación
+                            button.doctor-notification-dialog-close(
+                                type="button",
+                                aria-label="Cerrar detalle",
+                                data-close-notification-details
+                            ) ×
+                        p.doctor-notification-dialog-type(data-detail-label)
+                        dl.doctor-notification-dialog-fields
+                            div
+                                dt Tipo de actualización
+                                dd(data-detail-event)
+                            div
+                                dt Recibida
+                                dd(data-detail-occurred-at)
+                            div(data-detail-appointment-row)
+                                dt Fecha de la cita
+                                dd(data-detail-appointment-at)
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)

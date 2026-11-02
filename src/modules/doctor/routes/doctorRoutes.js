@@ -28,6 +28,7 @@ import { updateDoctorProfilePhoto } from "../services/doctorProfilePhotoService.
 import {
     getDoctorNotifications,
     getDoctorUnreadNotificationCount,
+    markAllDoctorNotificationsRead,
     markDoctorNotificationRead,
 } from "../services/doctorNotificationService.js";
 
@@ -58,6 +59,20 @@ doctorRoutes.get("/api/doctor/notifications", ...requireDoctor, async (req, res,
         return next(error);
     }
 });
+
+doctorRoutes.post(
+    "/api/doctor/notifications/read-all",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(await markAllDoctorNotificationsRead(req.auth.userId));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 doctorRoutes.post(
     "/api/doctor/notifications/:eventId/read",

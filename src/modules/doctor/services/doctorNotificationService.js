@@ -154,3 +154,25 @@ export async function markDoctorNotificationRead(userId, rawEventId) {
 
     return { id: event.id, isRead: true };
 }
+
+export async function markAllDoctorNotificationsRead(userId) {
+    const doctorId = await getDoctorId(userId);
+
+    await database.query(
+        `INSERT IGNORE INTO doctor_appointment_notification_reads
+            (doctor_id, appointment_history_id, read_at)
+         SELECT :doctorId, history.id, NOW()
+         FROM appointment_history AS history
+         INNER JOIN appointments AS appointment
+             ON appointment.id = history.appointment_id
+         LEFT JOIN doctor_appointment_notification_reads AS read_state
+             ON read_state.appointment_history_id = history.id
+             AND read_state.doctor_id = :doctorId
+         WHERE appointment.doctor_id = :doctorId
+             AND history.event_type IN (:eventTypes)
+             AND read_state.id IS NULL`,
+        { replacements: { doctorId, eventTypes: SUPPORTED_EVENTS } },
+    );
+
+    return { unreadCount: await countUnreadForDoctor(doctorId) };
+}
