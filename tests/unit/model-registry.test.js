@@ -18,6 +18,7 @@ describe("Sequelize model registry", () => {
         expect(database.models.DoctorScheduleException).toBeDefined();
         expect(database.models.NotificationPreference).toBeDefined();
         expect(database.models.Notification).toBeDefined();
+        expect(database.models.DoctorAppointmentNotificationRead).toBeDefined();
         expect(database.models.AuditLog).toBeDefined();
         expect(database.models.WhatsAppConversation).toBeDefined();
         expect(database.models.WhatsAppMessage).toBeDefined();
@@ -48,6 +49,9 @@ describe("Sequelize model registry", () => {
         );
         expect(database.models.NotificationPreference.tableName).toBe("notification_preferences");
         expect(database.models.Notification.tableName).toBe("notifications");
+        expect(database.models.DoctorAppointmentNotificationRead.tableName).toBe(
+            "doctor_appointment_notification_reads",
+        );
         expect(database.models.AuditLog.tableName).toBe("audit_logs");
         expect(database.models.WhatsAppConversation.tableName).toBe("whatsapp_conversations");
         expect(database.models.WhatsAppMessage.tableName).toBe("whatsapp_messages");
