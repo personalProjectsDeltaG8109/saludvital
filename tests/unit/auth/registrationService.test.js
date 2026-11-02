@@ -186,6 +186,78 @@ describe("Patient registration service", () => {
         expect(User.create).not.toHaveBeenCalled();
     });
 
+    test.each([
+        ["digits", "Juan2"],
+        ["markup", "<Juan>"],
+        ["unsupported punctuation", "Juan."],
+        ["repeated separators", "Juan--Carlos"],
+    ])("rejects a name with %s", async (_description, name) => {
+        await expect(registerPatient({ ...validData, first_name: name })).rejects.toThrow(
+            "El nombre solo puede contener letras, espacios, guiones y apóstrofes.",
+        );
+
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(User.create).not.toHaveBeenCalled();
+        expect(Patient.create).not.toHaveBeenCalled();
+    });
+
+    test("accepts and normalizes accented compound names", async () => {
+        await registerPatient({
+            ...validData,
+            first_name: "  María   José  ",
+            last_name: "  O'Connor-Pérez  ",
+        });
+
+        expect(Patient.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                first_name: "María José",
+                last_name: "O'Connor-Pérez",
+            }),
+            { transaction },
+        );
+    });
+
+    test("accepts Unicode combining marks in names", async () => {
+        await registerPatient({
+            ...validData,
+            first_name: "Jose\u0301",
+            last_name: "Mun\u0303oz",
+        });
+
+        expect(Patient.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                first_name: "Jose\u0301",
+                last_name: "Mun\u0303oz",
+            }),
+            { transaction },
+        );
+    });
+
+    test("rejects unsupported characters in last names", async () => {
+        await expect(registerPatient({ ...validData, last_name: "Pérez123" })).rejects.toThrow(
+            "Los apellidos solo pueden contener letras, espacios, guiones y apóstrofes.",
+        );
+
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(Patient.create).not.toHaveBeenCalled();
+    });
+
+    test("accepts first and last names at the 50-character limit", async () => {
+        await registerPatient({
+            ...validData,
+            first_name: "A".repeat(50),
+            last_name: "B".repeat(50),
+        });
+
+        expect(Patient.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                first_name: "A".repeat(50),
+                last_name: "B".repeat(50),
+            }),
+            { transaction },
+        );
+    });
+
     // Reject impossible and future dates of birth.
     test.each(["1990-02-30", "2025-13-01", "invalid-date", "2999-01-01"])(
         "rejects an invalid date of birth: %s",
