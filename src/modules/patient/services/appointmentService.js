@@ -19,8 +19,10 @@ import {
 } from "./notificationAutomationService.js";
 import { APPOINTMENT_SLOT_MINUTES } from "../../../config/appointmentScheduling.js";
 
-// Require at least thirty minutes of notice for booking or rescheduling.
+// Require at least thirty minutes of notice for new bookings.
 const MINIMUM_ADVANCE_MINUTES = 30;
+const MINIMUM_RESCHEDULE_ADVANCE_MINUTES = 5 * 60;
+const RESCHEDULE_NOTICE_HOURS = 24;
 
 // Limit each appointment to three patient rescheduling actions.
 const MAX_APPOINTMENT_RESCHEDULES = 3;
@@ -146,6 +148,81 @@ function getBogotaDateTime(date) {
             String(colombianTime.getUTCMinutes()).padStart(2, "0"),
             "00",
         ].join(":"),
+    };
+}
+
+function normalizeSpecialtyName(name) {
+    return String(name || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toLocaleLowerCase("es-CO");
+}
+
+function getAgeOnDate(dateOfBirth, appointmentDate) {
+    if (
+        typeof dateOfBirth !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth) ||
+        typeof appointmentDate !== "string" ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(appointmentDate)
+    ) {
+        throw new AppointmentError(
+            "No pudimos validar la edad del paciente para esta cita. Verifica su fecha de nacimiento.",
+            400,
+        );
+    }
+
+    const [birthYear, birthMonth, birthDay] = dateOfBirth.split("-").map(Number);
+    const [appointmentYear, appointmentMonth, appointmentDay] = appointmentDate
+        .split("-")
+        .map(Number);
+    const birthDate = new Date(Date.UTC(birthYear, birthMonth - 1, birthDay));
+    const appointmentLocalDate = new Date(
+        Date.UTC(appointmentYear, appointmentMonth - 1, appointmentDay),
+    );
+
+    if (
+        birthDate.toISOString().slice(0, 10) !== dateOfBirth ||
+        appointmentLocalDate.toISOString().slice(0, 10) !== appointmentDate ||
+        dateOfBirth > appointmentDate
+    ) {
+        throw new AppointmentError(
+            "No pudimos validar la edad del paciente para esta cita. Verifica su fecha de nacimiento.",
+            400,
+        );
+    }
+
+    const hasHadBirthday =
+        appointmentMonth > birthMonth ||
+        (appointmentMonth === birthMonth && appointmentDay >= birthDay);
+
+    return appointmentYear - birthYear - (hasHadBirthday ? 0 : 1);
+}
+
+function validatePediatricsEligibility(patient, specialty, startAt) {
+    if (!["pediatria", "pediatrics"].includes(normalizeSpecialtyName(specialty?.name))) return;
+
+    const appointmentDate = getBogotaDateTime(startAt).date;
+    if (getAgeOnDate(patient.date_of_birth, appointmentDate) >= 18) {
+        throw new AppointmentError(
+            "La especialidad de Pediatría solo está disponible para pacientes menores de 18 años en la fecha de la cita.",
+            400,
+        );
+    }
+}
+
+function getRescheduleNoticePolicy(actorSnapshot) {
+    if (actorSnapshot?.startsWith("Administrator ")) {
+        return {
+            minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
+            noticeMessage:
+                "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
+        };
+    }
+
+    return {
+        minimumAdvanceMinutes: MINIMUM_RESCHEDULE_ADVANCE_MINUTES,
+        noticeMessage: "La nueva cita debe programarse con al menos 5 horas de anticipación.",
     };
 }
 
@@ -527,9 +604,13 @@ export async function getAvailableDoctors(specialtyId) {
 /**
  * Return appointment start times that fit a doctor's schedule for a local date.
  */
-export async function getAvailableTimeSlots(doctorId, date, userId) {
+export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = "booking" } = {}) {
     doctorId = validatePositiveIntegerId(doctorId);
     userId = validatePositiveIntegerId(userId);
+
+    if (!["booking", "reschedule"].includes(purpose)) {
+        throw new AppointmentError("El tipo de consulta de horarios no es válido.", 400);
+    }
 
     if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
@@ -559,12 +640,16 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
                 attributes: ["id"],
             },
         ],
-        attributes: ["id"],
+        attributes: ["id", "specialty_id"],
     });
 
     if (!doctor) {
         throw new AppointmentError("El médico seleccionado no está disponible.", 404);
     }
+
+    const specialty = await getActiveSpecialty(doctor.specialty_id);
+    const appointmentStart = buildDateTime(date, "00:00");
+    validatePediatricsEligibility(patient, specialty, appointmentStart);
 
     const dateStart = buildDateTime(date, "00:00");
     const nextLocalDay = new Date(Date.UTC(year, month - 1, day + 1));
@@ -632,7 +717,9 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
         }),
     ]);
 
-    const minimumStart = new Date(Date.now() + MINIMUM_ADVANCE_MINUTES * 60 * 1000);
+    const minimumAdvanceMinutes =
+        purpose === "reschedule" ? MINIMUM_RESCHEDULE_ADVANCE_MINUTES : MINIMUM_ADVANCE_MINUTES;
+    const minimumStart = new Date(Date.now() + minimumAdvanceMinutes * 60 * 1000);
     const availableTimes = [];
 
     for (
@@ -688,7 +775,7 @@ export async function getAvailableTimeSlots(doctorId, date, userId) {
 export async function getReschedulableAppointments(userId) {
     userId = validatePositiveIntegerId(userId);
     const patient = await getPatientByUserId(userId);
-    const cutoff = new Date();
+    const cutoff = new Date(Date.now() + RESCHEDULE_NOTICE_HOURS * 60 * 60 * 1000);
 
     const appointments = await Appointment.findAll({
         where: {
@@ -771,11 +858,11 @@ export async function bookAppointment({
             ? await getPatientById(patientId, transaction)
             : await getPatientByUserId(userId, transaction);
 
-        await getActiveSpecialty(specialtyId, transaction);
-        await getActiveDoctor(doctorId, specialtyId, transaction);
-
+        const specialty = await getActiveSpecialty(specialtyId, transaction);
         const startAt = buildDateTime(date, time);
         const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
+        validatePediatricsEligibility(patient, specialty, startAt);
+        await getActiveDoctor(doctorId, specialtyId, transaction);
 
         validateAppointmentDate(startAt, endAt);
         await validateDailyAppointmentLimit({
@@ -937,10 +1024,8 @@ export async function reschedulePatientAppointment({
     const normalizedReason = updateReason ? normalizeAppointmentReason(reason) : undefined;
     const startAt = buildDateTime(date, time);
     const endAt = new Date(startAt.getTime() + APPOINTMENT_SLOT_MINUTES * 60 * 1000);
-    validateAppointmentDate(startAt, endAt, {
-        minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
-        noticeMessage: "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
-    });
+    const noticePolicy = getRescheduleNoticePolicy(actorSnapshot);
+    validateAppointmentDate(startAt, endAt, noticePolicy);
 
     return database.transaction(async (transaction) => {
         const patient = await getPatientByUserId(userId, transaction);
@@ -969,7 +1054,8 @@ export async function reschedulePatientAppointment({
                 throw new AppointmentError("El médico seleccionado ya no está disponible.", 409);
             }
         }
-        await getActiveSpecialty(targetSpecialtyId, transaction);
+        const specialty = await getActiveSpecialty(targetSpecialtyId, transaction);
+        validatePediatricsEligibility(patient, specialty, startAt);
         await getActiveDoctor(targetDoctorId, targetSpecialtyId, transaction, true);
 
         const appointment = await Appointment.findOne({
@@ -994,8 +1080,18 @@ export async function reschedulePatientAppointment({
         if (appointment.status.name !== CONFIRMED_STATUS) {
             throw new AppointmentError("Solo puedes reprogramar citas confirmadas.", 409);
         }
-        // Reject an original appointment that has started, even if the request bypasses the UI.
-        if (new Date(appointment.start_at).getTime() <= Date.now()) {
+        const originalAppointmentStart = new Date(appointment.start_at).getTime();
+        const minimumRescheduleTime = Date.now() + RESCHEDULE_NOTICE_HOURS * 60 * 60 * 1000;
+        if (
+            !actorSnapshot?.startsWith("Administrator ") &&
+            originalAppointmentStart < minimumRescheduleTime
+        ) {
+            throw new AppointmentError(
+                "Solo puedes solicitar la reprogramación con al menos 24 horas de anticipación.",
+                409,
+            );
+        }
+        if (originalAppointmentStart <= Date.now()) {
             throw new AppointmentError("Esta cita ya inició y no se puede reprogramar.", 409);
         }
         if (
@@ -1008,11 +1104,7 @@ export async function reschedulePatientAppointment({
         }
 
         // Revalidate the replacement slot after acquiring the appointment lock.
-        validateAppointmentDate(startAt, endAt, {
-            minimumAdvanceMinutes: MINIMUM_ADVANCE_MINUTES,
-            noticeMessage:
-                "La nueva cita debe programarse con al menos 30 minutos de anticipación.",
-        });
+        validateAppointmentDate(startAt, endAt, noticePolicy);
 
         // Count rescheduling events while the appointment row is locked.
         const rescheduleCount = await AppointmentHistory.count({

@@ -13,6 +13,7 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => {
     const model = () => ({
         count: jest.fn(),
         create: jest.fn(),
+        findAll: jest.fn(),
         findByPk: jest.fn(),
         findOne: jest.fn(),
     });
@@ -51,7 +52,7 @@ const {
 const { enqueueAppointmentNotifications } =
     await import("../../../src/modules/patient/services/notificationAutomationService.js");
 const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
-const { bookAppointment, cancelPatientAppointment } =
+const { bookAppointment, cancelPatientAppointment, getAvailableTimeSlots } =
     await import("../../../src/modules/patient/services/appointmentService.js");
 
 describe("appointment reminder scheduling", () => {
@@ -63,14 +64,23 @@ describe("appointment reminder scheduling", () => {
         jest.clearAllMocks();
 
         database.transaction.mockImplementation(async (callback) => callback(transaction));
-        Patient.findOne.mockResolvedValue({ id: 12 });
-        Specialities.findOne.mockResolvedValue({ id: 4, is_active: true });
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "1990-05-15" });
+        Specialities.findOne.mockResolvedValue({
+            id: 4,
+            name: "Medicina General",
+            is_active: true,
+        });
         Doctor.findOne.mockResolvedValue({ id: 7, specialty_id: 4 });
         Doctor.findByPk.mockResolvedValue({ id: 7 });
         Appointment.count.mockResolvedValue(0);
         Appointment.findOne.mockResolvedValue(null);
         DoctorAvailability.findOne.mockResolvedValue({ id: 3 });
+        DoctorAvailability.findAll.mockResolvedValue([
+            { start_time: "14:00:00", end_time: "16:30:00" },
+        ]);
         DoctorScheduleException.findOne.mockResolvedValue(null);
+        DoctorScheduleException.findAll.mockResolvedValue([]);
+        Appointment.findAll.mockResolvedValue([]);
         AppointmentStatus.findOne.mockResolvedValue({ id: 1, name: "Confirmed" });
         Appointment.create.mockResolvedValue({ id: 99 });
         AppointmentHistory.create.mockResolvedValue({});
@@ -163,6 +173,56 @@ describe("appointment reminder scheduling", () => {
             }),
             { transaction },
         );
+    });
+
+    test("allows a patient who is 17 on the appointment date to book Pediatrics", async () => {
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "2008-11-03" });
+        Specialities.findOne.mockResolvedValue({ id: 4, name: "Pediatrics", is_active: true });
+
+        await expect(
+            bookAppointment({
+                userId: 2,
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+            }),
+        ).resolves.toBeDefined();
+        expect(Appointment.create).toHaveBeenCalled();
+    });
+
+    test("rejects a Pediatrics booking on the patient's 18th birthday", async () => {
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "2008-11-02" });
+        Specialities.findOne.mockResolvedValue({ id: 4, name: "Pediatría", is_active: true });
+
+        await expect(
+            bookAppointment({
+                userId: 2,
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(Appointment.create).not.toHaveBeenCalled();
+    });
+
+    test("shows reschedule slots only when they meet the five-hour notice", async () => {
+        const slots = await getAvailableTimeSlots(7, "2026-11-01", 2, {
+            purpose: "reschedule",
+        });
+
+        expect(slots).toEqual(["15:00", "15:30", "16:00"]);
+    });
+
+    test("rejects Pediatrics availability for a patient who will be 18 on that date", async () => {
+        Patient.findOne.mockResolvedValue({ id: 12, date_of_birth: "2008-11-02" });
+        Specialities.findOne.mockResolvedValue({ id: 4, name: "Pediatría", is_active: true });
+
+        await expect(getAvailableTimeSlots(7, "2026-11-02", 2)).rejects.toMatchObject({
+            statusCode: 400,
+        });
+        expect(DoctorAvailability.findAll).not.toHaveBeenCalled();
     });
 
     test("rolls back booking when its audit record cannot be persisted", async () => {
