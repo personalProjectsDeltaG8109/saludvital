@@ -47,6 +47,15 @@ if (form) {
         });
     }
 
+    function normalizeSearchText(value) {
+        return String(value ?? "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLocaleLowerCase("es")
+            .trim()
+            .replace(/\s+/g, " ");
+    }
+
     async function getJson(url, options) {
         const response = await fetch(url, { credentials: "same-origin", ...options });
         const payload = await response.json();
@@ -86,11 +95,11 @@ if (form) {
     }
 
     function renderSpecialties(filter = "") {
-        const normalizedFilter = filter.trim().toLocaleLowerCase("es");
+        const normalizedFilter = normalizeSearchText(filter);
         const visibleSpecialties = state.specialties.filter((specialty) =>
-            `${specialty.name} ${specialty.description || ""}`
-                .toLocaleLowerCase("es")
-                .includes(normalizedFilter),
+            normalizeSearchText(`${specialty.name} ${specialty.description || ""}`).includes(
+                normalizedFilter,
+            ),
         );
 
         specialtyList.innerHTML = visibleSpecialties
