@@ -20,6 +20,9 @@
 .consultation-step .required-marker { color: #c62828; font-weight: 800; }
 .consultation-form-guidance { margin: .5rem 0 1rem; color: #53657d; font-size: .9rem; line-height: 1.5; }
 .consultation-step .consultation-field-help { display: block; color: #65758b; font-size: .78rem; font-weight: 400; line-height: 1.4; }
+.consultation-step .consultation-vital-warning { display: block; color: #8a4b08; font-size: .78rem; font-weight: 600; line-height: 1.4; }
+.consultation-step .consultation-vital-warning[hidden], .consultation-vitals-disclaimer[hidden] { display: none; }
+.consultation-vitals-disclaimer { border-left: 3px solid #d99a26; margin: .75rem 0; padding: .5rem .75rem; background: #fff8e8; color: #704313; font-size: .8rem; line-height: 1.45; }
 .consultation-step input, .consultation-step textarea { width: 100%; border: 1px solid #cbd9e9; border-radius: .55rem; padding: .7rem .8rem; background: #fbfdff; color: #18345d; font-weight: 400; }
 .consultation-step input:focus, .consultation-step textarea:focus { outline: 3px solid #1682ff35; border-color: #0875ee; }
 .consultation-vitals, .consultation-medication-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem 1rem; }

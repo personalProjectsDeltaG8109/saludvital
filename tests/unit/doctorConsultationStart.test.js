@@ -99,11 +99,11 @@ describe("start doctor consultation", () => {
     });
 
     test.each([
-        ["consultation reason", { symptoms: "x".repeat(5001) }],
-        ["patient condition", { patientFeeling: "x".repeat(5001) }],
-        ["medical evaluation", { clinicalNotes: "x".repeat(10001) }],
-        ["diagnosis", { diagnoses: [{ diagnosis: "x".repeat(501) }] }],
-        ["diagnosis notes", { diagnoses: [{ diagnosis: "Test", notes: "x".repeat(5001) }] }],
+        ["consultation reason", { symptoms: "x".repeat(501) }],
+        ["patient condition", { patientFeeling: "x".repeat(501) }],
+        ["medical evaluation", { clinicalNotes: "x".repeat(1501) }],
+        ["diagnosis", { diagnoses: [{ diagnosis: "x".repeat(201) }] }],
+        ["diagnosis notes", { diagnoses: [{ diagnosis: "Test", notes: "x".repeat(201) }] }],
         [
             "medication name",
             {
@@ -165,13 +165,20 @@ describe("start doctor consultation", () => {
                         dosage: "1 mg",
                         frequency: "Daily",
                         duration: "5 days",
-                        instructions: "x".repeat(5001),
+                        instructions: "x".repeat(1001),
                     },
                 ],
             },
         ],
-        ["medical order line", { medicalOrders: ["x".repeat(1001)] }],
+        ["medical order line", { medicalOrders: ["x".repeat(301)] }],
         ["medical order count", { medicalOrders: Array.from({ length: 31 }, () => "Order") }],
+        ["zero blood pressure", { vitalSigns: { bloodPressure: "00/00" } }],
+        ["zero heart rate", { vitalSigns: { heartRate: 0 } }],
+        ["zero weight", { vitalSigns: { weight: 0 } }],
+        ["zero height", { vitalSigns: { height: 0 } }],
+        ["unsupported temperature precision", { vitalSigns: { temperature: 36.55 } }],
+        ["unsupported weight precision", { vitalSigns: { weight: 70.55 } }],
+        ["unsupported height precision", { vitalSigns: { height: 1.755 } }],
     ])("rejects draft values beyond the supported %s limit", async (_fieldName, overrides) => {
         const payload = {
             symptoms: "Reason",
@@ -189,5 +196,39 @@ describe("start doctor consultation", () => {
             statusCode: 400,
         });
         expect(database.transaction).not.toHaveBeenCalled();
+    });
+
+    test("accepts atypical vital signs within technical bounds without blocking draft saving", async () => {
+        const consultation = { id: 88, status: "InProgress", appointment_id: 7, update: jest.fn() };
+        models.Doctor.findOne.mockResolvedValue({ id: 12 });
+        models.Consultation.findOne.mockResolvedValue(consultation);
+        models.Appointment.findOne.mockResolvedValue(appointment);
+        models.Diagnosis.destroy = jest.fn();
+        models.Diagnosis.bulkCreate = jest.fn();
+        models.Prescription.findAll = jest.fn().mockResolvedValue([]);
+
+        await expect(
+            saveDoctorConsultationDraft(45, 88, {
+                symptoms: "Motivo",
+                patientFeeling: "Estable",
+                clinicalNotes: "Evaluación",
+                recommendations: "",
+                medicalOrders: [],
+                vitalSigns: {
+                    bloodPressure: "180/120",
+                    heartRate: 140,
+                    temperature: 39,
+                    weight: 70,
+                    height: 1.7,
+                },
+                diagnoses: [],
+                prescriptionItems: [],
+            }),
+        ).resolves.toMatchObject({ message: "Borrador guardado correctamente." });
+
+        expect(consultation.update).toHaveBeenCalledWith(
+            expect.objectContaining({ vital_signs: expect.objectContaining({ heartRate: 140 }) }),
+            expect.any(Object),
+        );
     });
 });

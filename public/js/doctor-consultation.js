@@ -67,6 +67,62 @@
         feedback.classList.toggle("is-success", Boolean(message) && !isError);
     }
 
+    function updateVitalWarnings() {
+        const isAdultPatient = page.dataset.adultPatient === "true";
+        const warningIds = {
+            bloodPressure: "blood-pressure-warning",
+            heartRate: "heart-rate-warning",
+            temperature: "temperature-warning",
+        };
+        const referenceNote = document.querySelector("[data-vital-reference-note]");
+        if (referenceNote) referenceNote.hidden = !isAdultPatient;
+
+        document.querySelectorAll("[data-vital-warning]").forEach((input) => {
+            const warning = document.getElementById(warningIds[input.dataset.vitalWarning]);
+            if (!warning) return;
+            const message = window.SVDoctorVitalSignGuidance.getVitalSignWarning(
+                input.name,
+                field(input.name),
+                isAdultPatient,
+            );
+            warning.textContent = message;
+            warning.hidden = !message;
+        });
+    }
+
+    function getMedicalOrdersError() {
+        const orders = field("medicalOrders")
+            .split("\n")
+            .map((order) => order.trim())
+            .filter(Boolean);
+        if (orders.length > 30) return "Puedes registrar hasta 30 órdenes médicas.";
+        if (orders.some((order) => order.length > 300)) {
+            return "Cada orden médica admite hasta 300 caracteres.";
+        }
+        return "";
+    }
+
+    function updateMedicalOrdersWarning() {
+        const warning = document.querySelector("[data-medical-orders-warning]");
+        if (!warning) return;
+        warning.textContent = getMedicalOrdersError();
+        warning.hidden = !warning.textContent;
+    }
+
+    function preventInvalidMedicalOrders() {
+        const error = getMedicalOrdersError();
+        if (!error) return false;
+        setFeedback(error, true);
+        return true;
+    }
+
+    document.querySelectorAll("[data-vital-warning]").forEach((input) => {
+        input.addEventListener("input", updateVitalWarnings);
+    });
+    form.elements.namedItem("medicalOrders")?.addEventListener("input", updateMedicalOrdersWarning);
+    updateVitalWarnings();
+    updateMedicalOrdersWarning();
+
     function renderList(list, items, getLabel, onRemove) {
         list.replaceChildren();
         items.forEach((item, index) => {
@@ -275,6 +331,7 @@
 
     document.querySelectorAll("[data-save-draft]").forEach((button) =>
         button.addEventListener("click", async () => {
+            if (preventInvalidMedicalOrders()) return;
             button.disabled = true;
             try {
                 const data = await send(
@@ -296,6 +353,7 @@
         .addEventListener("click", async (event) => {
             const button = event.currentTarget;
             const payload = collectPayload();
+            if (preventInvalidMedicalOrders()) return;
             const missingFields = Object.entries(requiredFieldLabels)
                 .filter(([name]) => !field(name))
                 .map(([, label]) => label);

@@ -33,6 +33,37 @@ import {
 } from "../services/doctorNotificationService.js";
 
 const doctorRoutes = Router();
+
+function isAdultPatient(dateOfBirth, now = new Date()) {
+    if (typeof dateOfBirth !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return false;
+    const todayParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(now);
+    const today = Object.fromEntries(todayParts.map(({ type, value }) => [type, value]));
+    const [birthYear, birthMonth, birthDay] = dateOfBirth.split("-").map(Number);
+    const todayYear = Number(today.year);
+    const todayMonth = Number(today.month);
+    const todayDay = Number(today.day);
+    if (
+        !birthYear ||
+        !birthMonth ||
+        !birthDay ||
+        dateOfBirth > `${today.year}-${today.month}-${today.day}`
+    ) {
+        return false;
+    }
+    return (
+        todayYear -
+            birthYear -
+            (todayMonth < birthMonth || (todayMonth === birthMonth && todayDay < birthDay)
+                ? 1
+                : 0) >=
+        18
+    );
+}
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
 
 doctorRoutes.get(
@@ -188,6 +219,7 @@ doctorRoutes.get(
                 activeNav: "appointments",
                 consultation,
                 patient: consultation.appointment?.patient,
+                isAdultPatient: isAdultPatient(consultation.appointment?.patient?.date_of_birth),
                 appointment: consultation.appointment,
                 doctorName: consultation.doctor?.display_name || "Médico",
                 doctorPhotoUrl: consultation.doctor?.profile_photo_url || null,
