@@ -18,6 +18,8 @@
 .consultation-step h3 { margin: 1.25rem 0 .65rem; color: #13336b; font-weight: 750; }
 .consultation-step label { display: grid; gap: .4rem; margin: .9rem 0; color: #233b62; font-size: .9rem; font-weight: 700; }
 .consultation-step .required-marker { color: #c62828; font-weight: 800; }
+.consultation-form-guidance { margin: .5rem 0 1rem; color: #53657d; font-size: .9rem; line-height: 1.5; }
+.consultation-step .consultation-field-help { display: block; color: #65758b; font-size: .78rem; font-weight: 400; line-height: 1.4; }
 .consultation-step input, .consultation-step textarea { width: 100%; border: 1px solid #cbd9e9; border-radius: .55rem; padding: .7rem .8rem; background: #fbfdff; color: #18345d; font-weight: 400; }
 .consultation-step input:focus, .consultation-step textarea:focus { outline: 3px solid #1682ff35; border-color: #0875ee; }
 .consultation-vitals, .consultation-medication-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem 1rem; }

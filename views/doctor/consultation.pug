@@ -49,19 +49,25 @@ html(lang="es")
                     form.consultation-form(data-consultation-form, novalidate)
                         section.consultation-step(data-consultation-step="0")
                             h2 Atención
+                            p#consultation-form-guidance.consultation-form-guidance
+                                | Los campos marcados con * son obligatorios para finalizar. Puedes guardar un borrador antes de completarlos.
                             label(for="consultation-symptoms") Motivo de consulta
-                            textarea#consultation-symptoms(
-                                name="symptoms",
-                                rows="3",
-                                maxlength="5000",
-                                required
-                            )
+                                textarea#consultation-symptoms(
+                                    name="symptoms",
+                                    rows="3",
+                                    maxlength="5000",
+                                    aria-describedby="symptoms-help",
+                                    required
+                                )
+                                small#symptoms-help.consultation-field-help Hasta 5.000 caracteres.
                             label(for="consultation-feeling") ¿Cómo se siente el paciente?
-                            textarea#consultation-feeling(
-                                name="patientFeeling",
-                                rows="2",
-                                maxlength="5000"
-                            )
+                                textarea#consultation-feeling(
+                                    name="patientFeeling",
+                                    rows="2",
+                                    maxlength="5000",
+                                    aria-describedby="patient-feeling-help"
+                                )
+                                small#patient-feeling-help.consultation-field-help Hasta 5.000 caracteres.
                             h3 Signos vitales
                             .consultation-vitals
                                 label Presión arterial
@@ -104,12 +110,14 @@ html(lang="es")
                                         step="0.01"
                                     )
                             label(for="consultation-evaluation") Evaluación médica
-                            textarea#consultation-evaluation(
-                                name="clinicalNotes",
-                                rows="4",
-                                maxlength="10000",
-                                required
-                            )
+                                textarea#consultation-evaluation(
+                                    name="clinicalNotes",
+                                    rows="4",
+                                    maxlength="10000",
+                                    aria-describedby="evaluation-help",
+                                    required
+                                )
+                                small#evaluation-help.consultation-field-help Hasta 10.000 caracteres.
                             .consultation-actions
                                 button(type="button", data-save-draft) Guardar borrador
                                 button(type="button", data-next-step) Siguiente
@@ -121,14 +129,18 @@ html(lang="es")
                                     input#diagnosis-entry(
                                         type="text",
                                         maxlength="500",
+                                        aria-describedby="diagnosis-help",
                                         data-diagnosis-input
                                     )
+                                    small#diagnosis-help.consultation-field-help Hasta 500 caracteres.
                                 label(for="diagnosis-notes-entry") Notas
                                     input#diagnosis-notes-entry(
                                         type="text",
                                         maxlength="5000",
+                                        aria-describedby="diagnosis-notes-help",
                                         data-diagnosis-notes
                                     )
+                                    small#diagnosis-notes-help.consultation-field-help Opcional; hasta 5.000 caracteres.
                                 button(type="button", data-add-diagnosis) Agregar diagnóstico
                             ul.consultation-list(
                                 data-diagnosis-list,
@@ -141,38 +153,71 @@ html(lang="es")
                         section.consultation-step(hidden, data-consultation-step="2")
                             h2 Tratamiento y órdenes
                             h3 Medicamentos (opcional)
+                            p.consultation-form-guidance
+                                | Si agregas un medicamento, completa su nombre, dosis, frecuencia y duración.
                             .consultation-medication-fields
                                 label Medicamento
-                                    input(type="text", maxlength="150", data-medication-name)
+                                    input#medication-name(
+                                        type="text",
+                                        maxlength="150",
+                                        aria-describedby="medication-name-help",
+                                        data-medication-name
+                                    )
+                                    small#medication-name-help.consultation-field-help Hasta 150 caracteres.
                                 label Dosis
-                                    input(type="text", maxlength="100", data-medication-dosage)
+                                    input#medication-dosage(
+                                        type="text",
+                                        maxlength="100",
+                                        aria-describedby="medication-dosage-help",
+                                        data-medication-dosage
+                                    )
+                                    small#medication-dosage-help.consultation-field-help Hasta 100 caracteres.
                                 label Frecuencia
-                                    input(type="text", maxlength="100", data-medication-frequency)
+                                    input#medication-frequency(
+                                        type="text",
+                                        maxlength="100",
+                                        aria-describedby="medication-frequency-help",
+                                        data-medication-frequency
+                                    )
+                                    small#medication-frequency-help.consultation-field-help Hasta 100 caracteres.
                                 label Duración
-                                    input(type="text", maxlength="100", data-medication-duration)
+                                    input#medication-duration(
+                                        type="text",
+                                        maxlength="100",
+                                        aria-describedby="medication-duration-help",
+                                        data-medication-duration
+                                    )
+                                    small#medication-duration-help.consultation-field-help Hasta 100 caracteres.
                                 label Instrucciones
-                                    input(
+                                    input#medication-instructions(
                                         type="text",
                                         maxlength="5000",
+                                        aria-describedby="medication-instructions-help",
                                         data-medication-instructions
                                     )
+                                    small#medication-instructions-help.consultation-field-help Opcionales; hasta 5.000 caracteres.
                                 button(type="button", data-add-medication) Agregar medicamento
                             ul.consultation-list(
                                 data-medication-list,
                                 aria-label="Medicamentos agregados"
                             )
-                            label(for="consultation-recommendations") Recomendaciones
-                            textarea#consultation-recommendations(
-                                name="recommendations",
-                                rows="3",
-                                maxlength="10000"
-                            )
+                            label(for="consultation-recommendations") Recomendaciones (opcional)
+                                textarea#consultation-recommendations(
+                                    name="recommendations",
+                                    rows="3",
+                                    maxlength="10000",
+                                    aria-describedby="recommendations-help"
+                                )
+                                small#recommendations-help.consultation-field-help Hasta 10.000 caracteres.
                             label(for="consultation-orders") Órdenes médicas opcionales (una por línea)
                             textarea#consultation-orders(
                                 name="medicalOrders",
                                 rows="3",
-                                maxlength="10000"
+                                maxlength="30029",
+                                aria-describedby="medical-orders-help"
                             )
+                            small#medical-orders-help.consultation-field-help
+                                | Máximo 30 órdenes; cada línea admite hasta 1.000 caracteres.
                             .consultation-actions
                                 button(type="button", data-previous-step) Anterior
                                 button(type="button", data-save-draft) Guardar borrador
