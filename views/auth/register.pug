@@ -31,6 +31,10 @@ html(lang="es")
                         p.mt-2.text-sm.leading-6.text-slate-600
                             | Regístrate en SaludVital para gestionar tus citas médicas.
 
+                        p.mt-3.text-xs.text-slate-600
+                            span.font-semibold.text-red-600(aria-hidden="true") *
+                            |  Campos obligatorios.
+
                         //- Display server-side validation and registration errors.
                         if error
                             p#register-error.mt-4.rounded-xl.border.border-red-200.bg-red-50.p-3.text-sm.text-red-800(
@@ -50,7 +54,9 @@ html(lang="es")
 
                                 .grid.grid-cols-1.gap-4(class="sm:grid-cols-2")
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="first_name") Nombres
+                                        label.mb-2.block.text-sm.font-semibold(for="first_name")
+                                            | Nombres
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         input#first_name.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             type="text",
@@ -61,7 +67,9 @@ html(lang="es")
                                         )
 
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="last_name") Apellidos
+                                        label.mb-2.block.text-sm.font-semibold(for="last_name")
+                                            | Apellidos
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         input#last_name.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             type="text",
@@ -73,6 +81,7 @@ html(lang="es")
 
                                     div
                                         label.mb-2.block.text-sm.font-semibold(for="document_type") Tipo de documento
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         select#document_type.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             name="document_type",
@@ -85,7 +94,9 @@ html(lang="es")
                                     div
                                         label.mb-2.block.text-sm.font-semibold(
                                             for="document_number"
-                                        ) Número de documento
+                                        )
+                                            | Número de documento
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         input#document_number.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             type="text",
@@ -98,7 +109,9 @@ html(lang="es")
                                         )
 
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="date_of_birth") Fecha de nacimiento
+                                        label.mb-2.block.text-sm.font-semibold(for="date_of_birth")
+                                            | Fecha de nacimiento
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         input#date_of_birth.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             type="date",
@@ -108,7 +121,9 @@ html(lang="es")
                                         )
 
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="phone") Teléfono
+                                        label.mb-2.block.text-sm.font-semibold(for="phone")
+                                            | Teléfono
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         input#phone.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             type="tel",
@@ -125,7 +140,9 @@ html(lang="es")
                                 legend.mb-3.text-lg.font-semibold.text-primary Contacto y ubicación
 
                                 div
-                                    label.mb-2.block.text-sm.font-semibold(for="email") Correo electrónico
+                                    label.mb-2.block.text-sm.font-semibold(for="email")
+                                        | Correo electrónico
+                                        span.ml-1.text-red-600(aria-hidden="true") *
                                     input#email.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                         class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                         type="email",
@@ -137,7 +154,9 @@ html(lang="es")
 
                                 .grid.grid-cols-1.gap-4(class="sm:grid-cols-2")
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="department") Departamento
+                                        label.mb-2.block.text-sm.font-semibold(for="department")
+                                            | Departamento
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         select#department.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             name="department",
@@ -146,7 +165,9 @@ html(lang="es")
                                             option(value="", selected, disabled) Selecciona un departamento
 
                                     div
-                                        label.mb-2.block.text-sm.font-semibold(for="municipality") Municipio
+                                        label.mb-2.block.text-sm.font-semibold(for="municipality")
+                                            | Municipio
+                                            span.ml-1.text-red-600(aria-hidden="true") *
                                         select#municipality.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                             class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                             name="municipality",
@@ -210,7 +231,9 @@ html(lang="es")
                                 legend.mb-3.text-lg.font-semibold.text-primary Seguridad de la cuenta
 
                                 div
-                                    label.mb-2.block.text-sm.font-semibold(for="password") Contraseña
+                                    label.mb-2.block.text-sm.font-semibold(for="password")
+                                        | Contraseña
+                                        span.ml-1.text-red-600(aria-hidden="true") *
                                     input#password.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                         class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                         type="password",
@@ -235,7 +258,9 @@ html(lang="es")
                                 div
                                     label.mb-2.block.text-sm.font-semibold(
                                         for="password_confirmation"
-                                    ) Confirmar contraseña
+                                    )
+                                        | Confirmar contraseña
+                                        span.ml-1.text-red-600(aria-hidden="true") *
                                     input#password_confirmation.block.w-full.rounded-xl.border.border-slate-300.bg-white.px-4.py-3.text-base.text-slate-900(
                                         class="focus:border-secondary focus:ring-2 focus:ring-secondary/20",
                                         type="password",
@@ -263,6 +288,7 @@ html(lang="es")
                                     )
                                     span
                                         | Autorizo el tratamiento de mis datos personales y, cuando corresponda, de mis datos sensibles de salud para la prestación de los servicios de SaludVital.
+                                        span.ml-1.text-red-600(aria-hidden="true") *
 
                             //- Submit the registration form.
                             button.flex.w-full.items-center.justify-center.rounded-full.bg-primary.px-5.py-3.font-semibold.text-white.shadow-md.transition(
