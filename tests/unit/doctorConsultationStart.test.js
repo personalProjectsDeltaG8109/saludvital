@@ -19,7 +19,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 }));
 
 const models = await import("../../src/models/associations.js");
-const { startDoctorConsultation } =
+const { getActiveDoctorConsultationId, startDoctorConsultation } =
     await import("../../src/modules/doctor/services/doctorConsultationService.js");
 
 describe("start doctor consultation", () => {
@@ -38,6 +38,29 @@ describe("start doctor consultation", () => {
             status: "InProgress",
             started_at: new Date("2026-10-29T15:00:00.000Z"),
         });
+    });
+
+    test("returns only the active consultation owned by the signed-in doctor's profile", async () => {
+        models.Doctor.findOne.mockResolvedValue({ id: 12 });
+        models.Consultation.findOne.mockResolvedValue({ id: 88 });
+
+        await expect(getActiveDoctorConsultationId(45)).resolves.toBe(88);
+        expect(models.Doctor.findOne).toHaveBeenCalledWith({
+            where: { user_id: 45 },
+            attributes: ["id"],
+            raw: true,
+        });
+        expect(models.Consultation.findOne).toHaveBeenCalledWith({
+            where: { doctor_id: 12, status: "InProgress" },
+            attributes: ["id"],
+            raw: true,
+        });
+    });
+
+    test("returns no active consultation when the doctor has none", async () => {
+        models.Consultation.findOne.mockResolvedValue(null);
+
+        await expect(getActiveDoctorConsultationId(45)).resolves.toBeNull();
     });
 
     test("starts an assigned confirmed appointment and records its transition", async () => {
