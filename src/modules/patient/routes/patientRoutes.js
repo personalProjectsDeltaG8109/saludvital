@@ -337,7 +337,6 @@ patientRoutes.get(
                     status: { name: "Confirmed" },
                     specialty: { name: "Medicina General" },
                     doctor_label: "Dr. Carlos Ramírez",
-                    site_label: "Sede Dosquebradas",
                 },
                 {
                     id: "demo-2",
@@ -345,7 +344,6 @@ patientRoutes.get(
                     status: { name: "In Progress" },
                     specialty: { name: "Dermatología" },
                     doctor_label: "Dra. Ana Torres",
-                    site_label: "Sede Dosquebradas",
                 },
                 {
                     id: "demo-3",
@@ -353,7 +351,6 @@ patientRoutes.get(
                     status: { name: "Attended" },
                     specialty: { name: "Oftalmología" },
                     doctor_label: "Dr. Luis Gómez",
-                    site_label: "Sede Pereira",
                 },
                 {
                     id: "demo-4",
@@ -361,7 +358,6 @@ patientRoutes.get(
                     status: { name: "Cancelled" },
                     specialty: { name: "Cardiología" },
                     doctor_label: "Dr. Andrés Silva",
-                    site_label: "Sede Pereira",
                 },
                 {
                     id: "demo-5",
@@ -369,7 +365,6 @@ patientRoutes.get(
                     status: { name: "Confirmed" },
                     specialty: { name: "Pediatría" },
                     doctor_label: "Dra. Laura Vélez",
-                    site_label: "Sede Dosquebradas",
                 },
             ];
             const appointments = (previewMode ? previewAppointments : storedAppointments).map(

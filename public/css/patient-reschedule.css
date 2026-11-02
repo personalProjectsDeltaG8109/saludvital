@@ -40,20 +40,20 @@
 .reschedule-table td strong,.reschedule-table td span { display: block; }
 .reschedule-table td strong { color: #123b73; }
 .reschedule-table td:nth-child(2) span { margin-top: 2px; }
-.reschedule-status { width: fit-content; padding: 5px 10px; border-radius: 7px; color: #36A96B; background: #dcf8eb; font-size: 10px; font-weight: 650; }
+.reschedule-status { width: fit-content; padding: 5px 10px; border-radius: 7px; color: #1e673e; background: #dcf8eb; font-size: 10px; font-weight: 650; }
 .reschedule-date-time { display: grid; grid-template-columns: minmax(250px,.95fr) minmax(260px,1.15fr) minmax(220px,.9fr); gap: 10px; }
 .reschedule-calendar,.reschedule-times,.reschedule-summary { min-width: 0; padding: 11px; border: 1px solid #e2edf6; border-radius: 11px; background: #fbfdff; }
 .reschedule-calendar-heading { margin-bottom: 9px; display: flex; align-items: center; justify-content: space-between; }
 .reschedule-calendar-heading h3,.reschedule-times h3,.reschedule-summary h3 { margin: 0; color: #123b73; font-size: 13px; font-weight: 750; text-transform: capitalize; }
 .reschedule-calendar-heading button { width: 28px; height: 28px; border-radius: 7px; color: #0a4c8e; background: #edf7ff; font-size: 22px; cursor: pointer; }
 .reschedule-weekdays,.reschedule-calendar-days { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 4px; text-align: center; }
-.reschedule-weekdays { margin-bottom: 5px; color: #637891; font-size: 10px; }
+.reschedule-weekdays { margin-bottom: 5px; color: #536980; font-size: 10px; }
 .reschedule-calendar-day,.reschedule-calendar-blank { min-width: 0; aspect-ratio: 1; display: grid; place-items: center; border-radius: 7px; }
 .reschedule-calendar-day { color: #285276; background: transparent; font-size: 11px; cursor: pointer; }
 .reschedule-calendar-day:not(:disabled):hover { background: #e6f4ff; }
 .reschedule-calendar-day.is-selected { color: #fff; background: var(--reschedule-blue); box-shadow: 0 3px 8px #078bed35; }
 .reschedule-calendar-day:disabled { color: #becbd7; cursor: not-allowed; }
-.reschedule-times>p { margin: 4px 0 9px; color: #627891; font-size: 11px; text-transform: capitalize; }
+.reschedule-times>p { margin: 4px 0 9px; color: #52677e; font-size: 11px; text-transform: capitalize; }
 .reschedule-message.is-error { color: #c93548; }
 .reschedule-time-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
 .reschedule-time-option { min-height: 34px; padding: 5px; border: 1px solid #deebf6; border-radius: 8px; color: #174c7e; background: #fff; font-size: 11px; cursor: pointer; }
@@ -165,8 +165,7 @@
     .reschedule-table td:nth-child(2) { grid-column: 2; grid-row: 1; }
     .reschedule-table td:nth-child(3) { grid-column: 2; grid-row: 2; }
     .reschedule-table td:nth-child(4) { grid-column: 2; grid-row: 3; }
-    .reschedule-table td:nth-child(5) { display: none; }
-    .reschedule-table td:nth-child(6) { grid-column: 3; grid-row: 1; justify-self: end; }
+    .reschedule-table td:nth-child(5) { grid-column: 3; grid-row: 1; justify-self: end; }
     .reschedule-status { max-width: 100%; padding: 4px 6px; font-size: 9px; white-space: nowrap; }
     .reschedule-date-time { grid-template-columns: minmax(0,1fr); gap: 8px; }
     .reschedule-calendar,.reschedule-times,.reschedule-summary { padding: 9px; }
