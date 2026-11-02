@@ -28,7 +28,7 @@ html(lang="es")
                         each stat in appointmentStats
                             - const count = stat.status ? appointments.filter((a) => (a.status && a.status.name) === stat.status).length : appointments.length;
                             article.appointment-stat(class="stat-" + stat.key)
-                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" ? "✓" : stat.key === "in-progress" ? "◷" : stat.key === "attended" ? "✓" : "×"
+                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" || stat.key === "attended" ? "✓" : "×"
                                 span.stat-copy
                                     strong= count
                                     small= stat.label
@@ -62,7 +62,6 @@ html(lang="es")
                                 select(data-status)
                                     option(value="") Todos los estados
                                     option(value="Confirmed") Confirmadas
-                                    option(value="In Progress") En curso
                                     option(value="Attended") Atendidas
                                     option(value="Cancelled") Canceladas
                         if appointments.length
