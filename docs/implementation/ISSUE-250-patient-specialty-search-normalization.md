@@ -16,4 +16,7 @@ Fix specialty search in the patient appointment booking flow so users can find r
 
 ## Verification
 
-Pending implementation and project checks.
+- `npm run format` and the required targeted Prettier write command completed successfully.
+- `npm run test -- --runInBand`: 106 suites and 782 tests passed.
+- `npm run lint`, `npm run css:build`, and `npm run format:check` passed.
+- `npm run test:e2e` passed, including the new specialty search browser flow and available axe-core checks.
