@@ -61,6 +61,7 @@ describe("doctor next appointment service", () => {
             reason: "Medicina General",
             status: "Confirmed",
             canStart: true,
+            hasActiveConsultation: false,
         });
         expect(result).not.toHaveProperty("patientPhone");
         expect(result).not.toHaveProperty("patientDocument");
@@ -78,7 +79,7 @@ describe("doctor next appointment service", () => {
 
         const result = await getDoctorNextAppointmentData(45, NOW);
 
-        expect(result.canStart).toBe(false);
+        expect(result).toMatchObject({ canStart: false, hasActiveConsultation: true });
     });
 
     test("links an in-progress appointment only to its own consultation", async () => {

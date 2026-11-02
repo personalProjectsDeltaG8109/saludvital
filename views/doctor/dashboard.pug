@@ -14,7 +14,10 @@ html(lang="es")
             button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
             .sv-main
                 include ./partials/topbar.pug
-                main.doctor-content(data-start-consultation-url="/api/doctor/appointments")
+                main.doctor-content(
+                    data-start-consultation-url="/api/doctor/appointments",
+                    data-active-consultation-url="/api/doctor/consultations/active"
+                )
                     section.doctor-hero(aria-labelledby="doctor-hero-title")
                         .doctor-hero-copy
                             p.doctor-eyebrow Panel médico
@@ -121,9 +124,13 @@ html(lang="es")
                                                     aria-label=`Continuar consulta con ${appointment.patientName}`
                                                 ) Continuar consulta
                                             else if appointment.status === "Confirmed"
-                                                span.doctor-row-link.is-inactive(
-                                                    aria-label="Finaliza la consulta activa para iniciar otra"
-                                                ) Consulta activa
+                                                if appointment.hasActiveConsultation
+                                                    button.doctor-row-link(
+                                                        type="button",
+                                                        data-show-active-consultation
+                                                    ) Ver consulta en curso
+                                                else
+                                                    span.doctor-row-link.is-inactive Finaliza la consulta activa
                             else
                                 .doctor-empty-state
                                     span.doctor-empty-icon(aria-hidden="true") ▦
@@ -175,7 +182,13 @@ html(lang="es")
                                             href=`/doctor/consultations/${nextAppointment.consultationId}`
                                         ) Continuar consulta
                                     else if nextAppointment.status === "Confirmed"
-                                        span.doctor-primary-link.is-inactive Finaliza la consulta activa
+                                        if nextAppointment.hasActiveConsultation
+                                            button.doctor-primary-link(
+                                                type="button",
+                                                data-show-active-consultation
+                                            ) Ver consulta en curso
+                                        else
+                                            span.doctor-primary-link.is-inactive Finaliza la consulta activa
                             else
                                 .doctor-empty-state.doctor-next-empty
                                     span.doctor-empty-icon(aria-hidden="true") ◷
@@ -183,6 +196,7 @@ html(lang="es")
                                     p Las próximas citas aparecerán aquí.
 
                 include ./partials/start-consultation-dialog.pug
+                include ./partials/active-consultation-dialog.pug
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)

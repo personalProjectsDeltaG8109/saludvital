@@ -169,6 +169,7 @@ function serializeNextAppointment(appointment, activeConsultation, includePatien
     return {
         ...serializeAppointment(appointment, { includePatientPhoto }),
         reason: appointment.specialty?.name || "Consulta médica",
+        hasActiveConsultation: Boolean(activeConsultation),
         consultationId:
             status === "In Progress" && activeConsultation?.appointment_id === appointment.id
                 ? activeConsultation.id
@@ -291,11 +292,13 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             consultationsThisWeek: weeklyConsultations.length,
             averageDurationSeconds,
         },
+        hasActiveConsultation: Boolean(activeConsultation),
         todayAppointments: visibleAppointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
             consultationId:
                 appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
             canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+            hasActiveConsultation: Boolean(activeConsultation),
         })),
         nextAppointment: serializeNextAppointment(
             nextAppointmentRecords.appointment,
@@ -522,12 +525,14 @@ export async function getDoctorAppointments(userId, query = {}) {
     return {
         doctorName: doctor.display_name || "Médico",
         doctorPhotoUrl: doctor.profile_photo_url,
+        hasActiveConsultation: Boolean(activeConsultation),
         appointments: appointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
             consultationId:
                 appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
             specialty: appointment.specialty?.name || "Consulta médica",
             canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+            hasActiveConsultation: Boolean(activeConsultation),
         })),
         appointmentFilters: { ...filters, page },
         appointmentStatuses: statusRows

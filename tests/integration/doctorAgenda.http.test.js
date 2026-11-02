@@ -2,7 +2,7 @@ import request from "supertest";
 import app from "../../app.js";
 
 describe("Doctor agenda routes", () => {
-    test.each(["/doctor/agenda", "/api/doctor/agenda"])(
+    test.each(["/doctor/agenda", "/api/doctor/agenda", "/api/doctor/consultations/active"])(
         "%s requires an authenticated doctor",
         async (path) => {
             const response = await request(app).get(path).redirects(0);
