@@ -93,4 +93,17 @@ describe("doctor consultation form guidance", () => {
         expect(html).toContain("no constituye un diagnóstico");
         expect(html).toContain('id="heart-rate-warning"');
     });
+
+    test("renders an accessible four-stage consultation progress indicator", () => {
+        const html = renderConsultationPage();
+
+        expect(html).toContain('aria-label="Progreso de la consulta"');
+        expect(html).toContain("data-step-announcement");
+        expect(html).toContain('data-step-title="Atención"');
+        expect(html).toContain('aria-current="step"');
+        expect(html).toContain("data-step-state");
+        expect(html).toContain("Paso 1 de 4: Atención. Paso actual.");
+        expect(html).toMatch(/data-step-indicator="1"[^>]*disabled/);
+        expect(html).toMatch(/data-consultation-step="3"[^>]*>[\s\S]*?<h2 tabindex="-1">/);
+    });
 });
