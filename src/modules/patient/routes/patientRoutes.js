@@ -525,7 +525,6 @@ patientRoutes.get(
                             ],
                         },
                     ],
-                    documents: ["Resumen de atención", "Orden médica"],
                 },
                 {
                     id: "demo-2",
@@ -552,7 +551,6 @@ patientRoutes.get(
                             ],
                         },
                     ],
-                    documents: ["Registro odontológico"],
                 },
                 {
                     id: "demo-3",
@@ -568,7 +566,6 @@ patientRoutes.get(
                         { diagnosis: "Control cardiovascular", notes: "Sin hallazgos de alarma." },
                     ],
                     prescriptions: [],
-                    documents: ["Resultado de electrocardiograma"],
                 },
                 {
                     id: "demo-4",
@@ -594,7 +591,6 @@ patientRoutes.get(
                             ],
                         },
                     ],
-                    documents: ["Indicaciones de cuidado"],
                 },
                 {
                     id: "demo-5",
@@ -620,7 +616,6 @@ patientRoutes.get(
                             ],
                         },
                     ],
-                    documents: ["Resumen de atención"],
                 },
             ];
             const consultations = previewMode
@@ -634,10 +629,9 @@ patientRoutes.get(
                             prescriptionCount + (prescription.items?.length || 0),
                         0,
                     );
-                    counts.documents += consultation.documents?.length || 0;
                     return counts;
                 },
-                { diagnoses: 0, treatments: 0, documents: 0 },
+                { diagnoses: 0, treatments: 0 },
             );
 
             return res.render("patient/clinical-history", {
