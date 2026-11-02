@@ -260,13 +260,24 @@ if (agendaRoot) {
             continueLink.href = `/doctor/consultations/${encodeURIComponent(appointment.consultationId)}`;
             nextAppointmentCard.append(continueLink);
         } else {
-            nextAppointmentCard.append(
-                createElement(
-                    "p",
-                    "doctor-agenda-next-note",
-                    "Finaliza la consulta activa antes de iniciar otra.",
-                ),
-            );
+            if (appointment.hasActiveConsultation) {
+                const activeConsultationButton = createElement(
+                    "button",
+                    "doctor-agenda-start-button",
+                    "Consulta en curso · Ver opciones",
+                );
+                activeConsultationButton.type = "button";
+                activeConsultationButton.dataset.showActiveConsultation = "";
+                nextAppointmentCard.append(activeConsultationButton);
+            } else {
+                nextAppointmentCard.append(
+                    createElement(
+                        "p",
+                        "doctor-agenda-next-note",
+                        "Finaliza la consulta activa antes de iniciar otra.",
+                    ),
+                );
+            }
         }
     }
 

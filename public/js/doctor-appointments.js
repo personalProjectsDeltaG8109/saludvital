@@ -100,6 +100,14 @@
         } else if (appointment.status === "In Progress") {
             actionCell.textContent = "Consulta en curso";
             actionCell.classList.add("text-xs", "font-semibold", "text-teal-700");
+        } else if (appointment.hasActiveConsultation) {
+            const activeConsultationButton = document.createElement("button");
+            activeConsultationButton.type = "button";
+            activeConsultationButton.className =
+                "rounded-xl border border-sky-200 px-3 py-2 text-xs font-semibold text-primary hover:bg-sky-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary";
+            activeConsultationButton.dataset.showActiveConsultation = "";
+            activeConsultationButton.textContent = "Ver consulta en curso";
+            actionCell.append(activeConsultationButton);
         } else {
             actionCell.textContent = "—";
         }

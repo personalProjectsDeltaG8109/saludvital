@@ -19,6 +19,7 @@ html(lang="es")
                     data-doctor-agenda,
                     data-agenda-api-url="/api/doctor/agenda",
                     data-start-consultation-url="/api/doctor/appointments",
+                    data-active-consultation-url="/api/doctor/consultations/active",
                     data-today-date=todayDate,
                     data-initial-view=initialView
                 )
@@ -170,6 +171,7 @@ html(lang="es")
                                     )
                                         p.doctor-agenda-aside-loading Cargando disponibilidad…
                 include ./partials/start-consultation-dialog.pug
+                include ./partials/active-consultation-dialog.pug
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)

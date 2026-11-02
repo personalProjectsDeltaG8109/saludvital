@@ -13,6 +13,7 @@ import {
 } from "../services/doctorPatientsService.js";
 import {
     completeDoctorConsultation,
+    getActiveDoctorConsultationId,
     getDoctorConsultation,
     saveDoctorConsultationDraft,
     startDoctorConsultation,
@@ -27,6 +28,17 @@ import { updateDoctorProfilePhoto } from "../services/doctorProfilePhotoService.
 
 const doctorRoutes = Router();
 const requireDoctor = [authenticateToken, requireRole("Doctor")];
+
+doctorRoutes.get("/api/doctor/consultations/active", ...requireDoctor, async (req, res, next) => {
+    try {
+        return res.json({
+            consultationId: await getActiveDoctorConsultationId(req.auth.userId),
+        });
+    } catch (error) {
+        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
+        return next(error);
+    }
+});
 
 doctorRoutes.get(
     "/api/doctor/consultations/:consultationId",

@@ -32,6 +32,23 @@ function parseAppointmentId(value) {
     return appointmentId;
 }
 
+/** Return only the signed-in doctor's active consultation identifier. */
+export async function getActiveDoctorConsultationId(userId) {
+    const doctor = await Doctor.findOne({
+        where: { user_id: userId },
+        attributes: ["id"],
+        raw: true,
+    });
+    if (!doctor) throw createServiceError("No se encontró el perfil médico.", 404);
+
+    const consultation = await Consultation.findOne({
+        where: { doctor_id: doctor.id, status: ACTIVE_CONSULTATION_STATUS },
+        attributes: ["id"],
+        raw: true,
+    });
+    return consultation?.id ?? null;
+}
+
 /** Start an assigned confirmed appointment and its consultation atomically. */
 export async function startDoctorConsultation(userId, rawAppointmentId) {
     const appointmentId = parseAppointmentId(rawAppointmentId);
