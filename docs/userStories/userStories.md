@@ -560,6 +560,12 @@
 11. Medical orders remain optional and support up to 30 non-empty orders, each no longer than 300 characters. The browser provides immediate feedback, and the server validates every submitted line.
 12. Vital-sign warnings do not block saving drafts or completing the consultation. Existing draft, completion, authorization, and persistence rules remain in force.
 
+## US-DOC-05 Interface Addendum — Issue #263
+
+13. The consultation progress indicator distinguishes the current stage, previously visited stages, and stages that are not yet available. Future stages remain unavailable until reached through the form actions.
+14. Step changes announce the current stage to assistive technology and move keyboard focus to the new section heading.
+15. Consultation stages remain readable and usable by keyboard on mobile, tablet, and desktop widths without horizontal overflow. Draft save, draft recovery, and completion behavior remain unchanged.
+
 ## Revision
 
 | Criteria   | Comment | Made by |
