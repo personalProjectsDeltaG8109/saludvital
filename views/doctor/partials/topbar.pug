@@ -4,12 +4,14 @@
 - var topbarMessage = "Aquí tienes el resumen de tu jornada.";
 - var roleLabel = "Médico";
 - var mobileLogoSrc = "/brand/patient/logo-primary-background.png";
-- var notificationHref = null;
+- var notificationHref = "/doctor/notifications";
 - var showNotificationBell = true;
 - var notificationLabel = "Notificaciones";
 - var notificationCount = 0;
+- var notificationCountUrl = "/api/doctor/notifications/unread-count";
 - var profileHref = "/doctor/profile";
 - var profileLabel = "Perfil del médico";
 - var profilePhotoUrl = doctorPhotoUrl || null;
 
 include ../../shared/partials/topbar.pug
+script(src="/js/doctor-notifications.js", defer)

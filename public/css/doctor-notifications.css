@@ -1,0 +1,266 @@
+.doctor-notifications-page > .doctor-panel {
+    padding: 1.25rem;
+}
+
+.doctor-notifications-header,
+.doctor-notification-item,
+.doctor-notification-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.doctor-notification-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.doctor-notifications-header {
+    margin-bottom: 1rem;
+}
+
+.doctor-notifications-header h2,
+.doctor-notifications-header p,
+.doctor-notification-copy {
+    margin: 0;
+}
+
+.doctor-notifications-header h2 {
+    color: #153f75;
+    font-size: 1.1rem;
+}
+
+.doctor-notifications-header > div > p {
+    color: #5f7693;
+    margin-top: 0.25rem;
+}
+
+.doctor-notification-unread {
+    color: #075bbd;
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.doctor-notification-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.doctor-notification-item {
+    border-top: 1px solid #e4edf7;
+    padding: 1rem 0;
+}
+
+.doctor-notification-item.is-unread {
+    background: #f5faff;
+}
+
+.doctor-notification-icon {
+    align-items: center;
+    background: #e5f1ff;
+    border-radius: 0.8rem;
+    color: #0875e1;
+    display: inline-flex;
+    flex: 0 0 2.75rem;
+    height: 2.75rem;
+    justify-content: center;
+}
+
+.doctor-notification-icon svg {
+    fill: none;
+    height: 1.35rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+    width: 1.35rem;
+}
+
+.doctor-notification-copy {
+    display: grid;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.doctor-notification-copy strong {
+    color: #163d70;
+}
+
+.doctor-notification-copy > span,
+.doctor-notification-time {
+    color: #586b84;
+    font-size: 0.9rem;
+    margin-top: 0.2rem !important;
+}
+
+.doctor-notification-read-button,
+.doctor-notification-read-all-button,
+.doctor-notification-pagination a {
+    background: #fff;
+    border: 1px solid #b8d7fa;
+    border-radius: 0.6rem;
+    color: #075bbd;
+    cursor: pointer;
+    font: inherit;
+    padding: 0.55rem 0.8rem;
+    white-space: nowrap;
+}
+
+.doctor-notification-details-button {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    white-space: normal;
+}
+
+.doctor-notification-read-button:focus-visible,
+.doctor-notification-read-all-button:focus-visible,
+.doctor-notification-details-button:focus-visible,
+.doctor-notification-dialog-close:focus-visible,
+.doctor-notification-pagination a:focus-visible {
+    outline: 3px solid #71b7ff;
+    outline-offset: 2px;
+}
+
+.doctor-notification-feedback:empty {
+    display: none;
+}
+
+.doctor-notification-feedback {
+    color: #075bbd;
+    font-size: 0.9rem;
+}
+
+.doctor-notification-dialog {
+    position: fixed;
+    inset: 0;
+    width: min(34rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 2rem);
+    margin: auto;
+    overflow-y: auto;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    border: 1px solid #d9e8f8;
+    border-radius: 1rem;
+    color: #163d70;
+    box-shadow: 0 1.5rem 4rem rgb(12 42 75 / 24%);
+}
+
+.doctor-notification-dialog::backdrop {
+    background: rgb(8 29 54 / 52%);
+}
+
+.doctor-notification-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.doctor-notification-dialog-header h2 {
+    margin: 0;
+    color: #153f75;
+    font-size: 1.15rem;
+}
+
+.doctor-notification-dialog-close {
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid #b8d7fa;
+    border-radius: 0.6rem;
+    color: #075bbd;
+    background: #fff;
+    cursor: pointer;
+    font-size: 1.4rem;
+}
+
+.doctor-notification-dialog-type {
+    margin: 1rem 0;
+    font-weight: 700;
+}
+
+.doctor-notification-dialog-fields {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+}
+
+.doctor-notification-dialog-fields div {
+    display: grid;
+    gap: 0.2rem;
+}
+
+.doctor-notification-dialog-fields dt {
+    color: #5f7693;
+    font-size: 0.85rem;
+}
+
+.doctor-notification-dialog-fields dd {
+    margin: 0;
+}
+
+.doctor-notification-read {
+    color: #43815f;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.doctor-notification-empty {
+    background: #f6faff;
+    border-radius: 0.8rem;
+    color: #5f7693;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.doctor-notification-empty strong {
+    color: #163d70;
+}
+
+.doctor-notification-pagination {
+    border-top: 1px solid #e4edf7;
+    justify-content: center;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+}
+
+@media (max-width: 600px) {
+    .doctor-notifications-page > .doctor-panel {
+        padding: 0.85rem;
+    }
+
+    .doctor-notification-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+    }
+
+    .doctor-notification-copy {
+        flex-basis: calc(100% - 3.5rem);
+    }
+
+    .doctor-notifications-header,
+    .doctor-notification-header-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .doctor-notification-read-button,
+    .doctor-notification-read {
+        margin-left: 3.4rem;
+    }
+}
