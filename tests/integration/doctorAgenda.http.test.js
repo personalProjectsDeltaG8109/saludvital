@@ -21,4 +21,11 @@ describe("Doctor agenda routes", () => {
         expect(response.status).toBe(303);
         expect(response.headers.location).toBe("/login");
     });
+
+    test("mark-all doctor notification endpoint requires an authenticated doctor", async () => {
+        const response = await request(app).post("/api/doctor/notifications/read-all").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
 });

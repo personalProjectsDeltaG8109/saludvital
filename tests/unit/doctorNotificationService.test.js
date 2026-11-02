@@ -11,8 +11,12 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 
 const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
-const { getDoctorNotifications, getDoctorUnreadNotificationCount, markDoctorNotificationRead } =
-    await import("../../src/modules/doctor/services/doctorNotificationService.js");
+const {
+    getDoctorNotifications,
+    getDoctorUnreadNotificationCount,
+    markAllDoctorNotificationsRead,
+    markDoctorNotificationRead,
+} = await import("../../src/modules/doctor/services/doctorNotificationService.js");
 
 describe("doctor notification service", () => {
     beforeEach(() => {
@@ -126,6 +130,24 @@ describe("doctor notification service", () => {
                 defaults: { read_at: expect.any(Date) },
             }),
         );
+    });
+
+    test("marks all unread appointment events for the signed-in doctor as read", async () => {
+        database.query.mockResolvedValueOnce([]).mockResolvedValueOnce([{ unreadCount: 0 }]);
+
+        await expect(markAllDoctorNotificationsRead(42)).resolves.toEqual({ unreadCount: 0 });
+
+        expect(database.query).toHaveBeenNthCalledWith(
+            1,
+            expect.stringContaining("INSERT IGNORE INTO doctor_appointment_notification_reads"),
+            {
+                replacements: {
+                    doctorId: 7,
+                    eventTypes: ["Created", "Rescheduled", "Cancelled"],
+                },
+            },
+        );
+        expect(database.query.mock.calls[0][0]).toContain("appointment.doctor_id = :doctorId");
     });
 
     test("does not mark a missing or differently assigned event as read", async () => {
