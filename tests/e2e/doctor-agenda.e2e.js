@@ -48,45 +48,74 @@ try {
         window.agendaRequests = [];
         window.agendaMode = "success";
         window.activeConsultationId = null;
-        const createAvailability = (hasSchedule = true) => ({
-            appointmentDurationMinutes: 30,
-            today: {
-                capacitySlots: hasSchedule ? 8 : 0,
-                bookedSlots: hasSchedule ? 3 : 0,
-                availableSlots: hasSchedule ? 5 : 0,
-                hasSchedule,
-                days: hasSchedule
-                    ? [
-                          {
-                              date: "2026-10-29",
-                              workingPeriods: ["7:00 a. m. – 11:00 a. m."],
-                              exceptions: [
-                                  {
-                                      label: "Horario no disponible",
-                                      startTime: "9:00 a. m.",
-                                      endTime: "9:30 a. m.",
-                                      allDay: false,
-                                  },
-                              ],
-                          },
-                      ]
-                    : [],
-            },
-            week: {
-                capacitySlots: hasSchedule ? 40 : 0,
-                bookedSlots: hasSchedule ? 15 : 0,
-                availableSlots: hasSchedule ? 25 : 0,
-                hasSchedule,
-                days: [],
-            },
-            month: {
-                capacitySlots: hasSchedule ? 160 : 0,
-                bookedSlots: hasSchedule ? 60 : 0,
-                availableSlots: hasSchedule ? 100 : 0,
-                hasSchedule,
-                days: [],
-            },
-        });
+        const createAvailability = (hasSchedule = true, selectedDate = "2026-10-29") => {
+            const selected = new Date(`${selectedDate}T00:00:00.000Z`);
+            const weekStart = new Date(selected);
+            weekStart.setUTCDate(selected.getUTCDate() - ((selected.getUTCDay() + 6) % 7));
+            const weekEnd = new Date(weekStart);
+            weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+            const monthStart = new Date(
+                Date.UTC(selected.getUTCFullYear(), selected.getUTCMonth(), 1),
+            );
+            const monthEnd = new Date(
+                Date.UTC(selected.getUTCFullYear(), selected.getUTCMonth() + 1, 0),
+            );
+            const formatDate = (date) => date.toISOString().slice(0, 10);
+            const selectedScheduleDay = hasSchedule
+                ? [
+                      {
+                          date: selectedDate,
+                          workingPeriods: ["9:00 a. m. – 1:00 p. m."],
+                          exceptions: [],
+                      },
+                  ]
+                : [];
+            return {
+                appointmentDurationMinutes: 30,
+                today: {
+                    startDate: "2026-10-29",
+                    endDate: "2026-10-29",
+                    capacitySlots: hasSchedule ? 8 : 0,
+                    bookedSlots: hasSchedule ? 3 : 0,
+                    availableSlots: hasSchedule ? 5 : 0,
+                    hasSchedule,
+                    days: hasSchedule
+                        ? [
+                              {
+                                  date: "2026-10-29",
+                                  workingPeriods: ["7:00 a. m. – 11:00 a. m."],
+                                  exceptions: [
+                                      {
+                                          label: "Horario no disponible",
+                                          startTime: "9:00 a. m.",
+                                          endTime: "9:30 a. m.",
+                                          allDay: false,
+                                      },
+                                  ],
+                              },
+                          ]
+                        : [],
+                },
+                week: {
+                    startDate: formatDate(weekStart),
+                    endDate: formatDate(weekEnd),
+                    capacitySlots: hasSchedule ? 40 : 0,
+                    bookedSlots: hasSchedule ? 15 : 0,
+                    availableSlots: hasSchedule ? 25 : 0,
+                    hasSchedule,
+                    days: selectedScheduleDay,
+                },
+                month: {
+                    startDate: formatDate(monthStart),
+                    endDate: formatDate(monthEnd),
+                    capacitySlots: hasSchedule ? 160 : 0,
+                    bookedSlots: hasSchedule ? 60 : 0,
+                    availableSlots: hasSchedule ? 100 : 0,
+                    hasSchedule,
+                    days: selectedScheduleDay,
+                },
+            };
+        };
         window.fetch = async (url) => {
             if (String(url).includes("/api/doctor/consultations/active")) {
                 return {
@@ -137,7 +166,7 @@ try {
                         rangeStart: days[0].date,
                         rangeEnd: days[6].date,
                         periodLabel: "26 oct - 1 nov",
-                        availability: createAvailability(),
+                        availability: createAvailability(true, date),
                         nextAppointment: {
                             id: 7,
                             patientName: "Ana Pérez",
@@ -166,7 +195,7 @@ try {
                         rangeStart: "2026-10-01",
                         rangeEnd: "2026-10-31",
                         periodLabel: "octubre de 2026",
-                        availability: createAvailability(),
+                        availability: createAvailability(true, date),
                         nextAppointment: {
                             id: 7,
                             patientName: "Ana Pérez",
@@ -190,7 +219,7 @@ try {
                         exceptions: [],
                         appointments: [],
                         nextAppointment: null,
-                        availability: createAvailability(false),
+                        availability: createAvailability(false, date),
                         timeline: null,
                     }),
                 };
@@ -232,7 +261,7 @@ try {
                         status: "Confirmed",
                         canStart: true,
                     },
-                    availability: createAvailability(),
+                    availability: createAvailability(true, date),
                     timeline: { startHour: 7, endHour: 17 },
                 }),
             };
@@ -271,6 +300,11 @@ try {
     );
     await page.locator(".doctor-agenda-availability-details summary").first().click();
     await page.getByText("Horario no disponible: 9:00 a. m. – 9:30 a. m.").waitFor();
+    await page.locator('[data-agenda-availability="week"] summary').click();
+    await page
+        .locator('[data-agenda-availability="week"]')
+        .getByText("jueves, 29 de octubre de 2026")
+        .waitFor();
     assert.equal(await page.getByText("Editar").count(), 0);
     const availabilityAccessibility = await new AxeBuilder({ page })
         .include("[data-agenda-availability-cards]")
@@ -294,6 +328,10 @@ try {
             window.agendaRequests.at(-1).view === "week" &&
             window.agendaRequests.at(-1).date === "2026-11-05",
     );
+    await page
+        .locator('[data-agenda-availability="week"]')
+        .getByText("Del 02 nov 2026 al 08 nov 2026")
+        .waitFor();
     assert.equal(
         await page.locator('[data-agenda-view="week"]').getAttribute("aria-pressed"),
         "true",
@@ -382,7 +420,21 @@ try {
                 )
                     .filter((element) => element.getClientRects().length)
                     .map(box);
-                return { toolbarBox, toolbarControls, contentBox, panels };
+                const availabilityCards = Array.from(
+                    document.querySelectorAll(".doctor-agenda-availability-card"),
+                ).map((card) => ({
+                    card: box(card),
+                    content: Array.from(
+                        card.querySelectorAll(
+                            ".doctor-agenda-availability-period, .doctor-agenda-availability-metric, .doctor-agenda-availability-metric dt, .doctor-agenda-availability-metric dd, .doctor-agenda-availability-details summary",
+                        ),
+                    ).map((element) => ({
+                        ...box(element),
+                        scrollWidth: element.scrollWidth,
+                        clientWidth: element.clientWidth,
+                    })),
+                }));
+                return { toolbarBox, toolbarControls, contentBox, panels, availabilityCards };
             });
             assert.ok(
                 agendaBounds.toolbarBox.left >= agendaBounds.contentBox.left &&
@@ -404,6 +456,17 @@ try {
                     ({ left, right }) =>
                         left >= agendaBounds.contentBox.left &&
                         right <= agendaBounds.contentBox.right,
+                ),
+                JSON.stringify({ width: viewport.width, ...agendaBounds }),
+            );
+            assert.ok(
+                agendaBounds.availabilityCards.every(({ card, content }) =>
+                    content.every(
+                        ({ left, right, scrollWidth, clientWidth }) =>
+                            left >= card.left &&
+                            right <= card.right &&
+                            scrollWidth <= clientWidth + 1,
+                    ),
                 ),
                 JSON.stringify({ width: viewport.width, ...agendaBounds }),
             );
