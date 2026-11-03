@@ -2,7 +2,7 @@ import { describe, expect, test } from "@jest/globals";
 import pug from "pug";
 
 describe("administrator profile page", () => {
-    test("renders the saved administrator photo in the Dashboard-specific header", () => {
+    test("renders the saved identity and dashboard alerts through the shared header", () => {
         const html = pug.renderFile("views/admin/dashboard.pug", {
             pageTitle: "Panel administrativo | SaludVital",
             adminName: "Administradora",
@@ -11,7 +11,7 @@ describe("administrator profile page", () => {
             adminPhotoUrl: "/uploads/profile-photos/admin.png",
             dashboard: {
                 generatedAt: new Date("2026-11-03T12:00:00.000Z"),
-                notificationAlertCount: 0,
+                notificationAlertCount: 4,
                 weeklyAppointments: [],
                 selectedWeek: "current",
                 specialties: [],
@@ -38,6 +38,9 @@ describe("administrator profile page", () => {
         expect(html).toContain("Administrador");
         expect(html).toContain('class="admin-user-avatar"');
         expect(html).not.toContain("admin-user-chevron");
+        expect(html).toContain("data-admin-topbar");
+        expect(html).toContain('href="#admin-notifications-title"');
+        expect(html).toContain(">4</b>");
     });
 
     test("renders persisted account information without authentication secrets", () => {
@@ -68,6 +71,8 @@ describe("administrator profile page", () => {
         expect(html).toContain('src="/uploads/profile-photos/admin.png"');
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("Administrador");
+        expect(html).toContain("data-admin-topbar");
+        expect(html).toContain('href="/admin/notifications"');
         expect(html).not.toContain("admin-user-chevron");
         expect(html).toContain("+573001234567");
         expect(html).toContain("Información personal");

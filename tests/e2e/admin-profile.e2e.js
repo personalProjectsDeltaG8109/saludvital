@@ -129,6 +129,9 @@ try {
         if ((await page.locator(".admin-user-chevron").count()) !== 0) {
             throw new Error("The administrator header must not show a decorative chevron.");
         }
+        if ((await page.locator("[data-admin-topbar]").count()) !== 1) {
+            throw new Error("Every administrator page must render exactly one shared topbar.");
+        }
         const avatarStyle = await headerAvatar.evaluate((image) => ({
             objectFit: getComputedStyle(image).objectFit,
             width: image.getBoundingClientRect().width,

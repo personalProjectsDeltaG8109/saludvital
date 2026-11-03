@@ -56,7 +56,7 @@ describe("administrator WhatsApp overview view", () => {
             adminHeaderName: "Laura Méndez",
             adminHeaderRole: "Administrador",
             adminPhotoUrl: "/uploads/profile-photos/admin.png",
-            whatsapp: createOverviewData(),
+            whatsapp: createOverviewData({ notificationAlertCount: 3 }),
         });
 
         expect(html).toContain("WhatsApp y chatbot");
@@ -64,6 +64,9 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("Administrador");
         expect(html).not.toContain("admin-user-chevron");
+        expect(html).toContain("data-admin-topbar");
+        expect(html).toContain('href="/admin/dashboard#admin-notifications-title"');
+        expect(html).toContain(">3</b>");
         expect(html).toMatch(
             /<a class="admin-nav-link is-active" href="\/admin\/whatsapp"[^>]*aria-current="page"/,
         );

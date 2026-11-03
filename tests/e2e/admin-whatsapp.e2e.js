@@ -120,6 +120,20 @@ try {
     await page.goto("http://localhost/admin/whatsapp");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: whatsappStyles });
+    if ((await page.locator("[data-admin-topbar]").count()) !== 1) {
+        throw new Error("The WhatsApp page must render the shared administrator topbar.");
+    }
+    if (
+        (await page
+            .locator(
+                '.admin-notification-button[href="/admin/dashboard#admin-notifications-title"]',
+            )
+            .count()) !== 1
+    ) {
+        throw new Error(
+            "The WhatsApp header must preserve its Dashboard notification destination.",
+        );
+    }
     await page.evaluate((responseData) => {
         window.whatsappResponse = responseData;
         window.failWhatsAppRequest = false;
