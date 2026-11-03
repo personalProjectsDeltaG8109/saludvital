@@ -420,4 +420,6 @@
     detailClose.addEventListener("click", () => detailDialog.close());
 
     loadAuditLogs();
+    const requestedEventId = new URLSearchParams(window.location.search).get("eventId");
+    if (requestedEventId) openAuditDetail(requestedEventId);
 })();

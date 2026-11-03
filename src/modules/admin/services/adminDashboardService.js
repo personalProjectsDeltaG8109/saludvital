@@ -202,7 +202,7 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
             },
         }),
         AuditLog.findAll({
-            attributes: ["action", "target_type", "result", "occurred_at"],
+            attributes: ["id", "action", "target_type", "result", "occurred_at"],
             order: [["occurred_at", "DESC"]],
             limit: 5,
             raw: true,
@@ -262,6 +262,7 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
             failedMessagesToday: failedWhatsAppMessages,
         },
         recentActivity: activityRows.map((row) => ({
+            id: row.id,
             action: row.action,
             targetType: row.target_type,
             result: row.result,

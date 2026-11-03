@@ -174,6 +174,9 @@ html(lang="es")
                                             strong= activity.targetType === "Appointment" ? "Actualización en una cita" : activity.targetType === "User" ? "Actualización de un usuario" : "Actividad del sistema"
                                             small= activity.result === "Success" ? "Acción completada" : "Acción con novedad"
                                         time(datetime=activity.occurredAt)= new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "America/Bogota" }).format(new Date(activity.occurredAt))
+                                        a.admin-activity-detail(
+                                            href="/admin/audit?eventId=" + activity.id
+                                        ) Ver detalle
                         else
                             p.admin-empty-state No hay actividad reciente registrada.
                     section.admin-card.admin-feed-card(aria-labelledby="admin-request-title")
