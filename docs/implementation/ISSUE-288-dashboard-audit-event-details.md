@@ -7,6 +7,8 @@ Let administrators open one of the dashboard's recent persisted audit events in 
 ## Implementation
 
 - The dashboard query selects the audit event ID and returns it with the existing safe activity summary.
+- Each of the latest five records displays the actual action label and the associated module label, using the existing audit vocabulary.
+- Module-specific inline SVG icons distinguish appointments, doctors, schedules, specialties, user accounts, and other events.
 - Each activity row links to `/admin/audit?eventId=<id>` and remains keyboard accessible.
 - The Audit page reads the requested event ID and opens its existing detail dialog through the existing protected API endpoint.
 - Existing audit field filtering, safe error handling, and text-only rendering are reused. No detail API, schema, or dependency was added.
@@ -14,6 +16,8 @@ Let administrators open one of the dashboard's recent persisted audit events in 
 ## Acceptance Criteria
 
 - [x] Dashboard activity items with persisted IDs include an accessible detail link.
+- [x] The activity feed shows the actual action and module instead of generic completion text.
+- [x] A module-specific decorative icon identifies the event category without using sample records or patient imagery.
 - [x] The link opens the existing Audit page and detail dialog for that event.
 - [x] Event details come only from the existing administrator-protected endpoint.
 - [x] Existing privacy filtering and safe errors remain in effect.

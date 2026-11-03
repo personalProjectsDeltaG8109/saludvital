@@ -19,6 +19,9 @@ describe("administrator profile page", () => {
                     {
                         id: 42,
                         action: "AdminAppointmentCancelled",
+                        actionLabel: "Cancelación de cita",
+                        moduleLabel: "Citas médicas",
+                        moduleIcon: "appointment",
                         targetType: "Appointment",
                         result: "Success",
                         occurredAt: new Date("2026-11-03T12:00:00.000Z"),
@@ -54,6 +57,10 @@ describe("administrator profile page", () => {
         expect(html).not.toContain("Usuarios registrados");
         expect(html).toContain('href="/admin/audit?eventId=42"');
         expect(html).toContain("Ver detalle");
+        expect(html).toContain("Cancelación de cita");
+        expect(html).toContain("Citas médicas");
+        expect(html).not.toContain("Acción completada");
+        expect(html).toContain('class="admin-feed-icon activity-icon activity-icon-appointment"');
     });
 
     test("renders persisted account information without authentication secrets", () => {

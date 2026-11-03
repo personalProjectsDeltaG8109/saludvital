@@ -143,9 +143,9 @@ describe("administrator dashboard notification preferences", () => {
         expect(dashboard.recentActivity).toEqual([
             {
                 id: 42,
-                action: "AdminAppointmentCancelled",
-                targetType: "Appointment",
-                result: "Success",
+                actionLabel: "Cancelación de cita",
+                moduleLabel: "Citas médicas",
+                moduleIcon: "appointment",
                 occurredAt,
             },
         ]);
