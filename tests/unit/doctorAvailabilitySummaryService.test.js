@@ -73,6 +73,8 @@ describe("doctor availability summary service", () => {
         });
         expect(result.appointmentDurationMinutes).toBe(30);
         expect(result.today).toMatchObject({
+            startDate: "2026-10-29",
+            endDate: "2026-10-29",
             capacitySlots: 4,
             bookedSlots: 3,
             availableSlots: 1,
@@ -162,6 +164,24 @@ describe("doctor availability summary service", () => {
 
         await expect(getDoctorAvailabilitySummary(45, "2026-02-30", NOW)).rejects.toMatchObject({
             statusCode: 400,
+        });
+    });
+
+    test("anchors week and month summaries to the selected agenda date", async () => {
+        const result = await getDoctorAvailabilitySummary(45, "2026-11-05", NOW);
+
+        expect(result.selectedDate).toBe("2026-11-05");
+        expect(result.today).toMatchObject({
+            startDate: "2026-10-29",
+            endDate: "2026-10-29",
+        });
+        expect(result.week).toMatchObject({
+            startDate: "2026-11-02",
+            endDate: "2026-11-08",
+        });
+        expect(result.month).toMatchObject({
+            startDate: "2026-11-01",
+            endDate: "2026-11-30",
         });
     });
 });

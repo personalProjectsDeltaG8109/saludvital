@@ -427,6 +427,8 @@ function summarizeAvailability(label, dates, schedules, exceptions, appointments
 
     return {
         label,
+        startDate: dates[0],
+        endDate: dates.at(-1),
         capacitySlots,
         bookedSlots,
         availableSlots: Math.max(0, capacitySlots - bookedSlots),
