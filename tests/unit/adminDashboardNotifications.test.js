@@ -13,6 +13,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     AppointmentStatus: {},
     Doctor: { count: jest.fn() },
     Notification: { count: jest.fn(), findAll: jest.fn() },
+    Patient: { count: jest.fn() },
     Rol: { findOne: jest.fn() },
     Specialities: {},
     User: { count: jest.fn(), findByPk: jest.fn() },
@@ -30,7 +31,7 @@ jest.unstable_mockModule("../../src/models/WhatsAppMessage.js", () => ({
     default: { count: jest.fn() },
 }));
 
-const { Appointment, Doctor, Notification, Rol, User } =
+const { Appointment, Doctor, Notification, Patient, Rol, User } =
     await import("../../src/models/associations.js");
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
 const WhatsAppAppointmentRequest = (await import("../../src/models/WhatsAppAppointmentRequest.js"))
@@ -47,6 +48,7 @@ describe("administrator dashboard notification preferences", () => {
         User.count.mockResolvedValue(0);
         User.findByPk.mockResolvedValue({ admin_notifications_enabled: true });
         Doctor.count.mockResolvedValue(0);
+        Patient.count.mockResolvedValue(0);
         Appointment.findAll.mockResolvedValue([]);
         WhatsAppAppointmentRequest.count.mockResolvedValue(0);
         WhatsAppConversation.count.mockResolvedValue(0);
@@ -85,5 +87,37 @@ describe("administrator dashboard notification preferences", () => {
             },
         ]);
         expect(dashboard.notificationAlertCount).toBe(1);
+    });
+
+    test("counts persisted patient profiles and linked active patient accounts", async () => {
+        Patient.count.mockResolvedValueOnce(12).mockResolvedValueOnce(9);
+
+        const dashboard = await getAdminDashboardData({}, "7");
+
+        expect(dashboard.metrics.registeredPatients).toBe(12);
+        expect(dashboard.metrics.activePatients).toBe(9);
+        expect(Patient.count).toHaveBeenNthCalledWith(1);
+        expect(Patient.count).toHaveBeenNthCalledWith(2, {
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: [],
+                    required: true,
+                    where: { is_active: true },
+                },
+            ],
+        });
+        expect(User.count).not.toHaveBeenCalled();
+        expect(dashboard.metrics).not.toHaveProperty("phone");
+        expect(dashboard.metrics).not.toHaveProperty("email");
+        expect(dashboard.metrics).not.toHaveProperty("documentNumber");
+    });
+
+    test("returns zero registered and active patients when there are no patient profiles", async () => {
+        const dashboard = await getAdminDashboardData({}, "7");
+
+        expect(dashboard.metrics.registeredPatients).toBe(0);
+        expect(dashboard.metrics.activePatients).toBe(0);
     });
 });
