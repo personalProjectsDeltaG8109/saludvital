@@ -33,14 +33,6 @@ html(lang="es")
                     span
                         strong SaludVital
                         small Panel Administrativo
-                form.admin-global-search(role="search", action="/admin/dashboard", method="get")
-                    label.sr-only(for="admin-search") Buscar en el panel
-                    span(aria-hidden="true") ⌕
-                    input#admin-search(
-                        type="search",
-                        placeholder="Buscar personas, citas, médicos o secciones...",
-                        autocomplete="off"
-                    )
                 a.admin-notification-button(
                     href="#admin-notifications-title",
                     aria-label="Ver notificaciones recientes"

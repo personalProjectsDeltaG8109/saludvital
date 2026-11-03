@@ -13,7 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("doctors")
         .admin-main-shell
-            +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
+            +adminTopbar
             main.doctor-form-page(data-doctor-form, data-action=formAction)
                 a.doctors-back-link(href="/admin/doctors") ← Volver a médicos
                 header.doctors-heading

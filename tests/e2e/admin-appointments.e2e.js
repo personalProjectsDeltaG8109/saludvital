@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
@@ -11,7 +12,7 @@ const appointmentsStyles = await readFile(
 
 const pageMarkup = [
     '<!doctype html><html lang="es"><body class="admin-app">',
-    '<header class="admin-topbar"><form class="admin-global-search"><input data-user-top-search></form></header>',
+    '<header class="admin-topbar"><button class="admin-notification-button" type="button" aria-label="Ver notificaciones"></button></header>',
     '<main class="admin-appointments-page" data-admin-appointments data-endpoint="/api/admin/appointments">',
     '<header class="appointments-heading"><h1>Citas médicas</h1></header>',
     '<section class="appointment-stats"><strong data-stat-total></strong><strong data-stat-confirmed></strong><strong data-stat-in-progress></strong><strong data-stat-attended></strong><strong data-stat-cancelled></strong></section>',
@@ -45,6 +46,8 @@ const browser = await chromium.launch({ headless: true });
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.setContent(pageMarkup);
+    assert.equal(await page.locator(".admin-global-search").count(), 0);
+    assert.equal(await page.locator("[data-appointment-search]").count(), 1);
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: appointmentsStyles });
     await page.evaluate((availableStatuses) => {

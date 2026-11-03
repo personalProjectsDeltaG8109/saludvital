@@ -14,7 +14,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("specialties")
         .admin-main-shell
-            +adminTopbar("/admin/specialties", "Buscar especialidades médicas...")
+            +adminTopbar
             main.specialty-form-page
                 a.specialty-back-link(href="/admin/specialties")
                     span(aria-hidden="true") ←

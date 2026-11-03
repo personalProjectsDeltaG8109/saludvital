@@ -99,8 +99,6 @@ if (doctorsPage) {
     const search = doctorsPage.querySelector("[data-doctor-search]");
     const specialty = doctorsPage.querySelector("[data-doctor-specialty]");
     const status = doctorsPage.querySelector("[data-doctor-status]");
-    const topSearch = document.querySelector("[data-user-top-search]");
-    const topSearchForm = document.querySelector(".admin-global-search");
     const list = doctorsPage.querySelector("[data-doctor-list]");
     const feedback = doctorsPage.querySelector("[data-doctor-feedback]");
     let currentPage = 1;
@@ -211,21 +209,8 @@ if (doctorsPage) {
     }
     doctorsPage.querySelector("[data-doctor-filters]").addEventListener("submit", (event) => {
         event.preventDefault();
-        if (topSearch) topSearch.value = search.value;
         currentPage = 1;
         load();
-    });
-    topSearchForm?.addEventListener("submit", (event) => {
-        event.preventDefault();
-        search.value = topSearch.value;
-        currentPage = 1;
-        load();
-    });
-    topSearch?.addEventListener("input", () => {
-        search.value = topSearch.value;
-    });
-    search.addEventListener("input", () => {
-        if (topSearch) topSearch.value = search.value;
     });
     for (const control of [specialty, status])
         control.addEventListener("change", () => {

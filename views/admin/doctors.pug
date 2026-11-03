@@ -11,7 +11,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("doctors")
         .admin-main-shell
-            +adminTopbar("/admin/doctors", "Buscar médicos por nombre o correo...")
+            +adminTopbar
             main.doctors-page(
                 data-doctors,
                 data-endpoint="/api/admin/doctors",

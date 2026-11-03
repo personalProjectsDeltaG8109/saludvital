@@ -8,8 +8,6 @@ if (specialtiesPage) {
     const search = specialtiesPage.querySelector("[data-specialty-search]");
     const status = specialtiesPage.querySelector("[data-specialty-status]");
     const pageSize = specialtiesPage.querySelector("[data-specialty-page-size]");
-    const topSearch = document.querySelector("[data-user-top-search]");
-    const topSearchForm = document.querySelector(".admin-global-search");
     const adminApp = document.querySelector(".admin-app");
     const sidebar = document.querySelector("[data-admin-sidebar]");
     let currentPage = 1;
@@ -19,7 +17,6 @@ if (specialtiesPage) {
     let specialtyStatusFeedback = "";
     if (pageQuery.has("search")) {
         search.value = pageQuery.get("search") || "";
-        if (topSearch) topSearch.value = search.value;
     }
 
     function closeSidebar() {
@@ -209,7 +206,6 @@ if (specialtiesPage) {
         .addEventListener("submit", (event) => {
             event.preventDefault();
             currentPage = 1;
-            if (topSearch) topSearch.value = search.value;
             loadSpecialties();
         });
 
@@ -250,19 +246,6 @@ if (specialtiesPage) {
         }
     });
 
-    topSearchForm?.addEventListener("submit", (event) => {
-        event.preventDefault();
-        search.value = topSearch.value;
-        currentPage = 1;
-        loadSpecialties();
-    });
-
-    search.addEventListener("input", () => {
-        if (topSearch) topSearch.value = search.value;
-    });
-    topSearch?.addEventListener("input", () => {
-        search.value = topSearch.value;
-    });
     status.addEventListener("change", () => {
         currentPage = 1;
         loadSpecialties();
