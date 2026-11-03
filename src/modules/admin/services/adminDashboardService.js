@@ -13,6 +13,7 @@ import AuditLog from "../../../models/AuditLog.js";
 import WhatsAppAppointmentRequest from "../../../models/WhatsAppAppointmentRequest.js";
 import WhatsAppConversation from "../../../models/WhatsAppConversation.js";
 import WhatsAppMessage from "../../../models/WhatsAppMessage.js";
+import { getAuditActionLabel, getAuditModulePresentation } from "./adminAuditPresentation.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -202,7 +203,7 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
             },
         }),
         AuditLog.findAll({
-            attributes: ["action", "target_type", "result", "occurred_at"],
+            attributes: ["id", "action", "target_type", "result", "occurred_at"],
             order: [["occurred_at", "DESC"]],
             limit: 5,
             raw: true,
@@ -261,12 +262,16 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
             pendingRequests,
             failedMessagesToday: failedWhatsAppMessages,
         },
-        recentActivity: activityRows.map((row) => ({
-            action: row.action,
-            targetType: row.target_type,
-            result: row.result,
-            occurredAt: row.occurred_at,
-        })),
+        recentActivity: activityRows.map((row) => {
+            const module = getAuditModulePresentation(row.target_type);
+            return {
+                id: row.id,
+                actionLabel: getAuditActionLabel(row.action),
+                moduleLabel: module.label,
+                moduleIcon: module.icon,
+                occurredAt: row.occurred_at,
+            };
+        }),
         systemNotifications: showNotificationFeed
             ? notificationRows.map((row) => ({
                   eventType: row.event_type,

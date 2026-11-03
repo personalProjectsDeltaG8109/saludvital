@@ -1,46 +1,10 @@
 import { Op } from "sequelize";
 import { Appointment, Doctor, Rol, Specialities, User } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
+import { getAuditActionLabel, getAuditModuleLabel } from "./adminAuditPresentation.js";
 
 const PAGE_SIZE = 10;
 const BOGOTA_OFFSET_HOURS = 5;
-
-const MODULE_LABELS = {
-    Appointment: "Citas médicas",
-    Doctor: "Médicos",
-    DoctorAvailability: "Horarios",
-    DoctorScheduleException: "Horarios",
-    MedicalSpecialty: "Especialidades",
-    User: "Usuarios y roles",
-};
-
-const ACTION_LABELS = {
-    AdminAppointmentCreated: "Creación de cita",
-    AdminAppointmentCancelled: "Cancelación de cita",
-    AdminAppointmentRescheduled: "Reprogramación de cita",
-    AppointmentCancelled: "Cancelación de cita",
-    AppointmentCreated: "Creación de cita",
-    AppointmentRescheduled: "Reprogramación de cita",
-    AdminDoctorActivated: "Activación de médico",
-    AdminDoctorCreated: "Registro de médico",
-    AdminDoctorDeactivated: "Desactivación de médico",
-    AdminDoctorScheduleDeleted: "Retiro de intervalo",
-    AdminDoctorScheduleExceptionActivated: "Activación de excepción",
-    AdminDoctorScheduleExceptionCreated: "Creación de excepción",
-    AdminDoctorScheduleExceptionDeactivated: "Desactivación de excepción",
-    AdminDoctorScheduleExceptionUpdated: "Actualización de excepción",
-    AdminDoctorScheduleUpdated: "Actualización de horario",
-    AdminSpecialtyActivated: "Activación de especialidad",
-    AdminSpecialtyCreated: "Creación de especialidad",
-    AdminSpecialtyDeactivated: "Desactivación de especialidad",
-    AdminSpecialtyUpdated: "Actualización de especialidad",
-    AdminUserAccountUpdated: "Actualización de cuenta",
-    AdminUserProfileUpdated: "Actualización de perfil",
-    AdminUserProfilePhotoUpdated: "Actualización de foto de perfil",
-    AdminUserProfilePhotoRemoved: "Eliminación de foto de perfil",
-    AdminNotificationPreferencesUpdated: "Actualización de preferencias de notificaciones",
-    UserPasswordReset: "Restablecimiento de contraseña",
-};
 
 const EVENT_DESCRIPTIONS = {
     AdminAppointmentCreated: "Se creó una cita",
@@ -225,8 +189,8 @@ function formatAuditRecord(record, appointment = null) {
         id: record.id,
         occurredAt: record.occurred_at,
         actor: getActorLabel(record, record.actor),
-        module: MODULE_LABELS[record.target_type] || "Otros",
-        action: ACTION_LABELS[record.action] || "Actividad",
+        module: getAuditModuleLabel(record.target_type),
+        action: getAuditActionLabel(record.action),
         description: getSafeDescription(record, appointment),
     };
 }
@@ -402,7 +366,7 @@ async function getTargetDescription(record, appointment, changes) {
         });
         return user ? getActorLabel({ actor_user_id: user.id }, user) : "Cuenta de usuario";
     }
-    return MODULE_LABELS[record.target_type] || "Registro relacionado";
+    return getAuditModuleLabel(record.target_type, "Registro relacionado");
 }
 
 /** Return one persisted audit event with safe names for available related records. */
@@ -444,7 +408,7 @@ export async function getAdminAuditEvent(rawId) {
     const targetDescription = await getTargetDescription(record, appointment, changes);
     return {
         ...summary,
-        targetType: MODULE_LABELS[record.target_type] || "Otros",
+        targetType: getAuditModuleLabel(record.target_type),
         targetId: getSafeTargetId(record.target_id),
         targetDescription,
         result: { Success: "Correcto", Failure: "Fallido" }[record.result] || null,
@@ -461,11 +425,11 @@ async function getFilterOptions() {
     return {
         actions: actions.map(({ action }) => ({
             value: action,
-            label: ACTION_LABELS[action] || "Actividad",
+            label: getAuditActionLabel(action),
         })),
         modules: modules.map(({ target_type: targetType }) => ({
             value: targetType,
-            label: MODULE_LABELS[targetType] || "Otros",
+            label: getAuditModuleLabel(targetType),
         })),
     };
 }

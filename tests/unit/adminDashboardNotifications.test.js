@@ -120,4 +120,34 @@ describe("administrator dashboard notification preferences", () => {
         expect(dashboard.metrics.registeredPatients).toBe(0);
         expect(dashboard.metrics.activePatients).toBe(0);
     });
+
+    test("includes persisted audit event identifiers for dashboard details", async () => {
+        const occurredAt = new Date("2026-11-03T12:00:00.000Z");
+        AuditLog.findAll.mockResolvedValue([
+            {
+                id: 42,
+                action: "AdminAppointmentCancelled",
+                target_type: "Appointment",
+                result: "Success",
+                occurred_at: occurredAt,
+            },
+        ]);
+
+        const dashboard = await getAdminDashboardData({}, "7");
+
+        expect(AuditLog.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                attributes: ["id", "action", "target_type", "result", "occurred_at"],
+            }),
+        );
+        expect(dashboard.recentActivity).toEqual([
+            {
+                id: 42,
+                actionLabel: "Cancelación de cita",
+                moduleLabel: "Citas médicas",
+                moduleIcon: "appointment",
+                occurredAt,
+            },
+        ]);
+    });
 });

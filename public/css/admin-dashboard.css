@@ -206,14 +206,22 @@ a.admin-nav-link:hover, a.admin-nav-link:focus-visible, .admin-nav-link.is-activ
 .admin-text-link { flex: 0 0 auto; color: #087cf0; font-size: 11px; text-decoration: none; }
 .admin-text-link:hover { text-decoration: underline; }
 .admin-feed-list { display: grid; margin: 10px 0 0; padding: 0; list-style: none; }
-.admin-feed-list li { display: grid; min-height: 57px; grid-template-columns: 37px minmax(0, 1fr) auto; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; }
+.admin-feed-list li { display: grid; min-height: 57px; grid-template-columns: 37px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; }
 .admin-feed-list li:last-child { border-bottom: 0; }
 .admin-feed-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: #0879ce; background: #e6f4ff; font-size: 20px; font-weight: 800; }
-.activity-icon:nth-child(1) { color: #078d7a; background: #ddf8ef; }
+.admin-feed-icon svg { width: 19px; height: 19px; }
+.activity-icon-appointment { color: #0879ce; background: #e6f4ff; }
+.activity-icon-doctor { color: #078d7a; background: #ddf8ef; }
+.activity-icon-schedule { color: #7047c6; background: #f0eaff; }
+.activity-icon-specialty { color: #c27b00; background: #fff3d9; }
+.activity-icon-user { color: #0879ce; background: #e6f4ff; }
+.activity-icon-system { color: #57708f; background: #edf2f8; }
 .admin-feed-copy { display: grid; min-width: 0; gap: 3px; }
 .admin-feed-copy strong { overflow: hidden; color: #183b71; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .admin-feed-copy small { overflow: hidden; color: #7488a5; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .admin-feed-list time { align-self: start; padding-top: 13px; color: #7e8fa9; font-size: 9px; white-space: nowrap; }
+.admin-activity-detail { color: #087cf0; font-size: 9px; text-decoration: none; white-space: nowrap; }
+.admin-activity-detail:hover, .admin-activity-detail:focus-visible { text-decoration: underline; }
 .admin-whatsapp-summary { display: grid; grid-template-columns: 48px 1fr 1fr; align-items: center; gap: 14px 10px; margin-top: 24px; }
 .admin-whatsapp-large-mark { display: grid; width: 46px; height: 46px; grid-row: span 2; place-items: center; border-radius: 50%; background: #dff8eb; }
 .admin-whatsapp-large-mark img { width: 28px; height: 28px; }
