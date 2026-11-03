@@ -4,6 +4,7 @@ import {
     AppointmentStatus,
     Doctor,
     Notification,
+    Patient,
     Rol,
     Specialities,
     User,
@@ -115,8 +116,8 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
     const showNotificationFeed = administrator?.admin_notifications_enabled !== false;
 
     const [
-        registeredUsers,
-        activeUsers,
+        registeredPatients,
+        activePatients,
         activeDoctors,
         todayStatusRows,
         weeklyRows,
@@ -128,8 +129,18 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
         activityRows,
         notificationRows,
     ] = await Promise.all([
-        User.count(),
-        User.count({ where: { is_active: true } }),
+        Patient.count(),
+        Patient.count({
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: [],
+                    required: true,
+                    where: { is_active: true },
+                },
+            ],
+        }),
         doctorRole
             ? Doctor.count({
                   include: [
@@ -229,8 +240,8 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
         generatedAt: now.toISOString(),
         selectedWeek,
         metrics: {
-            registeredUsers,
-            activeUsers,
+            registeredPatients,
+            activePatients,
             appointmentsToday: appointmentCountToday,
             completedAppointmentsToday: statusCounts.Attended || 0,
             activeDoctors,
