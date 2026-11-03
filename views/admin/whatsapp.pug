@@ -79,8 +79,8 @@ html(lang="es")
                         if adminPhotoUrl
                             img(src=adminPhotoUrl, alt="")
                     span
-                        strong Administrador
-                        small SaludVital
+                        strong= adminHeaderName || adminName
+                        small= adminHeaderRole || "Administrador"
                     span.admin-user-chevron(aria-hidden="true") ⌄
             main.admin-dashboard.admin-whatsapp-page
                 header.admin-whatsapp-heading

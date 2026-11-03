@@ -51,7 +51,7 @@ import {
     getAdminChatbotFlow,
     saveAdminChatbotFlowDraft,
 } from "../services/adminChatbotFlowService.js";
-import { getAdminHeaderPhotoUrl, getAdminProfile } from "../services/adminProfileService.js";
+import { getAdminHeaderIdentity, getAdminProfile } from "../services/adminProfileService.js";
 import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
@@ -81,11 +81,14 @@ import {
 // Define the routes available to administrators.
 const adminRoutes = Router();
 
-async function loadAdminHeaderPhoto(req, res, next) {
+async function loadAdminHeaderIdentity(req, res, next) {
     if (!req.path.startsWith("/admin/")) return next();
 
     try {
-        res.locals.adminPhotoUrl = await getAdminHeaderPhotoUrl(req.auth.userId);
+        const identity = await getAdminHeaderIdentity(req.auth.userId);
+        res.locals.adminHeaderName = identity.displayName;
+        res.locals.adminHeaderRole = identity.roleLabel;
+        res.locals.adminPhotoUrl = identity.photoUrl;
         return next();
     } catch (error) {
         return next(error);
@@ -95,7 +98,7 @@ async function loadAdminHeaderPhoto(req, res, next) {
 const requireAdministrator = [
     authenticateToken,
     requireRole("Administrator"),
-    loadAdminHeaderPhoto,
+    loadAdminHeaderIdentity,
 ];
 
 adminRoutes.get(

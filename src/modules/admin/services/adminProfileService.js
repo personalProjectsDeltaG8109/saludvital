@@ -91,11 +91,11 @@ export async function getAdminProfile(rawUserId) {
     return toAdminProfile(user);
 }
 
-/** Return only a valid local photo URL for the authenticated administrator header. */
-export async function getAdminHeaderPhotoUrl(rawUserId) {
+/** Return only safe identity fields for the authenticated administrator header. */
+export async function getAdminHeaderIdentity(rawUserId) {
     const userId = parseUserId(rawUserId);
     const user = await User.findByPk(userId, {
-        attributes: ["id", "is_active", "profile_photo_url"],
+        attributes: ["id", "display_name", "is_active", "profile_photo_url"],
         include: [{ model: Rol, as: "rol", attributes: ["name"], required: true }],
     });
 
@@ -103,7 +103,16 @@ export async function getAdminHeaderPhotoUrl(rawUserId) {
         throw serviceError("No encontramos el perfil de administrador solicitado.", 404);
     }
 
-    return normalizeAdminHeaderPhotoUrl(user.profile_photo_url);
+    return {
+        displayName: normalizeAdminHeaderName(user.display_name),
+        roleLabel: "Administrador",
+        photoUrl: normalizeAdminHeaderPhotoUrl(user.profile_photo_url),
+    };
+}
+
+function normalizeAdminHeaderName(value) {
+    if (typeof value !== "string") return "Administrador";
+    return value.trim() || "Administrador";
 }
 
 function normalizeProfilePhotoUrl(value) {
