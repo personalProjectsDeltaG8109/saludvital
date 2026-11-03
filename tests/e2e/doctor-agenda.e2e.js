@@ -319,7 +319,10 @@ try {
 
     for (const viewport of [
         { width: 390, height: 844 },
+        { width: 760, height: 1024 },
+        { width: 762, height: 1024 },
         { width: 768, height: 1024 },
+        { width: 1024, height: 768 },
         { width: 1366, height: 768 },
     ]) {
         await page.setViewportSize(viewport);
@@ -328,6 +331,22 @@ try {
             true,
         );
         if (viewport.width === 390) {
+            const hourLabelLayouts = await page
+                .locator(".doctor-agenda-hour-label")
+                .evaluateAll((labels) =>
+                    labels.map((label) => ({
+                        whiteSpace: getComputedStyle(label).whiteSpace,
+                        scrollWidth: label.scrollWidth,
+                        clientWidth: label.clientWidth,
+                    })),
+                );
+            assert.ok(
+                hourLabelLayouts.every(
+                    ({ whiteSpace, scrollWidth, clientWidth }) =>
+                        whiteSpace === "nowrap" && scrollWidth <= clientWidth + 1,
+                ),
+                JSON.stringify(hourLabelLayouts),
+            );
             const selectorBounds = await page.locator(".doctor-agenda-view-switcher").boundingBox();
             const panelBounds = await page
                 .locator("[data-agenda-calendar] .doctor-panel-heading")
