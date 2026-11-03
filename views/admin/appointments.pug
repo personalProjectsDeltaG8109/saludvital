@@ -13,10 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("appointments")
         .admin-main-shell
-            +adminTopbar(
-                "/admin/appointments",
-                "Buscar pacientes por nombre, documento o teléfono...",
-            )
+            +adminTopbar
             main.admin-appointments-page(
                 data-admin-appointments,
                 data-endpoint="/api/admin/appointments"

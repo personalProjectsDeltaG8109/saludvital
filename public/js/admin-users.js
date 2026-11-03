@@ -4,7 +4,6 @@ if (page) {
     const app = document.querySelector(".admin-app");
     const sidebar = document.querySelector("[data-admin-sidebar]");
     const searchInput = document.querySelector("[data-user-search]");
-    const topSearchInput = document.querySelector("[data-user-top-search]");
     const roleFilter = document.querySelector("[data-user-role]");
     const statusFilter = document.querySelector("[data-user-status]");
     const list = document.querySelector("[data-user-list]");
@@ -39,7 +38,6 @@ if (page) {
     let doctorPhotoReadPromise = Promise.resolve();
 
     searchInput.value = initialSearch;
-    if (topSearchInput) topSearchInput.value = initialSearch;
 
     function setFeedback(message, kind = "") {
         feedback.textContent = message;
@@ -800,7 +798,6 @@ if (page) {
         state.search = value.trim();
         state.page = 1;
         if (searchInput.value !== value) searchInput.value = value;
-        if (topSearchInput.value !== value) topSearchInput.value = value;
         void loadUsers();
     }
 
@@ -809,20 +806,9 @@ if (page) {
         event.preventDefault();
         applySearch(searchInput.value);
     });
-    document
-        .querySelector("[data-user-top-search]")
-        ?.closest("form")
-        ?.addEventListener("submit", (event) => {
-            event.preventDefault();
-            applySearch(topSearchInput.value);
-        });
     searchInput.addEventListener("input", () => {
         window.clearTimeout(searchTimer);
         searchTimer = window.setTimeout(() => applySearch(searchInput.value), 250);
-    });
-    topSearchInput.addEventListener("input", () => {
-        window.clearTimeout(searchTimer);
-        searchTimer = window.setTimeout(() => applySearch(topSearchInput.value), 250);
     });
     roleFilter.addEventListener("change", () => {
         state.roleId = roleFilter.value;

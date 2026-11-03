@@ -13,7 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("specialties")
         .admin-main-shell
-            +adminTopbar("/admin/specialties", "Buscar especialidades médicas...")
+            +adminTopbar
             main.specialties-page(data-admin-specialties, data-endpoint="/api/admin/specialties")
                 header.specialties-heading
                     span.specialties-heading-icon(aria-hidden="true")

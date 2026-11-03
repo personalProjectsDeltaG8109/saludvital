@@ -13,8 +13,6 @@ if (appointmentsPage) {
     const doctor = appointmentsPage.querySelector("[data-appointment-doctor]");
     const search = appointmentsPage.querySelector("[data-appointment-search]");
     const pageSize = appointmentsPage.querySelector("[data-appointment-page-size]");
-    const topSearch = document.querySelector("[data-user-top-search]");
-    const topSearchForm = document.querySelector(".admin-global-search");
     const tabs = appointmentsPage.querySelector("[data-appointment-tabs]");
     const exportButton = appointmentsPage.querySelector("[data-appointment-export]");
     const pdfExportButton = appointmentsPage.querySelector("[data-appointment-pdf-export]");
@@ -361,15 +359,8 @@ if (appointmentsPage) {
         .addEventListener("submit", (event) => {
             event.preventDefault();
             currentPage = 1;
-            if (topSearch) topSearch.value = search.value;
             loadAppointments();
         });
-    topSearchForm?.addEventListener("submit", (event) => {
-        event.preventDefault();
-        search.value = topSearch.value;
-        currentPage = 1;
-        loadAppointments();
-    });
     tabs.addEventListener("click", (event) => {
         const tab = event.target.closest("[data-status-tab]");
         if (!tab) return;
@@ -395,13 +386,6 @@ if (appointmentsPage) {
         currentPage += 1;
         loadAppointments();
     });
-    search.addEventListener("input", () => {
-        if (topSearch) topSearch.value = search.value;
-    });
-    topSearch?.addEventListener("input", () => {
-        search.value = topSearch.value;
-    });
-
     exportButton?.addEventListener("click", async () => {
         exportButton.disabled = true;
         exportFeedback.textContent = "Preparando archivo CSV...";

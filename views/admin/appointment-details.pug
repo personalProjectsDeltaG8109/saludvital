@@ -13,7 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("appointments")
         .admin-main-shell
-            +adminTopbar("/admin/appointments", "Buscar citas médicas...")
+            +adminTopbar
             main.admin-appointment-details-page
                 a.appointment-details-back(href="/admin/appointments")
                     span(aria-hidden="true") ‹

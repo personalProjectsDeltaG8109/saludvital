@@ -75,8 +75,6 @@
     const weeklyError = page.querySelector("[data-weekly-error]");
     const exceptionsList = page.querySelector("[data-schedule-exceptions]");
     const exceptionsEmpty = page.querySelector("[data-schedule-exceptions-empty]");
-    const topbarSearch = document.querySelector("[data-user-top-search]");
-    const topbarForm = topbarSearch?.closest("form");
     const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
     function setText(selector, value) {
@@ -1010,15 +1008,6 @@
         selectedDate.setUTCDate(selectedDate.getUTCDate() - dayOfWeek + 1);
         weekInput.value = selectedDate.toISOString().slice(0, 10);
     });
-    topbarForm?.addEventListener("submit", (event) => {
-        event.preventDefault();
-        searchInput.value = topbarSearch.value;
-        loadSchedules();
-    });
-    topbarSearch?.addEventListener("input", () => {
-        searchInput.value = topbarSearch.value;
-    });
-
     configureOpenButton?.addEventListener("click", () => {
         openConfigurationDialog("create");
     });

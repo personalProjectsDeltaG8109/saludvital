@@ -13,7 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("profile")
         .admin-main-shell
-            +adminTopbar("/admin/dashboard", "Buscar personas, citas, médicos o secciones...")
+            +adminTopbar
             main.admin-profile-content(data-admin-profile, data-endpoint="/api/admin/profile")
                 header.admin-profile-heading
                     .admin-profile-heading-icon(aria-hidden="true")

@@ -13,7 +13,7 @@ html(lang="es")
         include partials/admin-shell.pug
         +adminSidebar("users")
         .admin-main-shell
-            +adminTopbar("/admin/users", "Buscar usuarios por nombre o correo...")
+            +adminTopbar
             main.admin-users-content(
                 data-admin-users,
                 data-endpoint="/api/admin/users",
