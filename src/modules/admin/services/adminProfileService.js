@@ -91,9 +91,31 @@ export async function getAdminProfile(rawUserId) {
     return toAdminProfile(user);
 }
 
+/** Return only a valid local photo URL for the authenticated administrator header. */
+export async function getAdminHeaderPhotoUrl(rawUserId) {
+    const userId = parseUserId(rawUserId);
+    const user = await User.findByPk(userId, {
+        attributes: ["id", "is_active", "profile_photo_url"],
+        include: [{ model: Rol, as: "rol", attributes: ["name"], required: true }],
+    });
+
+    if (!user || !user.is_active || user.rol?.name !== "Administrator") {
+        throw serviceError("No encontramos el perfil de administrador solicitado.", 404);
+    }
+
+    return normalizeAdminHeaderPhotoUrl(user.profile_photo_url);
+}
+
 function normalizeProfilePhotoUrl(value) {
     return typeof value === "string" &&
         /^\/(?:uploads\/profile-photos|brand\/patient)\/[\w.-]+\.(?:jpe?g|png|webp)$/i.test(value)
+        ? value
+        : null;
+}
+
+function normalizeAdminHeaderPhotoUrl(value) {
+    return typeof value === "string" &&
+        /^\/uploads\/profile-photos\/[\w.-]+\.(?:jpe?g|png|webp)$/i.test(value)
         ? value
         : null;
 }

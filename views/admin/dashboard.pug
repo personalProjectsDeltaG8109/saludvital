@@ -60,6 +60,8 @@ html(lang="es")
                         )
                             circle(cx="12", cy="8", r="3.2")
                             path(d="M5 21v-1.2a7 7 0 0 1 14 0V21z")
+                        if adminPhotoUrl
+                            img(src=adminPhotoUrl, alt="")
                     span
                         strong= adminName
                         small SaludVital
