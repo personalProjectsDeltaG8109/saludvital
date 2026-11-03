@@ -26,3 +26,4 @@
 
 - Fixed narrow-screen hour labels that wrapped into multiple lines and adjusted the timeline content offset to preserve alignment.
 - Browser checks passed at 390, 760, 762, 768, 1024, and 1366 px with no horizontal overflow.
+- At tablet widths, date navigation and view selectors use separate rows; browser assertions ensure the toolbar, timeline, and summary cards remain within the agenda content at 856, 900, 988, and 1000 px.

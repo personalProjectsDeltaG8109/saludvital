@@ -322,6 +322,10 @@ try {
         { width: 760, height: 1024 },
         { width: 762, height: 1024 },
         { width: 768, height: 1024 },
+        { width: 856, height: 1024 },
+        { width: 900, height: 1024 },
+        { width: 988, height: 1024 },
+        { width: 1000, height: 1024 },
         { width: 1024, height: 768 },
         { width: 1366, height: 768 },
     ]) {
@@ -354,6 +358,54 @@ try {
             assert.ok(
                 selectorBounds.y + selectorBounds.height <= panelBounds.y,
                 JSON.stringify({ selectorBounds, panelBounds }),
+            );
+        }
+        if (viewport.width >= 856 && viewport.width <= 1000) {
+            const agendaBounds = await page.evaluate(() => {
+                const box = (element) => {
+                    const { left, right, top, bottom } = element.getBoundingClientRect();
+                    return { left, right, top, bottom };
+                };
+                const toolbar = document.querySelector(".doctor-agenda-toolbar");
+                const toolbarBox = box(toolbar);
+                const toolbarControls = Array.from(
+                    toolbar.querySelectorAll(
+                        ":scope > button, :scope > label, :scope > .doctor-agenda-view-switcher",
+                    ),
+                ).map(box);
+                const content = document.querySelector(".doctor-content");
+                const contentBox = box(content);
+                const panels = Array.from(
+                    document.querySelectorAll(
+                        ".doctor-agenda-calendar, .doctor-agenda-aside, .doctor-agenda-next-card, .doctor-agenda-availability-card",
+                    ),
+                )
+                    .filter((element) => element.getClientRects().length)
+                    .map(box);
+                return { toolbarBox, toolbarControls, contentBox, panels };
+            });
+            assert.ok(
+                agendaBounds.toolbarBox.left >= agendaBounds.contentBox.left &&
+                    agendaBounds.toolbarBox.right <= agendaBounds.contentBox.right,
+                JSON.stringify({ width: viewport.width, ...agendaBounds }),
+            );
+            assert.ok(
+                agendaBounds.toolbarControls.every(
+                    ({ left, right, top, bottom }) =>
+                        left >= agendaBounds.toolbarBox.left &&
+                        right <= agendaBounds.toolbarBox.right &&
+                        top >= agendaBounds.toolbarBox.top &&
+                        bottom <= agendaBounds.toolbarBox.bottom,
+                ),
+                JSON.stringify({ width: viewport.width, ...agendaBounds }),
+            );
+            assert.ok(
+                agendaBounds.panels.every(
+                    ({ left, right }) =>
+                        left >= agendaBounds.contentBox.left &&
+                        right <= agendaBounds.contentBox.right,
+                ),
+                JSON.stringify({ width: viewport.width, ...agendaBounds }),
             );
         }
         await page.screenshot({
