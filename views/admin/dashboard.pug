@@ -63,8 +63,8 @@ html(lang="es")
                         if adminPhotoUrl
                             img(src=adminPhotoUrl, alt="")
                     span
-                        strong= adminName
-                        small SaludVital
+                        strong= adminHeaderName || adminName
+                        small= adminHeaderRole || "Administrador"
                     span.admin-user-chevron(aria-hidden="true") ⌄
             main.admin-dashboard(
                 data-admin-dashboard,
@@ -74,7 +74,7 @@ html(lang="es")
                 header.admin-welcome-banner
                     .admin-welcome-copy
                         p.admin-eyebrow Panel administrativo
-                        h1 ¡Hola, #{ adminName }!
+                        h1 ¡Hola, #{ adminHeaderName || adminName }!
                         p Aquí tienes un resumen general de la operación de SaludVital.
                     aside.admin-date-card
                         p= new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" }).format(new Date(dashboard.generatedAt))

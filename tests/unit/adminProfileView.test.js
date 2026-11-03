@@ -6,6 +6,8 @@ describe("administrator profile page", () => {
         const html = pug.renderFile("views/admin/dashboard.pug", {
             pageTitle: "Panel administrativo | SaludVital",
             adminName: "Administradora",
+            adminHeaderName: "Laura Méndez",
+            adminHeaderRole: "Administrador",
             adminPhotoUrl: "/uploads/profile-photos/admin.png",
             dashboard: {
                 generatedAt: new Date("2026-11-03T12:00:00.000Z"),
@@ -32,12 +34,16 @@ describe("administrator profile page", () => {
         });
 
         expect(html).toContain('src="/uploads/profile-photos/admin.png"');
+        expect(html).toContain("Laura Méndez");
+        expect(html).toContain("Administrador");
         expect(html).toContain('class="admin-user-avatar"');
     });
 
     test("renders persisted account information without authentication secrets", () => {
         const html = pug.renderFile("views/admin/profile.pug", {
             pageTitle: "Mi perfil | SaludVital",
+            adminHeaderName: "Laura Méndez",
+            adminHeaderRole: "Administrador",
             adminPhotoUrl: "/uploads/profile-photos/admin.png",
             adminName: "Laura Méndez",
             profile: {
@@ -59,6 +65,8 @@ describe("administrator profile page", () => {
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("laura@example.com");
         expect(html).toContain('src="/uploads/profile-photos/admin.png"');
+        expect(html).toContain("Laura Méndez");
+        expect(html).toContain("Administrador");
         expect(html).toContain("+573001234567");
         expect(html).toContain("Información personal");
         expect(html).toContain("Seguridad");
@@ -77,6 +85,8 @@ describe("administrator profile page", () => {
     test("does not invent a name for an account without one", () => {
         const html = pug.renderFile("views/admin/profile.pug", {
             pageTitle: "Mi perfil | SaludVital",
+            adminHeaderName: "Administrador",
+            adminHeaderRole: "Administrador",
             adminPhotoUrl: null,
             adminName: "Administrador",
             profile: {

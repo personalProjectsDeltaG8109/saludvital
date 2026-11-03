@@ -152,6 +152,6 @@ mixin adminTopbar
                 if adminPhotoUrl
                     img(src=adminPhotoUrl, alt="")
             span
-                strong= adminName
-                small SaludVital
+                strong= adminHeaderName || adminName
+                small= adminHeaderRole || "Administrador"
             span.admin-user-chevron(aria-hidden="true") ⌄
