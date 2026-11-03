@@ -18,8 +18,8 @@ describe("administrator profile page", () => {
                 recentActivity: [],
                 systemNotifications: [],
                 metrics: {
-                    registeredUsers: 0,
-                    activeUsers: 0,
+                    registeredPatients: 0,
+                    activePatients: 0,
                     appointmentsToday: 0,
                     completedAppointmentsToday: 0,
                     activeDoctors: 0,
@@ -41,6 +41,9 @@ describe("administrator profile page", () => {
         expect(html).toContain("data-admin-topbar");
         expect(html).toContain('href="#admin-notifications-title"');
         expect(html).toContain(">4</b>");
+        expect(html).toContain("Pacientes registrados");
+        expect(html).toContain("pacientes activos");
+        expect(html).not.toContain("Usuarios registrados");
     });
 
     test("renders persisted account information without authentication secrets", () => {
