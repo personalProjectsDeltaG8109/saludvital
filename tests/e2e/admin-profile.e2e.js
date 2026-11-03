@@ -15,6 +15,8 @@ const profilePreferencesScript = await readFile(
 const validPng = await readFile(path.resolve("public/brand/logo-symbol.png"));
 const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
+    adminHeaderName: "Laura Méndez",
+    adminHeaderRole: "Administrador",
     adminPhotoUrl: "/uploads/profile-photos/header.png",
     adminName: "Laura Méndez",
     profile: {
@@ -117,6 +119,12 @@ try {
         const headerAvatar = page.locator(".admin-user-avatar img");
         if ((await headerAvatar.count()) !== 1) {
             throw new Error("The saved administrator photo must appear in the header avatar.");
+        }
+        if ((await page.locator(".admin-user-chip strong").textContent()) !== "Laura Méndez") {
+            throw new Error("The header must show the authenticated administrator's saved name.");
+        }
+        if ((await page.locator(".admin-user-chip small").textContent()) !== "Administrador") {
+            throw new Error("The header must identify the authenticated account role.");
         }
         const avatarStyle = await headerAvatar.evaluate((image) => ({
             objectFit: getComputedStyle(image).objectFit,

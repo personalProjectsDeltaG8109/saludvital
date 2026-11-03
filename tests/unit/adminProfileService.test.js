@@ -8,7 +8,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 }));
 
 const { User } = await import("../../src/models/associations.js");
-const { getAdminHeaderPhotoUrl, getAdminProfile } =
+const { getAdminHeaderIdentity, getAdminProfile } =
     await import("../../src/modules/admin/services/adminProfileService.js");
 
 describe("administrator profile service", () => {
@@ -125,43 +125,58 @@ describe("administrator profile service", () => {
         await expect(getAdminProfile(9)).rejects.toMatchObject({ statusCode: 404 });
     });
 
-    test("returns only the authenticated administrator's valid local photo URL", async () => {
+    test("returns the authenticated administrator's safe name, role, and photo", async () => {
         User.findByPk.mockResolvedValue({
             id: 7,
+            display_name: "  Laura Méndez  ",
             is_active: true,
             profile_photo_url: "/uploads/profile-photos/admin.webp",
+            email: "private@example.com",
             password_hash: "must-not-be-selected",
             rol: { name: "Administrator" },
         });
 
-        await expect(getAdminHeaderPhotoUrl("7")).resolves.toBe(
-            "/uploads/profile-photos/admin.webp",
-        );
+        await expect(getAdminHeaderIdentity("7")).resolves.toEqual({
+            displayName: "Laura Méndez",
+            roleLabel: "Administrador",
+            photoUrl: "/uploads/profile-photos/admin.webp",
+        });
         expect(User.findByPk).toHaveBeenCalledWith(7, {
-            attributes: ["id", "is_active", "profile_photo_url"],
+            attributes: ["id", "display_name", "is_active", "profile_photo_url"],
             include: [{ model: {}, as: "rol", attributes: ["name"], required: true }],
         });
     });
 
-    test("uses the avatar fallback for missing or unsafe photo URLs", async () => {
+    test("uses safe identity fallbacks for missing names and unsafe photo URLs", async () => {
         User.findByPk.mockResolvedValue({
             id: 7,
+            display_name: "  ",
             is_active: true,
             profile_photo_url: "https://example.com/admin.png",
+            email: "private@example.com",
             rol: { name: "Administrator" },
         });
-        await expect(getAdminHeaderPhotoUrl(7)).resolves.toBeNull();
+        await expect(getAdminHeaderIdentity(7)).resolves.toEqual({
+            displayName: "Administrador",
+            roleLabel: "Administrador",
+            photoUrl: null,
+        });
 
         User.findByPk.mockResolvedValue({
             id: 7,
+            display_name: null,
             is_active: true,
             profile_photo_url: null,
+            email: "private@example.com",
             rol: { name: "Administrator" },
         });
-        await expect(getAdminHeaderPhotoUrl(7)).resolves.toBeNull();
+        await expect(getAdminHeaderIdentity(7)).resolves.toMatchObject({
+            displayName: "Administrador",
+            photoUrl: null,
+        });
     });
 
-    test("does not return another role's photo for an administrator header", async () => {
+    test("does not return identity for another role's header", async () => {
         User.findByPk.mockResolvedValue({
             id: 7,
             is_active: true,
@@ -169,6 +184,6 @@ describe("administrator profile service", () => {
             rol: { name: "Doctor" },
         });
 
-        await expect(getAdminHeaderPhotoUrl(7)).rejects.toMatchObject({ statusCode: 404 });
+        await expect(getAdminHeaderIdentity(7)).rejects.toMatchObject({ statusCode: 404 });
     });
 });
