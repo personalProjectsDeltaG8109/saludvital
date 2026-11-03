@@ -51,7 +51,7 @@ import {
     getAdminChatbotFlow,
     saveAdminChatbotFlowDraft,
 } from "../services/adminChatbotFlowService.js";
-import { getAdminProfile } from "../services/adminProfileService.js";
+import { getAdminHeaderPhotoUrl, getAdminProfile } from "../services/adminProfileService.js";
 import { getAdminReportsData, parseReportPeriod } from "../services/adminReportsService.js";
 import { updateAdminProfilePersonalInformation } from "../services/adminProfileEditingService.js";
 import { updateAdminProfilePreferences } from "../services/adminProfilePreferencesService.js";
@@ -81,7 +81,22 @@ import {
 // Define the routes available to administrators.
 const adminRoutes = Router();
 
-const requireAdministrator = [authenticateToken, requireRole("Administrator")];
+async function loadAdminHeaderPhoto(req, res, next) {
+    if (!req.path.startsWith("/admin/")) return next();
+
+    try {
+        res.locals.adminPhotoUrl = await getAdminHeaderPhotoUrl(req.auth.userId);
+        return next();
+    } catch (error) {
+        return next(error);
+    }
+}
+
+const requireAdministrator = [
+    authenticateToken,
+    requireRole("Administrator"),
+    loadAdminHeaderPhoto,
+];
 
 adminRoutes.get(
     "/api/admin/doctor-schedule-exceptions",

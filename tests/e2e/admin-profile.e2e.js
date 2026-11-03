@@ -15,6 +15,7 @@ const profilePreferencesScript = await readFile(
 const validPng = await readFile(path.resolve("public/brand/logo-symbol.png"));
 const html = pug.renderFile(path.resolve("views/admin/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
+    adminPhotoUrl: "/uploads/profile-photos/header.png",
     adminName: "Laura Méndez",
     profile: {
         displayName: "Laura Méndez",
@@ -112,6 +113,20 @@ try {
         );
         if (hasHorizontalOverflow) {
             throw new Error(`The administrator profile overflows horizontally at ${width}px.`);
+        }
+        const headerAvatar = page.locator(".admin-user-avatar img");
+        if ((await headerAvatar.count()) !== 1) {
+            throw new Error("The saved administrator photo must appear in the header avatar.");
+        }
+        const avatarStyle = await headerAvatar.evaluate((image) => ({
+            objectFit: getComputedStyle(image).objectFit,
+            width: image.getBoundingClientRect().width,
+            height: image.getBoundingClientRect().height,
+        }));
+        if (avatarStyle.objectFit !== "cover" || avatarStyle.width !== avatarStyle.height) {
+            throw new Error(
+                `The administrator photo is not cropped into a circle: ${JSON.stringify(avatarStyle)}`,
+            );
         }
     }
 

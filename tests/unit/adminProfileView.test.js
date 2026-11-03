@@ -2,9 +2,43 @@ import { describe, expect, test } from "@jest/globals";
 import pug from "pug";
 
 describe("administrator profile page", () => {
+    test("renders the saved administrator photo in the Dashboard-specific header", () => {
+        const html = pug.renderFile("views/admin/dashboard.pug", {
+            pageTitle: "Panel administrativo | SaludVital",
+            adminName: "Administradora",
+            adminPhotoUrl: "/uploads/profile-photos/admin.png",
+            dashboard: {
+                generatedAt: new Date("2026-11-03T12:00:00.000Z"),
+                notificationAlertCount: 0,
+                weeklyAppointments: [],
+                selectedWeek: "current",
+                specialties: [],
+                recentActivity: [],
+                systemNotifications: [],
+                metrics: {
+                    registeredUsers: 0,
+                    activeUsers: 0,
+                    appointmentsToday: 0,
+                    completedAppointmentsToday: 0,
+                    activeDoctors: 0,
+                    pendingWhatsAppRequests: 0,
+                },
+                whatsapp: {
+                    activeConversations: 0,
+                    pendingRequests: 0,
+                    integrationStatus: "Incomplete",
+                },
+            },
+        });
+
+        expect(html).toContain('src="/uploads/profile-photos/admin.png"');
+        expect(html).toContain('class="admin-user-avatar"');
+    });
+
     test("renders persisted account information without authentication secrets", () => {
         const html = pug.renderFile("views/admin/profile.pug", {
             pageTitle: "Mi perfil | SaludVital",
+            adminPhotoUrl: "/uploads/profile-photos/admin.png",
             adminName: "Laura Méndez",
             profile: {
                 displayName: "Laura Méndez",
@@ -24,6 +58,7 @@ describe("administrator profile page", () => {
 
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("laura@example.com");
+        expect(html).toContain('src="/uploads/profile-photos/admin.png"');
         expect(html).toContain("+573001234567");
         expect(html).toContain("Información personal");
         expect(html).toContain("Seguridad");
@@ -42,6 +77,7 @@ describe("administrator profile page", () => {
     test("does not invent a name for an account without one", () => {
         const html = pug.renderFile("views/admin/profile.pug", {
             pageTitle: "Mi perfil | SaludVital",
+            adminPhotoUrl: null,
             adminName: "Administrador",
             profile: {
                 displayName: null,
@@ -56,6 +92,7 @@ describe("administrator profile page", () => {
         });
 
         expect(html).toContain("Nombre no registrado");
+        expect(html).not.toContain("profile-photos");
         expect(html).toContain("admin@example.com");
         expect(html).not.toContain("Correo verificado el");
         expect(html).toContain("Verificación pendiente");

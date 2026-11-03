@@ -53,10 +53,12 @@ describe("administrator WhatsApp overview view", () => {
         const html = pug.renderFile("views/admin/whatsapp.pug", {
             pageTitle: "WhatsApp y chatbot | SaludVital",
             adminName: "Administradora",
+            adminPhotoUrl: "/uploads/profile-photos/admin.png",
             whatsapp: createOverviewData(),
         });
 
         expect(html).toContain("WhatsApp y chatbot");
+        expect(html).toContain('src="/uploads/profile-photos/admin.png"');
         expect(html).toMatch(
             /<a class="admin-nav-link is-active" href="\/admin\/whatsapp"[^>]*aria-current="page"/,
         );

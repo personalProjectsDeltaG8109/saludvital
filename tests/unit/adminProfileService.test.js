@@ -8,7 +8,8 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 }));
 
 const { User } = await import("../../src/models/associations.js");
-const { getAdminProfile } = await import("../../src/modules/admin/services/adminProfileService.js");
+const { getAdminHeaderPhotoUrl, getAdminProfile } =
+    await import("../../src/modules/admin/services/adminProfileService.js");
 
 describe("administrator profile service", () => {
     beforeEach(() => jest.clearAllMocks());
@@ -122,5 +123,52 @@ describe("administrator profile service", () => {
 
         User.findByPk.mockResolvedValue({ rol: { name: "Doctor" } });
         await expect(getAdminProfile(9)).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    test("returns only the authenticated administrator's valid local photo URL", async () => {
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            is_active: true,
+            profile_photo_url: "/uploads/profile-photos/admin.webp",
+            password_hash: "must-not-be-selected",
+            rol: { name: "Administrator" },
+        });
+
+        await expect(getAdminHeaderPhotoUrl("7")).resolves.toBe(
+            "/uploads/profile-photos/admin.webp",
+        );
+        expect(User.findByPk).toHaveBeenCalledWith(7, {
+            attributes: ["id", "is_active", "profile_photo_url"],
+            include: [{ model: {}, as: "rol", attributes: ["name"], required: true }],
+        });
+    });
+
+    test("uses the avatar fallback for missing or unsafe photo URLs", async () => {
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            is_active: true,
+            profile_photo_url: "https://example.com/admin.png",
+            rol: { name: "Administrator" },
+        });
+        await expect(getAdminHeaderPhotoUrl(7)).resolves.toBeNull();
+
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            is_active: true,
+            profile_photo_url: null,
+            rol: { name: "Administrator" },
+        });
+        await expect(getAdminHeaderPhotoUrl(7)).resolves.toBeNull();
+    });
+
+    test("does not return another role's photo for an administrator header", async () => {
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            is_active: true,
+            profile_photo_url: "/uploads/profile-photos/doctor.png",
+            rol: { name: "Doctor" },
+        });
+
+        await expect(getAdminHeaderPhotoUrl(7)).rejects.toMatchObject({ statusCode: 404 });
     });
 });
