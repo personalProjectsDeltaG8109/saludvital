@@ -91,6 +91,7 @@
 .doctor-agenda-availability-card .doctor-panel-heading { padding: 16px 16px 10px; }
 .doctor-agenda-availability-card .doctor-panel-heading h2 { font-size: 16px; }
 .doctor-agenda-availability-content { display: grid; gap: 10px; padding: 0 14px 14px; }
+.doctor-agenda-availability-period { margin: 0; color: #58708e; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .doctor-agenda-availability-metrics { display: grid; gap: 7px; margin: 0; }
 .doctor-agenda-availability-metric { display: flex; min-height: 37px; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border: 1px solid #e8f0f8; border-radius: 9px; background: #fbfdff; }
 .doctor-agenda-availability-metric dt { color: #58708e; font-size: 11px; }

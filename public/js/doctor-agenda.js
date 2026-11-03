@@ -285,6 +285,25 @@ if (agendaRoot) {
         return new Intl.NumberFormat("es-CO").format(value);
     }
 
+    function formatAvailabilityDate(dateString) {
+        const date = new Date(`${dateString}T05:00:00.000Z`);
+        const parts = new Intl.DateTimeFormat("es-CO", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            timeZone: "America/Bogota",
+        }).formatToParts(date);
+        const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+        return `${values.day} ${values.month.replaceAll(".", "")} ${values.year}`;
+    }
+
+    function formatAvailabilityPeriod(summary) {
+        if (summary.startDate === summary.endDate) {
+            return formatAvailabilityDate(summary.startDate);
+        }
+        return `Del ${formatAvailabilityDate(summary.startDate)} al ${formatAvailabilityDate(summary.endDate)}`;
+    }
+
     function renderAvailabilityDetails(container, days) {
         if (!days.length) return;
 
@@ -323,6 +342,13 @@ if (agendaRoot) {
     function renderAvailabilityCard(periodName, summary, appointmentDurationMinutes) {
         const card = agendaRoot.querySelector(`[data-agenda-availability="${periodName}"]`);
         card.replaceChildren();
+        card.append(
+            createElement(
+                "p",
+                "doctor-agenda-availability-period",
+                formatAvailabilityPeriod(summary),
+            ),
+        );
 
         if (!summary.hasSchedule) {
             card.append(
