@@ -11,7 +11,7 @@ const markup = `
         <aside class="admin-sidebar" id="schedule-sidebar" data-admin-sidebar><a href="/admin/doctor-schedules">Horarios</a><button type="button" data-admin-close>Cerrar</button></aside>
         <button type="button" class="admin-sidebar-backdrop" data-admin-close aria-label="Cerrar menú"></button>
         <div class="admin-main-shell">
-        <header class="admin-topbar"><button class="admin-menu-toggle" type="button" data-admin-open aria-expanded="false" aria-controls="schedule-sidebar"><span></span><span></span><span></span></button><form class="admin-global-search"><input data-user-top-search></form></header>
+        <header class="admin-topbar"><button class="admin-menu-toggle" type="button" data-admin-open aria-expanded="false" aria-controls="schedule-sidebar"><span></span><span></span><span></span></button><button class="admin-notification-button" type="button" aria-label="Ver notificaciones"></button></header>
         <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules">
             <header class="schedule-heading"><div class="schedule-heading-icon">◷</div><div><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios médicos.</p></div></header>
             <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong></section>
@@ -42,6 +42,10 @@ try {
     page.setDefaultTimeout(5000);
     page.on("pageerror", (error) => console.error("BROWSER ERROR:", error.message));
     await page.setContent(markup);
+    if ((await page.locator(".admin-global-search").count()) !== 0)
+        throw new Error("The administrator header must not render a duplicate global search.");
+    if ((await page.locator("[data-schedule-search]").count()) !== 1)
+        throw new Error("The schedules page must keep its local search field.");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: pageStyles });
     await page.evaluate(() => {

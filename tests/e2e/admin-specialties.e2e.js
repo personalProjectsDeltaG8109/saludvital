@@ -10,7 +10,7 @@ const pageMarkup = `
     <body class="admin-app">
         <header class="admin-topbar">
             <button type="button" data-admin-open aria-expanded="false">Menú</button>
-            <form class="admin-global-search"><input data-user-top-search></form>
+            <button class="admin-notification-button" type="button" aria-label="Ver notificaciones"></button>
         </header>
         <main class="specialties-page" data-admin-specialties data-endpoint="/api/admin/specialties">
             <header class="specialties-heading"><h1>Especialidades</h1><p>Catálogo médico</p></header>
@@ -37,6 +37,10 @@ const browser = await chromium.launch({ headless: true });
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.setContent(pageMarkup);
+    if ((await page.locator(".admin-global-search").count()) !== 0)
+        throw new Error("The administrator header must not render a duplicate global search.");
+    if ((await page.locator("[data-specialty-search]").count()) !== 1)
+        throw new Error("The specialties page must keep its local search field.");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: specialtiesStyles });
     await page.evaluate(() => {
