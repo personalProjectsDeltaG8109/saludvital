@@ -109,8 +109,8 @@ mixin adminSidebar(activePage)
                 span.admin-nav-icon(aria-hidden="true") ⇥
                 span Cerrar sesión
 
-mixin adminTopbar
-    header.admin-topbar
+mixin adminTopbar(notificationHref, notificationLabel, notificationCount)
+    header.admin-topbar(data-admin-topbar)
         button.admin-menu-toggle(
             type="button",
             aria-label="Abrir menú",
@@ -130,8 +130,8 @@ mixin adminTopbar
                 strong SaludVital
                 small Panel Administrativo
         a.admin-notification-button.admin-mobile-notification(
-            href="/admin/notifications",
-            aria-label="Ver el panel de notificaciones"
+            href=notificationHref || "/admin/notifications",
+            aria-label=notificationLabel || "Ver el panel de notificaciones"
         )
             svg(
                 viewBox="0 0 24 24",
@@ -144,6 +144,8 @@ mixin adminTopbar
             )
                 path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
                 path(d="M10 21h4")
+            if notificationCount
+                b= notificationCount
         .admin-user-chip
             span.admin-user-avatar(aria-hidden="true")
                 svg(viewBox="0 0 24 24", fill="none", stroke="currentColor", stroke-width="1.8")
