@@ -31,7 +31,10 @@ try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     page.setDefaultTimeout(5000);
     page.on("pageerror", (error) => console.error("BROWSER ERROR:", error.message));
-    await page.setContent(markup);
+    await page.route("http://localhost/**", (route) =>
+        route.fulfill({ status: 200, contentType: "text/html", body: markup }),
+    );
+    await page.goto("http://localhost/admin/audit?eventId=1");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: pageStyles });
     await page.evaluate(() => {
@@ -109,8 +112,14 @@ try {
         };
     });
     await page.addScriptTag({ content: pageScript });
+    await page.getByText("Se actualizaron los permisos de una cuenta.").waitFor();
+    if (!(await page.locator("dialog").evaluate((dialog) => dialog.open))) {
+        throw new Error("The requested audit event deep link must open its detail dialog.");
+    }
+    console.log("PASS: dashboard event links open the protected audit detail dialog.");
+    await page.locator("[data-audit-detail-close]").click();
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.locator("[data-admin-open]").click();
     if (
         !(await page
             .locator(".admin-app")
@@ -118,10 +127,7 @@ try {
     ) {
         throw new Error("The mobile audit menu button must open the sidebar.");
     }
-    if (
-        (await page.getByRole("button", { name: "Abrir menú" }).getAttribute("aria-expanded")) !==
-        "true"
-    ) {
+    if ((await page.locator("[data-admin-open]").getAttribute("aria-expanded")) !== "true") {
         throw new Error("The mobile audit menu button must expose its expanded state.");
     }
     await page.waitForFunction(() => {
@@ -142,7 +148,7 @@ try {
     ) {
         throw new Error("The mobile audit close control must close the sidebar.");
     }
-    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.locator("[data-admin-open]").click();
     await page.locator(".admin-sidebar-backdrop").click({ position: { x: 360, y: 400 } });
     if (
         await page
@@ -151,7 +157,7 @@ try {
     ) {
         throw new Error("The mobile audit backdrop must close the sidebar.");
     }
-    await page.getByRole("button", { name: "Abrir menú" }).click();
+    await page.locator("[data-admin-open]").click();
     await page.keyboard.press("Escape");
     if (
         await page

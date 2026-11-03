@@ -15,7 +15,15 @@ describe("administrator profile page", () => {
                 weeklyAppointments: [],
                 selectedWeek: "current",
                 specialties: [],
-                recentActivity: [],
+                recentActivity: [
+                    {
+                        id: 42,
+                        action: "AdminAppointmentCancelled",
+                        targetType: "Appointment",
+                        result: "Success",
+                        occurredAt: new Date("2026-11-03T12:00:00.000Z"),
+                    },
+                ],
                 systemNotifications: [],
                 metrics: {
                     registeredPatients: 0,
@@ -44,6 +52,8 @@ describe("administrator profile page", () => {
         expect(html).toContain("Pacientes registrados");
         expect(html).toContain("pacientes activos");
         expect(html).not.toContain("Usuarios registrados");
+        expect(html).toContain('href="/admin/audit?eventId=42"');
+        expect(html).toContain("Ver detalle");
     });
 
     test("renders persisted account information without authentication secrets", () => {
