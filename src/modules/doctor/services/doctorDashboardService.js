@@ -463,7 +463,7 @@ export async function getDoctorAppointments(userId, query = {}) {
             limit,
             offset: (filters.page - 1) * limit,
         }),
-        AppointmentStatus.findAll({ attributes: ["name"], order: [["name", "ASC"]] }),
+        AppointmentStatus.findAll({ attributes: ["id", "name"], order: [["name", "ASC"]] }),
         Appointment.findAll({
             where: { doctor_id: doctor.id },
             attributes: [
