@@ -63,6 +63,7 @@ describe("administrator WhatsApp overview view", () => {
         expect(html).toContain('src="/uploads/profile-photos/admin.png"');
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("Administrador");
+        expect(html).not.toContain("admin-user-chevron");
         expect(html).toMatch(
             /<a class="admin-nav-link is-active" href="\/admin\/whatsapp"[^>]*aria-current="page"/,
         );

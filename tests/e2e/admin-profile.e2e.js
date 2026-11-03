@@ -126,6 +126,9 @@ try {
         if ((await page.locator(".admin-user-chip small").textContent()) !== "Administrador") {
             throw new Error("The header must identify the authenticated account role.");
         }
+        if ((await page.locator(".admin-user-chevron").count()) !== 0) {
+            throw new Error("The administrator header must not show a decorative chevron.");
+        }
         const avatarStyle = await headerAvatar.evaluate((image) => ({
             objectFit: getComputedStyle(image).objectFit,
             width: image.getBoundingClientRect().width,
