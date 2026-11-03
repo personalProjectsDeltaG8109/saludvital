@@ -37,6 +37,7 @@ describe("administrator profile page", () => {
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("Administrador");
         expect(html).toContain('class="admin-user-avatar"');
+        expect(html).not.toContain("admin-user-chevron");
     });
 
     test("renders persisted account information without authentication secrets", () => {
@@ -67,6 +68,7 @@ describe("administrator profile page", () => {
         expect(html).toContain('src="/uploads/profile-photos/admin.png"');
         expect(html).toContain("Laura Méndez");
         expect(html).toContain("Administrador");
+        expect(html).not.toContain("admin-user-chevron");
         expect(html).toContain("+573001234567");
         expect(html).toContain("Información personal");
         expect(html).toContain("Seguridad");
