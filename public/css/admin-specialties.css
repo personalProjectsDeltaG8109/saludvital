@@ -90,7 +90,7 @@
 
 .specialties-filters {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 168px auto;
+    grid-template-columns: minmax(0, 1fr) 168px;
     align-items: end;
     gap: 12px;
     margin-bottom: 14px;
@@ -124,29 +124,9 @@
     font-size: 12px;
 }
 
-.specialty-search-button {
-    display: inline-flex;
-    min-height: 43px;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 0 17px;
-    border: 0;
-    border-radius: 9px;
-    color: #fff;
-    background: linear-gradient(115deg, #087cf0, #0561cf);
-    font: inherit;
-    font-size: 13px;
-    font-weight: 650;
-    cursor: pointer;
-}
-
-.specialty-search-button:hover { background: #075fc3; }
-.specialty-search-button:focus-visible,
 .specialties-pagination button:focus-visible,
 .specialties-filters :focus-visible,
 .specialty-page-size select:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }
-.specialty-search-button > span { font-size: 21px; line-height: 1; }
 
 .specialties-feedback { min-height: 18px; margin: 0 0 8px; color: #647b9d; font-size: 12px; }
 .specialties-table-wrap { width: 100%; overflow-x: auto; }
@@ -243,14 +223,11 @@
     .specialty-stat > div > span { font-size: 10px; }
     .specialty-stat strong { font-size: 22px; }
     .specialties-panel { padding: 12px 10px 8px; border-radius: 13px; }
-    .specialties-filters { grid-template-columns: minmax(0, 1fr) 42px; gap: 8px; margin-bottom: 10px; }
-    .specialty-search-field { grid-column: 1 / -1; min-height: 42px; }
-    .specialty-status-filter { grid-column: 1; grid-row: 2; display: block; }
+    .specialties-filters { grid-template-columns: minmax(0, 1fr); gap: 8px; margin-bottom: 10px; }
+    .specialty-search-field { min-height: 42px; }
+    .specialty-status-filter { display: block; }
     .specialty-status-filter > span { display: none; }
     .specialty-status-filter select { width: 100%; min-height: 40px; }
-    .specialty-search-button { width: 42px; min-height: 40px; grid-column: 2; grid-row: 2; padding: 0; }
-    .specialty-search-button > span { font-size: 23px; }
-    .specialty-search-button { font-size: 0; }
     .specialties-table-wrap { overflow: visible; }
     .specialties-table,
     .specialties-table tbody { display: block; width: 100%; }

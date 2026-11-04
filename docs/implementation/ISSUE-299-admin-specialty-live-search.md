@@ -5,8 +5,9 @@
 - Added a 300 ms debounce to the existing specialty-name search field and reused the protected specialty catalog endpoint.
 - Search resets pagination to page one and preserves the selected status and page size.
 - Aborted superseded requests and guarded rendering by request ID so a delayed response cannot replace newer results.
-- Kept the existing Buscar button in this change; removing redundant catalog search buttons remains a separate checklist item.
-- Added browser coverage for live search, preserved filters, page reset, empty/error results, and out-of-order responses.
+- Removed the redundant Buscar button and its form-submit handler. Typing in the search field continues to query the existing protected catalog endpoint.
+- Kept the catalog endpoint and its server-side search because live search uses that same API; there was no button-only backend route or query to remove.
+- Added browser coverage for live search, absence of the manual button, preserved filters, page reset, empty/error results, and out-of-order responses.
 
 ## Verification
 

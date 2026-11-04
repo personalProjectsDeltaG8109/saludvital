@@ -211,14 +211,6 @@ if (specialtiesPage) {
         }
     }
 
-    specialtiesPage
-        .querySelector("[data-specialty-filters]")
-        .addEventListener("submit", (event) => {
-            event.preventDefault();
-            currentPage = 1;
-            loadSpecialties();
-        });
-
     search.addEventListener("input", () => {
         clearTimeout(searchDebounce);
         searchDebounce = setTimeout(() => {

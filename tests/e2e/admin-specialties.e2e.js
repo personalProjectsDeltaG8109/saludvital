@@ -19,11 +19,10 @@ const pageMarkup = `
                 <strong data-stat-inactive>—</strong><strong data-stat-doctors>—</strong>
             </section>
             <section class="specialties-panel">
-                <form class="specialties-filters" data-specialty-filters>
+                <div class="specialties-filters" role="search" aria-label="Buscar y filtrar especialidades">
                     <label class="specialty-search-field"><span class="sr-only">Buscar</span><input data-specialty-search></label>
                     <label class="specialty-status-filter"><span>Estado</span><select data-specialty-status><option value="all">Todos</option><option value="active">Activas</option><option value="inactive">Inactivas</option></select></label>
-                    <button class="specialty-search-button" type="submit">Buscar</button>
-                </form>
+                </div>
                 <p class="specialties-feedback" data-specialty-feedback></p>
                 <div class="specialties-table-wrap"><table class="specialties-table"><thead><tr><th>#</th><th>Especialidad</th><th>Descripción</th><th>Médicos</th><th>Estado</th><th>Acciones</th></tr></thead><tbody data-specialty-list></tbody></table></div>
                 <footer class="specialties-pagination"><span data-specialty-page-summary></span><div class="specialty-pagination-controls"><button type="button" aria-label="Página anterior" data-specialty-prev></button><span data-specialty-page-label></span><button type="button" aria-label="Página siguiente" data-specialty-next></button></div><label class="specialty-page-size"><select data-specialty-page-size><option value="10">10</option><option value="25">25</option></select></label></footer>
@@ -41,6 +40,8 @@ try {
         throw new Error("The administrator header must not render a duplicate global search.");
     if ((await page.locator("[data-specialty-search]").count()) !== 1)
         throw new Error("The specialties page must keep its local search field.");
+    if ((await page.locator(".specialties-filters button").count()) !== 0)
+        throw new Error("The specialty filters must not show a manual search button.");
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: specialtiesStyles });
     await page.evaluate(() => {
@@ -167,7 +168,6 @@ try {
     }
 
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByRole("link", { name: "Editar Medicina General" }).waitFor();
     page.once("dialog", (dialog) => dialog.dismiss());
     await page.getByRole("button", { name: "Desactivar Medicina General" }).click();
