@@ -45,6 +45,7 @@ html(lang="es")
                                 type="search",
                                 maxlength="100",
                                 placeholder="Buscar por nombre o correo electrónico...",
+                                aria-label="Buscar médicos por nombre o correo electrónico",
                                 data-doctor-search
                             )
                         label
@@ -57,7 +58,6 @@ html(lang="es")
                                 option(value="") Todos los estados
                                 option(value="active") Activos
                                 option(value="inactive") Inactivos
-                        button.doctors-secondary-button(type="submit") Buscar
                     p.doctors-feedback(role="status", aria-live="polite", data-doctor-feedback) Cargando médicosâ€¦
                     .doctors-list(data-doctor-list)
                     footer.doctors-pagination
