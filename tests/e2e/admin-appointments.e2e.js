@@ -59,6 +59,8 @@ try {
             return { focus() {} };
         };
         window.failAppointmentRequest = false;
+        window.showMultipleAppointmentPages = false;
+        window.resolveObsoleteAppointmentSearch = null;
         window.cancellationRequests = [];
         window.fetch = async (url, options = {}) => {
             const parsedUrl = new URL(url, "http://localhost");
@@ -91,6 +93,11 @@ try {
             }
             const params = new URL(url, "http://localhost").searchParams;
             window.appointmentRequests.push(Object.fromEntries(params.entries()));
+            if (params.get("search") === "obsolete") {
+                await new Promise((resolve) => {
+                    window.resolveObsoleteAppointmentSearch = resolve;
+                });
+            }
             if (window.failAppointmentRequest) {
                 return {
                     ok: false,
@@ -131,7 +138,10 @@ try {
                             endAt: "2026-10-26T16:00:00.000Z",
                             patient: {
                                 id: 5,
-                                name: "María Fernanda López",
+                                name:
+                                    params.get("search") === "latest"
+                                        ? "Paciente más reciente"
+                                        : "María Fernanda López",
                                 document: "CC 123456",
                                 photoUrl: null,
                             },
@@ -148,8 +158,8 @@ try {
                     pagination: {
                         page: Number(params.get("page")),
                         pageSize: 10,
-                        totalItems: 1,
-                        totalPages: 1,
+                        totalItems: window.showMultipleAppointmentPages ? 21 : 1,
+                        totalPages: window.showMultipleAppointmentPages ? 3 : 1,
                     },
                 }),
             };
@@ -243,8 +253,23 @@ try {
     await page.locator("[data-appointment-to]").fill("2026-10-27");
     await page.locator("[data-appointment-specialty]").selectOption("2");
     await page.locator("[data-appointment-doctor]").selectOption("3");
-    await page.locator("[data-appointment-search]").fill("María");
+    await page.evaluate(() => {
+        window.showMultipleAppointmentPages = true;
+    });
     await page.getByRole("button", { name: "Buscar" }).click();
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.page === "1");
+    await page.locator("[data-appointment-next]").click();
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.page === "2");
+    const requestsBeforeLiveSearch = await page.evaluate(() => window.appointmentRequests.length);
+    const patientSearch = page.locator("[data-appointment-search]");
+    await patientSearch.fill("María");
+    await page.waitForTimeout(100);
+    if (
+        (await page.evaluate(() => window.appointmentRequests.length)) !== requestsBeforeLiveSearch
+    ) {
+        throw new Error("Patient search must wait for its debounce before requesting results.");
+    }
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.search === "María");
     await page.getByText("María Fernanda López").first().waitFor();
     const lastRequest = await page.evaluate(() => window.appointmentRequests.at(-1));
     if (
@@ -253,7 +278,8 @@ try {
         lastRequest.specialtyId !== "2" ||
         lastRequest.doctorId !== "3" ||
         lastRequest.search !== "María" ||
-        lastRequest.page !== "1"
+        lastRequest.page !== "1" ||
+        (await page.locator("[data-appointment-page-label]").textContent()) !== "1 / 3"
     ) {
         throw new Error(
             "Appointment filters were not sent correctly: " + JSON.stringify(lastRequest),
@@ -323,12 +349,28 @@ try {
         throw new Error("Selecting an appointment status must filter the directory.");
     }
     console.log(
-        "PASS: appointment search, date and directory filters, status tabs, and empty state.",
+        "PASS: debounced patient search preserves filters, resets pagination, and supports status tabs and empty results.",
     );
+
+    await page.locator("[data-status-tab='Confirmed']").click();
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.status === "Confirmed");
+    await patientSearch.fill("obsolete");
+    await page.waitForFunction(() => typeof window.resolveObsoleteAppointmentSearch === "function");
+    await patientSearch.fill("latest");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.search === "latest");
+    await page.getByText("Paciente más reciente").first().waitFor();
+    await page.evaluate(() => window.resolveObsoleteAppointmentSearch());
+    await page.waitForTimeout(50);
+    const currentAppointmentRows = await page.locator("[data-appointment-list]").innerText();
+    if (currentAppointmentRows.includes("María Fernanda López")) {
+        throw new Error("An outdated appointment response replaced the latest search results.");
+    }
+    console.log("PASS: outdated appointment search responses cannot replace newer results.");
+
     await page.evaluate(() => {
         window.failAppointmentRequest = true;
     });
-    await page.locator("[data-appointment-search]").fill("");
+    await patientSearch.fill("");
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No pudimos cargar las citas. Inténtalo de nuevo.").waitFor();
     if (await page.getByText("No encontramos citas con esos criterios.").count()) {
