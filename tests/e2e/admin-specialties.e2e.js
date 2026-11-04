@@ -203,6 +203,23 @@ try {
                 `Specialty row content overlaps at ${viewport.label}: ${JSON.stringify(rowLayout)}`,
             );
         }
+        if (viewport.width > 1000) {
+            const numberToNameGap = await page
+                .locator(".specialties-table tbody tr:not(.specialties-empty-row)")
+                .evaluate((row) => {
+                    const numberCell = row.querySelector("td:first-child");
+                    const numberRange = document.createRange();
+                    numberRange.selectNodeContents(numberCell);
+                    const numberText = numberRange.getBoundingClientRect();
+                    const icon = row.querySelector(".specialty-row-icon").getBoundingClientRect();
+                    return icon.left - numberText.right;
+                });
+            if (numberToNameGap > 30) {
+                throw new Error(
+                    `The specialty number and name are too far apart: ${numberToNameGap}px.`,
+                );
+            }
+        }
         await page.getByRole("button", { name: "Desactivar Medicina General" }).waitFor();
         console.log(
             `PASS: specialty layout has no horizontal overflow at ${viewport.label} (${viewport.width}x${viewport.height}).`,
