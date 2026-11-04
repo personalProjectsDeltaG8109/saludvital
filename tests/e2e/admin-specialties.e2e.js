@@ -48,6 +48,7 @@ try {
         window.specialtyStatusRequests = [];
         window.specialtyIsActive = true;
         window.failSpecialtyRequest = false;
+        window.delaySlowSpecialtySearch = false;
         window.fetch = async (url, options = {}) => {
             if (options.method === "PATCH") {
                 const payload = JSON.parse(options.body);
@@ -66,7 +67,11 @@ try {
                 search: params.get("search"),
                 status: params.get("status"),
                 page: params.get("page"),
+                pageSize: params.get("pageSize"),
             });
+            if (window.delaySlowSpecialtySearch && params.get("search") === "lenta") {
+                await new Promise((resolve) => setTimeout(resolve, 400));
+            }
             if (window.failSpecialtyRequest) {
                 return {
                     ok: false,
@@ -87,29 +92,46 @@ try {
             }
             const pageNumber = Number(params.get("page"));
             const isInactive = params.get("status") === "inactive";
-            const record = isInactive
-                ? {
-                      id: 3,
-                      name: "Neurología",
-                      description: "Atención del sistema nervioso.",
-                      isActive: false,
-                      doctorCount: 2,
-                  }
-                : pageNumber === 2
-                  ? {
-                        id: 2,
-                        name: "Pediatría",
-                        description: "Atención infantil.",
-                        isActive: window.specialtyIsActive,
-                        doctorCount: 5,
-                    }
-                  : {
-                        id: 1,
-                        name: "Medicina General",
-                        description: "Atención integral.",
-                        isActive: window.specialtyIsActive,
-                        doctorCount: 8,
-                    };
+            const record =
+                params.get("search") === "lenta"
+                    ? {
+                          id: 8,
+                          name: "Resultado anterior",
+                          description: "Respuesta lenta.",
+                          isActive: true,
+                          doctorCount: 1,
+                      }
+                    : params.get("search") === "rápida"
+                      ? {
+                            id: 9,
+                            name: "Resultado reciente",
+                            description: "Respuesta reciente.",
+                            isActive: true,
+                            doctorCount: 1,
+                        }
+                      : isInactive
+                        ? {
+                              id: 3,
+                              name: "Neurología",
+                              description: "Atención del sistema nervioso.",
+                              isActive: false,
+                              doctorCount: 2,
+                          }
+                        : pageNumber === 2
+                          ? {
+                                id: 2,
+                                name: "Pediatría",
+                                description: "Atención infantil.",
+                                isActive: window.specialtyIsActive,
+                                doctorCount: 5,
+                            }
+                          : {
+                                id: 1,
+                                name: "Medicina General",
+                                description: "Atención integral.",
+                                isActive: window.specialtyIsActive,
+                                doctorCount: 8,
+                            };
             return {
                 ok: true,
                 json: async () => ({
@@ -174,8 +196,48 @@ try {
     await page.locator("[data-specialty-status]").selectOption("all");
     await page.getByRole("button", { name: "Página siguiente" }).click();
     await page.getByText("Pediatría").waitFor();
+    await page.locator("[data-specialty-page-size]").selectOption("25");
+    await page.waitForFunction(() =>
+        [...window.specialtyRequests]
+            .reverse()
+            .some((request) => request.pageSize === "25" && request.page === "1"),
+    );
+    await page.locator("[data-specialty-search]").fill("medicina");
+    await page.waitForFunction(() =>
+        window.specialtyRequests.some((request) => request.search === "medicina"),
+    );
+    const liveSearchRequest = await page.evaluate(() =>
+        [...window.specialtyRequests].reverse().find((request) => request.search === "medicina"),
+    );
+    if (
+        liveSearchRequest.status !== "all" ||
+        liveSearchRequest.page !== "1" ||
+        liveSearchRequest.pageSize !== "25"
+    ) {
+        throw new Error("Live specialty search did not preserve filters or reset pagination.");
+    }
+
+    await page.evaluate(() => {
+        window.delaySlowSpecialtySearch = true;
+    });
+    await page.locator("[data-specialty-search]").fill("lenta");
+    await page.waitForFunction(() =>
+        window.specialtyRequests.some((request) => request.search === "lenta"),
+    );
+    await page.locator("[data-specialty-search]").fill("rápida");
+    await page.getByText("Resultado reciente").waitFor();
+    await page.waitForTimeout(450);
+    if (
+        !(await page.getByText("Resultado reciente").isVisible()) ||
+        (await page.getByText("Resultado anterior").count())
+    ) {
+        throw new Error("A stale specialty search response replaced newer results.");
+    }
+    console.log(
+        "PASS: live specialty search preserves filters, resets pagination, and ignores stale responses.",
+    );
+
     await page.locator("[data-specialty-search]").fill("zz-no-results");
-    await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No encontramos especialidades con esos criterios.").waitFor();
     console.log("PASS: specialty status filter, pagination, and empty results.");
 
@@ -183,7 +245,6 @@ try {
         window.failSpecialtyRequest = true;
     });
     await page.locator("[data-specialty-search]").fill("");
-    await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No pudimos cargar las especialidades. Inténtalo de nuevo.").waitFor();
     console.log("PASS: specialty API failure is announced with a safe message.");
 } finally {
