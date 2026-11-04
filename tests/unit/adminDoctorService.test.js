@@ -265,14 +265,44 @@ describe("Admin doctor management service", () => {
             ],
             count: 1,
         });
-        Doctor.count.mockResolvedValueOnce(4).mockResolvedValueOnce(3).mockResolvedValueOnce(2);
+        Doctor.count
+            .mockResolvedValueOnce(4)
+            .mockResolvedValueOnce(3)
+            .mockResolvedValueOnce(1)
+            .mockResolvedValueOnce(2);
         Specialities.findAll.mockResolvedValue([{ id: 3, name: "Pediatrics" }]);
         await expect(getAdminDoctors()).resolves.toMatchObject({
             stats: { total: 4, active: 3, scheduled: 2, inactive: 1 },
             doctors: [{ userId: 7, name: "Dr. Example", hasSchedule: false }],
         });
         expect(Doctor.count).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                distinct: true,
+                include: [
+                    expect.objectContaining({
+                        as: "user",
+                        where: { is_active: true },
+                        required: true,
+                    }),
+                ],
+            }),
+        );
+        expect(Doctor.count).toHaveBeenNthCalledWith(
             3,
+            expect.objectContaining({
+                distinct: true,
+                include: [
+                    expect.objectContaining({
+                        as: "user",
+                        where: { is_active: false },
+                        required: true,
+                    }),
+                ],
+            }),
+        );
+        expect(Doctor.count).toHaveBeenNthCalledWith(
+            4,
             expect.objectContaining({
                 distinct: true,
                 include: [expect.objectContaining({ as: "availability", required: true })],
