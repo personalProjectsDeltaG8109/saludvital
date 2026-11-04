@@ -283,6 +283,24 @@ body.has-admin-modal { overflow: hidden; }
     .admin-user-last-login { display: none; }
 }
 
+@media (min-width: 761px) and (max-width: 1160px) {
+    .admin-users-content { padding: 20px 18px 28px; }
+    .admin-users-heading { align-items: flex-start; gap: 14px; }
+    .admin-users-heading > div { min-width: 0; }
+    .admin-users-heading p:not(.admin-eyebrow) { max-width: 100%; line-height: 1.5; }
+    .admin-users-total { min-width: 82px; flex: 0 0 auto; padding: 10px; }
+    .admin-users-total strong { font-size: 20px; }
+    .admin-users-security { display: none; }
+    .admin-users-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-users-search { grid-column: 1 / -1; }
+    .admin-user-card { grid-template-columns: minmax(0, 1fr) auto; gap: 13px 10px; padding: 13px; }
+    .admin-user-identity { grid-column: 1 / -1; }
+    .admin-user-role { grid-column: 1; }
+    .admin-user-profile { grid-column: 2; text-align: right; }
+    .admin-user-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+    .admin-user-toggle, .admin-user-edit { justify-content: center; width: 100%; min-height: 40px; }
+}
+
 @media (max-width: 760px) {
     .admin-users-content { padding: 20px 15px 28px; }
     .admin-users-heading { align-items: center; margin-bottom: 18px; }
