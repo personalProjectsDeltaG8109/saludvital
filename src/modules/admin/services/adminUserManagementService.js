@@ -230,6 +230,15 @@ export async function updateAdminUser(actorUserId, rawUserId, payload) {
         });
         if (!nextRole) throw serviceError("El rol seleccionado no existe.", 400);
 
+        // This endpoint has no higher-privilege authorization for granting administrator access.
+        if (
+            changes.roleId !== undefined &&
+            nextRole.name === ADMIN_ROLE_NAME &&
+            user.role_id !== administratorRole.id
+        ) {
+            throw serviceError("No puedes asignar el rol de administrador desde este módulo.", 403);
+        }
+
         if (changes.isActive !== undefined && changes.isActive !== user.is_active) {
             const currentRole = await Rol.findByPk(user.role_id, {
                 attributes: ["name"],

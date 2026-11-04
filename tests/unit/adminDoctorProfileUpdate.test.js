@@ -77,6 +77,27 @@ describe("Admin doctor profile updates", () => {
         expect(database.transaction).toHaveBeenCalledTimes(1);
     });
 
+    test("prevents administrators from granting administrator access to another role", async () => {
+        const transaction = { LOCK: { UPDATE: "UPDATE" } };
+        database.transaction.mockImplementation((callback) => callback(transaction));
+        Rol.findOne.mockResolvedValue({ id: 1 });
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            email: "patient@example.com",
+            role_id: 2,
+            is_active: true,
+        });
+        Rol.findByPk.mockResolvedValue({ id: 1, name: "Administrator" });
+
+        await expect(updateAdminUser(1, 7, { roleId: 1 })).rejects.toMatchObject({
+            statusCode: 403,
+            message: "No puedes asignar el rol de administrador desde este módulo.",
+        });
+
+        expect(AuditLog.create).not.toHaveBeenCalled();
+        expect(User.findByPk).toHaveBeenCalledTimes(1);
+    });
+
     test("updates doctor details and photo transactionally and records field names", async () => {
         const { doctor, transaction } = prepareDoctorUpdate();
 

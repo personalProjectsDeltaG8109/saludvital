@@ -645,13 +645,15 @@ if (page) {
         const roleSelect = document.createElement("select");
         roleSelect.className = "admin-user-role-select";
         roleSelect.setAttribute("aria-label", `Rol de ${user.displayName}`);
-        roles.forEach((role) => {
-            const option = document.createElement("option");
-            option.value = String(role.id);
-            option.textContent = roleLabel(role.name);
-            option.selected = role.id === user.role.id;
-            roleSelect.append(option);
-        });
+        roles
+            .filter((role) => role.name !== "Administrator" || role.id === user.role.id)
+            .forEach((role) => {
+                const option = document.createElement("option");
+                option.value = String(role.id);
+                option.textContent = roleLabel(role.name);
+                option.selected = role.id === user.role.id;
+                roleSelect.append(option);
+            });
         roleSelect.addEventListener("change", () => {
             const selectedRole = Number(roleSelect.value);
             const label = roleLabel(
