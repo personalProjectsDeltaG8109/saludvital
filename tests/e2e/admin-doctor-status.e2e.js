@@ -101,10 +101,9 @@ const listMarkup = `
             </section>
             <section class="doctors-panel">
                 <form class="doctors-filters" data-doctor-filters>
-                    <label><input data-doctor-search></label>
+                    <label><input aria-label="Buscar médicos" data-doctor-search></label>
                     <label><select data-doctor-specialty><option value="">Todas</option></select></label>
                     <label><select data-doctor-status><option value="">Todos</option><option value="active">Activos</option></select></label>
-                    <button type="submit">Buscar</button>
                 </form>
                 <p class="doctors-feedback" data-doctor-feedback></p>
                 <div class="doctors-list" data-doctor-list></div>
@@ -173,6 +172,9 @@ try {
 
     await listPage.locator("[data-doctor-next]").click();
     await listPage.getByText("Página 2 de 3").waitFor();
+    if (await listPage.locator("[data-doctor-filters] button[type=submit]").count()) {
+        throw new Error("The redundant doctor search button is still visible.");
+    }
     await listPage.locator("[data-doctor-status]").selectOption("active");
     await listPage.locator("[data-doctor-search]").fill("ana");
     await listPage.waitForFunction(() =>
@@ -193,6 +195,14 @@ try {
     ) {
         throw new Error("Live search did not preserve filters or reset pagination.");
     }
+
+    const requestCountBeforeEnter = await listPage.evaluate(() => window.statusRequests.length);
+    await listPage.locator("[data-doctor-search]").fill("otra búsqueda");
+    await listPage.locator("[data-doctor-search]").press("Enter");
+    await listPage.waitForFunction(
+        (previousCount) => window.statusRequests.length > previousCount,
+        requestCountBeforeEnter,
+    );
 
     await listPage.evaluate(() => {
         window.delaySlowDoctorSearch = true;
