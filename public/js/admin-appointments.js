@@ -1,6 +1,7 @@
 const appointmentsPage = document.querySelector("[data-admin-appointments]");
 
 if (appointmentsPage) {
+    const SEARCH_DEBOUNCE_MS = 300;
     const endpoint = appointmentsPage.dataset.endpoint;
     const list = appointmentsPage.querySelector("[data-appointment-list]");
     const mobileList = appointmentsPage.querySelector("[data-appointment-mobile-list]");
@@ -24,6 +25,8 @@ if (appointmentsPage) {
     let selectedAppointmentId = null;
     let displayedAppointments = [];
     let currentPage = 1;
+    let searchDebounce = null;
+    let activeRequestId = 0;
 
     function createOption(select, value, label) {
         const option = document.createElement("option");
@@ -326,6 +329,10 @@ if (appointmentsPage) {
     }
 
     async function loadAppointments() {
+        clearTimeout(searchDebounce);
+        searchDebounce = null;
+        // Only the latest filter request may update the visible appointment list.
+        const requestId = ++activeRequestId;
         feedback.textContent = "Cargando citas...";
         errorMessage.hidden = true;
         const params = createFilterParams();
@@ -337,7 +344,9 @@ if (appointmentsPage) {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
             });
+            if (requestId !== activeRequestId) return;
             const data = await response.json();
+            if (requestId !== activeRequestId) return;
             if (!response.ok) throw new Error(data.message || "No pudimos cargar las citas.");
             renderOptions(data);
             renderStats(data.stats);
@@ -347,6 +356,7 @@ if (appointmentsPage) {
                 ? `${data.pagination.totalItems} cita${data.pagination.totalItems === 1 ? "" : "s"} encontrada${data.pagination.totalItems === 1 ? "" : "s"}.`
                 : "No hay citas para mostrar.";
         } catch (error) {
+            if (requestId !== activeRequestId) return;
             renderAppointments([], false);
             feedback.textContent = "No se pudieron cargar las citas.";
             errorMessage.textContent = error.message;
@@ -361,6 +371,13 @@ if (appointmentsPage) {
             currentPage = 1;
             loadAppointments();
         });
+    search.addEventListener("input", () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            currentPage = 1;
+            loadAppointments();
+        }, SEARCH_DEBOUNCE_MS);
+    });
     tabs.addEventListener("click", (event) => {
         const tab = event.target.closest("[data-status-tab]");
         if (!tab) return;
