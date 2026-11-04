@@ -50,7 +50,10 @@ try {
         );
     }
 
-    for (const width of [375, 760, 761, 762, 768, 800, 900, 960, 1000, 1440]) {
+    for (const width of [
+        375, 760, 761, 762, 768, 800, 900, 960, 961, 1000, 1024, 1050, 1051, 1052, 1053, 1150, 1151,
+        1160, 1161, 1440,
+    ]) {
         await page.setViewportSize({ width, height: 900 });
         const dimensions = await page.evaluate(() => {
             const card = document.querySelector(".admin-user-card");

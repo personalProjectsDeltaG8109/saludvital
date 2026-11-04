@@ -283,7 +283,7 @@ body.has-admin-modal { overflow: hidden; }
     .admin-user-last-login { display: none; }
 }
 
-@media (min-width: 761px) and (max-width: 960px) {
+@media (min-width: 761px) and (max-width: 1160px) {
     .admin-users-content { padding: 20px 18px 28px; }
     .admin-users-heading { align-items: flex-start; gap: 14px; }
     .admin-users-heading > div { min-width: 0; }
