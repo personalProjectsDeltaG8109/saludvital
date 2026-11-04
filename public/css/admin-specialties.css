@@ -203,7 +203,26 @@
 
 @media (max-width: 1000px) {
     .specialties-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .specialties-table th:nth-child(3) { width: 27%; }
+    .specialties-table-wrap { overflow: visible; }
+    .specialties-table,
+    .specialties-table tbody { display: block; width: 100%; }
+    .specialties-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+    .specialties-table tr:not(.specialties-empty-row) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; margin: 0 0 10px; padding: 13px; border: 1px solid #e8eff7; border-radius: 12px; background: #fff; box-shadow: 0 3px 10px rgb(27 72 119 / 3%); }
+    .specialties-table td { display: block; height: auto; min-width: 0; padding: 0; border: 0; }
+    .specialties-table td:first-child { display: none; }
+    .specialties-table td:nth-child(2) { grid-column: 1; grid-row: 1 / span 2; }
+    .specialty-name-cell { gap: 10px; }
+    .specialty-name-cell > span:last-child,
+    .specialty-description { min-width: 0; overflow-wrap: anywhere; }
+    .specialties-table td:nth-child(3) { grid-column: 1 / -1; padding-left: 46px; }
+    .specialties-table td:nth-child(4) { grid-column: 1; padding-left: 46px; }
+    .specialties-table td:nth-child(4)::before { content: "Médicos: "; }
+    .specialties-table td:nth-child(5) { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .specialties-table td:nth-child(6) { display: flex; grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-end; gap: 7px; padding-top: 8px; }
+    .specialty-actions-cell { white-space: normal; }
+    .specialty-status-action { min-height: 36px; margin-left: 0; padding: 0 12px; }
+    .specialties-empty-row { display: block; }
+    .specialties-empty-row td { display: block; min-height: 75px; padding: 25px 8px; }
 }
 
 @media (max-width: 760px) {
