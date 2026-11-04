@@ -1,6 +1,6 @@
 const doctorsPage = document.querySelector("[data-doctors]");
 const adminApp = document.querySelector(".admin-app");
-const sidebar = document.querySelector("[data-admin-sidebar]");
+const doctorSidebar = document.querySelector("[data-admin-sidebar]");
 
 function closeSidebar() {
     adminApp.classList.remove("is-sidebar-open");
@@ -86,7 +86,7 @@ async function changeDoctorStatus({
 document.querySelector("[data-admin-open]")?.addEventListener("click", () => {
     adminApp.classList.add("is-sidebar-open");
     document.querySelector("[data-admin-open]")?.setAttribute("aria-expanded", "true");
-    sidebar?.querySelector('a[href="/admin/doctors"]')?.focus();
+    doctorSidebar?.querySelector('a[href="/admin/doctors"]')?.focus();
 });
 document.querySelectorAll("[data-admin-close]").forEach((control) => {
     control.addEventListener("click", closeSidebar);

@@ -3,6 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const adminDoctorsScript = await readFile(path.resolve("public/js/admin-doctors.js"), "utf8");
+const adminDashboardScript = await readFile(path.resolve("public/js/admin-dashboard.js"), "utf8");
 const adminDoctorsStyles = await readFile(path.resolve("public/css/admin-doctors.css"), "utf8");
 
 async function preparePage(page, markup, initialActive = true) {
@@ -65,6 +66,7 @@ async function preparePage(page, markup, initialActive = true) {
             };
         };
     }, initialActive);
+    await page.addScriptTag({ content: adminDashboardScript });
     await page.addScriptTag({ content: adminDoctorsScript });
 }
 
