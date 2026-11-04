@@ -98,7 +98,10 @@ html(lang="es")
                             span Médicos asignados
                             strong(data-stat-doctors) —
                 section.specialties-panel(aria-label="Catálogo de especialidades")
-                    form.specialties-filters(data-specialty-filters, role="search")
+                    .specialties-filters(
+                        role="search",
+                        aria-label="Buscar y filtrar especialidades"
+                    )
                         label.specialty-search-field
                             span.sr-only Buscar por nombre de especialidad
                             span(aria-hidden="true") ⌕
@@ -115,9 +118,6 @@ html(lang="es")
                                 option(value="all") Todos
                                 option(value="active") Activas
                                 option(value="inactive") Inactivas
-                        button.specialty-search-button(type="submit")
-                            span(aria-hidden="true") ⌕
-                            | Buscar
                     p.specialties-feedback(
                         role="status",
                         aria-live="polite",

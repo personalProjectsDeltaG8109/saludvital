@@ -11,6 +11,9 @@ if (specialtiesPage) {
     const adminApp = document.querySelector(".admin-app");
     const sidebar = document.querySelector("[data-admin-sidebar]");
     let currentPage = 1;
+    let searchDebounce;
+    let latestRequestId = 0;
+    let activeRequestController;
     const pageQuery = new URLSearchParams(window.location.search);
     const specialtyCreated = pageQuery.get("created") === "1";
     const specialtyUpdated = pageQuery.get("updated") === "1";
@@ -150,8 +153,12 @@ if (specialtiesPage) {
     }
 
     async function loadSpecialties() {
+        clearTimeout(searchDebounce);
         feedback.textContent = "Cargando especialidades…";
         errorMessage.hidden = true;
+        const requestId = ++latestRequestId;
+        activeRequestController?.abort();
+        activeRequestController = new AbortController();
         const params = new URLSearchParams({
             page: String(currentPage),
             pageSize: pageSize.value,
@@ -163,6 +170,7 @@ if (specialtiesPage) {
             const response = await fetch(`${endpoint}?${params}`, {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
+                signal: activeRequestController.signal,
             });
             let data;
             try {
@@ -175,6 +183,7 @@ if (specialtiesPage) {
                     data.message || "No pudimos cargar las especialidades. Inténtalo de nuevo.",
                 );
             }
+            if (requestId !== latestRequestId) return;
 
             specialtiesPage.querySelector("[data-stat-total]").textContent = data.stats.total;
             specialtiesPage.querySelector("[data-stat-active]").textContent = data.stats.active;
@@ -194,6 +203,7 @@ if (specialtiesPage) {
                         : "No hay especialidades para mostrar.");
             specialtyStatusFeedback = "";
         } catch (error) {
+            if (error.name === "AbortError" || requestId !== latestRequestId) return;
             list.replaceChildren();
             feedback.textContent = "No se pudieron cargar los datos.";
             errorMessage.textContent = error.message;
@@ -201,13 +211,13 @@ if (specialtiesPage) {
         }
     }
 
-    specialtiesPage
-        .querySelector("[data-specialty-filters]")
-        .addEventListener("submit", (event) => {
-            event.preventDefault();
+    search.addEventListener("input", () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
             currentPage = 1;
             loadSpecialties();
-        });
+        }, 300);
+    });
 
     list.addEventListener("click", async (event) => {
         const button = event.target.closest("[data-specialty-toggle-status]");
