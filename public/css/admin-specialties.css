@@ -132,13 +132,15 @@
 .specialties-table-wrap { width: 100%; overflow-x: auto; }
 .specialties-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
 .specialties-table th { height: 39px; padding: 0 12px; color: #102d69; background: #edf5fc; font-size: 11px; font-weight: 700; text-align: left; }
-.specialties-table th:first-child { width: 42px; border-radius: 9px 0 0 9px; }
-.specialties-table th:nth-child(2) { width: 18%; }
-.specialties-table th:nth-child(3) { width: 27%; }
-.specialties-table th:nth-child(4) { width: 7%; }
-.specialties-table th:nth-child(5) { width: 13%; }
-.specialties-table th:nth-child(6) { width: 17%; border-radius: 0 9px 9px 0; }
+.specialties-table th:first-child { width: 34px; padding-right: 4px; padding-left: 8px; border-radius: 9px 0 0 9px; }
+.specialties-table th:nth-child(2) { width: 22%; padding-left: 5px; }
+.specialties-table th:nth-child(3) { width: 29%; }
+.specialties-table th:nth-child(4) { width: 11%; }
+.specialties-table th:nth-child(5) { width: 15%; }
+.specialties-table th:nth-child(6) { width: 23%; border-radius: 0 9px 9px 0; }
 .specialties-table td { height: 47px; padding: 8px 12px; border-bottom: 1px solid #edf2f7; color: #173b72; font-size: 12px; vertical-align: middle; }
+.specialties-table td:first-child { padding-right: 4px; padding-left: 8px; }
+.specialties-table td:nth-child(2) { padding-left: 5px; }
 .specialty-name-cell { display: flex; min-width: 0; align-items: center; gap: 12px; font-weight: 650; }
 .specialty-row-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #0a51ad; background: #e9f2fc; }
 .specialty-row-icon svg { width: 23px; height: 23px; }
