@@ -53,6 +53,20 @@ function formatDoctor(record) {
     };
 }
 
+function countDoctorsByAccountStatus(isActive) {
+    return Doctor.count({
+        distinct: true,
+        include: [
+            {
+                model: User,
+                as: "user",
+                where: { is_active: isActive },
+                required: true,
+            },
+        ],
+    });
+}
+
 /** Return the live doctor directory, summary counts, and assignable specialties. */
 export async function getAdminDoctors(query = {}) {
     const requestedPage = Number.parseInt(query.page, 10) || 1;
@@ -77,7 +91,7 @@ export async function getAdminDoctors(query = {}) {
         ];
     }
 
-    const [doctors, total, active, scheduled, specialties] = await Promise.all([
+    const [doctors, total, active, inactive, scheduled, specialties] = await Promise.all([
         Doctor.findAndCountAll({
             where: doctorWhere,
             include: [
@@ -102,10 +116,8 @@ export async function getAdminDoctors(query = {}) {
             distinct: true,
         }),
         Doctor.count(),
-        Doctor.count({
-            distinct: true,
-            include: [{ model: User, as: "user", where: { is_active: true }, required: true }],
-        }),
+        countDoctorsByAccountStatus(true),
+        countDoctorsByAccountStatus(false),
         Doctor.count({
             distinct: true,
             include: [{ model: DoctorAvailability, as: "availability", required: true }],
@@ -120,7 +132,7 @@ export async function getAdminDoctors(query = {}) {
     return {
         doctors: doctors.rows.map(formatDoctor),
         specialties,
-        stats: { total, active, scheduled, inactive: total - active },
+        stats: { total, active, scheduled, inactive },
         pagination: {
             page: requestedPage,
             pageSize: PAGE_SIZE,
