@@ -219,11 +219,6 @@ if (doctorsPage) {
             feedback.textContent = error.message;
         }
     }
-    doctorsPage.querySelector("[data-doctor-filters]").addEventListener("submit", (event) => {
-        event.preventDefault();
-        currentPage = 1;
-        load();
-    });
     search.addEventListener("input", () => {
         clearTimeout(searchDebounce);
         searchDebounce = setTimeout(() => {

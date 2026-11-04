@@ -100,11 +100,11 @@ const listMarkup = `
                 <article class="doctor-stat"><strong data-stat-inactive></strong></article>
             </section>
             <section class="doctors-panel">
-                <form class="doctors-filters" data-doctor-filters>
+                <div class="doctors-filters" role="search" aria-label="Buscar y filtrar médicos">
                     <label><input aria-label="Buscar médicos" data-doctor-search></label>
                     <label><select data-doctor-specialty><option value="">Todas</option></select></label>
                     <label><select data-doctor-status><option value="">Todos</option><option value="active">Activos</option></select></label>
-                </form>
+                </div>
                 <p class="doctors-feedback" data-doctor-feedback></p>
                 <div class="doctors-list" data-doctor-list></div>
                 <span data-doctor-page></span>
@@ -172,8 +172,12 @@ try {
 
     await listPage.locator("[data-doctor-next]").click();
     await listPage.getByText("Página 2 de 3").waitFor();
-    if (await listPage.locator("[data-doctor-filters] button[type=submit]").count()) {
-        throw new Error("The redundant doctor search button is still visible.");
+    if (
+        await listPage
+            .locator(".doctors-filters form, .doctors-filters button[type=submit]")
+            .count()
+    ) {
+        throw new Error("A manual doctor search control is still present.");
     }
     await listPage.locator("[data-doctor-status]").selectOption("active");
     await listPage.locator("[data-doctor-search]").fill("ana");
@@ -195,14 +199,6 @@ try {
     ) {
         throw new Error("Live search did not preserve filters or reset pagination.");
     }
-
-    const requestCountBeforeEnter = await listPage.evaluate(() => window.statusRequests.length);
-    await listPage.locator("[data-doctor-search]").fill("otra búsqueda");
-    await listPage.locator("[data-doctor-search]").press("Enter");
-    await listPage.waitForFunction(
-        (previousCount) => window.statusRequests.length > previousCount,
-        requestCountBeforeEnter,
-    );
 
     await listPage.evaluate(() => {
         window.delaySlowDoctorSearch = true;
