@@ -80,7 +80,7 @@
 }
 .doctors-filters {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) minmax(170px, 0.6fr) minmax(150px, 0.5fr) auto;
+    grid-template-columns: minmax(240px, 1fr) minmax(170px, 0.6fr) minmax(150px, 0.5fr);
     gap: 10px;
     margin-bottom: 16px;
 }
@@ -342,9 +342,6 @@
     }
     .doctors-filters label:first-child {
         grid-column: auto;
-    }
-    .doctors-filters button {
-        width: 100%;
     }
     .doctor-row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 9px; }
     .doctor-row-info { grid-column: 2; }

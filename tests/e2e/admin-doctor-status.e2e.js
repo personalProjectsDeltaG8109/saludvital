@@ -15,6 +15,7 @@ async function preparePage(page, markup, initialActive = true) {
     await page.evaluate((isActive) => {
         window.statusRequests = [];
         window.doctorIsActive = isActive;
+        window.delaySlowDoctorSearch = false;
         window.fetch = async (url, options = {}) => {
             window.statusRequests.push({ url: String(url), method: options.method || "GET" });
             if (String(url).endsWith("/status-impact")) {
@@ -39,6 +40,11 @@ async function preparePage(page, markup, initialActive = true) {
                     }),
                 };
             }
+            const requestUrl = new URL(String(url), "http://localhost");
+            const searchTerm = requestUrl.searchParams.get("search") || "";
+            if (window.delaySlowDoctorSearch && searchTerm === "lenta") {
+                await new Promise((resolve) => setTimeout(resolve, 400));
+            }
             return {
                 ok: true,
                 json: async () => ({
@@ -46,7 +52,12 @@ async function preparePage(page, markup, initialActive = true) {
                         {
                             id: 12,
                             userId: 7,
-                            name: "Dra. Ana Torres",
+                            name:
+                                searchTerm === "lenta"
+                                    ? "Resultado anterior"
+                                    : searchTerm === "rápida"
+                                      ? "Resultado reciente"
+                                      : "Dra. Ana Torres",
                             email: "ana@example.com",
                             specialty: "Medicina General",
                             isActive: window.doctorIsActive,
@@ -61,7 +72,11 @@ async function preparePage(page, markup, initialActive = true) {
                         scheduled: 1,
                         inactive: window.doctorIsActive ? 0 : 1,
                     },
-                    pagination: { page: 1, totalPages: 1, totalItems: 1 },
+                    pagination: {
+                        page: Number(requestUrl.searchParams.get("page")) || 1,
+                        totalPages: 3,
+                        totalItems: 21,
+                    },
                 }),
             };
         };
@@ -85,12 +100,11 @@ const listMarkup = `
                 <article class="doctor-stat"><strong data-stat-inactive></strong></article>
             </section>
             <section class="doctors-panel">
-                <form class="doctors-filters" data-doctor-filters>
-                    <label><input data-doctor-search></label>
+                <div class="doctors-filters" role="search" aria-label="Buscar y filtrar médicos">
+                    <label><input aria-label="Buscar médicos" data-doctor-search></label>
                     <label><select data-doctor-specialty><option value="">Todas</option></select></label>
-                    <label><select data-doctor-status><option value="">Todos</option></select></label>
-                    <button type="submit">Buscar</button>
-                </form>
+                    <label><select data-doctor-status><option value="">Todos</option><option value="active">Activos</option></select></label>
+                </div>
                 <p class="doctors-feedback" data-doctor-feedback></p>
                 <div class="doctors-list" data-doctor-list></div>
                 <span data-doctor-page></span>
@@ -155,6 +169,57 @@ try {
     await listPage.getByRole("button", { name: "Activar a Dra. Ana Torres" }).click();
     await listPage.getByRole("button", { name: "Desactivar a Dra. Ana Torres" }).waitFor();
     console.log("PASS: mobile doctor status confirmation, cancellation, and reactivation flow.");
+
+    await listPage.locator("[data-doctor-next]").click();
+    await listPage.getByText("Página 2 de 3").waitFor();
+    if (
+        await listPage
+            .locator(".doctors-filters form, .doctors-filters button[type=submit]")
+            .count()
+    ) {
+        throw new Error("A manual doctor search control is still present.");
+    }
+    await listPage.locator("[data-doctor-status]").selectOption("active");
+    await listPage.locator("[data-doctor-search]").fill("ana");
+    await listPage.waitForFunction(() =>
+        window.statusRequests.some((request) =>
+            new URL(request.url, "http://localhost").searchParams.has("search"),
+        ),
+    );
+    const liveSearchRequest = await listPage.evaluate(() => {
+        const request = [...window.statusRequests]
+            .reverse()
+            .find((item) => new URL(item.url, "http://localhost").searchParams.has("search"));
+        return Object.fromEntries(new URL(request.url, "http://localhost").searchParams);
+    });
+    if (
+        liveSearchRequest.search !== "ana" ||
+        liveSearchRequest.status !== "active" ||
+        liveSearchRequest.page !== "1"
+    ) {
+        throw new Error("Live search did not preserve filters or reset pagination.");
+    }
+
+    await listPage.evaluate(() => {
+        window.delaySlowDoctorSearch = true;
+    });
+    await listPage.locator("[data-doctor-search]").fill("lenta");
+    await listPage.waitForFunction(() =>
+        window.statusRequests.some(
+            (request) =>
+                new URL(request.url, "http://localhost").searchParams.get("search") === "lenta",
+        ),
+    );
+    await listPage.locator("[data-doctor-search]").fill("rápida");
+    await listPage.getByText("Resultado reciente").waitFor();
+    await listPage.waitForTimeout(450);
+    if (
+        !(await listPage.getByText("Resultado reciente").isVisible()) ||
+        (await listPage.getByText("Resultado anterior").count())
+    ) {
+        throw new Error("A stale doctor search response replaced newer results.");
+    }
+    console.log("PASS: live doctor search preserves filters and ignores stale responses.");
 
     const detailsPage = await browser.newPage({ viewport: { width: 320, height: 720 } });
     await preparePage(detailsPage, detailMarkup);

@@ -102,16 +102,27 @@ if (doctorsPage) {
     const list = doctorsPage.querySelector("[data-doctor-list]");
     const feedback = doctorsPage.querySelector("[data-doctor-feedback]");
     let currentPage = 1;
+    let searchDebounce;
+    let latestRequestId = 0;
+    let activeRequestController;
+
     async function load() {
+        clearTimeout(searchDebounce);
         feedback.textContent = "Cargando médicos…";
+        const requestId = ++latestRequestId;
+        activeRequestController?.abort();
+        activeRequestController = new AbortController();
         const params = new URLSearchParams({ page: String(currentPage) });
         if (search.value.trim()) params.set("search", search.value.trim());
         if (specialty.value) params.set("specialtyId", specialty.value);
         if (status.value) params.set("status", status.value);
         try {
-            const response = await fetch(`${doctorsPage.dataset.endpoint}?${params}`);
+            const response = await fetch(`${doctorsPage.dataset.endpoint}?${params}`, {
+                signal: activeRequestController.signal,
+            });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "No se pudo cargar el directorio.");
+            if (requestId !== latestRequestId) return;
             doctorsPage.querySelector("[data-stat-total]").textContent = data.stats.total;
             doctorsPage.querySelector("[data-stat-active]").textContent = data.stats.active;
             doctorsPage.querySelector("[data-stat-scheduled]").textContent = data.stats.scheduled;
@@ -204,13 +215,16 @@ if (doctorsPage) {
             doctorsPage.querySelector("[data-doctor-next]").disabled =
                 currentPage >= data.pagination.totalPages;
         } catch (error) {
+            if (error.name === "AbortError" || requestId !== latestRequestId) return;
             feedback.textContent = error.message;
         }
     }
-    doctorsPage.querySelector("[data-doctor-filters]").addEventListener("submit", (event) => {
-        event.preventDefault();
-        currentPage = 1;
-        load();
+    search.addEventListener("input", () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            currentPage = 1;
+            load();
+        }, 300);
     });
     for (const control of [specialty, status])
         control.addEventListener("change", () => {

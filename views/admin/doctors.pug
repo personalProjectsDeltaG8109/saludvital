@@ -38,13 +38,14 @@ html(lang="es")
                         span Inactivos
                         strong(data-stat-inactive) —
                 section.doctors-panel(aria-label="Directorio de médicos")
-                    form.doctors-filters(data-doctor-filters)
+                    .doctors-filters(role="search", aria-label="Buscar y filtrar médicos")
                         label
                             span.sr-only Buscar médicos
                             input(
                                 type="search",
                                 maxlength="100",
                                 placeholder="Buscar por nombre o correo electrónico...",
+                                aria-label="Buscar médicos por nombre o correo electrónico",
                                 data-doctor-search
                             )
                         label
@@ -57,7 +58,6 @@ html(lang="es")
                                 option(value="") Todos los estados
                                 option(value="active") Activos
                                 option(value="inactive") Inactivos
-                        button.doctors-secondary-button(type="submit") Buscar
                     p.doctors-feedback(role="status", aria-live="polite", data-doctor-feedback) Cargando médicosâ€¦
                     .doctors-list(data-doctor-list)
                     footer.doctors-pagination
