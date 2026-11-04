@@ -111,6 +111,22 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test.each([
+        ["GET", "/admin/doctors/new"],
+        ["POST", "/api/admin/doctors"],
+        ["GET", "/admin/users"],
+        ["GET", "/api/admin/users"],
+        ["PATCH", "/api/admin/users/7"],
+    ])("%s %s requires an authenticated administrator", async (method, url) => {
+        const response = await request(app)
+            [method.toLowerCase()](url)
+            .send({ displayName: "Test", email: "test@example.com" })
+            .redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("doctor profile page requires an authenticated doctor", async () => {
         const response = await request(app).get("/doctor/profile").redirects(0);
 
