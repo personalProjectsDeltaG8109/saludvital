@@ -148,7 +148,10 @@ try {
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
-        { label: "tablet", width: 768, height: 1024 },
+        { label: "small tablet", width: 768, height: 1024 },
+        { label: "tablet", width: 900, height: 1024 },
+        { label: "compact desktop", width: 1000, height: 900 },
+        { label: "desktop breakpoint", width: 1001, height: 900 },
         { label: "desktop", width: 1440, height: 900 },
     ]) {
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -159,6 +162,45 @@ try {
         if (layout.documentWidth > layout.viewportWidth) {
             throw new Error(
                 `Specialties page overflows at ${viewport.label}: ${JSON.stringify(layout)}`,
+            );
+        }
+        const rowLayout = await page
+            .locator(".specialties-table tbody tr:not(.specialties-empty-row)")
+            .evaluate((row) => {
+                const cells = [...row.querySelectorAll("td")].filter(
+                    (cell) => getComputedStyle(cell).display !== "none",
+                );
+                const boxes = cells.map((cell) => {
+                    const rect = cell.getBoundingClientRect();
+                    return {
+                        left: rect.left,
+                        right: rect.right,
+                        top: rect.top,
+                        bottom: rect.bottom,
+                    };
+                });
+                const actions = row.querySelector("td:nth-child(6)");
+                const actionBounds = actions.getBoundingClientRect();
+                const actionsFit = [...actions.querySelectorAll("a, button")].every((control) => {
+                    const rect = control.getBoundingClientRect();
+                    return rect.left >= actionBounds.left && rect.right <= actionBounds.right;
+                });
+                const cellsOverlap = boxes.some((first, index) =>
+                    boxes
+                        .slice(index + 1)
+                        .some(
+                            (second) =>
+                                first.left < second.right &&
+                                first.right > second.left &&
+                                first.top < second.bottom &&
+                                first.bottom > second.top,
+                        ),
+                );
+                return { cellsOverlap, actionsFit };
+            });
+        if (rowLayout.cellsOverlap || !rowLayout.actionsFit) {
+            throw new Error(
+                `Specialty row content overlaps at ${viewport.label}: ${JSON.stringify(rowLayout)}`,
             );
         }
         await page.getByRole("button", { name: "Desactivar Medicina General" }).waitFor();
