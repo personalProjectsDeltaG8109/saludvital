@@ -4,6 +4,7 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
     default: { transaction: jest.fn(async (callback) => callback({ id: "transaction" })) },
 }));
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
+    AppointmentHistory: { findAll: jest.fn() },
     Notification: {},
     NotificationPreference: { findAll: jest.fn(), upsert: jest.fn() },
     Patient: { findOne: jest.fn() },

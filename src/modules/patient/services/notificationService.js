@@ -1,6 +1,11 @@
 import database from "../../../../config/database.js";
 import { Op } from "sequelize";
-import { Notification, NotificationPreference, Patient } from "../../../models/associations.js";
+import {
+    AppointmentHistory,
+    Notification,
+    NotificationPreference,
+    Patient,
+} from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
 
@@ -45,6 +50,12 @@ const historyEventLabels = {
     appointment_reschedule: "Cambios o reprogramaciones",
     appointment_cancellation: "Cancelaciones",
     promotion: "Novedades y promociones",
+};
+
+const appointmentActivityLabels = {
+    Created: "Cita creada y confirmada",
+    Rescheduled: "Cita reprogramada",
+    Cancelled: "Cita cancelada",
 };
 
 function validateNotificationContacts(contacts = {}) {
@@ -102,10 +113,101 @@ function toHistoryItem(notification) {
         channel: channelLabels[notification.channel] || notification.channel,
         channelKey: notification.channel,
         status: notification.status,
+        statusLabel: getDeliveryStatusLabel(notification.status),
         date: notification.sent_at || notification.scheduled_at,
         readAt: notification.read_at,
         details: historyDetails[eventKey] || "Tienes una actualización de SaludVital.",
     };
+}
+
+function getDeliveryStatusLabel(status) {
+    const labels = {
+        Pending: "Pendiente",
+        Processing: "En proceso",
+        Sent: "Aceptado por el proveedor",
+        Failed: "Fallido",
+        Cancelled: "Cancelado",
+    };
+    return labels[status] || "Estado no disponible";
+}
+
+function getAppointmentStartAt(historyRecord) {
+    const recordedValues =
+        historyRecord.event_type === "Cancelled"
+            ? historyRecord.previous_values
+            : historyRecord.new_values;
+    return (
+        recordedValues?.start_at ||
+        recordedValues?.startAt ||
+        historyRecord.appointment?.start_at ||
+        null
+    );
+}
+
+function formatAppointmentSchedule(startAt) {
+    if (!startAt) return null;
+    const date = new Date(startAt);
+    if (Number.isNaN(date.getTime())) return null;
+    const dateLabel = new Intl.DateTimeFormat("es-CO", {
+        dateStyle: "medium",
+        timeZone: "America/Bogota",
+    }).format(date);
+    const timeLabel = new Intl.DateTimeFormat("es-CO", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/Bogota",
+    }).format(date);
+    return `${dateLabel} a las ${timeLabel}`;
+}
+
+function toAppointmentActivityItem(historyRecord) {
+    const schedule = formatAppointmentSchedule(getAppointmentStartAt(historyRecord));
+    const details = {
+        Created: schedule
+            ? `Tu cita quedó confirmada para ${schedule}.`
+            : "Tu cita quedó creada y confirmada.",
+        Rescheduled: schedule
+            ? `Tu cita fue reprogramada para ${schedule}.`
+            : "Tu cita fue reprogramada.",
+        Cancelled: schedule
+            ? `Tu cita programada para ${schedule} fue cancelada.`
+            : "Tu cita fue cancelada.",
+    };
+    const occurredAt = new Date(historyRecord.occurred_at);
+
+    return {
+        id: `appointment-${historyRecord.id}`,
+        isInAppActivity: true,
+        eventLabel: appointmentActivityLabels[historyRecord.event_type],
+        channel: "En SaludVital",
+        channelKey: "System",
+        statusLabel: "Registrada",
+        date: occurredAt,
+        readAt: occurredAt,
+        details: details[historyRecord.event_type],
+    };
+}
+
+async function getPatientAppointmentActivity(patientId) {
+    const history = await AppointmentHistory.findAll({
+        where: { event_type: { [Op.in]: Object.keys(appointmentActivityLabels) } },
+        attributes: ["id", "event_type", "previous_values", "new_values", "occurred_at"],
+        include: [
+            {
+                association: "appointment",
+                attributes: ["id", "start_at"],
+                where: { patient_id: patientId },
+                required: true,
+            },
+        ],
+        order: [
+            ["occurred_at", "DESC"],
+            ["id", "DESC"],
+        ],
+        limit: 20,
+    });
+
+    return history.map(toAppointmentActivityItem);
 }
 
 function getEnabledChannelStates(storedPreferences) {
@@ -154,7 +256,7 @@ export async function getPatientNotificationSettings(userId, { markVisibleAsRead
         };
     }
 
-    const [storedPreferences, notifications] = await Promise.all([
+    const [storedPreferences, notifications, appointmentActivity] = await Promise.all([
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
         Notification.findAll({
             where: { patient_id: patient.id },
@@ -170,21 +272,26 @@ export async function getPatientNotificationSettings(userId, { markVisibleAsRead
             order: [["scheduled_at", "DESC"]],
             limit: 20,
         }),
+        getPatientAppointmentActivity(patient.id),
     ]);
 
+    const history = [...notifications.map(toHistoryItem), ...appointmentActivity]
+        .sort((first, second) => new Date(second.date) - new Date(first.date))
+        .slice(0, 20);
+
     if (markVisibleAsRead) {
-        const visibleIds = notifications
+        const visibleIds = history
             .slice(0, 2)
-            .filter((notification) => !notification.read_at)
-            .map((notification) => notification.id);
+            .filter((item) => !item.isInAppActivity && !item.readAt)
+            .map((item) => item.id);
         if (visibleIds.length) {
             const readAt = new Date();
             await Notification.update(
                 { read_at: readAt },
                 { where: { patient_id: patient.id, id: { [Op.in]: visibleIds }, read_at: null } },
             );
-            notifications.forEach((notification) => {
-                if (visibleIds.includes(notification.id)) notification.read_at = readAt;
+            history.forEach((item) => {
+                if (visibleIds.includes(item.id)) item.readAt = readAt;
             });
         }
     }
@@ -217,7 +324,7 @@ export async function getPatientNotificationSettings(userId, { markVisibleAsRead
             email: patient.notification_email || patient.user.email,
         },
         preferences,
-        history: notifications.map(toHistoryItem),
+        history,
     };
 }
 
