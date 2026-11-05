@@ -306,6 +306,13 @@ if (appointmentsPage) {
         });
     }
 
+    function refreshFromFirstPage() {
+        clearTimeout(searchDebounce);
+        searchDebounce = null;
+        currentPage = 1;
+        loadAppointments();
+    }
+
     function renderStats(stats) {
         appointmentsPage.querySelector("[data-stat-total]").textContent = stats.total;
         appointmentsPage.querySelector("[data-stat-confirmed]").textContent = stats.Confirmed;
@@ -375,8 +382,7 @@ if (appointmentsPage) {
     search.addEventListener("input", () => {
         clearTimeout(searchDebounce);
         searchDebounce = setTimeout(() => {
-            currentPage = 1;
-            loadAppointments();
+            refreshFromFirstPage();
         }, SEARCH_DEBOUNCE_MS);
     });
     tabs.addEventListener("click", (event) => {
@@ -388,9 +394,11 @@ if (appointmentsPage) {
         loadAppointments();
     });
     status.addEventListener("change", () => {
-        currentPage = 1;
         syncSelectedTab(status.value);
-        loadAppointments();
+        refreshFromFirstPage();
+    });
+    [fromDate, toDate, specialty, doctor].forEach((filter) => {
+        filter.addEventListener("change", refreshFromFirstPage);
     });
     pageSize.addEventListener("change", () => {
         currentPage = 1;
