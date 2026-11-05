@@ -622,3 +622,10 @@
     .admin-whatsapp-record-list > li,
     .admin-whatsapp-conversation-open { transition: none; }
 }
+
+@media (max-width: 800px) {
+    .admin-whatsapp-dashboard-grid,
+    .admin-whatsapp-lower-grid { grid-template-columns: minmax(0, 1fr); }
+    .admin-whatsapp-chatbot-card { grid-column: auto; }
+    .admin-whatsapp-request-table { min-width: 450px; }
+}

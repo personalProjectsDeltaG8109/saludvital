@@ -306,7 +306,7 @@ try {
     if (await page.locator(".admin-whatsapp-message script").count()) {
         throw new Error("Persisted message content must render as text, not executable markup.");
     }
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 760, 761, 762, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         const hasHorizontalOverflow = await page.evaluate(
             () => document.documentElement.scrollWidth > window.innerWidth,
@@ -344,7 +344,7 @@ try {
     if ((await page.locator("[data-whatsapp-panel]").innerText()).includes("+573001234567")) {
         throw new Error("The request list must not expose a full contact number.");
     }
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 760, 761, 762, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         const hasHorizontalOverflow = await page.evaluate(
             () => document.documentElement.scrollWidth > window.innerWidth,
@@ -390,7 +390,7 @@ try {
     if ((await page.locator("[data-whatsapp-panel]").innerText()).includes("+573001234567")) {
         throw new Error("The delivery list must not expose a full contact number.");
     }
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 760, 761, 762, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         const hasHorizontalOverflow = await page.evaluate(
             () => document.documentElement.scrollWidth > window.innerWidth,
@@ -448,7 +448,7 @@ try {
     if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
         throw new Error("The local configuration filter must show only configured templates.");
     }
-    for (const width of [320, 375, 768, 1440]) {
+    for (const width of [320, 375, 760, 761, 762, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });
         const hasHorizontalOverflow = await page.evaluate(
             () => document.documentElement.scrollWidth > window.innerWidth,
@@ -460,12 +460,22 @@ try {
     await page.getByRole("tab", { name: "Resumen" }).click();
     await page.locator(".admin-whatsapp-bar-item").nth(29).waitFor();
 
-    for (const width of [320, 375, 768, 1024, 1440]) {
+    for (const width of [320, 375, 760, 761, 762, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
-        const hasHorizontalOverflow = await page.evaluate(
-            () => document.documentElement.scrollWidth > window.innerWidth,
-        );
-        if (hasHorizontalOverflow) {
+        const layout = await page.evaluate(() => ({
+            hasHorizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+            dashboardColumns: getComputedStyle(
+                document.querySelector(".admin-whatsapp-dashboard-grid"),
+            ).gridTemplateColumns.split(" ").length,
+            lowerColumns: getComputedStyle(
+                document.querySelector(".admin-whatsapp-lower-grid"),
+            ).gridTemplateColumns.split(" ").length,
+        }));
+        const requiresSingleColumn = width > 760 && width <= 800;
+        if (requiresSingleColumn && (layout.dashboardColumns !== 1 || layout.lowerColumns !== 1)) {
+            throw new Error(`WhatsApp dashboard cards must stack at ${width}px.`);
+        }
+        if (layout.hasHorizontalOverflow) {
             throw new Error(`The WhatsApp overview overflows horizontally at ${width}px.`);
         }
     }
