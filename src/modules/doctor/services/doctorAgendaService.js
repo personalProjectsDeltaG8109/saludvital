@@ -18,6 +18,7 @@ const APPOINTMENT_STATUS_LABELS = {
     "In Progress": "En curso",
     Attended: "Atendida",
     Cancelled: "Cancelada",
+    "No Show": "No asistió",
 };
 
 const EXCEPTION_TYPE_LABELS = {

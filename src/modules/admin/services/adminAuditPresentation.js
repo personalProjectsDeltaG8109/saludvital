@@ -14,6 +14,8 @@ const ACTION_LABELS = {
     AppointmentCancelled: "Cancelación de cita",
     AppointmentCreated: "Creación de cita",
     AppointmentRescheduled: "Reprogramación de cita",
+    AppointmentMarkedNoShow: "Inasistencia de cita",
+    DoctorConsultationStarted: "Inicio de consulta médica",
     AdminDoctorActivated: "Activación de médico",
     AdminDoctorCreated: "Registro de médico",
     AdminDoctorDeactivated: "Desactivación de médico",

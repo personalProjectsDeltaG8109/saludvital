@@ -10,6 +10,7 @@ const STATUS_LABELS = {
     "In Progress": "En curso",
     Attended: "Asistida",
     Cancelled: "Cancelada",
+    "No Show": "No asistió",
 };
 const MAX_RESCHEDULES = 3;
 

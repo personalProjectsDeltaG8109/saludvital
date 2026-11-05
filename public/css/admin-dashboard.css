@@ -171,6 +171,7 @@ a.admin-nav-link:hover, a.admin-nav-link:focus-visible, .admin-nav-link.is-activ
 .legend-scheduled { --legend-color: #2078c7; }
 .legend-completed { --legend-color: #20c4bb; }
 .legend-cancelled { --legend-color: #a5cafa; }
+.legend-no-show { --legend-color: #ef9f56; }
 .admin-chart { display: grid; min-height: 176px; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; gap: 6px; padding: 12px 4px 0; border-bottom: 1px solid #e7edf4; background: repeating-linear-gradient(to bottom, transparent 0, transparent 42px, #eaf0f6 43px, transparent 44px); }
 .admin-chart-day { display: grid; height: 100%; min-width: 0; grid-template-rows: 1fr auto; align-items: end; gap: 5px; }
 .admin-chart-bars { display: flex; height: 100%; align-items: end; justify-content: center; gap: 3px; }
@@ -178,6 +179,7 @@ a.admin-nav-link:hover, a.admin-nav-link:focus-visible, .admin-nav-link.is-activ
 .admin-chart-bar.is-scheduled { background: linear-gradient(#388fdb, #1865ae); }
 .admin-chart-bar.is-completed { background: linear-gradient(#3ed0c6, #16a99f); }
 .admin-chart-bar.is-cancelled { background: linear-gradient(#bedcff, #94bced); }
+.admin-chart-bar.is-no-show { background: linear-gradient(#ffc27e, #e58c35); }
 .admin-chart-day > span { min-height: 25px; color: #627a9b; font-size: 9px; text-align: center; }
 .admin-chart-feedback { min-height: 16px; margin: 5px 0 0; color: #6f83a0; font-size: 10px; }
 .admin-chart-table { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }

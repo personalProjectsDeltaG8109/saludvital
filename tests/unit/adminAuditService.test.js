@@ -408,4 +408,27 @@ describe("administrator audit log directory", () => {
         expect(result.description).toBe("Se actualizó la foto de perfil de un administrador.");
         expect(JSON.stringify(result)).not.toContain("/uploads/profile-photos/");
     });
+
+    test("describes automatic no-show and late consultation audit events in Spanish", async () => {
+        AuditLog.findByPk.mockResolvedValue({
+            id: 27,
+            actor_user_id: null,
+            actor_snapshot: "System appointment scheduler",
+            action: "AppointmentMarkedNoShow",
+            target_type: "Appointment",
+            target_id: "123",
+            result: "Success",
+            occurred_at: new Date("2026-10-27T15:30:00.000Z"),
+            changes: {
+                previous: { status: "Confirmed" },
+                next: { status: "No Show" },
+            },
+        });
+
+        const result = await getAdminAuditEvent("27");
+
+        expect(result.action).toBe("Inasistencia de cita");
+        expect(result.description).toBe("La cita se marcó como inasistencia.");
+        expect(JSON.stringify(result)).toContain("No asistió");
+    });
 });

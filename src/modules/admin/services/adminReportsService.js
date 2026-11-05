@@ -14,7 +14,7 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_REPORT_DAYS = 30;
 const SUPPORTED_REPORT_DAYS = [7, 30, 90];
 const TOP_DOCTOR_LIMIT = 5;
-const APPOINTMENT_STATUSES = ["Confirmed", "In Progress", "Attended", "Cancelled"];
+const APPOINTMENT_STATUSES = ["Confirmed", "In Progress", "Attended", "Cancelled", "No Show"];
 const STATUS_CHART_STATUSES = ["Confirmed", "Cancelled", "Rescheduled"];
 const STATUS_PRESENTATION = {
     Confirmed: { label: "Confirmadas", color: "#13b87a" },

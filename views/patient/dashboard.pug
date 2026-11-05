@@ -69,7 +69,7 @@ html(lang="es")
                                     - const appointmentDate = new Date(nextAppointment.start_at);
                                     - const appointmentStatus = nextAppointment.status.name;
                                     - const appointmentStatusClass = appointmentStatus === "In Progress" ? "in-progress" : appointmentStatus.toLowerCase();
-                                    - const appointmentStatusLabel = appointmentStatus === "In Progress" ? "En curso" : "Confirmada";
+                                    - const appointmentStatusLabel = appointmentStatus === "In Progress" ? "En curso" : appointmentStatus === "No Show" ? "No asistió" : "Confirmada";
                                     - const appointmentId = nextAppointment.id;
                                     .sv-appointment-content
                                         .sv-date-tile
@@ -250,7 +250,7 @@ html(lang="es")
                                                 each appointment in upcomingAppointments
                                                     - const recentStatus = appointment.status.name;
                                                     - const recentStatusClass = recentStatus === "In Progress" ? "status-in-progress" : recentStatus === "Attended" ? "status-blue" : recentStatus === "Cancelled" ? "status-red" : "";
-                                                    - const recentStatusLabel = recentStatus === "In Progress" ? "En curso" : recentStatus === "Attended" ? "Atendida" : recentStatus === "Cancelled" ? "Cancelada" : "Confirmada";
+                                                    - const recentStatusLabel = recentStatus === "In Progress" ? "En curso" : recentStatus === "Attended" ? "Atendida" : recentStatus === "Cancelled" ? "Cancelada" : recentStatus === "No Show" ? "No asistió" : "Confirmada";
                                                     tr
                                                         td= new Date(appointment.start_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" })
                                                         td= (appointment.specialty && appointment.specialty.name) || "Consulta médica"

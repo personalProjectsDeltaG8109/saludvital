@@ -1,4 +1,5 @@
 import database from "../../../../config/database.js";
+import AuditLog from "../../../models/AuditLog.js";
 import {
     Appointment,
     AppointmentHistory,
@@ -13,6 +14,7 @@ import {
 } from "../../../models/associations.js";
 
 const CONFIRMED_STATUS = "Confirmed";
+const NO_SHOW_STATUS = "No Show";
 const IN_PROGRESS_APPOINTMENT_STATUS = "In Progress";
 const ACTIVE_CONSULTATION_STATUS = "InProgress";
 const COMPLETED_CONSULTATION_STATUS = "Completed";
@@ -82,8 +84,11 @@ export async function startDoctorConsultation(userId, rawAppointmentId) {
             transaction,
         });
 
-        if (appointmentStatus?.name !== CONFIRMED_STATUS) {
-            throw createServiceError("Solo puedes iniciar una cita confirmada.", 409);
+        if (![CONFIRMED_STATUS, NO_SHOW_STATUS].includes(appointmentStatus?.name)) {
+            throw createServiceError(
+                "Solo puedes iniciar una cita confirmada o una cita marcada como inasistencia.",
+                409,
+            );
         }
 
         const activeConsultation = await Consultation.findOne({
@@ -129,13 +134,36 @@ export async function startDoctorConsultation(userId, rawAppointmentId) {
                 actor_user_id: userId,
                 actor_snapshot: `Doctor ${doctor.id}`,
                 event_type: "ConsultationStarted",
-                previous_values: { status: CONFIRMED_STATUS },
+                previous_values: { status: appointmentStatus.name },
                 new_values: {
                     status: IN_PROGRESS_APPOINTMENT_STATUS,
                     consultation_id: consultation.id,
                     started_at: startedAt.toISOString(),
                 },
-                reason: "Doctor started the appointment consultation.",
+                reason:
+                    appointmentStatus.name === NO_SHOW_STATUS
+                        ? "Doctor started the consultation after the patient arrived late."
+                        : "Doctor started the appointment consultation.",
+                occurred_at: startedAt,
+            },
+            { transaction },
+        );
+        await AuditLog.create(
+            {
+                actor_user_id: userId,
+                actor_snapshot: `Doctor ${doctor.id}`,
+                action: "DoctorConsultationStarted",
+                target_type: "Appointment",
+                target_id: String(appointment.id),
+                changes: {
+                    previous: { status: appointmentStatus.name },
+                    next: { status: IN_PROGRESS_APPOINTMENT_STATUS },
+                },
+                reason:
+                    appointmentStatus.name === NO_SHOW_STATUS
+                        ? "Doctor started the consultation after the patient arrived late."
+                        : "Doctor started the appointment consultation.",
+                result: "Success",
                 occurred_at: startedAt,
             },
             { transaction },

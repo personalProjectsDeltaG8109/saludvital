@@ -2,6 +2,10 @@ import app from "./app.js";
 import database from "./config/database.js";
 import environment from "./config/environment.js";
 import {
+    startNoShowAppointmentScheduler,
+    stopNoShowAppointmentScheduler,
+} from "./src/modules/admin/services/noShowAppointmentScheduler.js";
+import {
     startEmailOutboxScheduler,
     stopEmailOutboxScheduler,
 } from "./src/modules/auth/services/emailOutboxScheduler.js";
@@ -32,6 +36,8 @@ async function startServer() {
         // Process appointment notifications only when explicitly enabled in the environment.
         startNotificationScheduler();
         startWhatsAppRetentionScheduler();
+        // Recover missed appointments at startup and continue on a bounded interval.
+        startNoShowAppointmentScheduler();
     });
 
     // Handle graceful shutdown requests from the operating system.
@@ -51,6 +57,7 @@ async function startServer() {
             await stopUnverifiedRegistrationCleanupScheduler();
             await stopNotificationScheduler();
             await stopWhatsAppRetentionScheduler();
+            await stopNoShowAppointmentScheduler();
 
             // Stop accepting requests before closing the database connection.
             await new Promise((resolve, reject) => {

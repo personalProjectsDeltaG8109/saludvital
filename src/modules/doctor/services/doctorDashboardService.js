@@ -95,6 +95,7 @@ function getAppointmentStatusLabel(status) {
             "In Progress": "En curso",
             Attended: "Atendida",
             Cancelled: "Cancelada",
+            "No Show": "No asistió",
         }[status] ||
         status ||
         "Programada"
@@ -297,7 +298,8 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
             consultationId:
                 appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
-            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+            canStart:
+                ["Confirmed", "No Show"].includes(appointment.status?.name) && !activeConsultation,
             hasActiveConsultation: Boolean(activeConsultation),
         })),
         nextAppointment: serializeNextAppointment(
@@ -531,14 +533,15 @@ export async function getDoctorAppointments(userId, query = {}) {
             consultationId:
                 appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
             specialty: appointment.specialty?.name || "Consulta médica",
-            canStart: appointment.status?.name === "Confirmed" && !activeConsultation,
+            canStart:
+                ["Confirmed", "No Show"].includes(appointment.status?.name) && !activeConsultation,
             hasActiveConsultation: Boolean(activeConsultation),
         })),
         appointmentFilters: { ...filters, page },
         appointmentStatuses: statusRows
             .filter((status) => status.name !== "In Progress")
             .sort((first, second) => {
-                const statusOrder = { Confirmed: 0, Attended: 1, Cancelled: 2 };
+                const statusOrder = { Confirmed: 0, Attended: 1, Cancelled: 2, "No Show": 3 };
                 return (statusOrder[first.name] ?? 3) - (statusOrder[second.name] ?? 3);
             })
             .map((status) => ({
@@ -549,6 +552,7 @@ export async function getDoctorAppointments(userId, query = {}) {
                         Confirmed: "Confirmadas",
                         Attended: "Atendidas",
                         Cancelled: "Canceladas",
+                        "No Show": "No asistió",
                     }[status.name] || getAppointmentStatusLabel(status.name),
                 count: counts[status.name] || 0,
             })),

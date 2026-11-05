@@ -73,6 +73,7 @@ function buildWeekDays(start) {
             scheduled: 0,
             completed: 0,
             cancelled: 0,
+            noShow: 0,
         };
     });
 }
@@ -226,6 +227,7 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
         if (["Confirmed", "In Progress"].includes(row.status)) day.scheduled += count;
         if (row.status === "Attended") day.completed += count;
         if (row.status === "Cancelled") day.cancelled += count;
+        if (row.status === "No Show") day.noShow += count;
     }
 
     const statusCounts = Object.fromEntries(
@@ -245,6 +247,7 @@ export async function getAdminDashboardData(query = {}, adminUserId = null) {
             activePatients,
             appointmentsToday: appointmentCountToday,
             completedAppointmentsToday: statusCounts.Attended || 0,
+            missedAppointmentsToday: statusCounts["No Show"] || 0,
             activeDoctors,
             pendingWhatsAppRequests: pendingRequests,
         },

@@ -69,7 +69,7 @@ html(lang="es")
                         div
                             p Citas de hoy
                             strong= dashboard.metrics.appointmentsToday.toLocaleString("es-CO")
-                            small= dashboard.metrics.completedAppointmentsToday.toLocaleString("es-CO") + " completadas"
+                            small= dashboard.metrics.completedAppointmentsToday.toLocaleString("es-CO") + " completadas · " + dashboard.metrics.missedAppointmentsToday.toLocaleString("es-CO") + " no asistieron"
                     article.admin-metric-card.metric-doctors
                         span.admin-metric-icon(aria-hidden="true")
                             svg(
@@ -115,10 +115,11 @@ html(lang="es")
                             li.legend-scheduled Programadas
                             li.legend-completed Completadas
                             li.legend-cancelled Canceladas
+                            li.legend-no-show No asistieron
                         .admin-chart(
                             data-week-chart,
                             role="img",
-                            aria-label="Citas programadas, completadas y canceladas por día"
+                            aria-label="Citas programadas, completadas, canceladas y no asistidas por día"
                         )
                         p.admin-chart-feedback(
                             role="status",
@@ -133,6 +134,7 @@ html(lang="es")
                                     th Programadas
                                     th Completadas
                                     th Canceladas
+                                    th No asistieron
                             tbody(data-chart-table-body)
                     section.admin-card.admin-specialty-card(
                         aria-labelledby="admin-specialty-title"

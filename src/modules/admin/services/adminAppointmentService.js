@@ -14,9 +14,10 @@ const STATUS_LABELS = {
     "In Progress": "En curso",
     Attended: "Asistida",
     Cancelled: "Cancelada",
+    "No Show": "No asistió",
 };
 const SUPPORTED_STATUSES = Object.keys(STATUS_LABELS);
-const STATUS_PRIORITY = ["Confirmed", "In Progress", "Attended", "Cancelled"];
+const STATUS_PRIORITY = ["Confirmed", "In Progress", "Attended", "Cancelled", "No Show"];
 
 function serviceError(message, statusCode = 400) {
     const error = new Error(message);

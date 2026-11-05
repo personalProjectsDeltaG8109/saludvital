@@ -33,6 +33,7 @@ describe("administrator profile page", () => {
                     activePatients: 0,
                     appointmentsToday: 0,
                     completedAppointmentsToday: 0,
+                    missedAppointmentsToday: 0,
                     activeDoctors: 0,
                     pendingWhatsAppRequests: 0,
                 },
