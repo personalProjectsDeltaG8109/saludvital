@@ -3,6 +3,7 @@ import { sendSms } from "./smsService.js";
 import { sendWhatsApp } from "./whatsappService.js";
 
 const TEMPLATE_PARAMETER_FIELDS = {
+    appointment_confirmation: ["date", "time", "doctor", "specialty"],
     appointment_reminder: ["date", "time"],
     appointment_reschedule: ["date", "time"],
     appointment_cancellation: ["date"],
@@ -14,6 +15,9 @@ function messageFor(notification) {
     const careTeam = [doctor, specialty].filter(Boolean).join(" · ");
     const details = careTeam ? ` con ${careTeam}` : "";
 
+    if (notification.event_type === "appointment_confirmation") {
+        return `SaludVital: Tu cita quedó confirmada para ${appointment}${details}.`;
+    }
     if (notification.event_type === "appointment_reminder") {
         return `SaludVital: Te recordamos tu cita ${appointment}${details}.`;
     }

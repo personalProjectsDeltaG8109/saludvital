@@ -1,6 +1,9 @@
 const GRAPH_API_BASE_URL = "https://graph.facebook.com";
 
 const TEMPLATE_CONFIGURATION = {
+    appointment_confirmation: {
+        nameKey: "META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME",
+    },
     appointment_reminder: {
         nameKey: "META_WHATSAPP_REMINDER_TEMPLATE_NAME",
     },

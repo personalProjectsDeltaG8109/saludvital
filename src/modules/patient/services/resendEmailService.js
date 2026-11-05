@@ -1,6 +1,7 @@
 const RESEND_SEND_URL = "https://api.resend.com/emails";
 
 const EVENT_SUBJECTS = {
+    appointment_confirmation: "Confirmación de tu cita en SaludVital",
     appointment_reminder: "Recordatorio de tu cita en SaludVital",
     appointment_reschedule: "Actualización de tu cita en SaludVital",
     appointment_cancellation: "Cancelación de tu cita en SaludVital",
@@ -52,6 +53,7 @@ export async function sendResendEmail({ to, eventType, body }) {
 
     const { apiKey, from } = getConfiguration();
     const eventKey = {
+        appointment_confirmation: "CONFIRMATION",
         appointment_reminder: "REMINDER",
         appointment_reschedule: "RESCHEDULE",
         appointment_cancellation: "CANCELLATION",
