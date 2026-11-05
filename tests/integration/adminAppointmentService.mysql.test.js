@@ -31,7 +31,9 @@ describe("Admin appointment service MySQL integration", () => {
         expect(result.pagination.pageSize).toBe(10);
         expect(
             result.statuses.every((status) =>
-                ["Confirmed", "In Progress", "Attended", "Cancelled"].includes(status.value),
+                ["Confirmed", "In Progress", "Attended", "Cancelled", "No Show"].includes(
+                    status.value,
+                ),
             ),
         ).toBe(true);
         for (const appointment of result.appointments) {

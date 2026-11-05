@@ -108,6 +108,7 @@ describe("administrator reports service", () => {
             "In Progress",
             "Attended",
             "Cancelled",
+            "No Show",
         ]);
         expect(Appointment.count).toHaveBeenCalledWith(
             expect.objectContaining({ distinct: true, col: "patient_id" }),

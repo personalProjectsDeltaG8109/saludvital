@@ -39,6 +39,7 @@ const supportedStatuses = [
     { id: 2, name: "In Progress" },
     { id: 3, name: "Attended" },
     { id: 4, name: "Cancelled" },
+    { id: 5, name: "No Show" },
 ];
 
 function createAppointment() {
@@ -97,11 +98,12 @@ describe("admin appointment directory service", () => {
         expect(JSON.stringify(result)).not.toContain("private clinical information");
         expect(JSON.stringify(result)).not.toContain("3001234567");
         expect(result.stats).toEqual({
-            total: 4,
+            total: 5,
             Confirmed: 1,
             "In Progress": 1,
             Attended: 1,
             Cancelled: 1,
+            "No Show": 1,
         });
         expect(result.pagination).toMatchObject({ page: 2, pageSize: 25, totalItems: 1 });
         expect(Appointment.findAndCountAll).toHaveBeenCalledWith(

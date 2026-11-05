@@ -15,13 +15,13 @@ describe("Initial appointment statuses seeder", () => {
         };
     });
 
-    test("inserts all four statuses when the catalog is empty", async () => {
+    test("inserts all five statuses when the catalog is empty", async () => {
         // Simulate an empty appointment status catalog.
         queryInterface.sequelize.query.mockResolvedValue([[]]);
 
         await up(queryInterface);
 
-        // Confirm that exactly the four expected statuses are inserted.
+        // Confirm that every supported appointment status is inserted.
         expect(queryInterface.bulkInsert).toHaveBeenCalledTimes(1);
 
         const [tableName, insertedStatuses] = queryInterface.bulkInsert.mock.calls[0];
@@ -32,6 +32,7 @@ describe("Initial appointment statuses seeder", () => {
             "In Progress",
             "Attended",
             "Cancelled",
+            "No Show",
         ]);
 
         // Every inserted record must include the audit timestamps.
@@ -49,20 +50,25 @@ describe("Initial appointment statuses seeder", () => {
 
         await up(queryInterface);
 
-        // Only In Progress and Cancelled should be added.
+        // Only statuses missing from the catalog should be added.
         const [, insertedStatuses] = queryInterface.bulkInsert.mock.calls[0];
 
-        expect(insertedStatuses.map((status) => status.name)).toEqual(["In Progress", "Cancelled"]);
+        expect(insertedStatuses.map((status) => status.name)).toEqual([
+            "In Progress",
+            "Cancelled",
+            "No Show",
+        ]);
     });
 
     test("does not insert records when all statuses already exist", async () => {
-        // Simulate a catalog that already contains all four statuses.
+        // Simulate a catalog that already contains every supported status.
         queryInterface.sequelize.query.mockResolvedValue([
             [
                 { name: "Confirmed" },
                 { name: "In Progress" },
                 { name: "Attended" },
                 { name: "Cancelled" },
+                { name: "No Show" },
             ],
         ]);
 

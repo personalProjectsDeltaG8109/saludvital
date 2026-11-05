@@ -147,7 +147,9 @@ describe("admin weekly doctor schedule service", () => {
                 include: [
                     expect.objectContaining({
                         as: "status",
-                        where: { name: { [Op.in]: ["Confirmed", "In Progress", "Attended"] } },
+                        where: {
+                            name: { [Op.in]: ["Confirmed", "In Progress", "Attended", "No Show"] },
+                        },
                     }),
                 ],
             }),
