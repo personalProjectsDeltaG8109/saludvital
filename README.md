@@ -24,7 +24,9 @@
 
 <p align="center">
   <a href="#features-by-role">Features</a> ·
-  <a href="#technology-stack">Technology Stack</a>
+  <a href="#technology-stack">Technology Stack</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#documentation">Documentation</a>
 </p>
 
 ## Overview
@@ -35,7 +37,7 @@ The project was developed individually as a graduation project for **Tecnología
 
 The application interface is in **Spanish**. Source identifiers and this technical overview are in **English**.
 
-**Current status:** the repository contains implemented patient, doctor, and administrator modules. Local setup instructions will be added in the documentation follow-up. A public demonstration URL has not been published; external messaging requires provider configuration.
+**Current status:** the repository contains implemented patient, doctor, and administrator modules. Local setup instructions will be added in the documentation follow-up. A public demonstration URL has not been published; external messaging requires provider configuration. See [Current Limitations](#current-limitations) for deployment and integration boundaries.
 
 ## Features by Role
 
@@ -97,6 +99,122 @@ Implementation: [appointmentService.js](src/modules/patient/services/appointment
 | Delivery workflow         | Git, GitHub, GitHub Actions                         | Branches, issues, pull requests, and continuous integration.                           |
 
 Dependency ranges and commands are defined in [package.json](package.json); resolved dependencies are recorded in [package-lock.json](package-lock.json).
+
+## Architecture
+
+SaludVital runs as a **single Express application organized into feature modules**. Pug renders pages on the server, while browser scripts call JSON endpoints for interactive workflows. Routes delegate business operations to services; some page handlers also query models directly.
+
+```mermaid
+flowchart TD
+    U["Browser: rendered HTML, CSS, JavaScript"] -->|"HTTP requests and forms"| A["Express application"]
+    A --> M["Authentication and role middleware"]
+    M --> R["Auth, patient, doctor, and admin routes"]
+    R --> C["Controllers and page handlers"]
+    C --> S["Business services"]
+    S --> Q["Sequelize models and transactions"]
+    Q --> DB[("MySQL")]
+    S --> V["Pug templates"]
+    V --> U
+    DB --> W["Outbox and notification workers"]
+    W --> P["SMTP, Resend, WhatsApp, SMS"]
+    P -->|"WhatsApp webhook events"| A
+```
+
+- [app.js](app.js) configures middleware, static assets, templates, routes, and error handling.
+- [server.js](server.js) verifies the database connection, starts the HTTP server and background schedulers, and coordinates shutdown.
+- [src/modules](src/modules) contains the `auth`, `patient`, `doctor`, and `admin` domains.
+- [src/models/associations.js](src/models/associations.js) registers the relationships used by Sequelize queries.
+
+### Core Data Relationships
+
+```mermaid
+erDiagram
+    roles ||--o{ users : assigns
+    users ||--o| patients : has
+    users ||--o| doctors : has
+    specialties ||--o{ doctors : groups
+    patients ||--o{ appointments : books
+    doctors ||--o{ appointments : receives
+    appointments ||--o{ appointment_history : records
+    appointments ||--o| consultations : produces
+    consultations ||--o{ diagnoses : contains
+    consultations ||--o{ prescriptions : contains
+    prescriptions ||--o{ prescription_items : contains
+```
+
+This is a simplified relationship diagram. Additional tables support availability, exceptions, notification preferences, message delivery, email jobs, password recovery, WhatsApp conversations, and audit logs. Schema changes are versioned in [database/migrations](database/migrations).
+
+## Authentication and Security
+
+- Passwords are stored as bcrypt hashes; login uses `bcrypt.compare`.
+- A signed **HS256 JWT** is stored in an `httpOnly` cookie with `sameSite: lax`; the cookie is `secure` in production.
+- A server-side session identifier links the JWT to an in-memory activity record. The inactivity limit is three minutes; JWT expiry is configured separately.
+- Protected requests check the account's current active state and role before applying role authorization.
+- Login has both request throttling and a persistent account lock after five failed password attempts.
+- Email verification and password recovery use expiring tokens whose hashes are persisted.
+- Business services validate inputs and ownership; relevant operations create appointment history or audit records.
+
+These are implemented controls, not a security certification. Deployment-related limitations and remaining work are listed below. Never commit `.env`, signing secrets, provider keys, or real patient information.
+
+## Notifications and WhatsApp
+
+| Component                     | Implementation and requirements                                                                                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Account email**             | `EmailOutbox` jobs are processed through Nodemailer/SMTP for verification and recovery. Requires SMTP credentials and a correct `APP_BASE_URL`.                                                                                                               |
+| **Appointment notifications** | Workers process reminders, rescheduling, and cancellation events using patient channel preferences. Delivery remains disabled unless `NOTIFICATION_DELIVERY_ENABLED=true`.                                                                                    |
+| **Email notifications**       | Resend adapter with configurable sender and message content.                                                                                                                                                                                                  |
+| **SMS**                       | Inalambria Express adapter for Colombian mobile numbers, with error classification for retry decisions.                                                                                                                                                       |
+| **WhatsApp**                  | Meta message adapters, signed webhook validation, conversation/message persistence, and provider delivery-status updates. Requires Meta credentials, webhook setup, and approved notification templates.                                                      |
+| **Chatbot**                   | Code supports patient identity verification and appointment operations. Execution requires a published active flow and is explicitly disabled when `NODE_ENV=production`. The administrative editor saves draft versions; saving a draft does not publish it. |
+
+Provider acceptance, delivery, and reading are different events. A configured key or template name does not prove successful delivery or provider approval. External delivery must be verified separately in the intended environment.
+
+## Project Structure
+
+```text
+saludvital/
+├── app.js                  Express configuration and route registration
+├── server.js               HTTP startup, schedulers, and shutdown
+├── config/                 Environment, database, and CLI configuration
+├── database/
+│   ├── migrations/         Versioned schema changes
+│   └── seeders/            Initial records and development fixtures
+├── src/
+│   ├── middleware/         Authentication, authorization, error handling
+│   ├── models/             Sequelize models and associations
+│   ├── modules/
+│   │   ├── auth/           Registration, login, recovery, email jobs
+│   │   ├── patient/        Appointments, profile, history, messaging
+│   │   ├── doctor/         Agenda, consultations, patient access
+│   │   └── admin/          Administration, reports, audit, monitoring
+│   ├── config/             Shared scheduling configuration
+│   └── styles/             Editable Tailwind and CSS source
+├── views/                  Pug pages and partials by role
+├── public/                 Stylesheets, browser scripts, brand assets
+├── scripts/                Database preparation and provider diagnostics
+├── tests/                  Unit, integration, and browser tests
+├── docs/                   User stories and implementation notes
+└── .github/                CI workflow and issue/PR templates
+```
+
+## Current Limitations
+
+- **Public demo:** hosting and a demonstration URL are pending.
+- **Sessions:** activity records are process-local and disappear on restart. Multi-instance deployment needs shared session state. The logout route currently clears the cookie without first resolving `req.auth`, so immediate server-side revocation needs completion.
+- **Uploads:** profile photos use the local filesystem; deployment needs a persistence strategy.
+- **Messaging:** credentials, sender setup, templates, recipient permissions, and delivery checks are environment-dependent. No live provider availability is asserted here.
+- **Chatbot administration:** draft editing and runtime execution have different lifecycle requirements; production chatbot execution is currently disabled.
+- **Clinical documents:** completed clinical information and medical orders are supported, but a consultation-document attachment module is not implemented.
+
+## Documentation
+
+- [User Stories and Acceptance Criteria](docs/userStories/userStories.md)
+- [Implementation Notes](docs/implementation)
+- [Models and Relationships](src/models/associations.js)
+- [Database Migrations](database/migrations)
+- [Environment Reference](.env.example)
+- [Development and Contribution Workflow](CONTRIBUTING.md)
+- [Issues](https://github.com/personalProjectsDeltaG8109/saludvital/issues)
 
 ## Academic Context and Authorship
 
