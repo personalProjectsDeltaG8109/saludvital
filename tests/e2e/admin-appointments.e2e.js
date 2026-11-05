@@ -23,7 +23,7 @@ const pageMarkup = [
     '<label>Especialidad<select data-appointment-specialty><option value="all">Todas</option></select></label>',
     '<label>Médico<select data-appointment-doctor><option value="all">Todos</option></select></label>',
     '<label>Buscar paciente<input type="search" data-appointment-search></label>',
-    '<button type="submit">Buscar</button></form>',
+    "</form>",
     '<button type="button" data-appointment-export>Exportar CSV</button><button type="button" data-appointment-pdf-export>Exportar PDF</button><p data-appointment-export-feedback></p>',
     '<nav data-appointment-tabs aria-label="Filtrar citas por estado"></nav>',
     "<p data-appointment-feedback></p><p data-appointment-error hidden></p>",
@@ -49,6 +49,7 @@ try {
     await page.setContent(pageMarkup);
     assert.equal(await page.locator(".admin-global-search").count(), 0);
     assert.equal(await page.locator("[data-appointment-search]").count(), 1);
+    assert.equal(await page.getByRole("button", { name: "Buscar" }).count(), 0);
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: appointmentsStyles });
     await page.evaluate((availableStatuses) => {
@@ -247,7 +248,7 @@ try {
         window.useStatusPriorityData = true;
         window.showMultipleAppointmentPages = true;
     });
-    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.locator("[data-appointment-status]").selectOption("Confirmed");
     await page.waitForFunction(
         () =>
             document.querySelectorAll("[data-appointment-list] .appointment-status-badge")
@@ -347,17 +348,34 @@ try {
     }
 
     await page.locator("[data-appointment-status]").selectOption("Confirmed");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.status === "Confirmed");
     await page.locator("[data-appointment-from]").fill("2026-10-20");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.from === "2026-10-20");
     await page.locator("[data-appointment-to]").fill("2026-10-27");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.to === "2026-10-27");
     await page.locator("[data-appointment-specialty]").selectOption("2");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.specialtyId === "2");
     await page.locator("[data-appointment-doctor]").selectOption("3");
+    await page.waitForFunction(() => window.appointmentRequests.at(-1)?.doctorId === "3");
     await page.evaluate(() => {
         window.showMultipleAppointmentPages = true;
     });
-    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.locator("[data-appointment-page-size]").selectOption("25");
     await page.waitForFunction(() => window.appointmentRequests.at(-1)?.page === "1");
     await page.locator("[data-appointment-next]").click();
     await page.waitForFunction(() => window.appointmentRequests.at(-1)?.page === "2");
+    await page.locator("[data-appointment-doctor]").selectOption("all");
+    await page.waitForFunction(
+        () =>
+            window.appointmentRequests.at(-1)?.doctorId === undefined &&
+            window.appointmentRequests.at(-1)?.page === "1",
+    );
+    await page.locator("[data-appointment-doctor]").selectOption("3");
+    await page.waitForFunction(
+        () =>
+            window.appointmentRequests.at(-1)?.doctorId === "3" &&
+            window.appointmentRequests.at(-1)?.page === "1",
+    );
     const requestsBeforeLiveSearch = await page.evaluate(() => window.appointmentRequests.length);
     const patientSearch = page.locator("[data-appointment-search]");
     await patientSearch.fill("María");
@@ -427,7 +445,6 @@ try {
     console.log("PASS: PDF report action opens the protected report with active filters.");
 
     await page.locator("[data-appointment-search]").fill("export-empty");
-    await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No encontramos citas con esos criterios.").first().waitFor();
     await page.getByRole("button", { name: "Exportar CSV" }).click();
     await page.getByText("No hay citas para exportar con esos filtros.").waitFor();
@@ -474,7 +491,6 @@ try {
         window.failAppointmentRequest = true;
     });
     await patientSearch.fill("");
-    await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No pudimos cargar las citas. Inténtalo de nuevo.").waitFor();
     if (await page.getByText("No encontramos citas con esos criterios.").count()) {
         throw new Error("A failed request must not look like a successful empty result.");
