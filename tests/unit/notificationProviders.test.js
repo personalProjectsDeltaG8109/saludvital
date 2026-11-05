@@ -10,6 +10,8 @@ const environmentKeys = [
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
     "RESEND_FROM_NAME",
+    "RESEND_CONFIRMATION_SUBJECT",
+    "RESEND_CONFIRMATION_HTML",
 ];
 const originalEnvironment = Object.fromEntries(
     environmentKeys.map((key) => [key, process.env[key]]),
@@ -81,6 +83,26 @@ describe("independent notification providers", () => {
         expect(global.fetch.mock.calls[0][0]).toBe("https://api.resend.com/emails");
         expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer test-resend-key");
         expect(requestBody.html).toContain("&lt;mañana&gt;");
+    });
+
+    test("sends an appointment confirmation through the existing Resend adapter", async () => {
+        process.env.RESEND_API_KEY = "test-resend-key";
+        process.env.RESEND_FROM_EMAIL = "alerts@example.test";
+        global.fetch = jest
+            .fn()
+            .mockResolvedValue({ ok: true, json: async () => ({ id: "email-confirmation" }) });
+
+        await expect(
+            sendResendEmail({
+                to: "patient@example.test",
+                eventType: "appointment_confirmation",
+                body: "Tu cita quedó confirmada para mañana.",
+            }),
+        ).resolves.toMatchObject({ id: "email-confirmation", status: "accepted" });
+
+        const requestBody = JSON.parse(global.fetch.mock.calls[0][1].body);
+        expect(requestBody.subject).toBe("Confirmación de tu cita en SaludVital");
+        expect(requestBody.html).toContain("Tu cita quedó confirmada para mañana.");
     });
 
     test("sends an identity code without exposing it in a response or error", async () => {

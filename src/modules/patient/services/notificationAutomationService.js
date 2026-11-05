@@ -58,14 +58,26 @@ export async function enqueueAppointmentNotifications({
     if (!ENABLED()) return [];
     if (!transaction) throw new Error("Appointment notifications require a database transaction.");
 
-    const appointment = await Appointment.findByPk(appointmentId, {
+    const appointmentOptions = {
         include: [
             { model: Doctor, as: "doctor", attributes: ["display_name"] },
             { model: Specialities, as: "specialty", attributes: ["name"] },
         ],
         transaction,
-    });
+    };
+    if (eventType === "appointment_confirmation") {
+        appointmentOptions.lock = transaction.LOCK.UPDATE;
+    }
+    const appointment = await Appointment.findByPk(appointmentId, appointmentOptions);
     if (!appointment) return [];
+
+    if (eventType === "appointment_confirmation") {
+        const existingConfirmations = await Notification.count({
+            where: { appointment_id: appointment.id, event_type: eventType },
+            transaction,
+        });
+        if (existingConfirmations > 0) return [];
+    }
 
     const patient = await Patient.findByPk(appointment.patient_id, {
         include: [{ association: "user", attributes: ["email"] }],
@@ -91,11 +103,15 @@ export async function enqueueAppointmentNotifications({
         const eventPreference = preferences.find(
             (item) => item.channel === channel && item.event_type === eventType,
         );
-        const enabled = hasEnabledChannel
-            ? eventPreference
-                ? eventPreference.is_enabled
-                : channelStates.get(channel)
-            : channel === "SMS";
+        // Confirmations follow enabled channels without adding a preference toggle.
+        const enabled =
+            eventType === "appointment_confirmation"
+                ? channelStates.get(channel)
+                : hasEnabledChannel
+                  ? eventPreference
+                      ? eventPreference.is_enabled
+                      : channelStates.get(channel)
+                  : channel === "SMS";
         const recipient = destinationFor(channel, patient)?.trim();
         if (!enabled || !recipient) continue;
         rows.push({

@@ -9,6 +9,7 @@ const environmentKeys = [
     "META_WHATSAPP_PHONE_NUMBER_ID",
     "META_WHATSAPP_API_VERSION",
     "META_WHATSAPP_TEMPLATE_LANGUAGE",
+    "META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME",
     "META_WHATSAPP_REMINDER_TEMPLATE_NAME",
 ];
 const originalEnvironment = Object.fromEntries(
@@ -51,6 +52,38 @@ describe("Meta WhatsApp Cloud API", () => {
             { type: "text", text: "22/04/2025" },
             { type: "text", text: "10:30 a. m." },
         ]);
+    });
+
+    test("sends appointment confirmation only with the configured approved template", async () => {
+        process.env.META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME = "appointment_confirmation_es";
+
+        await sendWhatsApp({
+            to: "+573001234567",
+            eventType: "appointment_confirmation",
+            contentVariables: ["22/04/2025", "10:30 a. m.", "Dra. Ejemplo", "Pediatría"],
+        });
+
+        const payload = JSON.parse(global.fetch.mock.calls[0][1].body);
+        expect(payload.template.name).toBe("appointment_confirmation_es");
+        expect(payload.template.components[0].parameters).toEqual([
+            { type: "text", text: "22/04/2025" },
+            { type: "text", text: "10:30 a. m." },
+            { type: "text", text: "Dra. Ejemplo" },
+            { type: "text", text: "Pediatría" },
+        ]);
+    });
+
+    test("does not send a WhatsApp confirmation without an approved template setting", async () => {
+        delete process.env.META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME;
+
+        await expect(
+            sendWhatsApp({
+                to: "+573001234567",
+                eventType: "appointment_confirmation",
+                contentVariables: ["fecha", "hora", "médico", "especialidad"],
+            }),
+        ).rejects.toThrow("plantilla aprobada de WhatsApp no está configurada");
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test("sends a safe interactive reply and returns the provider message id", async () => {

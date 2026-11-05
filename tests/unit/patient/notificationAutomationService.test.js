@@ -92,6 +92,58 @@ describe("appointment notification automation", () => {
         expect(Notification.bulkCreate).toHaveBeenCalledWith(rows, { transaction });
     });
 
+    test("queues one confirmation per enabled channel without requiring a confirmation preference", async () => {
+        const rows = await enqueueAppointmentNotifications({
+            appointmentId: 99,
+            eventType: "appointment_confirmation",
+            transaction,
+        });
+
+        expect(
+            rows.map(({ channel, recipient_address, event_type }) => [
+                channel,
+                recipient_address,
+                event_type,
+            ]),
+        ).toEqual([
+            ["SMS", "+573002222222", "appointment_confirmation"],
+            ["Email", "notificaciones@example.com", "appointment_confirmation"],
+        ]);
+        expect(Notification.count).toHaveBeenCalledWith({
+            where: { appointment_id: 99, event_type: "appointment_confirmation" },
+            transaction,
+        });
+    });
+
+    test("does not enqueue duplicate appointment confirmations", async () => {
+        Notification.count.mockResolvedValueOnce(2);
+
+        await expect(
+            enqueueAppointmentNotifications({
+                appointmentId: 99,
+                eventType: "appointment_confirmation",
+                transaction,
+            }),
+        ).resolves.toEqual([]);
+
+        expect(Notification.bulkCreate).not.toHaveBeenCalled();
+    });
+
+    test("does not queue appointment confirmations while provider delivery is disabled", async () => {
+        process.env.NOTIFICATION_DELIVERY_ENABLED = "false";
+
+        await expect(
+            enqueueAppointmentNotifications({
+                appointmentId: 99,
+                eventType: "appointment_confirmation",
+                transaction,
+            }),
+        ).resolves.toEqual([]);
+
+        expect(Appointment.findByPk).not.toHaveBeenCalled();
+        expect(Notification.bulkCreate).not.toHaveBeenCalled();
+    });
+
     // Backfill reminders for confirmed appointments whose 24-hour due time remains ahead.
     test("backfills reminders for existing appointments more than 24 hours away", async () => {
         await expect(backfillUpcomingAppointmentReminders()).resolves.toBe(2);

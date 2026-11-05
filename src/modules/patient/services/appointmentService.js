@@ -987,6 +987,12 @@ export async function bookAppointment({
             { transaction },
         );
 
+        await enqueueAppointmentNotifications({
+            appointmentId: appointment.id,
+            eventType: "appointment_confirmation",
+            transaction,
+        });
+
         const reminderAt = new Date(startAt.getTime() - 24 * 60 * 60 * 1000);
         if (reminderAt > new Date()) {
             await enqueueAppointmentNotifications({
