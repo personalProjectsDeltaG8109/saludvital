@@ -20,7 +20,7 @@ This change makes appointment lifecycle activity visible and readable inside Sal
 ## Verification
 
 - Focused Jest and Supertest checks passed: 3 suites, 100 tests, including authenticated endpoint access, combined unread counts, patient scoping, explicit read actions, and appointment detail retrieval.
-- Full Jest suite passed: 115 suites, 903 tests.
+- Full Jest suite passed: 115 suites, 904 tests.
 - ESLint and repository-wide Prettier checks passed.
 - Tailwind CSS build completed successfully. The generated `public/css/app.css` output was restored because this change uses the existing standalone patient notification stylesheet.
 - Playwright and axe-core checks passed for the appointment detail dialog, doctor photo, read actions, and mobile accessibility. The full E2E suite also passed.
