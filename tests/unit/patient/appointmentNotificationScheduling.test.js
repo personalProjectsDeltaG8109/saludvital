@@ -92,8 +92,8 @@ describe("appointment reminder scheduling", () => {
         jest.useRealTimers();
     });
 
-    // Queue a reminder at the exact 24-hour boundary for a booking with enough notice.
-    test("queues a reminder 24 hours before an appointment booked more than 24 hours ahead", async () => {
+    // Confirm every successful booking and queue a reminder when its due time is still ahead.
+    test("queues a confirmation and the reminder for an appointment booked more than 24 hours ahead", async () => {
         await bookAppointment({
             userId: 2,
             specialtyId: 4,
@@ -102,7 +102,12 @@ describe("appointment reminder scheduling", () => {
             time: "10:30",
         });
 
-        expect(enqueueAppointmentNotifications).toHaveBeenCalledWith({
+        expect(enqueueAppointmentNotifications).toHaveBeenNthCalledWith(1, {
+            appointmentId: 99,
+            eventType: "appointment_confirmation",
+            transaction,
+        });
+        expect(enqueueAppointmentNotifications).toHaveBeenNthCalledWith(2, {
             appointmentId: 99,
             eventType: "appointment_reminder",
             scheduledAt: new Date("2026-11-01T15:30:00.000Z"),
@@ -110,8 +115,8 @@ describe("appointment reminder scheduling", () => {
         });
     });
 
-    // A booking less than 24 hours ahead must not enqueue an already-due reminder.
-    test("does not queue a late reminder for an appointment booked less than 24 hours ahead", async () => {
+    // A short-notice booking still gets confirmation but never a late reminder.
+    test("confirms a short-notice booking without queueing an overdue reminder", async () => {
         await bookAppointment({
             userId: 2,
             specialtyId: 4,
@@ -119,6 +124,27 @@ describe("appointment reminder scheduling", () => {
             date: "2026-11-02",
             time: "09:30",
         });
+
+        expect(enqueueAppointmentNotifications).toHaveBeenCalledTimes(1);
+        expect(enqueueAppointmentNotifications).toHaveBeenCalledWith({
+            appointmentId: 99,
+            eventType: "appointment_confirmation",
+            transaction,
+        });
+    });
+
+    test("does not enqueue a confirmation when appointment history persistence fails", async () => {
+        AppointmentHistory.create.mockRejectedValueOnce(new Error("History write failed."));
+
+        await expect(
+            bookAppointment({
+                userId: 2,
+                specialtyId: 4,
+                doctorId: 7,
+                date: "2026-11-02",
+                time: "10:30",
+            }),
+        ).rejects.toThrow("History write failed.");
 
         expect(enqueueAppointmentNotifications).not.toHaveBeenCalled();
     });
