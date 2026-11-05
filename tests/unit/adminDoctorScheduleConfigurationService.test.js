@@ -136,6 +136,68 @@ describe("admin doctor schedule configuration service", () => {
         ).rejects.toThrow("Hay intervalos superpuestos");
     });
 
+    test("allows only weekdays that occur inside a bounded validity period", async () => {
+        await expect(
+            configureAdminDoctorSchedule(
+                makeInput({
+                    validFrom: "2026-11-05",
+                    validUntil: "2026-11-06",
+                    blocks: [
+                        { dayOfWeek: 4, startTime: "08:00", endTime: "12:00" },
+                        { dayOfWeek: 5, startTime: "08:00", endTime: "12:00" },
+                    ],
+                }),
+            ),
+        ).resolves.toMatchObject({ availability: [{ dayOfWeek: 4 }, { dayOfWeek: 5 }] });
+
+        await expect(
+            configureAdminDoctorSchedule(
+                makeInput({
+                    validFrom: "2026-11-05",
+                    validUntil: "2026-11-06",
+                    blocks: [{ dayOfWeek: 1, startTime: "08:00", endTime: "12:00" }],
+                }),
+            ),
+        ).rejects.toThrow("El día seleccionado está fuera del periodo de vigencia.");
+        expect(models.DoctorAvailability.bulkCreate).toHaveBeenCalledTimes(1);
+    });
+
+    test("allows the weekday in a one-day range and every weekday in a full-week range", async () => {
+        await expect(
+            configureAdminDoctorSchedule(
+                makeInput({
+                    validFrom: "2026-11-05",
+                    validUntil: "2026-11-05",
+                    blocks: [{ dayOfWeek: 4, startTime: "08:00", endTime: "12:00" }],
+                }),
+            ),
+        ).resolves.toMatchObject({ availability: [{ dayOfWeek: 4 }] });
+
+        await expect(
+            configureAdminDoctorSchedule(
+                makeInput({
+                    validFrom: "2026-11-05",
+                    validUntil: "2026-11-05",
+                    blocks: [{ dayOfWeek: 5, startTime: "08:00", endTime: "12:00" }],
+                }),
+            ),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        await expect(
+            configureAdminDoctorSchedule(
+                makeInput({
+                    validFrom: "2026-11-05",
+                    validUntil: "2026-11-11",
+                    blocks: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+                        dayOfWeek,
+                        startTime: "08:00",
+                        endTime: "12:00",
+                    })),
+                }),
+            ),
+        ).resolves.toMatchObject({ availability: Array(7).fill(expect.any(Object)) });
+    });
+
     test("rejects overlaps with an existing active block whose validity dates intersect", async () => {
         models.DoctorAvailability.findAll.mockResolvedValue([
             {

@@ -57,6 +57,17 @@ function minutesSinceMidnight(value) {
     return hours * 60 + minutes;
 }
 
+function weekdayOccursWithinRange(dayOfWeek, validFrom, validUntil) {
+    if (!validUntil) return true;
+
+    const startDate = new Date(`${validFrom}T00:00:00.000Z`);
+    const endDate = new Date(`${validUntil}T00:00:00.000Z`);
+    const startWeekday = startDate.getUTCDay() || 7;
+    const daysUntilWeekday = (dayOfWeek - startWeekday + 7) % 7;
+    startDate.setUTCDate(startDate.getUTCDate() + daysUntilWeekday);
+    return startDate <= endDate;
+}
+
 export function normalizeDoctorSchedule(input) {
     const doctorId = parseDoctorId(input?.doctorId);
     const validFrom = parseDate(input?.validFrom, "de inicio", true);
@@ -74,6 +85,9 @@ export function normalizeDoctorSchedule(input) {
         const dayOfWeek = Number(block?.dayOfWeek);
         if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
             throw serviceError("Selecciona un día de atención válido.");
+        }
+        if (!weekdayOccursWithinRange(dayOfWeek, validFrom, validUntil)) {
+            throw serviceError("El d\u00eda seleccionado est\u00e1 fuera del periodo de vigencia.");
         }
         const startTime = parseTime(block?.startTime, "de inicio");
         const endTime = parseTime(block?.endTime, "de finalización");

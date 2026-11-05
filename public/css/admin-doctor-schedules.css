@@ -145,12 +145,16 @@
 .schedule-config-fields { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 11px; }
 .schedule-config-fields label, .schedule-config-interval label, .schedule-config-duration { display: grid; min-width: 0; gap: 6px; color: #31577f; font-size: 11px; font-weight: 600; }
 .schedule-config-fields input, .schedule-config-fields select, .schedule-config-interval input, .schedule-config-duration input { width: 100%; min-width: 0; height: 41px; padding: 0 10px; border: 1px solid #d8e4f0; border-radius: 8px; color: #244773; background: #fff; font: inherit; font-size: 12px; }
+.schedule-config-weekday-hint { margin: -4px 0 0; color: #526f91; font-size: 11px; }
 .schedule-config-dialog :focus-visible { outline: 3px solid rgb(22 141 226 / 35%); outline-offset: 2px; }
 .schedule-config-days { display: grid; gap: 7px; margin: 0; padding: 13px; border: 1px solid #e1eaf4; border-radius: 11px; }
 .schedule-config-days legend { padding: 0 6px; color: #183f70; font-size: 13px; font-weight: 700; }
 .schedule-config-day { display: grid; grid-template-columns: minmax(100px, .7fr) minmax(0, 2fr) auto; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid #edf2f7; border-radius: 9px; background: #fbfdff; }
 .schedule-config-day-toggle { display: flex; align-items: center; gap: 8px; color: #244c79; font-size: 12px; font-weight: 650; cursor: pointer; }
 .schedule-config-day-toggle input { width: 17px; height: 17px; accent-color: #087cf0; }
+.schedule-config-day.is-outside-validity { border-color: #edf1f5; background: #f6f8fa; }
+.schedule-config-day.is-outside-validity .schedule-config-day-toggle { color: #8695a6; cursor: not-allowed; }
+.schedule-config-day-toggle input:disabled { cursor: not-allowed; }
 .schedule-config-intervals { display: grid; gap: 7px; }
 .schedule-config-interval { display: grid; grid-template-columns: minmax(95px, 1fr) minmax(95px, 1fr) 30px; align-items: end; gap: 8px; }
 .schedule-config-interval label span { font-size: 9px; }

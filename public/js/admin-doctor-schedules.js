@@ -210,6 +210,8 @@
             dayElement.querySelector("[data-interval-end]").value = schedule.endTime;
         }
 
+        updateAvailableWeekdays();
+
         configureForm.querySelector("[data-config-title]").textContent = schedule
             ? "Editar horario"
             : "Configurar horario";
@@ -265,6 +267,64 @@
                 input.required = enabled;
             });
         dayElement.querySelector("[data-add-interval]").hidden = !enabled;
+    }
+
+    function getAvailableWeekdays(validFrom, validUntil) {
+        if (!validFrom) return new Set();
+
+        const startDate = new Date(`${validFrom}T00:00:00.000Z`);
+        const endDate = validUntil ? new Date(`${validUntil}T00:00:00.000Z`) : null;
+        if (Number.isNaN(startDate.getTime()) || (endDate && Number.isNaN(endDate.getTime()))) {
+            return new Set();
+        }
+        if (!endDate) return new Set([1, 2, 3, 4, 5, 6, 7]);
+        if (endDate < startDate) return new Set();
+
+        const availableWeekdays = new Set();
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            availableWeekdays.add(currentDate.getUTCDay() || 7);
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+        }
+        return availableWeekdays;
+    }
+
+    function updateAvailableWeekdays() {
+        const validFromInput = configureForm.querySelector("[data-config-valid-from]");
+        const validUntilInput = configureForm.querySelector("[data-config-valid-until]");
+        const validFrom = validFromInput.value;
+        const validUntil = validUntilInput.value;
+        const availableWeekdays = getAvailableWeekdays(validFrom, validUntil);
+        const hint = configureForm.querySelector("[data-config-weekday-hint]");
+
+        validUntilInput.min = validFrom || "";
+        configureForm.querySelectorAll("[data-config-day]").forEach((dayElement) => {
+            const dayCheckbox = dayElement.querySelector("[data-day-enabled]");
+            const isAvailable = availableWeekdays.has(Number(dayElement.dataset.configDay));
+            dayCheckbox.disabled = !isAvailable;
+            if (!isAvailable) dayCheckbox.checked = false;
+            dayElement.classList.toggle("is-outside-validity", !isAvailable);
+            setEnabledDay(dayElement, isAvailable && dayCheckbox.checked);
+        });
+
+        if (!hint) return;
+
+        if (!validFrom) {
+            hint.textContent = "Selecciona la fecha de inicio para habilitar los días.";
+        } else if (validUntil && validUntil < validFrom) {
+            hint.textContent = "La fecha final debe ser igual o posterior a la fecha inicial.";
+        } else if (validUntil) {
+            const availableNames = [...configureForm.querySelectorAll("[data-config-day]")]
+                .filter((dayElement) => availableWeekdays.has(Number(dayElement.dataset.configDay)))
+                .map((dayElement) =>
+                    dayElement
+                        .querySelector("[data-day-enabled]")
+                        .nextElementSibling.textContent.trim(),
+                );
+            hint.textContent = `Días disponibles para este periodo: ${availableNames.join(", ")}.`;
+        } else {
+            hint.textContent = "Sin fecha final, puedes seleccionar cualquier día de la semana.";
+        }
     }
 
     function updateIntervalRemoveButtons(dayElement) {
@@ -1119,6 +1179,12 @@
         button.addEventListener("click", () => configureDialog.close());
     });
     configureForm?.addEventListener("submit", submitConfiguration);
+    configureForm
+        ?.querySelector("[data-config-valid-from]")
+        ?.addEventListener("change", updateAvailableWeekdays);
+    configureForm
+        ?.querySelector("[data-config-valid-until]")
+        ?.addEventListener("change", updateAvailableWeekdays);
     configureDeleteButton?.addEventListener("click", async () => {
         if (!window.confirm("¿Quieres eliminar este intervalo de atención?")) return;
         configureForm.dataset.mode = "delete";
