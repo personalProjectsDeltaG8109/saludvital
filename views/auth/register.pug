@@ -1,3 +1,6 @@
+//- Reuse the registration support destination in the shared branding panel.
+- var whatsappContactUrl = "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.";
+
 doctype html
 html(lang="es")
     head
@@ -8,22 +11,19 @@ html(lang="es")
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
 
-    body.login-page.min-h-screen.bg-background.text-primary.antialiased
+    body.login-page.registration-page.min-h-screen.text-primary.antialiased
         //- Responsive registration layout using the existing brand identity.
-        main.min-h-screen.w-full
-            .min-h-screen.w-full.overflow-hidden.bg-transparent(class="lg:grid lg:grid-cols-2 lg:bg-white")
+        main.registration-shell
+            .registration-layout
                 //- Reuse the existing desktop branding panel.
                 include ./partials/login-desktop
 
                 //- Registration section.
-                section.flex.min-w-0.flex-col.justify-center.p-5(
-                    class="sm:p-8 lg:from-[#F3F8FF] lg:via-white lg:to-[#E6FAF7] xl:p-10",
-                    aria-labelledby="register-title"
-                )
+                section.registration-panel(aria-labelledby="register-title")
                     //- Reuse the existing mobile branding.
                     include ./partials/login-mobile
 
-                    .mx-auto.w-full.max-w-2xl.py-4
+                    .registration-card
                         h1#register-title.text-2xl.font-bold.tracking-tight.text-primary(
                             class="sm:text-3xl"
                         ) Crear cuenta de paciente
@@ -314,7 +314,7 @@ html(lang="es")
                 p.whatsapp-message-help ¿Necesitas ayuda? Escríbenos por WhatsApp.
 
             a.whatsapp-float(
-                href="https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                href=whatsappContactUrl,
                 target="_blank",
                 rel="noopener noreferrer",
                 aria-label="Contactar a SaludVital por WhatsApp",
