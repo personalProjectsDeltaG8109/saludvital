@@ -17,7 +17,7 @@ mixin notificationBellIcon
     svg(viewBox="0 0 24 24", aria-hidden="true")
         path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4")
     if notificationCount
-        span= notificationCount
+        span.sv-notification-count= notificationCount > 99 ? "99+" : notificationCount
 
 header.sv-topbar
     a.sv-mobile-brand(href=homeHref, aria-label="SaludVital, inicio")

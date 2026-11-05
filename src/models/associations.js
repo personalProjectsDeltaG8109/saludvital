@@ -26,6 +26,7 @@ import EmergencyContact from "./EmergencyContact.js";
 import PasswordResetToken from "./PasswordResetToken.js";
 import EmailOutbox from "./EmailOutbox.js";
 import DoctorAppointmentNotificationRead from "./DoctorAppointmentNotificationRead.js";
+import PatientAppointmentHistoryRead from "./PatientAppointmentHistoryRead.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(User, {
@@ -175,6 +176,34 @@ AppointmentHistory.belongsTo(Appointment, {
     as: "appointment",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
+});
+
+Patient.hasMany(PatientAppointmentHistoryRead, {
+    foreignKey: "patient_id",
+    as: "appointmentHistoryReadReceipts",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+PatientAppointmentHistoryRead.belongsTo(Patient, {
+    foreignKey: "patient_id",
+    as: "patient",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+AppointmentHistory.hasMany(PatientAppointmentHistoryRead, {
+    foreignKey: "appointment_history_id",
+    as: "patientReadReceipts",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+PatientAppointmentHistoryRead.belongsTo(AppointmentHistory, {
+    foreignKey: "appointment_history_id",
+    as: "appointmentHistory",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
 });
 
 // Preserve history when the actor account is deleted.
@@ -593,6 +622,7 @@ export {
     User,
     EmailOutbox,
     DoctorAppointmentNotificationRead,
+    PatientAppointmentHistoryRead,
     PasswordResetToken,
     Patient,
     EmergencyContact,

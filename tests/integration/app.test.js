@@ -144,6 +144,16 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test.each([
+        ["GET", "/api/patient/notifications/unread-count"],
+        ["GET", "/api/patient/notifications/appointment-activity/1"],
+        ["PATCH", "/api/patient/notifications/read-all"],
+    ])("patient notification endpoint %s %s requires authentication", async (method, url) => {
+        const response = await request(app)[method.toLowerCase()](url).redirects(0);
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
     test("patient notification channel updates require an authenticated patient", async () => {
         const response = await request(app)
             .patch("/api/patient/notifications/channel")

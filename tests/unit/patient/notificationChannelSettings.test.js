@@ -4,9 +4,13 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
     default: { transaction: jest.fn(async (callback) => callback({ id: "transaction" })) },
 }));
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
+    AppointmentHistory: { findAll: jest.fn() },
+    Doctor: { findByPk: jest.fn() },
     Notification: {},
     NotificationPreference: { findAll: jest.fn(), upsert: jest.fn() },
     Patient: { findOne: jest.fn() },
+    PatientAppointmentHistoryRead: { bulkCreate: jest.fn() },
+    Specialities: { findByPk: jest.fn() },
 }));
 
 const { default: database } = await import("../../../config/database.js");
