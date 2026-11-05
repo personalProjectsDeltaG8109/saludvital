@@ -26,6 +26,8 @@
   <a href="#features-by-role">Features</a> ·
   <a href="#technology-stack">Technology Stack</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#testing-and-quality">Testing</a> ·
   <a href="#documentation">Documentation</a>
 </p>
 
@@ -37,7 +39,7 @@ The project was developed individually as a graduation project for **Tecnología
 
 The application interface is in **Spanish**. Source identifiers and this technical overview are in **English**.
 
-**Current status:** the repository contains implemented patient, doctor, and administrator modules. Local setup instructions will be added in the documentation follow-up. A public demonstration URL has not been published; external messaging requires provider configuration. See [Current Limitations](#current-limitations) for deployment and integration boundaries.
+**Current status:** the repository contains implemented patient, doctor, and administrator modules. Local execution is documented below. A public demonstration URL has not been published; external messaging requires provider configuration. See [Current Limitations](#current-limitations) for deployment and integration boundaries.
 
 ## Features by Role
 
@@ -168,6 +170,97 @@ These are implemented controls, not a security certification. Deployment-related
 | **Chatbot**                   | Code supports patient identity verification and appointment operations. Execution requires a published active flow and is explicitly disabled when `NODE_ENV=production`. The administrative editor saves draft versions; saving a draft does not publish it. |
 
 Provider acceptance, delivery, and reading are different events. A configured key or template name does not prove successful delivery or provider approval. External delivery must be verified separately in the intended environment.
+
+## Getting Started
+
+### Requirements
+
+- **Node.js 24** and npm, matching the CI runtime.
+- A reachable **MySQL server**; CI uses MySQL 8.4.
+- Git.
+- SMTP access if you want to exercise registration verification or password recovery by email.
+
+### 1. Install the Application
+
+```bash
+git clone --branch develop https://github.com/personalProjectsDeltaG8109/saludvital.git
+cd saludvital
+npm ci
+```
+
+The example checks out `develop`, the integration branch. See [CONTRIBUTING.md](CONTRIBUTING.md) for branch and review conventions.
+
+### 2. Configure the Environment
+
+Copy [.env.example](.env.example) to `.env`:
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
+
+```bash
+# macOS / Linux
+cp .env.example .env
+```
+
+Set these values for your local environment:
+
+| Variables                                                            | Purpose                                                                     |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `NODE_ENV`, `PORT`                                                   | Execution mode and HTTP port. Use `development` locally.                    |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`            | Connection to your local development database.                              |
+| `JWT_SECRET`, `JWT_EXPIRES_IN`                                       | A generated signing secret and token lifetime.                              |
+| `APP_BASE_URL`                                                       | Public or local base address used in account email links.                   |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP settings for account email.                                            |
+| `NOTIFICATION_DELIVERY_ENABLED`                                      | Leave `false` until messaging providers and test recipients are configured. |
+
+Additional provider variables are documented in `.env.example`. Replace example values locally; do not commit the resulting file.
+
+### 3. Prepare a Local Development Database
+
+Create the database named by `DB_NAME` on your MySQL server and grant your configured database user access. Then apply the schema:
+
+```bash
+npm run db:migrate
+```
+
+For a fresh, isolated **development** database, review [database/seeders](database/seeders) and populate the initial roles, statuses, and development fixtures:
+
+```bash
+npm run db:seed
+```
+
+The seeders include synthetic accounts and clinical examples for local development. They are not a production account-provisioning process, and several intentionally reject production execution. Seeded appointment dates may need preparation for a current demonstration. Do not run development seeders against real patient data.
+
+### 4. Build Styles and Run
+
+```bash
+npm run css:build
+npm run dev
+```
+
+Open **http://localhost:3000/login**, or use the port configured in `.env`. Use the local development accounts defined by the seeders or register a patient and complete email verification. `npm start` runs the server without Nodemon.
+
+## Testing and Quality
+
+| Command                              | Purpose                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| `npm test -- --runInBand tests/unit` | Run unit tests serially.                                           |
+| `npm run db:test:prepare`            | Apply migrations and initial roles to the dedicated test database. |
+| `npm test -- --runInBand`            | Run Jest unit and integration tests.                               |
+| `npm run test:coverage`              | Generate a coverage report.                                        |
+| `npx playwright install chromium`    | Install the Chromium browser used by browser tests.                |
+| `npm run test:e2e`                   | Run the repository's Playwright scripts.                           |
+| `npm run lint`                       | Check JavaScript with ESLint.                                      |
+| `npm run format:check`               | Check formatting with Prettier.                                    |
+| `npm run css:build`                  | Compile the Tailwind stylesheet.                                   |
+
+Create **`saludvital_test`** and grant access to the configured database user before preparing database tests. The Jest setup selects that database explicitly; integration and browser tests can create, update, and remove test records. Keep it separate from development and production data.
+
+The [GitHub Actions workflow](.github/workflows/ci.yml) provisions MySQL 8.4, uses Node.js 24, installs locked dependencies, and runs ESLint, database preparation, Jest, targeted formatting checks, CSS compilation, and browser/accessibility tests. It runs for configured pushes and pull requests involving `main`, `develop`, and `release/**`.
+
+Test counts and coverage are intentionally not hard-coded here. Check [workflow runs](https://github.com/personalProjectsDeltaG8109/saludvital/actions/workflows/ci.yml) and generated reports for current results. Automated axe-core checks complement manual accessibility review; they do not establish full accessibility conformance.
 
 ## Project Structure
 
