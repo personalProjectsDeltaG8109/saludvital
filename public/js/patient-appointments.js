@@ -169,7 +169,8 @@
                 filter === "all" ||
                 (filter === "upcoming" && future) ||
                 (filter === "attended" && rowStatus === "Attended") ||
-                (filter === "cancelled" && rowStatus === "Cancelled");
+                (filter === "cancelled" && rowStatus === "Cancelled") ||
+                (filter === "no-show" && rowStatus === "No Show");
             const statusMatches = !status?.value || status.value === rowStatus;
             const specialtyMatches = !specialty?.value || specialty.value === row.dataset.specialty;
             const queryMatches =
