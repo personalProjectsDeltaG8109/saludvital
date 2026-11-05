@@ -294,4 +294,22 @@ describe("patient notification read state", () => {
         });
         expect(Doctor.findByPk).not.toHaveBeenCalled();
     });
+
+    test("does not return an external doctor photo URL", async () => {
+        AppointmentHistory.findOne.mockResolvedValue({
+            id: 34,
+            event_type: "Created",
+            new_values: { doctor_id: 8, specialty_id: 4 },
+            occurred_at: new Date("2026-11-03T15:00:00.000Z"),
+            appointment: { doctor_id: 8, specialty_id: 4 },
+        });
+        Doctor.findByPk.mockResolvedValue({
+            display_name: "Dr. Ejemplo",
+            profile_photo_url: "//external.example/photo.png",
+        });
+        Specialities.findByPk.mockResolvedValue({ name: "Medicina general" });
+        await expect(getPatientAppointmentActivityDetails(91, "34")).resolves.toMatchObject({
+            doctor: { photoUrl: null },
+        });
+    });
 });

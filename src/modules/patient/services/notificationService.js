@@ -656,9 +656,14 @@ function parseAppointmentHistoryId(value) {
 }
 
 function safeDoctorPhotoUrl(value) {
-    return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
-        ? value
-        : null;
+    if (typeof value !== "string") return null;
+    try {
+        const imageUrl = new URL(value, "https://saludvital.invalid");
+        if (imageUrl.origin !== "https://saludvital.invalid") return null;
+        return `${imageUrl.pathname}${imageUrl.search}${imageUrl.hash}`;
+    } catch {
+        return null;
+    }
 }
 
 export async function getPatientAppointmentActivityDetails(userId, rawHistoryId) {
