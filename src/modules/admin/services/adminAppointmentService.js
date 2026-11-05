@@ -1,4 +1,4 @@
-import { Op } from "sequelize";
+import { literal, Op } from "sequelize";
 import {
     Appointment,
     AppointmentStatus,
@@ -16,6 +16,7 @@ const STATUS_LABELS = {
     Cancelled: "Cancelada",
 };
 const SUPPORTED_STATUSES = Object.keys(STATUS_LABELS);
+const STATUS_PRIORITY = ["Confirmed", "In Progress", "Attended", "Cancelled"];
 
 function serviceError(message, statusCode = 400) {
     const error = new Error(message);
@@ -125,6 +126,31 @@ function createIncludes(search, includePatientPrivateFields = true) {
     ];
 }
 
+function createStatusPriorityOrder(statusRows) {
+    const availableStatuses = STATUS_PRIORITY.flatMap((name) => {
+        const status = statusRows.find((row) => row.name === name);
+        const id = Number(status?.id);
+        return Number.isSafeInteger(id) && id > 0 ? [{ id }] : [];
+    });
+
+    if (!availableStatuses.length) {
+        return [
+            ["start_at", "DESC"],
+            ["id", "DESC"],
+        ];
+    }
+
+    // Status IDs come from the database and are normalized before entering the SQL literal.
+    const cases = availableStatuses.map(({ id }, index) => `WHEN ${id} THEN ${index}`).join(" ");
+    const fallbackPriority = availableStatuses.length;
+
+    return [
+        [literal(`CASE status_id ${cases} ELSE ${fallbackPriority} END`), "ASC"],
+        ["start_at", "DESC"],
+        ["id", "DESC"],
+    ];
+}
+
 function formatAppointment(appointment, includePatientDocument = true) {
     const patient = {
         id: appointment.patient.id,
@@ -231,10 +257,7 @@ export async function getAdminAppointments(query = {}) {
                 "status_id",
             ],
             include: includes,
-            order: [
-                ["start_at", "DESC"],
-                ["id", "DESC"],
-            ],
+            order: createStatusPriorityOrder(statusRows),
             limit: pageSize,
             offset: (page - 1) * pageSize,
             distinct: true,
@@ -310,10 +333,7 @@ export async function getAdminAppointmentExportRows(query = {}) {
             "status_id",
         ],
         include: createIncludes(search, false),
-        order: [
-            ["start_at", "DESC"],
-            ["id", "DESC"],
-        ],
+        order: createStatusPriorityOrder(statusRows),
     });
 
     return appointments.map((appointment) => ({
