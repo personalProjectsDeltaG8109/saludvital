@@ -60,6 +60,7 @@ try {
         };
         window.failAppointmentRequest = false;
         window.showMultipleAppointmentPages = false;
+        window.useStatusPriorityData = false;
         window.resolveObsoleteAppointmentSearch = null;
         window.cancellationRequests = [];
         window.fetch = async (url, options = {}) => {
@@ -128,6 +129,55 @@ try {
                     }),
                 };
             }
+            if (window.useStatusPriorityData) {
+                const statusesByPage = {
+                    1: [
+                        { id: 10, status: "Confirmed", statusLabel: "Confirmada" },
+                        { id: 11, status: "In Progress", statusLabel: "En curso" },
+                    ],
+                    2: [
+                        { id: 12, status: "Attended", statusLabel: "Asistida" },
+                        { id: 13, status: "Cancelled", statusLabel: "Cancelada" },
+                    ],
+                };
+                const appointments = (statusesByPage[params.get("page")] || []).map((item) => ({
+                    id: item.id,
+                    startAt: "2026-10-26T15:30:00.000Z",
+                    endAt: "2026-10-26T16:00:00.000Z",
+                    patient: {
+                        id: item.id,
+                        name: `Paciente ${item.id}`,
+                        document: "CC 123",
+                        photoUrl: null,
+                    },
+                    specialty: "Medicina General",
+                    doctor: "Dra. Ana Torres",
+                    status: item.status,
+                    statusLabel: item.statusLabel,
+                }));
+                return {
+                    ok: true,
+                    json: async () => ({
+                        appointments,
+                        statuses: availableStatuses,
+                        specialties: [],
+                        doctors: [],
+                        stats: {
+                            total: 4,
+                            Confirmed: 1,
+                            "In Progress": 1,
+                            Attended: 1,
+                            Cancelled: 1,
+                        },
+                        pagination: {
+                            page: Number(params.get("page")),
+                            pageSize: 10,
+                            totalItems: 4,
+                            totalPages: 2,
+                        },
+                    }),
+                };
+            }
             return {
                 ok: true,
                 json: async () => ({
@@ -175,6 +225,37 @@ try {
         .getByRole("link", { name: "Editar y reprogramar la cita de María Fernanda López" })
         .first()
         .waitFor();
+
+    await page.evaluate(() => {
+        window.useStatusPriorityData = true;
+        window.showMultipleAppointmentPages = true;
+    });
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.waitForFunction(
+        () =>
+            document.querySelectorAll("[data-appointment-list] .appointment-status-badge")
+                .length === 2,
+    );
+    const firstPageStatuses = await page
+        .locator("[data-appointment-list] .appointment-status-badge")
+        .allTextContents();
+    assert.deepEqual(firstPageStatuses, ["Confirmada", "En curso"]);
+    await page.locator("[data-appointment-next]").click();
+    await page.waitForFunction(
+        () => document.querySelector("[data-appointment-page-label]")?.textContent === "2 / 2",
+    );
+    const secondPageStatuses = await page
+        .locator("[data-appointment-list] .appointment-status-badge")
+        .allTextContents();
+    assert.deepEqual(secondPageStatuses, ["Asistida", "Cancelada"]);
+    await page.evaluate(() => {
+        window.useStatusPriorityData = false;
+        window.showMultipleAppointmentPages = false;
+    });
+    await page.locator("[data-appointment-prev]").click();
+    console.log(
+        "PASS: status priority remains visible and stable across server-paginated results.",
+    );
 
     await page.locator('[data-cancel-appointment="10"]').first().click();
     await page.getByRole("dialog").waitFor({ state: "visible" });
