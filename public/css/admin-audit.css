@@ -408,6 +408,90 @@
     }
 }
 
+@media (max-width: 800px) {
+    .admin-audit-table-wrap {
+        display: none;
+    }
+
+    .admin-audit-cards {
+        display: grid;
+        gap: 0;
+        margin: 0;
+        padding: 0 13px;
+        list-style: none;
+    }
+
+    .admin-audit-card {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 10px;
+        padding: 13px 0;
+        border-bottom: 1px solid #edf1f6;
+    }
+
+    .admin-audit-card .admin-audit-module-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        font-size: 17px;
+    }
+
+    .admin-audit-card-main {
+        display: grid;
+        min-width: 0;
+        gap: 5px;
+    }
+
+    .admin-audit-card-main strong {
+        color: #123b73;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    .admin-audit-card-main span,
+    .admin-audit-card-main p {
+        margin: 0;
+        color: #536f93;
+        font-size: 12px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .admin-audit-card-time {
+        color: #637c9c;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .admin-audit-card .admin-audit-action {
+        width: fit-content;
+        min-height: 23px;
+        padding: 3px 7px;
+        font-size: 10px;
+    }
+
+    .admin-audit-card-detail {
+        grid-column: 2 / -1;
+        justify-self: start;
+    }
+
+    .admin-audit-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 12px 14px;
+        font-size: 11px;
+    }
+
+    .admin-audit-pagination {
+        width: 100%;
+    }
+
+    .admin-audit-pagination-list {
+        justify-content: flex-start;
+    }
+}
+
 @media (max-width: 640px) {
     .admin-audit-content {
         padding: 16px 12px 26px;

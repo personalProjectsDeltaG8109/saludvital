@@ -233,6 +233,9 @@ try {
     await page.setViewportSize({ width: 375, height: 812 });
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
+        { label: "compact tablet 760", width: 760, height: 1024 },
+        { label: "compact tablet 761", width: 761, height: 1024 },
+        { label: "compact tablet 762", width: 762, height: 1024 },
         { label: "tablet", width: 768, height: 1024 },
         { label: "desktop", width: 1440, height: 900 },
     ]) {
@@ -240,11 +243,20 @@ try {
         const dimensions = await page.evaluate(() => ({
             documentWidth: document.documentElement.scrollWidth,
             viewportWidth: window.innerWidth,
+            cardDisplay: getComputedStyle(document.querySelector(".admin-audit-cards")).display,
+            tableDisplay: getComputedStyle(document.querySelector(".admin-audit-table-wrap"))
+                .display,
         }));
         if (dimensions.documentWidth > dimensions.viewportWidth) {
             throw new Error(
                 `Audit page overflows at ${viewport.label}: ${JSON.stringify(dimensions)}.`,
             );
+        }
+        if (
+            viewport.width <= 800 &&
+            (dimensions.cardDisplay !== "grid" || dimensions.tableDisplay !== "none")
+        ) {
+            throw new Error(`Audit records must use readable cards at ${viewport.width}px.`);
         }
     }
     console.log("PASS: audit page has no horizontal overflow at mobile, tablet, or desktop sizes.");
