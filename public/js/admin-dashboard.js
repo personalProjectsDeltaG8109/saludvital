@@ -49,7 +49,7 @@ if (page) {
         tableBody.replaceChildren();
         const maximum = Math.max(
             1,
-            ...days.flatMap((day) => [day.scheduled, day.completed, day.cancelled]),
+            ...days.flatMap((day) => [day.scheduled, day.completed, day.cancelled, day.noShow]),
         );
         days.forEach((day) => {
             const column = document.createElement("div");
@@ -63,7 +63,9 @@ if (page) {
                     day.completed +
                     " completadas, " +
                     day.cancelled +
-                    " canceladas",
+                    " canceladas, " +
+                    day.noShow +
+                    " no asistieron",
             );
 
             const bars = document.createElement("div");
@@ -72,6 +74,7 @@ if (page) {
                 ["scheduled", day.scheduled],
                 ["completed", day.completed],
                 ["cancelled", day.cancelled],
+                ["no-show", day.noShow],
             ].forEach(([status, count]) => {
                 const bar = document.createElement("span");
                 bar.className = "admin-chart-bar is-" + status;
@@ -86,11 +89,13 @@ if (page) {
             chart.append(column);
 
             const row = document.createElement("tr");
-            [day.label, day.scheduled, day.completed, day.cancelled].forEach((value) => {
-                const cell = document.createElement("td");
-                cell.textContent = value;
-                row.append(cell);
-            });
+            [day.label, day.scheduled, day.completed, day.cancelled, day.noShow].forEach(
+                (value) => {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.append(cell);
+                },
+            );
             tableBody.append(row);
         });
     }

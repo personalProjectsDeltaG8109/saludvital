@@ -15,6 +15,7 @@ const APPOINTMENT_STATUS_LABELS = {
     Confirmed: "Confirmada",
     "In Progress": "En curso",
     Attended: "Asistida",
+    "No Show": "No asistió",
 };
 
 function serviceError(message, statusCode = 400) {

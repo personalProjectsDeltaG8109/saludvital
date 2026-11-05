@@ -27,6 +27,7 @@ const APPLICATION_STATUS_LABELS = {
     Sent: "Aceptada por el proveedor",
     Failed: "Fallida en el envío",
     Cancelled: "Cancelada",
+    "No Show": "No asistió",
 };
 
 const PROVIDER_STATUS_LABELS = {

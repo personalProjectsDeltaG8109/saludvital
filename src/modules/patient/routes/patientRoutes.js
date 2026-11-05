@@ -48,6 +48,7 @@ const appointmentStats = [
     { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
     { key: "attended", label: "Atendidas", status: "Attended" },
     { key: "cancelled", label: "Cancelada", status: "Cancelled" },
+    { key: "no-show", label: "No asistió", status: "No Show" },
 ];
 
 async function getPatientHeader(userId) {

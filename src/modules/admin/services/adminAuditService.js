@@ -13,6 +13,8 @@ const EVENT_DESCRIPTIONS = {
     AppointmentCancelled: "Se canceló una cita",
     AppointmentCreated: "Se creó una cita",
     AppointmentRescheduled: "Se reprogramó una cita",
+    AppointmentMarkedNoShow: "La cita se marcó como inasistencia",
+    DoctorConsultationStarted: "El médico inició la consulta",
     AdminDoctorActivated: "Se activó un médico",
     AdminDoctorCreated: "Se registró un médico",
     AdminDoctorDeactivated: "Se desactivó un médico",
@@ -260,7 +262,13 @@ function formatChangeValue(key, value, nameMaps) {
     if (typeof value !== "string") return null;
 
     if (key === "status") {
-        return { Confirmed: "Confirmada", Cancelled: "Cancelada" }[value] || null;
+        return (
+            {
+                Confirmed: "Confirmada",
+                Cancelled: "Cancelada",
+                "No Show": "No asistió",
+            }[value] || null
+        );
     }
     if (key === "cancellationCause") {
         return (
