@@ -2,9 +2,12 @@ import database from "../../../../config/database.js";
 import { Op } from "sequelize";
 import {
     AppointmentHistory,
+    Doctor,
     Notification,
     NotificationPreference,
     Patient,
+    PatientAppointmentHistoryRead,
+    Specialities,
 } from "../../../models/associations.js";
 
 export const notificationChannels = ["WhatsApp", "SMS", "Email"];
@@ -177,13 +180,14 @@ function toAppointmentActivityItem(historyRecord) {
 
     return {
         id: `appointment-${historyRecord.id}`,
+        appointmentHistoryId: historyRecord.id,
         isInAppActivity: true,
         eventLabel: appointmentActivityLabels[historyRecord.event_type],
         channel: "En SaludVital",
         channelKey: "System",
         statusLabel: "Registrada",
         date: occurredAt,
-        readAt: occurredAt,
+        readAt: historyRecord.patientReadReceipts?.[0]?.read_at || null,
         details: details[historyRecord.event_type],
     };
 }
@@ -193,6 +197,12 @@ async function getPatientAppointmentActivity(patientId) {
         where: { event_type: { [Op.in]: Object.keys(appointmentActivityLabels) } },
         attributes: ["id", "event_type", "previous_values", "new_values", "occurred_at"],
         include: [
+            {
+                association: "patientReadReceipts",
+                attributes: ["read_at"],
+                where: { patient_id: patientId },
+                required: false,
+            },
             {
                 association: "appointment",
                 attributes: ["id", "start_at"],
@@ -208,6 +218,39 @@ async function getPatientAppointmentActivity(patientId) {
     });
 
     return history.map(toAppointmentActivityItem);
+}
+
+async function countUnreadAppointmentActivity(patientId) {
+    return AppointmentHistory.count({
+        where: {
+            event_type: { [Op.in]: Object.keys(appointmentActivityLabels) },
+            "$patientReadReceipts.id$": null,
+        },
+        include: [
+            {
+                association: "appointment",
+                attributes: [],
+                where: { patient_id: patientId },
+                required: true,
+            },
+            {
+                association: "patientReadReceipts",
+                attributes: [],
+                where: { patient_id: patientId },
+                required: false,
+            },
+        ],
+        distinct: true,
+        col: "id",
+    });
+}
+
+async function getUnreadCountByPatientId(patientId) {
+    const [deliveryCount, appointmentActivityCount] = await Promise.all([
+        Notification.count({ where: { patient_id: patientId, read_at: null } }),
+        countUnreadAppointmentActivity(patientId),
+    ]);
+    return deliveryCount + appointmentActivityCount;
 }
 
 function getEnabledChannelStates(storedPreferences) {
@@ -232,7 +275,7 @@ function getEnabledChannelStates(storedPreferences) {
     return states;
 }
 
-export async function getPatientNotificationSettings(userId, { markVisibleAsRead = false } = {}) {
+export async function getPatientNotificationSettings(userId) {
     const patient = await Patient.findOne({
         where: { user_id: userId },
         attributes: [
@@ -278,23 +321,6 @@ export async function getPatientNotificationSettings(userId, { markVisibleAsRead
     const history = [...notifications.map(toHistoryItem), ...appointmentActivity]
         .sort((first, second) => new Date(second.date) - new Date(first.date))
         .slice(0, 20);
-
-    if (markVisibleAsRead) {
-        const visibleIds = history
-            .slice(0, 2)
-            .filter((item) => !item.isInAppActivity && !item.readAt)
-            .map((item) => item.id);
-        if (visibleIds.length) {
-            const readAt = new Date();
-            await Notification.update(
-                { read_at: readAt },
-                { where: { patient_id: patient.id, id: { [Op.in]: visibleIds }, read_at: null } },
-            );
-            history.forEach((item) => {
-                if (visibleIds.includes(item.id)) item.readAt = readAt;
-            });
-        }
-    }
 
     const channelStates = getEnabledChannelStates(storedPreferences);
     let preferences = notificationChannels.flatMap((channel) => {
@@ -415,7 +441,7 @@ export async function updatePatientNotificationPreferences(userId, updates, cont
 export async function getPatientUnreadNotificationCount(userId) {
     const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
     if (!patient) return 0;
-    return Notification.count({ where: { patient_id: patient.id, read_at: null } });
+    return getUnreadCountByPatientId(patient.id);
 }
 
 export async function getPatientChannelStates(patientId) {
@@ -505,5 +531,192 @@ export async function markPatientNotificationsAsRead(userId, notificationIds) {
     );
     return {
         unreadCount: await Notification.count({ where: { patient_id: patient.id, read_at: null } }),
+    };
+}
+
+export async function markPatientNotificationEntriesAsRead(
+    userId,
+    notificationIds = [],
+    appointmentHistoryIds = [],
+) {
+    const isValidSelection = (ids) =>
+        Array.isArray(ids) &&
+        ids.length <= 20 &&
+        ids.every((id) => Number.isSafeInteger(id) && id > 0) &&
+        new Set(ids).size === ids.length;
+    if (
+        !isValidSelection(notificationIds) ||
+        !isValidSelection(appointmentHistoryIds) ||
+        (notificationIds.length === 0 && appointmentHistoryIds.length === 0)
+    ) {
+        const error = new Error("La selecciÃ³n de notificaciones no es vÃ¡lida.");
+        error.status = 400;
+        throw error;
+    }
+
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) {
+        const error = new Error("No se encontrÃ³ el perfil del paciente.");
+        error.status = 404;
+        throw error;
+    }
+
+    if (notificationIds.length) {
+        await Notification.update(
+            { read_at: new Date() },
+            {
+                where: {
+                    patient_id: patient.id,
+                    id: { [Op.in]: notificationIds },
+                    read_at: null,
+                },
+            },
+        );
+    }
+
+    if (appointmentHistoryIds.length) {
+        const ownedEvents = await AppointmentHistory.findAll({
+            where: {
+                id: { [Op.in]: appointmentHistoryIds },
+                event_type: { [Op.in]: Object.keys(appointmentActivityLabels) },
+            },
+            attributes: ["id"],
+            include: [
+                {
+                    association: "appointment",
+                    attributes: [],
+                    where: { patient_id: patient.id },
+                    required: true,
+                },
+            ],
+        });
+        const readAt = new Date();
+        const receipts = ownedEvents.map((event) => ({
+            patient_id: patient.id,
+            appointment_history_id: event.id,
+            read_at: readAt,
+        }));
+        if (receipts.length) {
+            await PatientAppointmentHistoryRead.bulkCreate(receipts, { ignoreDuplicates: true });
+        }
+    }
+
+    return { unreadCount: await getUnreadCountByPatientId(patient.id) };
+}
+
+export async function markAllPatientNotificationEntriesAsRead(userId) {
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) {
+        const error = new Error("No se encontrÃ³ el perfil del paciente.");
+        error.status = 404;
+        throw error;
+    }
+
+    const readAt = new Date();
+    await database.transaction(async (transaction) => {
+        await Notification.update(
+            { read_at: readAt },
+            { where: { patient_id: patient.id, read_at: null }, transaction },
+        );
+        await database.query(
+            `INSERT IGNORE INTO patient_appointment_history_reads
+                (patient_id, appointment_history_id, read_at)
+             SELECT :patientId, history.id, :readAt
+             FROM appointment_history AS history
+             INNER JOIN appointments AS appointment
+                ON appointment.id = history.appointment_id
+                AND appointment.patient_id = :patientId
+             LEFT JOIN patient_appointment_history_reads AS receipt
+                ON receipt.patient_id = :patientId
+                AND receipt.appointment_history_id = history.id
+             WHERE history.event_type IN (:eventTypes)
+                AND receipt.id IS NULL`,
+            {
+                replacements: {
+                    patientId: patient.id,
+                    readAt,
+                    eventTypes: Object.keys(appointmentActivityLabels),
+                },
+                transaction,
+            },
+        );
+    });
+
+    return { unreadCount: await getUnreadCountByPatientId(patient.id) };
+}
+
+function parseAppointmentHistoryId(value) {
+    const id = Number(value);
+    if (!Number.isSafeInteger(id) || id < 1) {
+        const error = new Error("No encontramos esa actividad de cita.");
+        error.status = 404;
+        throw error;
+    }
+    return id;
+}
+
+function safeDoctorPhotoUrl(value) {
+    return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
+        ? value
+        : null;
+}
+
+export async function getPatientAppointmentActivityDetails(userId, rawHistoryId) {
+    const historyId = parseAppointmentHistoryId(rawHistoryId);
+    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
+    if (!patient) {
+        const error = new Error("No encontramos esa actividad de cita.");
+        error.status = 404;
+        throw error;
+    }
+
+    const historyRecord = await AppointmentHistory.findOne({
+        where: {
+            id: historyId,
+            event_type: { [Op.in]: Object.keys(appointmentActivityLabels) },
+        },
+        attributes: ["id", "event_type", "previous_values", "new_values", "occurred_at"],
+        include: [
+            {
+                association: "appointment",
+                attributes: ["id", "start_at", "doctor_id", "specialty_id"],
+                where: { patient_id: patient.id },
+                required: true,
+            },
+        ],
+    });
+    if (!historyRecord) {
+        const error = new Error("No encontramos esa actividad de cita.");
+        error.status = 404;
+        throw error;
+    }
+
+    const eventValues =
+        historyRecord.event_type === "Cancelled"
+            ? historyRecord.previous_values || {}
+            : historyRecord.new_values || {};
+    const doctorId = eventValues.doctor_id || historyRecord.appointment.doctor_id;
+    const specialtyId = eventValues.specialty_id || historyRecord.appointment.specialty_id;
+    const [doctor, specialty] = await Promise.all([
+        Doctor.findByPk(doctorId, { attributes: ["id", "display_name", "profile_photo_url"] }),
+        Specialities.findByPk(specialtyId, { attributes: ["id", "name"] }),
+    ]);
+
+    const appointmentStartAt = getAppointmentStartAt(historyRecord);
+    const appointmentDate = appointmentStartAt ? new Date(appointmentStartAt) : null;
+
+    return {
+        eventLabel: appointmentActivityLabels[historyRecord.event_type],
+        occurredAt: new Date(historyRecord.occurred_at),
+        appointmentStartAt:
+            appointmentDate && !Number.isNaN(appointmentDate.getTime())
+                ? appointmentDate.toISOString()
+                : null,
+        appointmentStatus: historyRecord.event_type === "Cancelled" ? "Cancelada" : "Confirmada",
+        specialty: specialty?.name || "Especialidad no disponible",
+        doctor: {
+            name: doctor?.display_name || "MÃ©dico no disponible",
+            photoUrl: safeDoctorPhotoUrl(doctor?.profile_photo_url),
+        },
     };
 }

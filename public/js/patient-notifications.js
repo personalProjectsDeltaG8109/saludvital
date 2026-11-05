@@ -18,6 +18,8 @@
     const closeResultButton = settings.querySelector("[data-close-notification-result]");
     const historyToggle = document.querySelector("[data-history-toggle]");
     const historyTable = document.querySelector(".notifications-history-table");
+    const markAllReadButton = document.querySelector("[data-mark-all-read]");
+    const appointmentDetailsDialog = document.querySelector("[data-appointment-details-dialog]");
     let preferences = JSON.parse(settings.dataset.preferences || "[]");
     let savedPreferences = structuredClone(preferences);
     let savedContacts = getContacts();
@@ -210,23 +212,33 @@
 
     const readStatus = document.querySelector("[data-notification-read-status]");
 
-    async function markRowsAsRead(rows) {
+    async function markRowsAsRead(rows, appointmentHistoryIds = []) {
         const unreadRows = rows.filter((row) => row.classList.contains("is-unread"));
-        const ids = unreadRows.map((row) => Number(row.dataset.notificationId));
-        if (!ids.length) return;
+        const ids = unreadRows
+            .map((row) => Number(row.dataset.notificationId))
+            .filter(Number.isSafeInteger);
+        const unreadHistoryIds = unreadRows
+            .map((row) => Number(row.dataset.appointmentHistoryId))
+            .filter(Number.isSafeInteger);
+        const historyIds = [...new Set([...appointmentHistoryIds, ...unreadHistoryIds])];
+        if (!ids.length && !historyIds.length) return;
 
         try {
             const response = await fetch("/api/patient/notifications/read", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
                 credentials: "same-origin",
-                body: JSON.stringify({ ids }),
+                body: JSON.stringify({ notificationIds: ids, appointmentHistoryIds: historyIds }),
             });
             const payload = await response.json();
             if (!response.ok || !payload.success) {
                 throw new Error(payload.message || "No se pudieron actualizar las notificaciones.");
             }
-            unreadRows.forEach((row) => row.classList.remove("is-unread"));
+            unreadRows.forEach((row) => {
+                row.classList.remove("is-unread");
+                row.querySelector(".notifications-unread-label")?.remove();
+                row.querySelector("[data-mark-notification-read]")?.remove();
+            });
             updateNotificationBell(payload.data.unreadCount);
             if (readStatus) readStatus.textContent = "Notificaciones marcadas como leídas.";
         } catch {
@@ -237,18 +249,93 @@
         }
     }
 
+    async function loadAppointmentDetails(row) {
+        const historyId = Number(row.dataset.appointmentHistoryId);
+        const status = appointmentDetailsDialog.querySelector("[data-appointment-details-status]");
+        const title = appointmentDetailsDialog.querySelector("[data-appointment-details-title]");
+        const doctorName = appointmentDetailsDialog.querySelector("[data-appointment-doctor-name]");
+        const photo = appointmentDetailsDialog.querySelector("[data-appointment-doctor-photo]");
+        const photoPlaceholder = appointmentDetailsDialog.querySelector(
+            "[data-appointment-doctor-placeholder]",
+        );
+        const fields = {
+            specialty: appointmentDetailsDialog.querySelector("[data-appointment-specialty]"),
+            schedule: appointmentDetailsDialog.querySelector("[data-appointment-schedule]"),
+            appointmentStatus: appointmentDetailsDialog.querySelector("[data-appointment-status]"),
+            occurredAt: appointmentDetailsDialog.querySelector("[data-appointment-occurred-at]"),
+        };
+
+        status.textContent = "Cargando el detalle de la cita…";
+        title.textContent =
+            row.querySelector(".notifications-history-kind")?.textContent.trim() ||
+            "Detalle de la cita";
+        doctorName.textContent = "Cargando información del médico…";
+        photo.hidden = true;
+        photo.removeAttribute("src");
+        photoPlaceholder.hidden = false;
+        Object.values(fields).forEach((field) => (field.textContent = "—"));
+        appointmentDetailsDialog.showModal();
+
+        try {
+            const response = await fetch(
+                `/api/patient/notifications/appointment-activity/${historyId}`,
+                {
+                    headers: { Accept: "application/json" },
+                    credentials: "same-origin",
+                },
+            );
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.message || "No se pudo cargar el detalle de la cita.");
+            }
+
+            const details = payload.data;
+            title.textContent = details.eventLabel;
+            doctorName.textContent = details.doctor.name;
+            fields.specialty.textContent = details.specialty;
+            fields.schedule.textContent = formatDate(details.appointmentStartAt);
+            fields.appointmentStatus.textContent = details.appointmentStatus;
+            fields.occurredAt.textContent = formatDate(details.occurredAt);
+            if (details.doctor.photoUrl) {
+                photo.src = details.doctor.photoUrl;
+                photo.alt = `Foto de ${details.doctor.name}`;
+                photo.hidden = false;
+                photoPlaceholder.hidden = true;
+            }
+            status.textContent = "Detalle cargado.";
+            if (row.classList.contains("is-unread")) await markRowsAsRead([row], [historyId]);
+        } catch (error) {
+            status.textContent = error.message || "No se pudo cargar el detalle de la cita.";
+        }
+    }
+
+    function formatDate(value) {
+        if (!value) return "Horario no disponible";
+        const date = new Date(value);
+        return Number.isNaN(date.getTime())
+            ? "Fecha no disponible"
+            : date.toLocaleString("es-CO", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                  timeZone: "America/Bogota",
+              });
+    }
+
     function updateNotificationBell(unreadCount) {
         const bell = document.querySelector(".sv-bell");
-        const count = bell?.querySelector("span");
+        let count = bell?.querySelector(".sv-notification-count");
         if (!bell) return;
         bell.setAttribute(
             "aria-label",
             unreadCount ? `Notificaciones, ${unreadCount} sin leer` : "Notificaciones",
         );
-        if (count) {
-            count.textContent = unreadCount ? String(unreadCount) : "";
-            count.hidden = unreadCount === 0;
+        if (unreadCount > 0 && !count) {
+            count = document.createElement("span");
+            count.className = "sv-notification-count";
+            bell.append(count);
         }
+        if (!unreadCount) count?.remove();
+        else count.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
     }
 
     historyToggle?.addEventListener("click", async () => {
@@ -256,9 +343,51 @@
         const isExpanded = historyTable.classList.toggle("is-expanded");
         historyToggle.setAttribute("aria-expanded", String(isExpanded));
         historyToggle.textContent = isExpanded ? "Ver menos" : "Ver todas";
-        if (isExpanded) {
-            await markRowsAsRead([...historyTable.querySelectorAll("tr[data-notification-id]")]);
+    });
+
+    markAllReadButton?.addEventListener("click", async () => {
+        markAllReadButton.disabled = true;
+        try {
+            const response = await fetch("/api/patient/notifications/read-all", {
+                method: "PATCH",
+                headers: { Accept: "application/json" },
+                credentials: "same-origin",
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success)
+                throw new Error("No se pudieron marcar como leídas.");
+            historyTable?.querySelectorAll("tr.is-unread").forEach((row) => {
+                row.classList.remove("is-unread");
+                row.querySelector(".notifications-unread-label")?.remove();
+                row.querySelector("[data-mark-notification-read]")?.remove();
+            });
+            updateNotificationBell(payload.data.unreadCount);
+            if (readStatus)
+                readStatus.textContent = "Todas las notificaciones están marcadas como leídas.";
+        } catch (error) {
+            if (readStatus) readStatus.textContent = error.message;
+        } finally {
+            markAllReadButton.disabled = false;
         }
+    });
+
+    historyTable?.addEventListener("click", (event) => {
+        const row = event.target.closest("tr");
+        if (!row) return;
+        if (event.target.closest("[data-open-appointment-details]")) {
+            loadAppointmentDetails(row);
+        } else if (event.target.closest("[data-mark-notification-read]")) {
+            markRowsAsRead([row]);
+        }
+    });
+
+    appointmentDetailsDialog
+        ?.querySelectorAll("[data-close-appointment-details]")
+        .forEach((button) => {
+            button.addEventListener("click", () => appointmentDetailsDialog.close());
+        });
+    appointmentDetailsDialog?.addEventListener("click", (event) => {
+        if (event.target === appointmentDetailsDialog) appointmentDetailsDialog.close();
     });
 
     render();

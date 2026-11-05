@@ -195,6 +195,7 @@ html(lang="es")
                                 h2#history-heading Historial de notificaciones
                                 p Consulta los movimientos de tus citas y el estado de los avisos enviados por tus canales.
                             button(type="button", data-history-toggle, aria-expanded="false") Ver todas
+                            button.notifications-mark-all(type="button", data-mark-all-read) Marcar todas como leídas
                         if history.length
                             .notifications-history-table-wrap
                                 table.notifications-history-table
@@ -210,7 +211,8 @@ html(lang="es")
                                             tr(
                                                 class=[index > 1 ? "is-history-extra" : "", notification.readAt ? "" : "is-unread"].filter(Boolean).join(" "),
                                                 data-notification-id=notification.isInAppActivity ? undefined : notification.id,
-                                                data-in-app-activity=notification.isInAppActivity ? "true" : undefined
+                                                data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
+                                                data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined
                                             )
                                                 td(data-label="Fecha y hora")
                                                     if !notification.readAt
@@ -245,6 +247,19 @@ html(lang="es")
                                                     span(
                                                         class=`notifications-delivery-status is-${notification.status ? notification.status.toLowerCase() : "registered"}`
                                                     )= notification.statusLabel
+                                                td.notifications-history-actions(
+                                                    data-label="Acciones"
+                                                )
+                                                    if notification.isInAppActivity
+                                                        button.notifications-detail-button(
+                                                            type="button",
+                                                            data-open-appointment-details
+                                                        ) Ver detalle
+                                                    else if !notification.readAt
+                                                        button.notifications-detail-button(
+                                                            type="button",
+                                                            data-mark-notification-read
+                                                        ) Marcar leída
                         else
                             .notifications-history-empty
                                 span.notifications-empty-icon(aria-hidden="true") ♧
@@ -255,5 +270,47 @@ html(lang="es")
                             aria-live="polite",
                             data-notification-read-status
                         )
+                    dialog.notifications-appointment-dialog(
+                        data-appointment-details-dialog,
+                        aria-labelledby="appointment-details-title",
+                        aria-describedby="appointment-details-status"
+                    )
+                        button.notifications-appointment-dialog-close(
+                            type="button",
+                            data-close-appointment-details,
+                            aria-label="Cerrar detalle"
+                        ) ×
+                        .notifications-appointment-doctor
+                            img(data-appointment-doctor-photo, alt="", hidden)
+                            span.notifications-doctor-placeholder(
+                                data-appointment-doctor-placeholder,
+                                aria-hidden="true"
+                            ) SV
+                            div
+                                h2#appointment-details-title(data-appointment-details-title) Detalle de la cita
+                                p(data-appointment-doctor-name) Cargando información…
+                        dl.notifications-appointment-facts
+                            div
+                                dt Especialidad
+                                dd(data-appointment-specialty) —
+                            div
+                                dt Fecha y hora de la cita
+                                dd(data-appointment-schedule) —
+                            div
+                                dt Estado
+                                dd(data-appointment-status) —
+                            div
+                                dt Actividad registrada
+                                dd(data-appointment-occurred-at) —
+                        p#appointment-details-status.notifications-appointment-detail-status(
+                            role="status",
+                            aria-live="polite",
+                            data-appointment-details-status
+                        )
+                        .notifications-dialog-actions
+                            button.notifications-dialog-primary(
+                                type="button",
+                                data-close-appointment-details
+                            ) Cerrar
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)

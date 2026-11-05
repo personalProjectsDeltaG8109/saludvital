@@ -1,6 +1,9 @@
 import {
     getPatientNotificationSettings,
-    markPatientNotificationsAsRead,
+    getPatientAppointmentActivityDetails,
+    getPatientUnreadNotificationCount,
+    markAllPatientNotificationEntriesAsRead,
+    markPatientNotificationEntriesAsRead,
     updatePatientNotificationChannel,
     updatePatientNotificationPreferences,
 } from "../services/notificationService.js";
@@ -36,14 +39,51 @@ export async function listPatientNotifications(req, res, next) {
     }
 }
 
+export async function getPatientUnreadNotificationCountResponse(req, res, next) {
+    try {
+        const unreadCount = await getPatientUnreadNotificationCount(req.auth.userId);
+        return res.status(200).json({ success: true, unreadCount });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+export async function getPatientAppointmentActivityDetailsResponse(req, res, next) {
+    try {
+        const details = await getPatientAppointmentActivityDetails(
+            req.auth.userId,
+            req.params.historyId,
+        );
+        return res.status(200).json({ success: true, data: details });
+    } catch (error) {
+        if (error.status) {
+            return res.status(error.status).json({ success: false, message: error.message });
+        }
+        return next(error);
+    }
+}
+
 export async function markPatientNotificationsRead(req, res, next) {
     try {
-        const result = await markPatientNotificationsAsRead(req.auth.userId, req.body?.ids);
+        const result = await markPatientNotificationEntriesAsRead(
+            req.auth.userId,
+            req.body?.notificationIds ?? req.body?.ids ?? [],
+            req.body?.appointmentHistoryIds ?? [],
+        );
         return res.status(200).json({ success: true, data: result });
     } catch (error) {
         if (error.status) {
             return res.status(error.status).json({ success: false, message: error.message });
         }
+        return next(error);
+    }
+}
+
+export async function markAllPatientNotificationsRead(req, res, next) {
+    try {
+        const result = await markAllPatientNotificationEntriesAsRead(req.auth.userId);
+        return res.status(200).json({ success: true, data: result });
+    } catch (error) {
         return next(error);
     }
 }

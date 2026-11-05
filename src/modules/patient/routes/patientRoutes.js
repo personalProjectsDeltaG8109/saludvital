@@ -11,6 +11,9 @@ import {
 } from "../../../models/associations.js";
 import {
     markPatientNotificationsRead,
+    markAllPatientNotificationsRead,
+    getPatientUnreadNotificationCountResponse,
+    getPatientAppointmentActivityDetailsResponse,
     listPatientNotifications,
     savePatientNotificationChannel,
     savePatientNotificationPreferences,
@@ -61,6 +64,7 @@ async function getPatientHeader(userId) {
         patientName: patient ? `${patient.first_name} ${patient.last_name}` : "Paciente",
         patientPhotoUrl: patient?.profile_photo_url || null,
         notificationCount,
+        notificationCountUrl: "/api/patient/notifications/unread-count",
         notificationLabel: notificationCount
             ? `Notificaciones, ${notificationCount} sin leer`
             : "Notificaciones",
@@ -74,11 +78,32 @@ patientRoutes.get(
     listPatientNotifications,
 );
 
+patientRoutes.get(
+    "/api/patient/notifications/unread-count",
+    authenticateToken,
+    requireRole("Patient"),
+    getPatientUnreadNotificationCountResponse,
+);
+
+patientRoutes.get(
+    "/api/patient/notifications/appointment-activity/:historyId",
+    authenticateToken,
+    requireRole("Patient"),
+    getPatientAppointmentActivityDetailsResponse,
+);
+
 patientRoutes.patch(
     "/api/patient/notifications/read",
     authenticateToken,
     requireRole("Patient"),
     markPatientNotificationsRead,
+);
+
+patientRoutes.patch(
+    "/api/patient/notifications/read-all",
+    authenticateToken,
+    requireRole("Patient"),
+    markAllPatientNotificationsRead,
 );
 
 patientRoutes.patch(
@@ -469,9 +494,7 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
-            const notificationSettings = await getPatientNotificationSettings(req.auth.userId, {
-                markVisibleAsRead: true,
-            });
+            const notificationSettings = await getPatientNotificationSettings(req.auth.userId);
             return res.render("patient/notifications", {
                 pageTitle: "Notificaciones | SaludVital",
                 activeNav: "notifications",
