@@ -4,14 +4,116 @@ html(lang="es")
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         meta(name="robots", content="noindex, nofollow")
-        title= pageTitle
+        meta(name="theme-color", content="#ffffff")
+        title= pageTitle || "Error del servidor | SaludVital"
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
-        link(rel="stylesheet", href="/css/app.css")
-    body.flex.min-h-screen.items-center.justify-center.bg-slate-50.px-4.text-slate-800
-        main.w-full.max-w-lg.rounded-2xl.border.border-slate-200.bg-white.p-8.text-center.shadow-lg
-            h1.mb-3.text-2xl.font-bold(class="text-[#123B73]") No pudimos completar tu solicitud
-            p.mb-6.text-sm.leading-6.text-slate-600 Ocurrió un error inesperado. Inténtalo más tarde.
-            a.inline-flex.min-h-11.items-center.justify-center.rounded-xl.px-5.py-3.text-sm.font-semibold.text-white(
-                class="bg-[#123B73]",
-                href="/login"
-            ) Volver al inicio de sesión
+        link(rel="stylesheet", href="/css/error-500.css")
+
+    body.error-500-page
+        //- Decorative waves and foliage follow the supplied visual reference.
+        .error-500-decoration(aria-hidden="true")
+            svg.error-500-waves(
+                viewBox="0 0 1440 430",
+                preserveAspectRatio="none",
+                focusable="false"
+            )
+                path(
+                    d="M0 35C180 70 215 350 455 255S745 76 960 171s307 178 480 133v126H0Z",
+                    fill="#eaf7ff"
+                )
+                path(
+                    d="M0 114c171 29 215 317 459 237s325-174 549-98 291 98 432 52v125H0Z",
+                    fill="#c8ecff",
+                    opacity=".74"
+                )
+                path(
+                    d="M640 287c186-135 320-207 489-127s222 114 311 100v170H640Z",
+                    fill="#d9f8ef",
+                    opacity=".72"
+                )
+                path(
+                    d="M0 337c159 74 274 115 467 41s352-156 555-104 276 118 418 77v79H0Z",
+                    fill="#ffffff",
+                    opacity=".86"
+                )
+            svg.error-500-plant(viewBox="0 0 180 270", focusable="false")
+                path(
+                    d="M56 270c12-89 8-149-20-219",
+                    fill="none",
+                    stroke="#40bca9",
+                    stroke-width="5"
+                )
+                path(
+                    d="M59 211C0 197-11 146 3 116c42 8 69 43 56 95Z",
+                    fill="#32c6b8",
+                    opacity=".78"
+                )
+                path(
+                    d="M56 170C24 124 26 66 52 37c27 30 28 83 4 133Z",
+                    fill="#72ddcc",
+                    opacity=".78"
+                )
+                path(
+                    d="M62 221c-2-57 26-97 67-106 8 41-15 84-67 106Z",
+                    fill="#38cbbb",
+                    opacity=".85"
+                )
+                path(
+                    d="M57 258c18-43 57-64 103-54-16 38-58 63-103 54Z",
+                    fill="#72ddcc",
+                    opacity=".85"
+                )
+                path(
+                    d="M56 269C18 251 0 226 1 197c35 6 59 30 55 72Z",
+                    fill="#0fae9b",
+                    opacity=".82"
+                )
+
+        main.error-500-shell(aria-labelledby="error-500-title")
+            .error-500-content
+                section.error-500-copy
+                    h1#error-500-title
+                        span.error-500-code 500
+                        span.error-500-heading Error del servidor
+                    p.error-500-description Lo sentimos, ha ocurrido un error inesperado en nuestros servidores.
+                    p.error-500-help Por favor, intenta nuevamente en unos minutos.
+                    nav.error-500-actions(aria-label="Opciones para continuar")
+                        a.error-500-button.error-500-button-primary(href=retryHref || "/login")
+                            svg(viewBox="0 0 24 24", aria-hidden="true", focusable="false")
+                                path(
+                                    d="M20 7v5h-5M4 17v-5h5M5.1 8a7 7 0 0 1 11.6-2L20 9M4 15l3.3 3A7 7 0 0 0 18.9 16"
+                                )
+                            span= retryLabel || "Intentar de nuevo"
+                        a.error-500-button.error-500-button-secondary(href="/")
+                            svg(viewBox="0 0 24 24", aria-hidden="true", focusable="false")
+                                path(d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9")
+                            span Ir al inicio
+                figure.error-500-art
+                    img(
+                        src="/brand/500-medical-illustration.png",
+                        alt="Ilustración de un médico junto a servidores y una señal de alerta",
+                        width="1377",
+                        height="1142",
+                        fetchpriority="high"
+                    )
+            ul.error-500-guidance(aria-label="Información para continuar")
+                li
+                    span.error-500-guidance-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24", focusable="false")
+                            path(d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6l-8-3Z")
+                            path(d="m8 12 3 3 5-6")
+                    p Tu información no se muestra aquí
+                li
+                    span.error-500-guidance-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24", focusable="false")
+                            circle(cx="12", cy="7", r="3")
+                            path(
+                                d="M6 21v-2a6 6 0 0 1 12 0v2M5 5a3 3 0 0 0 0 6M19 5a3 3 0 0 1 0 6M2 19v-2a5 5 0 0 1 3-4M22 19v-2a5 5 0 0 0-3-4"
+                            )
+                    p Estamos para ayudarte
+                li
+                    span.error-500-guidance-icon(aria-hidden="true")
+                        svg(viewBox="0 0 24 24", focusable="false")
+                            circle(cx="12", cy="12", r="9")
+                            path(d="M12 7v5l3 2")
+                    p Vuelve a intentarlo en unos minutos
