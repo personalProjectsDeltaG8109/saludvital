@@ -15,7 +15,7 @@ const pageMarkup = [
     '<header class="admin-topbar"><button class="admin-notification-button" type="button" aria-label="Ver notificaciones"></button></header>',
     '<main class="admin-appointments-page" data-admin-appointments data-endpoint="/api/admin/appointments">',
     '<header class="appointments-heading"><h1>Citas médicas</h1></header>',
-    '<section class="appointment-stats"><strong data-stat-total></strong><strong data-stat-confirmed></strong><strong data-stat-in-progress></strong><strong data-stat-attended></strong><strong data-stat-cancelled></strong></section>',
+    '<section class="appointment-stats"><strong data-stat-total></strong><strong data-stat-confirmed></strong><strong data-stat-in-progress></strong><strong data-stat-attended></strong><strong data-stat-cancelled></strong><strong data-stat-no-show></strong></section>',
     '<section class="appointments-panel"><form data-appointment-filters>',
     '<label>Fecha inicial<input type="date" data-appointment-from></label>',
     '<label>Fecha final<input type="date" data-appointment-to></label>',
@@ -39,6 +39,7 @@ const statuses = [
     { value: "In Progress", label: "En curso" },
     { value: "Attended", label: "Asistidas" },
     { value: "Cancelled", label: "Canceladas" },
+    { value: "No Show", label: "No asistió" },
 ];
 
 const browser = await chromium.launch({ headless: true });
@@ -109,7 +110,7 @@ try {
             }
             if (
                 ["no-results", "export-empty"].includes(params.get("search")) ||
-                params.get("status") === "In Progress"
+                ["In Progress", "No Show"].includes(params.get("status"))
             ) {
                 return {
                     ok: true,
@@ -124,6 +125,7 @@ try {
                             "In Progress": 0,
                             Attended: 0,
                             Cancelled: 0,
+                            "No Show": 0,
                         },
                         pagination: { page: 1, pageSize: 10, totalItems: 0, totalPages: 0 },
                     }),
@@ -168,6 +170,7 @@ try {
                             "In Progress": 1,
                             Attended: 1,
                             Cancelled: 1,
+                            "No Show": 1,
                         },
                         pagination: {
                             page: Number(params.get("page")),
@@ -204,7 +207,14 @@ try {
                     statuses: availableStatuses,
                     specialties: [{ id: 2, name: "Medicina General" }],
                     doctors: [{ id: 3, name: "Dra. Ana Torres" }],
-                    stats: { total: 1, Confirmed: 1, "In Progress": 0, Attended: 0, Cancelled: 0 },
+                    stats: {
+                        total: 1,
+                        Confirmed: 1,
+                        "In Progress": 0,
+                        Attended: 0,
+                        Cancelled: 0,
+                        "No Show": 0,
+                    },
                     pagination: {
                         page: Number(params.get("page")),
                         pageSize: 10,
@@ -225,6 +235,13 @@ try {
         .getByRole("link", { name: "Editar y reprogramar la cita de María Fernanda López" })
         .first()
         .waitFor();
+    if ((await page.locator("[data-stat-no-show]").textContent()) !== "0") {
+        throw new Error("The administrative No Show metric must display the persisted count.");
+    }
+    assert.equal(
+        await page.locator('[data-appointment-status] option[value="No Show"]').count(),
+        1,
+    );
 
     await page.evaluate(() => {
         window.useStatusPriorityData = true;
@@ -428,6 +445,11 @@ try {
     await page.getByText("No encontramos citas con esos criterios.").first().waitFor();
     if ((await page.evaluate(() => window.appointmentRequests.at(-1).status)) !== "In Progress") {
         throw new Error("Selecting an appointment status must filter the directory.");
+    }
+    await page.locator("[data-status-tab='No Show']").click();
+    await page.getByText("No encontramos citas con esos criterios.").first().waitFor();
+    if ((await page.evaluate(() => window.appointmentRequests.at(-1).status)) !== "No Show") {
+        throw new Error("Selecting No asistió must filter the administrative directory.");
     }
     console.log(
         "PASS: debounced patient search preserves filters, resets pagination, and supports status tabs and empty results.",

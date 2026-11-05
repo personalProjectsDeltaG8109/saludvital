@@ -38,6 +38,7 @@ html(lang="es")
                             button(type="button", data-filter="upcoming", aria-pressed="false") Próximas
                             button(type="button", data-filter="attended", aria-pressed="false") Asistidas
                             button(type="button", data-filter="cancelled", aria-pressed="false") Canceladas
+                            button(type="button", data-filter="no-show", aria-pressed="false") No asistió
                         .appointment-tools
                             label.appointment-search
                                 span(aria-hidden="true") ⌕
@@ -64,6 +65,7 @@ html(lang="es")
                                     option(value="Confirmed") Confirmadas
                                     option(value="Attended") Atendidas
                                     option(value="Cancelled") Canceladas
+                                    option(value="No Show") No asistió
                         if appointments.length
                             .appointment-table-wrap
                                 table.appointment-table

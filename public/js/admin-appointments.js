@@ -313,6 +313,7 @@ if (appointmentsPage) {
             stats["In Progress"];
         appointmentsPage.querySelector("[data-stat-attended]").textContent = stats.Attended;
         appointmentsPage.querySelector("[data-stat-cancelled]").textContent = stats.Cancelled;
+        appointmentsPage.querySelector("[data-stat-no-show]").textContent = stats["No Show"];
     }
 
     function renderPagination(pagination) {

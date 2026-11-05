@@ -34,7 +34,7 @@
 
 .appointment-stats {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 12px;
     margin-bottom: 18px;
 }
@@ -61,6 +61,7 @@
 .appointment-stat.is-progress .appointment-stat-icon { color: #ed8a18; background: #fff2de; }
 .appointment-stat.is-attended .appointment-stat-icon { color: #0875db; background: #e5f2ff; }
 .appointment-stat.is-cancelled .appointment-stat-icon { color: #ed343d; background: #ffebeb; }
+.appointment-stat.is-no-show .appointment-stat-icon { color: #7b4bc4; background: #f1eaff; }
 
 .appointments-panel {
     padding: 15px 14px 10px;
@@ -190,6 +191,7 @@
 .appointment-status-badge.status-in-progress { color: #a35a08; background: #fff2de; }
 .appointment-status-badge.status-attended { color: #075fc3; background: #e8f3ff; }
 .appointment-status-badge.status-cancelled { color: #b42328; background: #ffebeb; }
+.appointment-status-badge.status-no-show { color: #7042b1; background: #f1eaff; }
 .appointment-details-link { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; padding: 0 10px; border: 1px solid #d9e7f5; border-radius: 8px; color: #075fc3; background: #f3f9ff; font-size: 10px; font-weight: 650; text-decoration: none; white-space: nowrap; }
 .appointment-details-link:hover { background: #e4f2ff; }
 .appointment-details-link:focus-visible { outline: 3px solid rgb(22 141 226 / 32%); outline-offset: 2px; }

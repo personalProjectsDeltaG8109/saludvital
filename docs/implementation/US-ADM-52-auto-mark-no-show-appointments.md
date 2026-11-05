@@ -2,6 +2,7 @@
 
 ## Implementation
 
+- Added a patient quick filter and status selector for missed appointments. The administrator directory exposes the persisted `No Show` status in its status tabs and selector, and its summary includes the corresponding database count.
 - Added the persisted `No Show` appointment status through a reversible migration and the existing idempotent status seeder. Rollback refuses to delete a status referenced by an appointment.
 - Added a bounded service that transitions only still-confirmed appointments whose persisted `start_at` is at least one hour before the current instant. It locks rows, rechecks the status during update, and records each successful transition through `AppointmentHistory` and `AuditLog` in the same transaction.
 - Added a scheduler that runs at startup to recover eligible appointments after downtime, then processes batches every 60 seconds. It does not enqueue patient notifications or alter patient preferences.
