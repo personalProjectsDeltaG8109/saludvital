@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("sequelize", () => ({
+    literal: jest.fn((value) => ({ val: value })),
     Op: {
         and: Symbol.for("sequelize.and"),
         gte: Symbol.for("sequelize.gte"),
@@ -159,6 +160,29 @@ describe("admin appointment directory service", () => {
         );
     });
 
+    test("orders appointments by persisted status priority and keeps IDs out of the fixed order", async () => {
+        AppointmentStatus.findAll.mockResolvedValue([
+            { id: 70, name: "Cancelled" },
+            { id: 30, name: "Attended" },
+            { id: 90, name: "Confirmed" },
+            { id: 10, name: "In Progress" },
+        ]);
+
+        await getAdminAppointments();
+
+        const { order } = Appointment.findAndCountAll.mock.calls[0][0];
+        expect(order[0]).toEqual([
+            {
+                val: "CASE status_id WHEN 90 THEN 0 WHEN 10 THEN 1 WHEN 30 THEN 2 WHEN 70 THEN 3 ELSE 4 END",
+            },
+            "ASC",
+        ]);
+        expect(order.slice(1)).toEqual([
+            ["start_at", "DESC"],
+            ["id", "DESC"],
+        ]);
+    });
+
     test("exports all matching records with safe fields and no pagination", async () => {
         const rows = await getAdminAppointmentExportRows({
             from: "2026-10-26",
@@ -192,10 +216,14 @@ describe("admin appointment directory service", () => {
                         [Symbol.for("sequelize.lt")]: new Date("2026-10-28T05:00:00.000Z"),
                     },
                 }),
-                order: [
+                order: expect.arrayContaining([
+                    [
+                        expect.objectContaining({ val: expect.stringContaining("CASE status_id") }),
+                        "ASC",
+                    ],
                     ["start_at", "DESC"],
                     ["id", "DESC"],
-                ],
+                ]),
             }),
         );
         expect(Appointment.findAll.mock.calls[0][0].where[Symbol.for("sequelize.or")]).toEqual(
