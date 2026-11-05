@@ -193,7 +193,7 @@ html(lang="es")
                         .notifications-history-heading
                             .notifications-section-heading
                                 h2#history-heading Historial de notificaciones
-                                p Aquí puedes ver las últimas notificaciones que has recibido.
+                                p Consulta los movimientos de tus citas y el estado de los avisos enviados por tus canales.
                             button(type="button", data-history-toggle, aria-expanded="false") Ver todas
                         if history.length
                             .notifications-history-table-wrap
@@ -209,7 +209,8 @@ html(lang="es")
                                         each notification, index in history
                                             tr(
                                                 class=[index > 1 ? "is-history-extra" : "", notification.readAt ? "" : "is-unread"].filter(Boolean).join(" "),
-                                                data-notification-id=notification.id
+                                                data-notification-id=notification.isInAppActivity ? undefined : notification.id,
+                                                data-in-app-activity=notification.isInAppActivity ? "true" : undefined
                                             )
                                                 td(data-label="Fecha y hora")
                                                     if !notification.readAt
@@ -228,19 +229,27 @@ html(lang="es")
                                                             )
                                                         else if notification.channelKey === "SMS"
                                                             | ▣
+                                                        else if notification.channelKey === "System"
+                                                            svg(
+                                                                viewBox="0 0 24 24",
+                                                                aria-hidden="true"
+                                                            )
+                                                                path(
+                                                                    d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
+                                                                )
                                                         else
                                                             | ✉
                                                         | #{ notification.channel }
                                                 td(data-label="Mensaje")= notification.details
                                                 td(data-label="Estado")
                                                     span(
-                                                        class=`notifications-delivery-status is-${notification.status.toLowerCase()}`
-                                                    )= notification.status === "Sent" ? "Enviado" : notification.status === "Failed" ? "Fallido" : notification.status === "Cancelled" ? "Cancelado" : notification.status === "Processing" ? "En proceso" : "Pendiente"
+                                                        class=`notifications-delivery-status is-${notification.status ? notification.status.toLowerCase() : "registered"}`
+                                                    )= notification.statusLabel
                         else
                             .notifications-history-empty
                                 span.notifications-empty-icon(aria-hidden="true") ♧
                                 strong Aún no tienes notificaciones
-                                p Aquí aparecerán las confirmaciones y recordatorios de tus citas.
+                                p Aquí aparecerán las citas creadas, reprogramadas o canceladas, junto con los avisos de tus canales.
                         p.notifications-read-status(
                             role="status",
                             aria-live="polite",

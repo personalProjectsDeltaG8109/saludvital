@@ -245,7 +245,10 @@
 .notifications-history-channel.is-whatsapp { color: #06a976; }
 .notifications-history-channel.is-sms { color: #078bed; }
 .notifications-history-channel.is-email { color: #794de0; }
+.notifications-history-channel.is-system { color: #168de2; }
+.notifications-history-channel.is-system svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .notifications-delivery-status { width: fit-content; padding: 5px 9px; display: block; border-radius: 7px; color: #078357; background: #dcf8eb; font-size: 9px; white-space: nowrap; }
+.notifications-delivery-status.is-registered { color: #075db8; background: #e6f2ff; }
 .notifications-delivery-status.is-failed { color: #bd3344; background: #ffeaec; }
 .notifications-delivery-status.is-pending,.notifications-delivery-status.is-processing { color: #8a6300; background: #fff4d1; }
 .notifications-delivery-status.is-cancelled { color: #64758b; background: #edf1f5; }
