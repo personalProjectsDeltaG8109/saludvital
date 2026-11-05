@@ -191,6 +191,11 @@ html(lang="es")
                         label
                             span Fin de vigencia (opcional)
                             input(type="date", data-config-valid-until)
+                    p.schedule-config-weekday-hint(
+                        data-config-weekday-hint,
+                        role="status",
+                        aria-live="polite"
+                    ) Selecciona la fecha de inicio para habilitar los dias.
                     fieldset.schedule-config-days
                         legend Días y horas de atención
                         each day, index in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]

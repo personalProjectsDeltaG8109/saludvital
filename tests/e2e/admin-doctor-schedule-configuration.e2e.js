@@ -8,6 +8,20 @@ const styles = await readFile(path.resolve("public/css/admin-doctor-schedules.cs
 const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.css"), "utf8");
 const appStyles = await readFile(path.resolve("public/css/app.css"), "utf8");
 const browser = await chromium.launch({ headless: true });
+const configDaysMarkup = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    .map(
+        (day, index) => `
+            <div data-config-day="${index + 1}">
+                <label><input type="checkbox" data-day-enabled><span>${day}</span></label>
+                <div data-config-intervals><div data-config-interval>
+                    <input type="time" data-interval-start disabled>
+                    <input type="time" data-interval-end disabled>
+                    <button type="button" data-remove-interval hidden></button>
+                </div></div>
+                <button type="button" data-add-interval hidden></button>
+            </div>`,
+    )
+    .join("");
 
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -26,8 +40,8 @@ try {
           <div data-schedule-doctor-list></div><p data-schedule-empty hidden></p><ul data-schedule-exceptions></ul><p data-schedule-exceptions-empty hidden></p>
           <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form><h2 data-config-title>Configurar horario</h2>
             <button type="button" data-config-close>Cerrar</button><p data-config-error hidden></p><p data-config-success hidden></p>
-            <select data-config-doctor required></select><input type="date" data-config-valid-from required><input type="date" data-config-valid-until>
-            <div data-config-day="1"><input type="checkbox" data-day-enabled><div data-config-intervals><div data-config-interval><input type="time" data-interval-start disabled><input type="time" data-interval-end disabled><button data-remove-interval hidden></button></div></div><button type="button" data-add-interval hidden></button></div>
+            <select data-config-doctor required></select><input type="date" data-config-valid-from required><input type="date" data-config-valid-until><p data-config-weekday-hint role="status"></p>
+            ${configDaysMarkup}
             <section data-config-impact hidden><h3>Revisa las citas confirmadas</h3><ul data-config-impact-list></ul></section><button type="submit" data-config-submit>Guardar horario</button>
           </form></dialog>
         </main></body></html>`);
@@ -132,10 +146,36 @@ try {
     await page.keyboard.press("Enter");
     await page.locator("[data-schedule-config-dialog]").waitFor({ state: "visible" });
     await page.locator("[data-config-doctor]").selectOption("7");
-    await page.locator("[data-config-valid-from]").fill("2026-10-26");
-    await page.locator("[data-day-enabled]").check();
-    await page.locator("[data-interval-start]").fill("08:00");
-    await page.locator("[data-interval-end]").fill("12:00");
+    await page.locator("[data-config-valid-from]").fill("2026-11-05");
+    assert.equal(await page.locator("[data-day-enabled]:disabled").count(), 0);
+    await page.locator("[data-config-valid-until]").fill("2026-11-05");
+    assert.equal(await page.locator("[data-day-enabled]:enabled").count(), 1);
+    assert.equal(await page.locator('[data-config-day="4"] [data-day-enabled]').isEnabled(), true);
+    await page.locator("[data-config-valid-until]").fill("2026-11-06");
+    assert.match(await page.locator("[data-config-weekday-hint]").textContent(), /Jueves, Viernes/);
+    for (const dayNumber of [1, 2, 3, 6, 7]) {
+        assert.equal(
+            await page.locator(`[data-config-day="${dayNumber}"] [data-day-enabled]`).isDisabled(),
+            true,
+            `weekday ${dayNumber} should be disabled outside the selected period`,
+        );
+    }
+    for (const dayNumber of [4, 5]) {
+        assert.equal(
+            await page.locator(`[data-config-day="${dayNumber}"] [data-day-enabled]`).isEnabled(),
+            true,
+            `weekday ${dayNumber} should be selectable inside the selected period`,
+        );
+    }
+    await page.locator("[data-config-valid-until]").fill("2026-11-11");
+    assert.equal(await page.locator("[data-day-enabled]:disabled").count(), 0);
+    await page.locator("[data-config-valid-until]").fill("2026-11-06");
+    for (const dayNumber of [4, 5]) {
+        const day = page.locator(`[data-config-day="${dayNumber}"]`);
+        await day.locator("[data-day-enabled]").check();
+        await day.locator("[data-interval-start]").fill("08:00");
+        await day.locator("[data-interval-end]").fill("12:00");
+    }
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-config-impact]:visible").waitFor();
     assert.match(await page.locator("[data-config-impact-list]").textContent(), /Cita #81/);
@@ -154,7 +194,11 @@ try {
     assert.equal(attempts.length, 2);
     assert.equal(attempts[0].confirmImpact, false);
     assert.equal(attempts[1].confirmImpact, true);
-    assert.equal(attempts[1].blocks[0].dayOfWeek, 1);
+    assert.deepEqual(
+        attempts[1].blocks.map((block) => block.dayOfWeek),
+        [4, 5],
+        "only the selected validity-range weekdays should be submitted",
+    );
     console.log(
         "PASS: configuration requires explicit impact confirmation before cancelling affected appointments and notifying patients.",
     );
