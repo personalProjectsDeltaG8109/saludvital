@@ -17,9 +17,13 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     PrescriptionItem: {},
     Specialities: {},
 }));
+jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
+    default: { create: jest.fn() },
+}));
 
 const database = (await import("../../config/database.js")).default;
 const models = await import("../../src/models/associations.js");
+const AuditLog = (await import("../../src/models/AuditLog.js")).default;
 const { getActiveDoctorConsultationId, saveDoctorConsultationDraft, startDoctorConsultation } =
     await import("../../src/modules/doctor/services/doctorConsultationService.js");
 
@@ -74,7 +78,37 @@ describe("start doctor consultation", () => {
         expect(models.Consultation.create).toHaveBeenCalled();
         expect(appointment.update).toHaveBeenCalledWith({ status_id: 2 }, expect.any(Object));
         expect(models.AppointmentHistory.create).toHaveBeenCalled();
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({ action: "DoctorConsultationStarted" }),
+            expect.any(Object),
+        );
         expect(result.consultation.id).toBe(88);
+    });
+
+    test("allows a late consultation for a no-show appointment and records the correction", async () => {
+        models.AppointmentStatus.findByPk.mockResolvedValue({ id: 5, name: "No Show" });
+
+        await startDoctorConsultation(45, "7");
+
+        expect(models.AppointmentHistory.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                event_type: "ConsultationStarted",
+                previous_values: { status: "No Show" },
+                new_values: expect.objectContaining({ status: "In Progress" }),
+            }),
+            expect.any(Object),
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: "DoctorConsultationStarted",
+                changes: {
+                    previous: { status: "No Show" },
+                    next: { status: "In Progress" },
+                },
+                reason: "Doctor started the consultation after the patient arrived late.",
+            }),
+            expect.any(Object),
+        );
     });
 
     test("rejects an appointment that is not assigned to the doctor", async () => {
