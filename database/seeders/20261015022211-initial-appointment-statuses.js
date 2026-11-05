@@ -19,6 +19,10 @@ export async function up(queryInterface) {
             name: "Cancelled",
             description: "The appointment has been cancelled.",
         },
+        {
+            name: "No Show",
+            description: "The patient did not attend the appointment.",
+        },
     ];
 
     // Check existing names so rerunning the seeder does not duplicate statuses.
