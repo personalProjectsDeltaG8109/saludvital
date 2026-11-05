@@ -320,6 +320,16 @@ try {
     await page.getByRole("button", { name: "Buscar" }).click();
     const appliedSearch = await page.evaluate(() => window.scheduleRequests.at(-1).search);
     if (appliedSearch !== "Dra. Ana") throw new Error("Doctor search was not sent to the backend.");
+    await page.locator("[data-schedule-week]").fill("2026-11-05");
+    await page.waitForFunction(() => window.scheduleRequests.at(-1)?.weekStart === "2026-11-02");
+    const selectedWeekRequest = await page.evaluate(() => window.scheduleRequests.at(-1));
+    if (selectedWeekRequest.search !== "Dra. Ana") {
+        throw new Error("Changing the selected week must preserve the other schedule filters.");
+    }
+    if ((await page.locator("[data-schedule-week]").inputValue()) !== "2026-11-02") {
+        throw new Error("The selected date must be normalized to the week's Monday.");
+    }
+    console.log("PASS: changing the selected date refreshes all schedules for that Monday.");
     await page.locator("[data-schedule-search]").fill("sin-resultados");
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByText("No hay médicos que coincidan con los filtros seleccionados.").waitFor();

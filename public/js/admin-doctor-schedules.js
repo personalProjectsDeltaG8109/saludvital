@@ -64,6 +64,8 @@
     let managedExceptions = [];
     let exceptionDoctors = [];
     let pendingExceptionStatusRequest = null;
+    let scheduleRequestId = 0;
+    let weeklyRequestId = 0;
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
@@ -585,6 +587,7 @@
     }
 
     async function loadWeeklySchedule(doctorId) {
+        const requestId = ++weeklyRequestId;
         weeklyView.hidden = false;
         weeklyContent.hidden = true;
         page.querySelector("[data-weekly-empty]").hidden = true;
@@ -600,12 +603,14 @@
                 },
             );
             const data = await response.json();
+            if (requestId !== weeklyRequestId) return;
             if (!response.ok)
                 throw new Error(data.message || "No pudimos cargar la semana del médico.");
             renderWorkingInformation(data);
             weeklyContent.hidden = false;
             weeklyFeedback.hidden = true;
         } catch (error) {
+            if (requestId !== weeklyRequestId) return;
             weeklyFeedback.hidden = true;
             weeklyError.textContent =
                 error.message || "Ocurrió un error al cargar la semana del médico.";
@@ -906,11 +911,25 @@
     }
 
     async function loadSchedules() {
+        const requestId = ++scheduleRequestId;
+        weeklyRequestId += 1;
         feedback.hidden = false;
         feedback.textContent = "Cargando horarios…";
         errorMessage.hidden = true;
         emptyMessage.hidden = true;
         doctorList.replaceChildren();
+        exceptionsList.replaceChildren();
+        exceptionsEmpty.hidden = true;
+        setText("[data-stat-active-doctors]", "—");
+        setText("[data-stat-configured]", "—");
+        setText("[data-stat-exceptions]", "—");
+        if (doctorSelect.value) {
+            weeklyView.hidden = false;
+            weeklyContent.hidden = true;
+            weeklyError.hidden = true;
+            weeklyFeedback.hidden = false;
+            weeklyFeedback.textContent = "Cargando disponibilidad de la semana…";
+        }
 
         const params = new URLSearchParams({
             search: searchInput.value.trim(),
@@ -925,6 +944,7 @@
                 headers: { Accept: "application/json" },
             });
             const data = await response.json();
+            if (requestId !== scheduleRequestId) return;
             if (!response.ok) throw new Error(data.message || "No pudimos cargar los horarios.");
 
             setText("[data-stat-active-doctors]", data.summary.activeDoctors);
@@ -954,11 +974,17 @@
             });
             if (doctorSelect.value) await loadWeeklySchedule(doctorSelect.value);
         } catch (error) {
+            if (requestId !== scheduleRequestId) return;
             feedback.hidden = true;
             errorMessage.textContent = error.message || "Ocurrió un error al cargar los horarios.";
             errorMessage.hidden = false;
             exceptionsList.replaceChildren();
             exceptionsEmpty.hidden = false;
+            if (doctorSelect.value) {
+                weeklyFeedback.hidden = true;
+                weeklyError.textContent = "No pudimos actualizar la semana seleccionada.";
+                weeklyError.hidden = false;
+            }
         }
     }
 
@@ -1007,6 +1033,7 @@
         const dayOfWeek = selectedDate.getUTCDay() || 7;
         selectedDate.setUTCDate(selectedDate.getUTCDate() - dayOfWeek + 1);
         weekInput.value = selectedDate.toISOString().slice(0, 10);
+        loadSchedules();
     });
     configureOpenButton?.addEventListener("click", () => {
         openConfigurationDialog("create");
