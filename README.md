@@ -1,578 +1,324 @@
-# SaludVital
-
 <p align="center">
-  <img src="docs/assets/saludvital-logo.svg" alt="SaludVital logo" width="120" />
+  <img src="public/brand/logo-symbol.png" alt="SaludVital logo" width="110" />
 </p>
 
-<h3 align="center">Your health. Connected.</h3>
+<h1 align="center">SaludVital</h1>
 
 <p align="center">
-  A modern, accessible, and responsive medical appointment management platform.
+  <strong>Medical appointments, clinical workflows, and administration in one application.</strong>
   <br />
-  Connecting patients, healthcare professionals, and administrators through a unified digital experience.
+  An individual software development graduation project for SENA's ADSO program.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Project-Planning-168AAD?style=for-the-badge" alt="Project status: Planning" />
-  <img src="https://img.shields.io/badge/Language-JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript" />
-  <img src="https://img.shields.io/badge/Backend-Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
-  <img src="https://img.shields.io/badge/Database-MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/Express-000000?logo=express&logoColor=white" alt="Express" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript" />
+  <img src="https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
 </p>
 
 <p align="center">
-  <a href="https://github.com/personalProjectsDeltaG8109/saludvital/issues">Report an Issue</a>
-  ·
-  <a href="https://github.com/personalProjectsDeltaG8109/saludvital/wiki">Project Wiki</a>
-  ·
-  <a href="https://github.com/personalProjectsDeltaG8109/saludvital/projects">Project Board</a>
+  <a href="https://github.com/personalProjectsDeltaG8109/saludvital/actions/workflows/ci.yml"><img src="https://github.com/personalProjectsDeltaG8109/saludvital/actions/workflows/ci.yml/badge.svg?branch=develop" alt="SaludVital CI on develop" /></a>
 </p>
 
----
+<p align="center">
+  <a href="#features-by-role">Features</a> ·
+  <a href="#technology-stack">Technology Stack</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#getting-started">Getting Started</a> ·
+  <a href="#testing-and-quality">Testing</a> ·
+  <a href="#documentation">Documentation</a>
+</p>
 
-## Table of Contents
+## Overview
 
-- [About the Project](#about-the-project)
-- [Vision and Goals](#vision-and-goals)
-- [Key Features](#key-features)
-- [User Roles](#user-roles)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Database Design](#database-design)
-- [Accessibility and Responsive Design](#accessibility-and-responsive-design)
-- [Security and Privacy](#security-and-privacy)
-- [Testing Strategy](#testing-strategy)
-- [Development Workflow](#development-workflow)
-- [Project Management](#project-management)
-- [Getting Started](#getting-started)
-- [Documentation](#documentation)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
+SaludVital is a server-rendered web application that brings patient scheduling, doctor consultations, and administrative operations into a shared system. It addresses the need to coordinate medical availability, keep appointment changes traceable, and give each user access to the information relevant to their role.
 
-## About the Project
+The project was developed individually as a graduation project for **Tecnología en Análisis y Desarrollo de Software (ADSO)** at **Servicio Nacional de Aprendizaje (SENA), Colombia**. It applies requirements analysis, relational database design, backend and frontend development, automated testing, and version control within a healthcare scheduling scenario.
 
-**SaludVital** is a healthcare appointment management system designed to simplify the interaction between patients, doctors, and administrative staff.
+The application interface is in **Spanish**. Source identifiers and this technical overview are in **English**.
 
-The platform aims to make appointment scheduling more accessible, improve healthcare workflow organization, and provide authorized users with the tools they need to manage appointments and related medical information.
+**Current status:** the repository contains implemented patient, doctor, and administrator modules. Local execution is documented below. A public demonstration URL has not been published; external messaging requires provider configuration. See [Current Limitations](#current-limitations) for deployment and integration boundaries.
 
-The application will provide a Spanish-language user experience while maintaining English naming conventions throughout the source code, database schema, technical documentation, and development workflow.
+## Features by Role
 
-> **Project status:** Planning and initial repository setup. Features described in this README represent the planned product scope and will be implemented and verified incrementally.
+All three roles use the same login form. The server reads the account's role from the database, selects its dashboard, and enforces authorization on protected routes.
 
-## Vision and Goals
+| Role              | Implemented capabilities                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Patient**       | Register and verify an email address; book, view, reschedule, and cancel appointments; review completed consultations, diagnoses, and treatments; manage profile information, photos, and notification channels.                                                                                                                             |
+| **Doctor**        | Review assigned appointments and daily, weekly, and monthly agenda views; start a consultation; save clinical drafts; record symptoms, vital signs, diagnoses, prescriptions, recommendations, and medical orders; complete consultations; review authorized patient history and appointment notifications; update permitted profile fields. |
+| **Administrator** | Manage user access, doctor accounts, specialties, appointments, weekly availability, and schedule exceptions; review appointment impacts; export appointment records; inspect audit events, reports, notification history, and WhatsApp activity; manage administrative profile settings.                                                    |
 
-Our vision is to build a reliable, intuitive, and inclusive digital platform that makes healthcare appointment management easier for everyone.
+### Appointment Workflow
 
-### Project Goals
+```mermaid
+flowchart LR
+    A["Choose specialty"] --> B["Choose doctor and date"]
+    B --> C["Request available time slots"]
+    C --> D["Confirm booking"]
+    D --> E["Revalidate rules and availability"]
+    E --> F[("Save appointment and history")]
+    F --> G["Doctor starts consultation"]
+    G --> H["Save clinical draft"]
+    H --> I["Complete consultation"]
+    I --> J["Patient reviews completed history"]
+```
 
-- Simplify the medical appointment scheduling process.
-- Improve coordination between patients and healthcare professionals.
-- Provide role-based access to appropriate functionality.
-- Organize appointment schedules and availability.
-- Support the management of diagnoses and prescriptions by authorized medical professionals.
-- Reduce missed appointments through configurable notifications.
-- Explore appointment requests and notifications through WhatsApp.
-- Deliver a consistent experience across mobile devices, tablets, and desktop computers.
-- Apply accessibility, privacy, and security principles throughout development.
+Scheduling rules in the patient service include:
 
-## Key Features
+- **30-minute appointment slots**, with new bookings made at least 30 minutes in advance.
+- Up to **two non-cancelled appointments per patient per Bogotá calendar day**, in different specialties.
+- Checks for overlapping appointments for both the doctor and patient.
+- Weekly availability, additional availability, and blocking schedule exceptions.
+- Patient cancellation at least **24 hours before** the appointment.
+- Patient rescheduling at least **24 hours before the original appointment**, with a new slot at least **five hours ahead**, subject to a maximum of three patient reschedules. Administrative workflows have different notice rules.
+- Pediatric eligibility checks for patients under 18 on the appointment date.
+- Automatic transition of appointments that remain confirmed one hour after their scheduled start to **No Show**, with history and audit records.
 
-Features will be delivered incrementally through planned development sprints.
+Booking operations use database transactions and row locks to coordinate concurrent requests. Availability displayed in the browser is checked again before persistence.
 
-### Patient Portal
-
-- Account registration and authentication.
-- Patient profile management.
-- Doctor and specialty discovery.
-- Appointment booking, cancellation, and rescheduling.
-- Appointment history and status tracking.
-- Access to authorized medical information.
-- Notification preferences.
-- Planned WhatsApp appointment request workflow.
-
-### Doctor Portal
-
-- Appointment calendar and daily schedule.
-- Availability and schedule management.
-- Access to assigned appointments.
-- Authorized patient information.
-- Diagnosis recording during medical consultations.
-- Prescription creation and management.
-- Access to authorized clinical history.
-
-### Administrator Portal
-
-- User and role administration.
-- Doctor and specialty management.
-- Appointment oversight.
-- Schedule and availability administration.
-- Consultation of diagnoses and prescriptions according to permissions.
-- Administrative dashboard and operational indicators.
-- Notification configuration and audit monitoring.
-
-**Clinical responsibility:** Diagnoses and prescriptions are created and managed by authorized healthcare professionals. Administrative access does not automatically grant permission to create or modify clinical records.
-
-## User Roles
-
-| Role          | Main responsibilities                                                |
-| ------------- | -------------------------------------------------------------------- |
-| Patient       | Manage personal information and medical appointments.                |
-| Doctor        | Manage assigned appointments and authorized clinical records.        |
-| Administrator | Manage platform configuration, users, and administrative operations. |
-
-Access to protected resources will be enforced on the server through authentication, authorization, and validation rules.
+Implementation: [appointmentService.js](src/modules/patient/services/appointmentService.js), [doctorConsultationService.js](src/modules/doctor/services/doctorConsultationService.js), and [noShowAppointmentService.js](src/modules/admin/services/noShowAppointmentService.js).
 
 ## Technology Stack
 
-The following technologies are the initial architectural proposal. Versions and dependencies will be selected and verified during project setup.
+| Layer                     | Technology                                          | How it is used                                                                         |
+| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Language                  | JavaScript, ES modules                              | Application logic on the server and in the browser.                                    |
+| Runtime and HTTP          | Node.js, Express 5                                  | Server startup, request processing, routing, middleware, and error handling.           |
+| Templates                 | Pug                                                 | Server-rendered HTML pages and shared interface partials.                              |
+| Styling                   | Tailwind CSS 4, custom CSS                          | Responsive layouts, application colors, and interface components.                      |
+| Persistence               | MySQL, mysql2                                       | Relational storage and the database driver used by Sequelize.                          |
+| Data access               | Sequelize 6, Sequelize CLI                          | Models, associations, transactions, migrations, and seeders.                           |
+| Authentication            | bcrypt, jsonwebtoken, cookie-parser                 | Password hashing and verification, signed JWT cookies, and cookie parsing.             |
+| Request protection        | Helmet, express-rate-limit                          | Security headers and request throttling.                                               |
+| Account email             | Nodemailer, SMTP                                    | Asynchronous email verification and password recovery through an outbox.               |
+| Messaging                 | Meta WhatsApp Cloud API, Resend, Inalambria Express | Provider adapters for WhatsApp, notification email, identity codes, and Colombian SMS. |
+| Automated tests           | Jest, Supertest                                     | Unit tests, HTTP integration tests, and database integration tests.                    |
+| Browser and accessibility | Playwright, @axe-core/playwright                    | Browser workflows, viewport checks, and automated accessibility checks.                |
+| Code quality              | ESLint, Prettier                                    | JavaScript checks and consistent formatting.                                           |
+| Delivery workflow         | Git, GitHub, GitHub Actions                         | Branches, issues, pull requests, and continuous integration.                           |
 
-| Technology     | Purpose                                                          |
-| -------------- | ---------------------------------------------------------------- |
-| JavaScript     | Primary programming language.                                    |
-| Node.js        | Server-side JavaScript runtime.                                  |
-| Express.js     | HTTP server, routing, and middleware.                            |
-| Pug            | Server-rendered HTML templates.                                  |
-| HTML5          | Semantic page structure.                                         |
-| Tailwind CSS   | Responsive interface styling and reusable design patterns.       |
-| MySQL          | Relational database.                                             |
-| Sequelize      | Object-relational mapping and database access.                   |
-| Jest           | Unit and integration testing.                                    |
-| Supertest      | HTTP endpoint testing.                                           |
-| Playwright     | Browser automation and end-to-end testing.                       |
-| axe-core       | Automated accessibility checks.                                  |
-| Git and GitHub | Version control, collaboration, reviews, and project management. |
-
-### Architectural Principles
-
-- Modular and maintainable code.
-- Separation of presentation, business logic, and data access.
-- Reusable interface components.
-- Consistent naming conventions in English.
-- Centralized configuration and environment variables.
-- Automated testing from the beginning.
-- Responsive and accessible interface design.
+Dependency ranges and commands are defined in [package.json](package.json); resolved dependencies are recorded in [package-lock.json](package-lock.json).
 
 ## Architecture
 
-SaludVital will initially follow a modular monolithic architecture.
+SaludVital runs as a **single Express application organized into feature modules**. Pug renders pages on the server, while browser scripts call JSON endpoints for interactive workflows. Routes delegate business operations to services; some page handlers also query models directly.
 
 ```mermaid
 flowchart TD
-    A["Spanish-language responsive UI"] --> B["Express.js application"]
-    B --> C["Authentication and authorization"]
-    B --> D["Feature modules"]
-    D --> E["Controllers"]
-    E --> F["Services and business rules"]
-    F --> G["Sequelize models"]
-    G --> H[("MySQL database")]
-    F --> I["Notification services"]
-    I --> J["Email and future WhatsApp integration"]
+    U["Browser: rendered HTML, CSS, JavaScript"] -->|"HTTP requests and forms"| A["Express application"]
+    A --> M["Authentication and role middleware"]
+    M --> R["Auth, patient, doctor, and admin routes"]
+    R --> C["Controllers and page handlers"]
+    C --> S["Business services"]
+    S --> Q["Sequelize models and transactions"]
+    Q --> DB[("MySQL")]
+    S --> V["Pug templates"]
+    V --> U
+    DB --> W["Outbox and notification workers"]
+    W --> P["SMTP, Resend, WhatsApp, SMS"]
+    P -->|"WhatsApp webhook events"| A
 ```
 
-The application will be organized into modules such as authentication, patients, doctors, appointments, schedules, diagnoses, prescriptions, notifications, and administration.
+- [app.js](app.js) configures middleware, static assets, templates, routes, and error handling.
+- [server.js](server.js) verifies the database connection, starts the HTTP server and background schedulers, and coordinates shutdown.
+- [src/modules](src/modules) contains the `auth`, `patient`, `doctor`, and `admin` domains.
+- [src/models/associations.js](src/models/associations.js) registers the relationships used by Sequelize queries.
 
-Each module will separate routing, request handling, business rules, and validation wherever appropriate.
-
-## Project Structure
-
-The following structure is the intended direction. Directories will be introduced as the corresponding functionality is implemented.
-
-```text
-saludvital/
-├── app.js
-├── server.js
-├── package.json
-├── .env.example
-├── .gitignore
-├── README.md
-├── config/
-│   ├── database.js
-│   └── environment.js
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── src/
-│   ├── modules/
-│   │   ├── auth/
-│   │   ├── patients/
-│   │   ├── doctors/
-│   │   ├── appointments/
-│   │   ├── schedules/
-│   │   ├── diagnoses/
-│   │   ├── prescriptions/
-│   │   ├── specialties/
-│   │   ├── notifications/
-│   │   └── administration/
-│   ├── middleware/
-│   ├── models/
-│   ├── services/
-│   └── utils/
-├── views/
-│   ├── layouts/
-│   ├── components/
-│   └── pages/
-│       ├── auth/
-│       ├── patient/
-│       ├── doctor/
-│       └── admin/
-├── public/
-│   ├── css/
-│   ├── js/
-│   ├── images/
-│   └── icons/
-├── tests/
-│   ├── unit/
-│   ├── integration/
-│   ├── accessibility/
-│   └── e2e/
-├── docs/
-│   ├── assets/
-│   ├── diagrams/
-│   └── technical/
-└── .github/
-    ├── ISSUE_TEMPLATE/
-    └── PULL_REQUEST_TEMPLATE.md
-```
-
-## Database Design
-
-The application will use MySQL with Sequelize for structured data management.
-
-The database design will be documented before implementing the business modules.
-
-Planned entities include:
-
-- Users and roles.
-- Patients and doctors.
-- Medical specialties.
-- Doctor schedules and schedule exceptions.
-- Appointments and appointment statuses.
-- Diagnoses and prescriptions.
-- Notifications and notification preferences.
-- WhatsApp appointment requests.
-- Audit logs.
-
-The final schema, entity relationships, field definitions, constraints, indexes, migrations, and seed data will be documented in the project Wiki.
-
-Database names, table names, column names, and model identifiers will use English conventions.
-
-## Accessibility and Responsive Design
-
-SaludVital will be designed for a broad range of users and devices.
-
-### Responsive Design
-
-Target testing widths:
-
-| Device category | Reference width |
-| --------------- | --------------: |
-| Small mobile    |          320 px |
-| Standard mobile |          375 px |
-| Large mobile    |          430 px |
-| Tablet          |          768 px |
-| Laptop          |         1024 px |
-| Desktop         |         1440 px |
-
-These widths are testing references, not fixed layout restrictions.
-
-### Accessibility Goals
-
-- Target WCAG 2.2 Level AA.
-- Keyboard-accessible navigation and controls.
-- Visible focus indicators.
-- Appropriate text and interface contrast.
-- Semantic HTML and accessible form labels.
-- Clear validation and error messages in Spanish.
-- Screen-reader support.
-- Adequate touch target sizes.
-- No reliance on color alone to communicate information.
-- Testing at different zoom levels and viewport sizes.
-
-Automated accessibility tools will complement manual keyboard and screen-reader checks.
-
-## Security and Privacy
-
-Security will be incorporated into the architecture and development workflow.
-
-Planned measures include:
-
-- Secure password hashing.
-- Server-side input validation.
-- Role-based authorization.
-- Secure session and cookie configuration.
-- Protection against common web vulnerabilities.
-- Environment-based secret management.
-- Restricted access to clinical information.
-- Audit logging for relevant actions.
-- Safe error handling that avoids exposing sensitive information.
-- Synthetic data for development and testing.
-
-Security and privacy requirements will be reviewed against the applicable regulations before production deployment.
-
-## Testing Strategy
-
-Testing will be introduced alongside implementation, rather than postponed until the end.
-
-| Test level          | Purpose                                          | Proposed tools             |
-| ------------------- | ------------------------------------------------ | -------------------------- |
-| Unit tests          | Validate individual functions and services.      | Jest                       |
-| Integration tests   | Validate module and database interactions.       | Jest, Supertest            |
-| End-to-end tests    | Verify complete user workflows.                  | Playwright                 |
-| Responsive tests    | Check layouts across viewport sizes.             | Playwright                 |
-| Accessibility tests | Detect accessibility violations.                 | axe-core and manual checks |
-| Regression tests    | Ensure existing functionality continues working. | Automated test suite       |
-
-A feature will not be considered complete until its acceptance criteria and relevant tests have been reviewed.
-
-## Development Workflow
-
-The project will use a controlled branch-based workflow.
+### Core Data Relationships
 
 ```mermaid
-flowchart TD
-    A["develop"] --> B["feature/*"]
-    B --> C["Implement and document"]
-    C --> D["Run relevant tests"]
-    D --> E{"Checks pass?"}
-    E -- No --> C
-    E -- Yes --> F["Open Pull Request"]
-    F --> G["Review and merge into develop"]
-    G --> H["Create release/* when ready"]
-    H --> I["Verify release"]
-    I --> J["Merge approved release into main"]
+erDiagram
+    roles ||--o{ users : assigns
+    users ||--o| patients : has
+    users ||--o| doctors : has
+    specialties ||--o{ doctors : groups
+    patients ||--o{ appointments : books
+    doctors ||--o{ appointments : receives
+    appointments ||--o{ appointment_history : records
+    appointments ||--o| consultations : produces
+    consultations ||--o{ diagnoses : contains
+    consultations ||--o{ prescriptions : contains
+    prescriptions ||--o{ prescription_items : contains
 ```
 
-### Branch Conventions
+This is a simplified relationship diagram. Additional tables support availability, exceptions, notification preferences, message delivery, email jobs, password recovery, WhatsApp conversations, and audit logs. Schema changes are versioned in [database/migrations](database/migrations).
 
-| Branch      | Purpose                                                  |
-| ----------- | -------------------------------------------------------- |
-| `main`      | Production-ready code.                                   |
-| `develop`   | Integration branch for completed features.               |
-| `release/*` | Release preparation, stabilization, and verification.    |
-| `feature/*` | New functionality, documentation, and development tasks. |
+## Authentication and Security
 
-Development work must not be performed directly on `main` or `develop`.
+- Passwords are stored as bcrypt hashes; login uses `bcrypt.compare`.
+- A signed **HS256 JWT** is stored in an `httpOnly` cookie with `sameSite: lax`; the cookie is `secure` in production.
+- A server-side session identifier links the JWT to an in-memory activity record. The inactivity limit is three minutes; JWT expiry is configured separately.
+- Protected requests check the account's current active state and role before applying role authorization.
+- Login has both request throttling and a persistent account lock after five failed password attempts.
+- Email verification and password recovery use expiring tokens whose hashes are persisted.
+- Business services validate inputs and ownership; relevant operations create appointment history or audit records.
 
-### Commit Conventions
+These are implemented controls, not a security certification. Deployment-related limitations and remaining work are listed below. Never commit `.env`, signing secrets, provider keys, or real patient information.
 
-Commit messages will use English and follow a consistent format.
+## Notifications and WhatsApp
 
-Examples:
+| Component                     | Implementation and requirements                                                                                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Account email**             | `EmailOutbox` jobs are processed through Nodemailer/SMTP for verification and recovery. Requires SMTP credentials and a correct `APP_BASE_URL`.                                                                                                               |
+| **Appointment notifications** | Workers process reminders, rescheduling, and cancellation events using patient channel preferences. Delivery remains disabled unless `NOTIFICATION_DELIVERY_ENABLED=true`.                                                                                    |
+| **Email notifications**       | Resend adapter with configurable sender and message content.                                                                                                                                                                                                  |
+| **SMS**                       | Inalambria Express adapter for Colombian mobile numbers, with error classification for retry decisions.                                                                                                                                                       |
+| **WhatsApp**                  | Meta message adapters, signed webhook validation, conversation/message persistence, and provider delivery-status updates. Requires Meta credentials, webhook setup, and approved notification templates.                                                      |
+| **Chatbot**                   | Code supports patient identity verification and appointment operations. Execution requires a published active flow and is explicitly disabled when `NODE_ENV=production`. The administrative editor saves draft versions; saving a draft does not publish it. |
 
-```text
-docs: initialize project documentation
-feat: add patient registration form
-test: add appointment validation tests
-fix: correct mobile navigation layout
-refactor: separate appointment business logic
-```
-
-Pull Requests will reference related Issues, describe the changes, and include relevant testing evidence.
-
-## Project Management
-
-GitHub will be used to manage development tasks, collaboration, and sprint progress.
-
-The project will include:
-
-- **Issues:** user stories, bugs, technical tasks, and testing tasks.
-- **Labels:** type, priority, module, and review status.
-- **Assignees:** an identified person responsible for each task.
-- **Milestones:** sprint goals and release objectives.
-- **GitHub Projects:** the development board and progress tracking.
-- **GitHub Wiki:** technical documentation and project decisions.
+Provider acceptance, delivery, and reading are different events. A configured key or template name does not prove successful delivery or provider approval. External delivery must be verified separately in the intended environment.
 
 ## Getting Started
 
-### Prerequisites
+### Requirements
 
-- Node.js 24.x
-- npm (included with Node.js)
-- Git
-- MariaDB 10.4 or a compatible MySQL server
-- Visual Studio Code or another JavaScript editor
+- **Node.js 24** and npm, matching the CI runtime.
+- A reachable **MySQL server**; CI uses MySQL 8.4.
+- Git.
+- SMTP access if you want to exercise registration verification or password recovery by email.
 
-The project uses Sequelize 6 with the `mysql2` driver. The current local development environment uses MariaDB through Sequelize's `mysql` dialect.
-
-### Installation
-
-Clone the repository and enter the project directory:
+### 1. Install the Application
 
 ```bash
-git clone https://github.com/personalProjectsDeltaG8109/saludvital.git
+git clone --branch develop https://github.com/personalProjectsDeltaG8109/saludvital.git
 cd saludvital
-npm install
+npm ci
 ```
 
-### Environment Configuration
+The example checks out `develop`, the integration branch. See [CONTRIBUTING.md](CONTRIBUTING.md) for branch and review conventions.
 
-Create a local `.env` file by copying `.env.example`:
+### 2. Configure the Environment
+
+Copy [.env.example](.env.example) to `.env`:
+
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+```
 
 ```bash
+# macOS / Linux
 cp .env.example .env
 ```
 
-Update the database settings in `.env` to match your local database server. Never commit `.env` or put real credentials in `.env.example`.
+Set these values for your local environment:
 
-Required database variables:
+| Variables                                                            | Purpose                                                                     |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `NODE_ENV`, `PORT`                                                   | Execution mode and HTTP port. Use `development` locally.                    |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`            | Connection to your local development database.                              |
+| `JWT_SECRET`, `JWT_EXPIRES_IN`                                       | A generated signing secret and token lifetime.                              |
+| `APP_BASE_URL`                                                       | Public or local base address used in account email links.                   |
+| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP settings for account email.                                            |
+| `NOTIFICATION_DELIVERY_ENABLED`                                      | Leave `false` until messaging providers and test recipients are configured. |
 
-- `DB_HOST`: database server hostname.
-- `DB_PORT`: database server port.
-- `DB_NAME`: application database name.
-- `DB_USER`: database username.
-- `DB_PASSWORD`: database password, if configured.
+Additional provider variables are documented in `.env.example`. Replace example values locally; do not commit the resulting file.
 
-The application also uses `NODE_ENV`, `PORT`, `JWT_SECRET`, and `JWT_EXPIRES_IN`. Set a secure random `JWT_SECRET` before using the application outside local development.
+### 3. Prepare a Local Development Database
 
-### Development
-
-Start the development server with automatic restarts:
-
-```bash
-npm run dev
-```
-
-The default local address is `http://localhost:3000`.
-
-The health endpoint is available at `/health`.
-
-### CSS Compilation
-
-Compile Tailwind CSS locally:
-
-```bash
-npm run css:build
-```
-
-To watch for stylesheet changes during development:
-
-```bash
-npm run css:watch
-```
-
-The compiled stylesheet is written to `public/css/app.css`. The application does not load Tailwind CSS from a CDN.
-
-### Database Commands
-
-The project uses Sequelize CLI for database migrations and seeders.
+Create the database named by `DB_NAME` on your MySQL server and grant your configured database user access. Then apply the schema:
 
 ```bash
 npm run db:migrate
-npm run db:migrate:undo
+```
+
+For a fresh, isolated **development** database, review [database/seeders](database/seeders) and populate the initial roles, statuses, and development fixtures:
+
+```bash
 npm run db:seed
-npm run db:seed:undo
 ```
 
-These commands operate on the database configured through the environment variables. Review migration and seeder files before executing them. No complete application schema or initial business seed data is included in this foundation feature.
+The seeders include synthetic accounts and clinical examples for local development. They are not a production account-provisioning process, and several intentionally reject production execution. Seeded appointment dates may need preparation for a current demonstration. Do not run development seeders against real patient data.
 
-### Testing and Code Quality
-
-Run the automated test suite:
+### 4. Build Styles and Run
 
 ```bash
-npm test
+npm run css:build
+npm run dev
 ```
 
-Run tests in watch mode or with coverage:
+Open **http://localhost:3000/login**, or use the port configured in `.env`. Use the local development accounts defined by the seeders or register a patient and complete email verification. `npm start` runs the server without Nodemon.
 
-```bash
-npm run test:watch
-npm run test:coverage
-```
+## Testing and Quality
 
-Run ESLint and check formatting:
+| Command                              | Purpose                                                            |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| `npm test -- --runInBand tests/unit` | Run unit tests serially.                                           |
+| `npm run db:test:prepare`            | Apply migrations and initial roles to the dedicated test database. |
+| `npm test -- --runInBand`            | Run Jest unit and integration tests.                               |
+| `npm run test:coverage`              | Generate a coverage report.                                        |
+| `npx playwright install chromium`    | Install the Chromium browser used by browser tests.                |
+| `npm run test:e2e`                   | Run the repository's Playwright scripts.                           |
+| `npm run lint`                       | Check JavaScript with ESLint.                                      |
+| `npm run format:check`               | Check formatting with Prettier.                                    |
+| `npm run css:build`                  | Compile the Tailwind stylesheet.                                   |
 
-```bash
-npm run lint
-npx prettier --check .
-```
+Create **`saludvital_test`** and grant access to the configured database user before preparing database tests. The Jest setup selects that database explicitly; integration and browser tests can create, update, and remove test records. Keep it separate from development and production data.
 
-Verify the database connection using the local diagnostic script:
+The [GitHub Actions workflow](.github/workflows/ci.yml) provisions MySQL 8.4, uses Node.js 24, installs locked dependencies, and runs ESLint, database preparation, Jest, targeted formatting checks, CSS compilation, and browser/accessibility tests. It runs for configured pushes and pull requests involving `main`, `develop`, and `release/**`.
 
-```bash
-node scripts/check-database.js
-```
+Test counts and coverage are intentionally not hard-coded here. Check [workflow runs](https://github.com/personalProjectsDeltaG8109/saludvital/actions/workflows/ci.yml) and generated reports for current results. Automated axe-core checks complement manual accessibility review; they do not establish full accessibility conformance.
 
-The database check requires a reachable database server and valid local credentials.
-
-### Initial Project Structure
+## Project Structure
 
 ```text
-config/                 Application and CLI configuration
-database/migrations/    Database migration files
-database/seeders/       Database seed files
-src/models/             Application data models
-src/styles/             Tailwind CSS source
-views/                  Pug templates
-public/                 Static assets and compiled CSS
-tests/unit/             Unit tests
-tests/integration/      Integration tests
+saludvital/
+├── app.js                  Express configuration and route registration
+├── server.js               HTTP startup, schedulers, and shutdown
+├── config/                 Environment, database, and CLI configuration
+├── database/
+│   ├── migrations/         Versioned schema changes
+│   └── seeders/            Initial records and development fixtures
+├── src/
+│   ├── middleware/         Authentication, authorization, error handling
+│   ├── models/             Sequelize models and associations
+│   ├── modules/
+│   │   ├── auth/           Registration, login, recovery, email jobs
+│   │   ├── patient/        Appointments, profile, history, messaging
+│   │   ├── doctor/         Agenda, consultations, patient access
+│   │   └── admin/          Administration, reports, audit, monitoring
+│   ├── config/             Shared scheduling configuration
+│   └── styles/             Editable Tailwind and CSS source
+├── views/                  Pug pages and partials by role
+├── public/                 Stylesheets, browser scripts, brand assets
+├── scripts/                Database preparation and provider diagnostics
+├── tests/                  Unit, integration, and browser tests
+├── docs/                   User stories and implementation notes
+└── .github/                CI workflow and issue/PR templates
 ```
 
-Additional modules, accessibility tests, end-to-end tests, and technical documentation will be added as their corresponding requirements are implemented.
+## Current Limitations
+
+- **Public demo:** hosting and a demonstration URL are pending.
+- **Sessions:** activity records are process-local and disappear on restart. Multi-instance deployment needs shared session state. The logout route currently clears the cookie without first resolving `req.auth`, so immediate server-side revocation needs completion.
+- **Uploads:** profile photos use the local filesystem; deployment needs a persistence strategy.
+- **Messaging:** credentials, sender setup, templates, recipient permissions, and delivery checks are environment-dependent. No live provider availability is asserted here.
+- **Chatbot administration:** draft editing and runtime execution have different lifecycle requirements; production chatbot execution is currently disabled.
+- **Clinical documents:** completed clinical information and medical orders are supported, but a consultation-document attachment module is not implemented.
 
 ## Documentation
 
-The GitHub Wiki will be the primary source of detailed project documentation.
+- [User Stories and Acceptance Criteria](docs/userStories/userStories.md)
+- [Implementation Notes](docs/implementation)
+- [Models and Relationships](src/models/associations.js)
+- [Database Migrations](database/migrations)
+- [Environment Reference](.env.example)
+- [Development and Contribution Workflow](CONTRIBUTING.md)
+- [Issues](https://github.com/personalProjectsDeltaG8109/saludvital/issues)
 
-Planned documentation pages:
+## Academic Context and Authorship
 
-- Product Overview.
-- Vision and Scope.
-- Functional Requirements.
-- Non-Functional Requirements.
-- User Stories and Acceptance Criteria.
-- Software Architecture.
-- Database Design and Data Dictionary.
-- UML Diagrams.
-- UI/UX and Accessibility.
-- Git Workflow.
-- Testing Strategy.
-- Sprint Planning.
-- Security and Privacy.
-- Deployment Guide.
-- Troubleshooting.
-
-Documentation will be written in English. Explanations and learning support provided to Spanish-speaking contributors may be in Spanish.
-
-## Roadmap
-
-| Phase    | Planned outcome                                                      |
-| -------- | -------------------------------------------------------------------- |
-| Sprint 0 | Product planning, requirements, architecture, and GitHub setup.      |
-| Sprint 1 | Project foundation and responsive design system.                     |
-| Sprint 2 | Database and authentication.                                         |
-| Sprint 3 | Patient portal and appointment booking.                              |
-| Sprint 4 | Doctor portal and clinical workflows.                                |
-| Sprint 5 | Administrative portal.                                               |
-| Sprint 6 | Notifications and WhatsApp integration.                              |
-| Sprint 7 | Quality assurance, security, accessibility, and release preparation. |
-
-## Contributing
-
-Contributions will follow the project's documented Git workflow.
-
-Before submitting a contribution:
-
-1. Review the relevant Issue and acceptance criteria.
-2. Create a feature branch from the current `develop` branch.
-3. Follow the English naming and commenting conventions.
-4. Add or update relevant tests.
-5. Verify responsive behavior and accessibility where applicable.
-6. Submit a Pull Request with a clear description and testing evidence.
-7. Address review feedback before merging.
-
-Issue templates and Pull Request templates will be added during repository setup.
+| Item             | Description                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| Institution      | Servicio Nacional de Aprendizaje — SENA, Colombia                                                   |
+| Program          | Tecnología en Análisis y Desarrollo de Software — ADSO                                              |
+| Project type     | Individual graduation project                                                                       |
+| Focus            | Analysis, design, implementation, testing, and documentation of a healthcare scheduling application |
+| Repository owner | [personalProjectsDeltaG8109](https://github.com/personalProjectsDeltaG8109)                         |
 
 ## License
 
-No license has been selected yet. Licensing will be decided before public distribution.
-
----
-
-<p align="center">
-  <strong>SaludVital</strong>
-  <br />
-  Building a more accessible and connected healthcare experience.
-</p>
+`package.json` declares `ISC`. A standalone license file is not currently included in the repository.
