@@ -80,6 +80,8 @@ try {
             return { ok: true, status: 200, json: async () => result };
         };
     });
+    // Keep the fixed appointment fixtures in the future regardless of the execution date.
+    await page.clock.setFixedTime(new Date("2026-11-03T12:00:00.000Z"));
     await page.addScriptTag({ content: script });
     await page.getByRole("heading", { name: "Editar y reprogramar cita" }).waitFor();
     await page.locator('[data-edit-specialty] option[value="3"]').waitFor({ state: "attached" });
