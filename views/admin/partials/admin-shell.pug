@@ -109,6 +109,8 @@ mixin adminSidebar(activePage)
                 span.admin-nav-icon(aria-hidden="true") ⇥
                 span Cerrar sesión
 
+        include ../../shared/partials/logout-confirmation.pug
+
 mixin adminTopbar(notificationHref, notificationLabel, notificationCount)
     header.admin-topbar(data-admin-topbar)
         button.admin-menu-toggle(

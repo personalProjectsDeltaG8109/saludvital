@@ -1,0 +1,93 @@
+body.logout-confirmation-open {
+    overflow: hidden;
+}
+.logout-confirmation {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(440px, calc(100% - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    box-sizing: border-box;
+    padding: clamp(24px, 5vw, 36px);
+    overflow: auto;
+    border: 1px solid #dbe8f5;
+    border-radius: 24px;
+    background: #fff;
+    color: #123b73;
+    box-shadow: 0 24px 80px rgb(8 40 80 / 24%);
+    font-family: "Segoe UI", Arial, sans-serif;
+    text-align: center;
+}
+.logout-confirmation::backdrop {
+    background: rgb(6 35 69 / 52%);
+}
+.logout-confirmation-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    border-radius: 20px;
+    background: #eaf5ff;
+    color: #0865ba;
+}
+.logout-confirmation-icon svg {
+    width: 32px;
+    height: 32px;
+}
+.logout-confirmation h2 {
+    margin: 0 0 12px;
+    font-size: clamp(21px, 5vw, 26px);
+    line-height: 1.25;
+    color: #123b73;
+}
+.logout-confirmation p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #48617b;
+}
+.logout-confirmation-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 26px;
+}
+.logout-confirmation-actions button {
+    min-width: 0;
+    min-height: 48px;
+    padding: 12px;
+    border: 1px solid #b4cce1;
+    border-radius: 12px;
+    background: #fff;
+    color: #123b73;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.logout-confirmation-actions [data-confirm-logout] {
+    border-color: #0865ba;
+    background: #0865ba;
+    color: #fff;
+}
+.logout-confirmation-actions button:hover {
+    background: #edf6ff;
+}
+.logout-confirmation-actions [data-confirm-logout]:hover {
+    background: #07549b;
+}
+.logout-confirmation-actions button:focus-visible {
+    outline: 3px solid #123b73;
+    outline-offset: 3px;
+}
+.logout-confirmation-actions button:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+@media (max-width: 380px) {
+    .logout-confirmation-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
