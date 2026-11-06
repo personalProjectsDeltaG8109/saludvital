@@ -47,8 +47,8 @@ const root = process.cwd();
                         id: 18,
                         start_at: new Date(Date.now() + 48 * 3600000),
                         doctor: { profile_photo_url: "/brand/logo-symbol.png" },
-                        doctor_label: "Dra. Ana Torres",
-                        specialty: { name: "Medicina general" },
+                        doctor_label: "Dr. Carlos Ramírez",
+                        specialty: { name: "General Medicine" },
                         status: { name: "Confirmed" },
                         history: [],
                         can_reschedule: eligible,
@@ -86,8 +86,9 @@ const root = process.cwd();
                         .locator(".sv-appointment-doctor-photo-trigger")
                         .boundingBox(),
                     name = await card.locator(".sv-appointment-doctor-name").boundingBox();
-                assert.ok(name.y >= img.y + img.height);
-                assert.ok(Math.abs(img.x + img.width / 2 - name.x - name.width / 2) < 2);
+                const specialty = await card.locator(".sv-appointment-specialty").boundingBox();
+                assert.ok(specialty.y >= name.y + name.height);
+                assert.ok(Math.abs(img.y + img.height / 2 - name.y - name.height / 2) < 2);
                 if (eligible && process.env.PATIENT_CARD_SCREENSHOT_DIR)
                     await card.screenshot({
                         path: path.join(

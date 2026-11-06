@@ -76,24 +76,24 @@ html(lang="es")
                                             strong= appointmentDate.toLocaleDateString("es-CO", { day: "2-digit", timeZone: "America/Bogota" })
                                             span= appointmentDate.toLocaleDateString("es-CO", { month: "short", year: "numeric", timeZone: "America/Bogota" })
                                         .sv-appointment-info
-                                            if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
-                                                button.sv-appointment-doctor-photo-trigger(
-                                                    type="button",
-                                                    aria-label="Ver foto de " + nextAppointment.doctor_label,
-                                                    aria-haspopup="dialog",
-                                                    data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
-                                                    data-doctor-name=nextAppointment.doctor_label
-                                                )
-                                                    img.profile-avatar-image(
-                                                        src=nextAppointment.doctor.profile_photo_url,
-                                                        alt="",
-                                                        loading="lazy"
-                                                    )
-                                            else
-                                                span.sv-appointment-doctor-placeholder(
-                                                    aria-hidden="true"
-                                                )= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
                                             p.sv-appointment-doctor-name
+                                                if nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
+                                                    button.sv-appointment-doctor-photo-trigger(
+                                                        type="button",
+                                                        aria-label="Ver foto de " + nextAppointment.doctor_label,
+                                                        aria-haspopup="dialog",
+                                                        data-open-doctor-photo=nextAppointment.doctor.profile_photo_url,
+                                                        data-doctor-name=nextAppointment.doctor_label
+                                                    )
+                                                        img.profile-avatar-image(
+                                                            src=nextAppointment.doctor.profile_photo_url,
+                                                            alt="",
+                                                            loading="lazy"
+                                                        )
+                                                else
+                                                    span.sv-appointment-doctor-placeholder(
+                                                        aria-hidden="true"
+                                                    )= nextAppointment.doctor_label.split(" ").slice(0, 2).map((part) => part[0]).join("")
                                                 strong= nextAppointment.doctor_label
                                             p.sv-appointment-specialty= nextAppointment.specialty.name
                                             p.sv-appointment-time= appointmentDate.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" })
