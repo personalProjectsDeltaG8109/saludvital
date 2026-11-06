@@ -3,6 +3,21 @@ import pug from "pug";
 import { chromium } from "playwright";
 import { readFile } from "node:fs/promises";
 
+function getFutureDateKey(daysAhead = 2) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+    const dateParts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(futureDate);
+    const dateValues = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
+
+    return `${dateValues.year}-${dateValues.month}-${dateValues.day}`;
+}
+
+const availableDate = getFutureDateKey();
 const markup = pug.renderFile(path.resolve("views/admin/appointment-edit.pug"), {
     pageTitle: "Editar cita #17 | SaludVital",
     adminName: "Administradora",
@@ -105,7 +120,7 @@ try {
     await page.locator("[data-edit-specialty]").selectOption("5");
     await page.locator('[data-edit-doctor] option[value="7"]').waitFor({ state: "attached" });
     await page.locator("[data-edit-doctor]").selectOption("7");
-    await page.locator("[data-edit-date]").fill("2026-11-05");
+    await page.locator("[data-edit-date]").fill(availableDate);
     await page.locator("[data-edit-time]").selectOption("11:00");
     await page.locator("[data-edit-reason]").fill("Control de seguimiento");
     await page.getByRole("button", { name: "Guardar cambios" }).click();
@@ -129,7 +144,7 @@ try {
     if (
         submittedBody.specialtyId !== "5" ||
         submittedBody.doctorId !== "7" ||
-        submittedBody.date !== "2026-11-05" ||
+        submittedBody.date !== availableDate ||
         submittedBody.reason !== "Control de seguimiento"
     ) {
         throw new Error(`Unexpected appointment edit payload: ${JSON.stringify(submittedBody)}`);
