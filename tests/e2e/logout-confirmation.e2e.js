@@ -177,6 +177,12 @@ try {
             form.requestSubmit(form.querySelector('button[type="submit"]'));
         });
         await page.locator("[data-logout-confirmation]").waitFor({ state: "visible" });
+        await page.locator("[data-logout-confirmation]").evaluate((dialog) => {
+            dialog.close();
+            const form = document.querySelector('form[action="/logout"]');
+            form.requestSubmit(form.querySelector('button[type="submit"]'));
+        });
+        await page.locator("[data-logout-confirmation]").waitFor({ state: "visible" });
         await Promise.all([
             page.waitForURL("**/logout", { waitUntil: "domcontentloaded" }),
             page.locator("[data-confirm-logout]").evaluate((button) => {

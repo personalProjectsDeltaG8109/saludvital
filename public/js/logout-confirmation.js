@@ -56,6 +56,8 @@
     });
     cancel.addEventListener("click", () => dialog.close());
     dialog.addEventListener("close", () => {
+        // Ignore a close event queued before the dialog was reopened.
+        if (dialog.open) return;
         document.body.classList.remove("logout-confirmation-open");
         pendingForm = null;
         if (trigger?.isConnected) trigger.focus({ preventScroll: true });
