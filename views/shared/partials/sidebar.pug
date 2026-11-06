@@ -10,8 +10,17 @@ aside.sv-sidebar(id=sidebarId)
                     title="Esta sección aún no está disponible"
                 )
                     span.sv-nav-icon(aria-hidden="true")
-                        svg(viewBox="0 0 24 24")
-                            path(d=item.icon)
+                        if item.iconImage
+                            img(
+                                src=item.iconImage,
+                                alt="",
+                                width="28",
+                                height="28",
+                                decoding="async"
+                            )
+                        else
+                            svg(viewBox="0 0 24 24")
+                                path(d=item.icon)
                     span= item.label
             else
                 a.sv-nav-link(
@@ -20,8 +29,17 @@ aside.sv-sidebar(id=sidebarId)
                     aria-current=activeNav === item.key ? "page" : null
                 )
                     span.sv-nav-icon(aria-hidden="true")
-                        svg(viewBox="0 0 24 24")
-                            path(d=item.icon)
+                        if item.iconImage
+                            img(
+                                src=item.iconImage,
+                                alt="",
+                                width="28",
+                                height="28",
+                                decoding="async"
+                            )
+                        else
+                            svg(viewBox="0 0 24 24")
+                                path(d=item.icon)
                     span= item.label
 
     .sv-sidebar-footer
@@ -29,3 +47,5 @@ aside.sv-sidebar(id=sidebarId)
             button(type="submit")
                 span(aria-hidden="true") ↪
                 = ` ${logoutLabel}`
+
+include logout-confirmation.pug
