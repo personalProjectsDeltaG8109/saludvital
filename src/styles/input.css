@@ -1629,6 +1629,332 @@
     }
 }
 
+/* The splash is a decorative, bounded introduction; login remains available underneath. */
+.login-splash {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: grid;
+    overflow: hidden;
+    place-items: center;
+    background: #fff;
+    color: #123b73;
+    pointer-events: none;
+    animation: login-splash-fallback 2.5s ease forwards;
+}
+
+.login-splash[data-managed="true"] {
+    animation: none;
+}
+
+.login-splash-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    width: min(84vw, 360px);
+    flex-direction: column;
+    align-items: center;
+    gap: 1.1rem;
+    transform: translateY(-8vh);
+}
+
+.login-splash-logo {
+    position: relative;
+    z-index: 2;
+    width: min(68vw, 260px);
+    height: auto;
+    animation: login-splash-logo-in 700ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.login-splash-pulse {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: min(72vw, 300px);
+    height: 110px;
+    margin-top: -6.2rem;
+    margin-bottom: 3.8rem;
+    place-items: center;
+    border: 1px solid rgb(22 141 226 / 18%);
+    border-radius: 999px;
+    background: rgb(22 141 226 / 5%);
+    box-shadow:
+        0 0 34px rgb(19 184 176 / 14%),
+        inset 0 0 25px rgb(22 141 226 / 5%);
+    animation: login-splash-orbit 3.2s ease-in-out infinite;
+}
+
+.login-splash-ecg {
+    width: 78%;
+    overflow: visible;
+}
+
+.login-splash-ecg path {
+    stroke: #13b8b0;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 330;
+    stroke-dashoffset: 330;
+    animation: login-splash-ecg-draw 1.35s ease-in-out 300ms infinite;
+}
+
+.login-splash-message {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.login-splash-progress {
+    width: min(58vw, 220px);
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(18 59 115 / 10%);
+}
+
+.login-splash-progress span {
+    display: block;
+    width: 42%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #168de2, #13b8b0);
+    box-shadow: 0 0 12px rgb(19 184 176 / 65%);
+    animation: login-splash-progress 1.1s ease-in-out infinite alternate;
+}
+
+.login-splash-dots {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.login-splash-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #168de2;
+    animation: login-splash-dot 800ms ease-in-out infinite alternate;
+}
+
+.login-splash-dots span:nth-child(2) {
+    animation-delay: 140ms;
+}
+.login-splash-dots span:nth-child(3) {
+    animation-delay: 280ms;
+}
+
+.login-splash-waves,
+.login-splash-wave {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.login-splash-wave {
+    inset: auto -10% -36%;
+    height: 58%;
+    border-radius: 50% 50% 0 0;
+    background: radial-gradient(
+        ellipse at 50% 100%,
+        rgb(19 184 176 / 12%),
+        rgb(22 141 226 / 8%) 48%,
+        transparent 72%
+    );
+    animation: login-splash-wave 4s ease-in-out infinite alternate;
+}
+
+.login-splash-wave-two {
+    inset: auto -18% -43%;
+    height: 62%;
+    opacity: 0.7;
+    animation-delay: -1.5s;
+}
+
+.login-splash-orbit {
+    position: absolute;
+    width: min(68vw, 420px);
+    aspect-ratio: 1;
+    border: 1px solid rgb(22 141 226 / 11%);
+    border-radius: 50%;
+    box-shadow:
+        0 0 32px rgb(22 141 226 / 7%),
+        inset 0 0 26px rgb(19 184 176 / 5%);
+    animation: login-splash-orbit 5s ease-in-out infinite alternate;
+}
+
+.login-splash-orbit-two {
+    width: min(52vw, 320px);
+    border-color: rgb(19 184 176 / 14%);
+    animation-delay: -2s;
+}
+
+.login-splash-particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #13b8b0;
+    box-shadow: 0 0 12px rgb(19 184 176 / 70%);
+    animation: login-splash-particle 1.8s ease-out infinite;
+}
+
+.login-splash-particle:nth-child(1) {
+    --particle-x: -34vw;
+    --particle-y: -18vh;
+    animation-delay: 0ms;
+}
+.login-splash-particle:nth-child(2) {
+    --particle-x: 28vw;
+    --particle-y: -24vh;
+    animation-delay: 250ms;
+}
+.login-splash-particle:nth-child(3) {
+    --particle-x: 38vw;
+    --particle-y: 12vh;
+    animation-delay: 500ms;
+}
+.login-splash-particle:nth-child(4) {
+    --particle-x: -29vw;
+    --particle-y: 26vh;
+    animation-delay: 750ms;
+}
+.login-splash-particle:nth-child(5) {
+    --particle-x: 12vw;
+    --particle-y: 30vh;
+    animation-delay: 1s;
+}
+.login-splash-particle:nth-child(6) {
+    --particle-x: -38vw;
+    --particle-y: -5vh;
+    animation-delay: 1.25s;
+}
+
+.login-splash.is-ready .login-splash-logo {
+    animation: login-splash-ready 350ms ease-in-out both;
+}
+.login-splash.is-dismissing {
+    animation: login-splash-exit 360ms ease-in forwards;
+}
+
+@keyframes login-splash-fallback {
+    0%,
+    78% {
+        opacity: 1;
+        visibility: visible;
+    }
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes login-splash-logo-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes login-splash-ready {
+    50% {
+        filter: drop-shadow(0 0 12px rgb(19 184 176 / 34%));
+        transform: scale(1.035);
+    }
+}
+
+@keyframes login-splash-ecg-draw {
+    0% {
+        stroke-dashoffset: 330;
+        opacity: 0.35;
+    }
+    55%,
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+}
+
+@keyframes login-splash-progress {
+    from {
+        transform: translateX(-35%);
+    }
+    to {
+        transform: translateX(145%);
+    }
+}
+
+@keyframes login-splash-dot {
+    to {
+        opacity: 0.35;
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes login-splash-wave {
+    to {
+        transform: translate3d(0, -10px, 0) scale(1.04);
+    }
+}
+
+@keyframes login-splash-orbit {
+    to {
+        transform: scale(1.04);
+    }
+}
+
+@keyframes login-splash-particle {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0) scale(0.5);
+    }
+    18% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(var(--particle-x), var(--particle-y), 0) scale(0.1);
+    }
+}
+
+@keyframes login-splash-exit {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(1.015);
+    }
+}
+
+@media (max-width: 640px) {
+    .login-splash-content {
+        gap: 0.9rem;
+    }
+    .login-splash-particle:nth-child(n + 5) {
+        display: none;
+    }
+    .login-splash-orbit-one {
+        width: 78vw;
+    }
+    .login-splash-orbit-two {
+        width: 58vw;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-splash,
+    .login-splash * {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 .login-page .whatsapp-widget {
     display: none;
 }

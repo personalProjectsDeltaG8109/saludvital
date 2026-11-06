@@ -98,26 +98,29 @@ function getConfiguredWhatsAppContactUrl() {
         : null;
 }
 
-function getLoginPageData(error, lockedUntil = null) {
+function getLoginPageData(error, lockedUntil = null, showLoginSplash = false) {
     return {
         pageTitle: "Iniciar sesión | SaludVital",
         error,
         whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         loginLockedUntil: lockedUntil ? new Date(lockedUntil).getTime() : null,
+        showLoginSplash,
     };
 }
 
-function renderLoginPage(res, statusCode, error, lockedUntil = null) {
+function renderLoginPage(res, statusCode, error, lockedUntil = null, showLoginSplash = false) {
     if (lockedUntil) {
         res.set("Cache-Control", "no-store");
     }
 
-    return res.status(statusCode).render("auth/login", getLoginPageData(error, lockedUntil));
+    return res
+        .status(statusCode)
+        .render("auth/login", getLoginPageData(error, lockedUntil, showLoginSplash));
 }
 
 export function showLogin(req, res) {
     const error = typeof req.query.error === "string" ? req.query.error : null;
-    return renderLoginPage(res, 200, error);
+    return renderLoginPage(res, 200, error, null, true);
 }
 
 export function showLoginLocked(req, res, lockedUntil) {

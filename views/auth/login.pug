@@ -9,6 +9,8 @@ html(lang="es")
         link(rel="stylesheet", href="/css/app.css")
 
     body.login-page.min-h-screen.text-primary.antialiased
+        if showLoginSplash
+            include ./partials/login-splash
         main.login-layout
             include ./partials/login-desktop
 
@@ -49,3 +51,5 @@ html(lang="es")
                     )
 
         script(src="/js/login.js", defer)
+        if showLoginSplash
+            script(src="/js/login-splash.js", defer)
