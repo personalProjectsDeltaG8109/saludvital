@@ -91,16 +91,18 @@ const dashboardRoutes = {
 /**
  * Render the login page with an optional error message.
  */
-function getLoginPageData(error, lockedUntil = null) {
+function getConfiguredWhatsAppContactUrl() {
     const contactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER?.replace(/\D/g, "") || "";
-    const whatsappContactUrl = /^[1-9]\d{7,14}$/.test(contactNumber)
+    return /^[1-9]\d{7,14}$/.test(contactNumber)
         ? `https://wa.me/${contactNumber}?text=${encodeURIComponent("Hola, quisiera recibir información sobre SaludVital.")}`
         : null;
+}
 
+function getLoginPageData(error, lockedUntil = null) {
     return {
         pageTitle: "Iniciar sesión | SaludVital",
         error,
-        whatsappContactUrl,
+        whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         loginLockedUntil: lockedUntil ? new Date(lockedUntil).getTime() : null,
     };
 }
@@ -157,6 +159,7 @@ export function showForgotPassword(req, res) {
         pageTitle: "Recuperar contraseña | SaludVital",
         error: null,
         success: null,
+        whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         source,
         returnDestination: getRecoveryReturnDestination(source),
     });
@@ -175,7 +178,8 @@ export async function forgotPassword(req, res, next) {
             pageTitle: "Recuperar contraseña | SaludVital",
             error: null,
             success:
-                "Si existe una cuenta asociada a ese correo, recibirás instrucciones para recuperar tu contraseña.",
+                "Si el correo electrónico está asociado a una cuenta, enviaremos un enlace para restablecer la contraseña.",
+            whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             source,
             returnDestination: getRecoveryReturnDestination(source),
         });
@@ -201,6 +205,7 @@ export function showResetPassword(req, res) {
         token,
         error: null,
         success: null,
+        whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
     });
 }
 
@@ -232,6 +237,7 @@ export async function resetPasswordController(req, res, next) {
                 token: typeof token === "string" ? token : "",
                 error: messages[result.reason] || messages.invalid_or_expired,
                 success: null,
+                whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             });
         }
 
@@ -249,6 +255,7 @@ export async function resetPasswordController(req, res, next) {
             error: null,
             success:
                 "Tu contraseña fue actualizada y cerramos tu sesión por seguridad. Inicia sesión con tu nueva contraseña.",
+            whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         });
     } catch (error) {
         return next(error);

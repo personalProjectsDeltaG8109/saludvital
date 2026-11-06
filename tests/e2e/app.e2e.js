@@ -313,6 +313,100 @@ try {
         console.log(`PASS: login accessibility at ${viewport.name}.`);
     }
 
+    // Verify the recovery request and reset screens across narrow, tablet, and desktop layouts.
+    const recoveryPage = await context.newPage();
+    const recoveryViewports = [
+        { name: "small mobile", width: 320, height: 720 },
+        { name: "mobile", width: 375, height: 812 },
+        { name: "tablet", width: 760, height: 1024 },
+        { name: "desktop", width: 1440, height: 900 },
+    ];
+
+    for (const viewport of recoveryViewports) {
+        await recoveryPage.setViewportSize({
+            width: viewport.width,
+            height: viewport.height,
+        });
+        await recoveryPage.goto(`${baseUrl}/forgot-password`);
+        await recoveryPage.getByRole("heading", { name: "¿Olvidaste tu contraseña?" }).waitFor();
+        await recoveryPage.locator('[data-image-slot="forgot-password"]').waitFor();
+        await recoveryPage.locator('form[action="/forgot-password"] input[name="email"]').waitFor();
+        await recoveryPage.locator('.recovery-whatsapp[href^="https://wa.me/"]').waitFor();
+
+        const recoveryLayout = await recoveryPage.evaluate(() => ({
+            documentWidth: document.documentElement.scrollWidth,
+            bodyWidth: document.body.scrollWidth,
+            viewportWidth: window.innerWidth,
+            cardWidth: document.querySelector(".recovery-card").getBoundingClientRect().width,
+            panelWidth: document.querySelector(".recovery-panel").getBoundingClientRect().width,
+            visualDisplay: getComputedStyle(document.querySelector(".recovery-visual")).display,
+            mobileHeroDisplay: getComputedStyle(document.querySelector(".recovery-mobile-hero"))
+                .display,
+        }));
+
+        if (
+            recoveryLayout.documentWidth > recoveryLayout.viewportWidth ||
+            recoveryLayout.bodyWidth > recoveryLayout.viewportWidth ||
+            recoveryLayout.cardWidth > recoveryLayout.panelWidth
+        ) {
+            throw new Error(
+                `Recovery page overflows at ${viewport.name}: ${JSON.stringify(recoveryLayout)}`,
+            );
+        }
+
+        const usesDesktopComposition = viewport.width >= 1200;
+        if (
+            (usesDesktopComposition && recoveryLayout.visualDisplay === "none") ||
+            (!usesDesktopComposition && recoveryLayout.mobileHeroDisplay === "none")
+        ) {
+            throw new Error(
+                `Recovery composition is incorrect at ${viewport.name}: ${JSON.stringify(recoveryLayout)}`,
+            );
+        }
+
+        await recoveryPage.goto(`${baseUrl}/reset-password?token=visual-test-token`);
+        await recoveryPage.getByRole("heading", { name: "Crea tu nueva contraseña" }).waitFor();
+        await recoveryPage.locator('[data-image-slot="reset-password"]').waitFor();
+        await recoveryPage.locator('input[name="password"]').fill("RecoveryTest123!");
+        await recoveryPage.getByRole("button", { name: "Mostrar contraseña" }).first().click();
+
+        if (
+            (await recoveryPage.locator('input[name="password"]').getAttribute("type")) !== "text"
+        ) {
+            throw new Error(`Password visibility toggle failed at ${viewport.name}.`);
+        }
+
+        console.log(`PASS: password recovery responsive flow at ${viewport.name}.`);
+    }
+
+    for (const viewport of [
+        { name: "mobile", width: 375, height: 812 },
+        { name: "desktop", width: 1440, height: 900 },
+    ]) {
+        await recoveryPage.setViewportSize({ width: viewport.width, height: viewport.height });
+        await recoveryPage.goto(`${baseUrl}/forgot-password`);
+
+        const recoveryAccessibility = await new AxeBuilder({ page: recoveryPage }).analyze();
+        if (recoveryAccessibility.violations.length > 0) {
+            console.error(JSON.stringify(recoveryAccessibility.violations, null, 2));
+            throw new Error(
+                `Password recovery accessibility check found ${recoveryAccessibility.violations.length} violation(s) at ${viewport.name}.`,
+            );
+        }
+
+        await recoveryPage.goto(`${baseUrl}/reset-password?token=visual-test-token`);
+        const resetAccessibility = await new AxeBuilder({ page: recoveryPage }).analyze();
+        if (resetAccessibility.violations.length > 0) {
+            console.error(JSON.stringify(resetAccessibility.violations, null, 2));
+            throw new Error(
+                `Password reset accessibility check found ${resetAccessibility.violations.length} violation(s) at ${viewport.name}.`,
+            );
+        }
+    }
+
+    console.log("PASS: recovery request and reset accessibility at mobile and desktop.");
+    await recoveryPage.close();
+
     for (let attempt = 0; attempt < 5; attempt += 1) {
         const response = await loginPage.request.post(`${baseUrl}/login`, {
             form: {
