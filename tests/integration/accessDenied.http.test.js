@@ -23,10 +23,10 @@ function createApplication(role, allowedRole = "Patient") {
 
 describe("access-denied page and role enforcement", () => {
     test.each([
-        ["Patient", "Administrator", "/patient/dashboard"],
-        ["Doctor", "Patient", "/doctor/dashboard"],
-        ["Administrator", "Patient", "/admin/dashboard"],
-    ])("renders a 403 with recovery for the verified %s role", async (role, allowedRole, href) => {
+        ["Patient", "Administrator"],
+        ["Doctor", "Patient"],
+        ["Administrator", "Patient"],
+    ])("renders a 403 with recovery for the verified %s role", async (role, allowedRole) => {
         const response = await request(createApplication(role, allowedRole))
             .get("/restricted")
             .accept("html");
@@ -34,7 +34,7 @@ describe("access-denied page and role enforcement", () => {
         expect(response.status).toBe(403);
         expect(response.headers["cache-control"]).toBe("no-store");
         expect(response.text).toContain("Acceso denegado");
-        expect(response.text).toContain(`href="${href}"`);
+        expect(response.text).not.toContain("/dashboard");
         expect(response.text).toContain('href="/"');
         expect(response.text).not.toContain(protectedContent);
     });
@@ -46,7 +46,8 @@ describe("access-denied page and role enforcement", () => {
             .accept("html");
 
         expect(response.status).toBe(403);
-        expect(response.text).toContain('href="/doctor/dashboard"');
+        expect(response.text).toContain('href="/"');
+        expect(response.text).not.toContain("/dashboard");
         expect(response.text).not.toContain('href="/admin/dashboard"');
         expect(response.text).not.toContain("example.test");
     });

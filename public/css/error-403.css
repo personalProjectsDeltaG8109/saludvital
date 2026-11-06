@@ -1,11 +1,12 @@
-/* A self-contained access-denied view matching the supplied dark reference. */
+/* A self-contained access-denied view using the shared login background. */
 .error-403-page {
     min-width: 320px;
     min-height: 100vh;
     min-height: 100svh;
     margin: 0;
     color: #123b73;
-    background: #202124;
+    background: #edf7ff url("/brand/login/background-login.png") center / cover no-repeat;
+    background-attachment: fixed;
     font-family: Arial, Helvetica, sans-serif;
 }
 .error-403-page *,
@@ -126,13 +127,6 @@
     stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
-}
-.error-403-button-secondary {
-    color: #085ab3;
-    background: #fff;
-}
-.error-403-button-secondary:hover {
-    background: #edf7ff;
 }
 .error-403-button-primary {
     border-color: #086bd0;

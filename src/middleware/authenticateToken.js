@@ -124,18 +124,9 @@ export function requireRole(...allowedRoles) {
                 !req.path?.startsWith("/api/") && req.accepts?.(["html", "json"]) === "html";
 
             if (wantsHtml) {
-                const dashboards = {
-                    Patient: "/patient/dashboard",
-                    Doctor: "/doctor/dashboard",
-                    Administrator: "/admin/dashboard",
-                };
-                const role = req.auth?.role;
-                const dashboardHref = Object.hasOwn(dashboards, role) ? dashboards[role] : null;
-
                 res.set("Cache-Control", "no-store");
                 return res.status(403).render("errors/403", {
                     pageTitle: "Acceso denegado | SaludVital",
-                    dashboardHref,
                 });
             }
 
