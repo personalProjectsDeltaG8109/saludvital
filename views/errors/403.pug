@@ -1,0 +1,34 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="robots", content="noindex, nofollow")
+        meta(name="theme-color", content="#202124")
+        title= pageTitle || "Acceso denegado | SaludVital"
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/error-403.css")
+    body.error-403-page
+        main.error-403-shell(aria-labelledby="error-403-title")
+            figure.error-403-art
+                img(
+                    src="/brand/403-medical-illustration.png",
+                    alt="Ilustración de un médico señalando acceso restringido junto al número 403 y un candado",
+                    width="1605",
+                    height="980",
+                    fetchpriority="high"
+                )
+            section.error-403-panel
+                h1#error-403-title Acceso denegado
+                p.error-403-description No tienes permisos para acceder a esta página.
+                p.error-403-help Si crees que se trata de un error, contacta al administrador del sistema.
+                nav.error-403-actions(aria-label="Opciones para continuar")
+                    a.error-403-button.error-403-button-secondary(href="/")
+                        svg(viewBox="0 0 24 24", aria-hidden="true", focusable="false")
+                            path(d="m12 5-7 7 7 7M5 12h15")
+                        span Volver al inicio
+                    if dashboardHref
+                        a.error-403-button.error-403-button-primary(href=dashboardHref)
+                            svg(viewBox="0 0 24 24", aria-hidden="true", focusable="false")
+                                path(d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9")
+                            span Ir al dashboard
