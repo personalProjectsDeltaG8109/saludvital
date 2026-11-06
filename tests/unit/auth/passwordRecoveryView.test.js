@@ -36,7 +36,7 @@ describe("password recovery views", () => {
         expect(html).toContain("girl.png");
     });
 
-    test("renders a generic sent-link state without the email form", () => {
+    test("renders a generic sent-link state with the supplied confirmation illustration", () => {
         const html = renderFile(recoveryViewPath, {
             ...commonLocals,
             error: null,
@@ -45,6 +45,8 @@ describe("password recovery views", () => {
         });
 
         expect(html).toContain('data-image-slot="recovery-link-sent"');
+        expect(html).toContain("/brand/login/recovery-link-sent.png");
+        expect(html).toContain("recovery-art-slot-plain");
         expect(html).toContain("Hemos enviado el enlace");
         expect(html).toContain("Si el correo electrónico está asociado a una cuenta");
         expect(html).not.toContain('action="/forgot-password"');
@@ -66,5 +68,6 @@ describe("password recovery views", () => {
         expect(html).toContain("al menos tres minúsculas");
         expect(html).toContain('data-image-slot="reset-password"');
         expect(html).toContain("/brand/login/password-security.png");
+        expect(html).toContain("recovery-art-slot-plain");
     });
 });

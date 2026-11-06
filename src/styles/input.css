@@ -514,6 +514,15 @@
     left: calc(50% - 36px);
 }
 
+.recovery-art-slot-plain {
+    background: transparent;
+}
+
+.recovery-art-slot-plain::before,
+.recovery-art-slot-plain::after {
+    display: none;
+}
+
 .recovery-art-slot svg {
     position: relative;
     z-index: 1;
