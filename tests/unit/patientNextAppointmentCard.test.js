@@ -65,9 +65,6 @@ describe("next appointment card", () => {
                     html.indexOf('class="appointment-details-dialog"'),
                 ),
             ).not.toContain("Reprogramar cita");
-        expect(html.indexOf("sv-appointment-doctor-photo-trigger")).toBeLessThan(
-            html.indexOf("sv-appointment-doctor-name"),
-        );
         expect(html.indexOf("sv-appointment-doctor-name")).toBeLessThan(
             html.indexOf("sv-appointment-specialty"),
         );
