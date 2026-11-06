@@ -1,9 +1,20 @@
 #login-splash.login-splash(data-login-splash, aria-hidden="true", inert)
     .login-splash-waves(aria-hidden="true")
-        span.login-splash-wave.login-splash-wave-one
-        span.login-splash-wave.login-splash-wave-two
+        span.login-splash-wave.login-splash-wave-top
+        span.login-splash-wave.login-splash-wave-top-accent
+        span.login-splash-wave.login-splash-wave-bottom
+        span.login-splash-wave.login-splash-wave-bottom-accent
+    .login-splash-plus.login-splash-plus-one(aria-hidden="true")
+    .login-splash-plus.login-splash-plus-two(aria-hidden="true")
+    .login-splash-plus.login-splash-plus-three(aria-hidden="true")
     .login-splash-orbit.login-splash-orbit-one(aria-hidden="true")
     .login-splash-orbit.login-splash-orbit-two(aria-hidden="true")
+    .login-splash-pulse(aria-hidden="true")
+        svg.login-splash-ecg(viewBox="0 0 1440 220", preserveAspectRatio="none", fill="none")
+            path(
+                d="M0 110h210l22-1 18-22 19 37 18-76 19 91 19-45 19 16h194m306 0h194l19-16 19 45 19-91 18 76 19-37 18 22 22 1h210",
+                pathLength="1000"
+            )
     .login-splash-particles(aria-hidden="true")
         span.login-splash-particle
         span.login-splash-particle
@@ -12,15 +23,7 @@
         span.login-splash-particle
         span.login-splash-particle
     .login-splash-content
-        img.login-splash-logo(
-            src="/brand/login/logo-login-mobile.png",
-            alt="",
-            width="300",
-            height="100"
-        )
-        .login-splash-pulse(aria-hidden="true")
-            svg.login-splash-ecg(viewBox="0 0 220 48", fill="none")
-                path(d="M4 25h53l13-1 12-19 17 39 16-32 12 13h89")
+        img.login-splash-logo(src="/brand/logo-vertical.png", alt="", width="260", height="320")
         p.login-splash-message(data-splash-message, aria-live="polite") Preparando tu experiencia...
         .login-splash-progress(role="presentation")
             span

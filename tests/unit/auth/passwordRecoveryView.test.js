@@ -28,7 +28,7 @@ describe("password recovery views", () => {
 
         expect(html).toContain("data-login-splash");
         expect(html).toContain("/js/login-splash.js");
-        expect(html).toContain("/brand/login/logo-login-mobile.png");
+        expect(html).toContain("/brand/logo-vertical.png");
         expect(html).toContain('action="/login"');
     });
 

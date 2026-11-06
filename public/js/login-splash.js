@@ -20,7 +20,7 @@
     const waitForVisibleImages = async () => {
         const visibleImages = [
             ...document.querySelectorAll(
-                ".login-brand-logo, .login-doctor-illustration, .login-mobile-logo, .login-mobile-illustration",
+                ".login-splash-logo, .login-brand-logo, .login-doctor-illustration, .login-mobile-logo, .login-mobile-illustration",
             ),
         ].filter((image) => image.getClientRects().length > 0 && image.complete === false);
         await Promise.race([
