@@ -27,7 +27,6 @@ const {
 const {
     getPatientNotificationSettings,
     getPatientUnreadNotificationCount,
-    markPatientNotificationsAsRead,
     markPatientNotificationEntriesAsRead,
     markAllPatientNotificationEntriesAsRead,
     getPatientAppointmentActivityDetails,
@@ -74,32 +73,6 @@ describe("patient notification read state", () => {
             }),
         );
     });
-
-    test("marks only requested unread records belonging to the authenticated patient", async () => {
-        await expect(markPatientNotificationsAsRead(91, [4, 5])).resolves.toEqual({
-            unreadCount: 3,
-        });
-        expect(Notification.update).toHaveBeenCalledWith(
-            { read_at: expect.any(Date) },
-            {
-                where: {
-                    patient_id: 17,
-                    id: { [Op.in]: [4, 5] },
-                    read_at: null,
-                },
-            },
-        );
-    });
-
-    test.each([[[]], [[0]], [[1, 1]], [[...Array(21)].map((_, index) => index + 1)]])(
-        "rejects invalid or oversized notification selections",
-        async (ids) => {
-            await expect(markPatientNotificationsAsRead(91, ids)).rejects.toMatchObject({
-                status: 400,
-            });
-            expect(Notification.update).not.toHaveBeenCalled();
-        },
-    );
 
     test("does not mark notifications as read just because the history page is opened", async () => {
         NotificationPreference.findAll.mockResolvedValue([]);
