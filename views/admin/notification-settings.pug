@@ -65,6 +65,19 @@ html(lang="es")
                                         span= setting.label
                                         strong(class=setting.configured ? "is-configured" : "is-missing")
                                             | #{ setting.configured ? "Configurado" : "No configurado" }
+                            if channel.webhook
+                                section.admin-notification-webhook(
+                                    aria-label="Configuración del webhook"
+                                )
+                                    h3= channel.webhook.label
+                                    ul
+                                        each setting in channel.webhook.settings
+                                            li
+                                                span= setting.label
+                                                strong(
+                                                    class=setting.configured ? "is-configured" : "is-missing"
+                                                )
+                                                    | #{ setting.configured ? "Configurado" : "No configurado" }
                             footer
                                 span Estado operativo
                                 strong= channel.operationLabel
