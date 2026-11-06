@@ -9,6 +9,7 @@ html(lang="es")
         link(rel="stylesheet", href="/css/app.css")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-appointments.css")
+        link(rel="stylesheet", href="/css/admin-booking-wizard.css")
     body.admin-app
         include partials/admin-shell.pug
         +adminSidebar("appointments")
@@ -40,7 +41,12 @@ html(lang="es")
                     div
                         h1 Nueva cita médica
                         p Registra una cita con pacientes y horarios disponibles.
-                form.appointment-create-form(data-appointment-create-form)
+                ol.admin-booking-steps(aria-label="Pasos para crear una cita")
+                    each label, index in ["Especialidad", "Médico", "Fecha y hora", "Confirmación"]
+                        li(data-step-indicator=index + 1)
+                            span= index + 1
+                            strong= label
+                form.appointment-create-form(data-appointment-create-form, novalidate)
                     p.appointment-create-feedback(
                         role="status",
                         aria-live="polite",
@@ -48,7 +54,12 @@ html(lang="es")
                     )
                         | Cargando pacientes y especialidades...
                     p.appointment-create-error(role="alert", data-create-error, hidden)
-                    .appointment-create-grid
+                    section.admin-booking-panel(
+                        data-booking-step="1",
+                        aria-labelledby="specialty-heading"
+                    )
+                        h2#specialty-heading(tabindex="-1") 1. Selecciona la especialidad
+                        p Elige el paciente y la especialidad de su cita médica.
                         label.appointment-create-field(for="booking-patient")
                             span Paciente
                             select#booking-patient(
@@ -58,37 +69,74 @@ html(lang="es")
                                 disabled
                             )
                                 option(value="") Selecciona un paciente
-                        label.appointment-create-field(for="booking-specialty")
-                            span Especialidad
-                            select#booking-specialty(
-                                name="specialtyId",
-                                required,
-                                data-booking-specialty,
-                                disabled
+                        label.admin-booking-search(for="specialty-search")
+                            span Buscar especialidad
+                            input#specialty-search(
+                                type="search",
+                                placeholder="Buscar especialidad...",
+                                data-specialty-search
                             )
-                                option(value="") Selecciona una especialidad
-                        label.appointment-create-field(for="booking-doctor")
-                            span Médico
-                            select#booking-doctor(
-                                name="doctorId",
-                                required,
-                                data-booking-doctor,
-                                disabled
-                            )
-                                option(value="") Selecciona una especialidad primero
-                        label.appointment-create-field(for="booking-date")
-                            span Fecha
-                            input#booking-date(
-                                type="date",
-                                name="date",
-                                required,
-                                data-booking-date,
-                                disabled
-                            )
-                        label.appointment-create-field(for="booking-time")
-                            span Horario disponible
-                            select#booking-time(name="time", required, data-booking-time, disabled)
-                                option(value="") Selecciona paciente, médico y fecha
+                        p(data-specialty-message, role="status")
+                        .admin-booking-cards(
+                            data-specialty-list,
+                            role="group",
+                            aria-label="Especialidades"
+                        )
+                    section.admin-booking-panel(
+                        data-booking-step="2",
+                        aria-labelledby="doctor-heading",
+                        hidden
+                    )
+                        h2#doctor-heading(tabindex="-1") 2. Selecciona el médico
+                        p Elige el profesional con el que deseas agendar la cita.
+                        p(data-doctor-message, role="status")
+                        .admin-booking-cards(data-doctor-list, role="group", aria-label="Médicos")
+                    section.admin-booking-panel(
+                        data-booking-step="3",
+                        aria-labelledby="datetime-heading",
+                        hidden
+                    )
+                        h2#datetime-heading(tabindex="-1") 3. Selecciona la fecha y hora
+                        p Selecciona un día y consulta los horarios disponibles para el paciente.
+                        .admin-booking-datetime
+                            .admin-booking-calendar
+                                .admin-booking-calendar-heading
+                                    button(
+                                        type="button",
+                                        data-month-shift="-1",
+                                        aria-label="Mes anterior"
+                                    ) ‹
+                                    h3(data-calendar-month, aria-live="polite")
+                                    button(
+                                        type="button",
+                                        data-month-shift="1",
+                                        aria-label="Mes siguiente"
+                                    ) ›
+                                .admin-booking-weekdays(aria-hidden="true")
+                                    each day in ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"]
+                                        span= day
+                                .admin-booking-days(
+                                    data-calendar-days,
+                                    role="group",
+                                    aria-label="Días del mes"
+                                )
+                            .admin-booking-times
+                                h3 Horarios disponibles
+                                p(data-selected-date)
+                                p(data-time-message, role="status")
+                                .admin-booking-time-grid(
+                                    data-time-list,
+                                    role="group",
+                                    aria-label="Horarios"
+                                )
+                    section.admin-booking-panel(
+                        data-booking-step="4",
+                        aria-labelledby="confirmation-heading",
+                        hidden
+                    )
+                        h2#confirmation-heading(tabindex="-1") 4. Confirma la cita
+                        p Revisa los datos antes de crear la cita médica.
+                        dl.admin-booking-summary(data-booking-summary)
                         label.appointment-create-field.appointment-create-reason(
                             for="booking-reason"
                         )
@@ -102,12 +150,13 @@ html(lang="es")
                             )
                     footer.appointment-create-actions
                         a.appointment-create-cancel(href="/admin/appointments") Cancelar
+                        button.appointment-create-cancel(type="button", data-booking-back, hidden) ← Atrás
                         button.appointment-create-submit(
-                            type="submit",
-                            data-create-submit,
+                            type="button",
+                            data-booking-next,
                             disabled
-                        )
-                            | Crear cita
+                        ) Siguiente →
+                        button.appointment-create-submit(type="submit", data-create-submit, hidden) Confirmar cita
                 dialog.appointment-create-success(
                     data-create-success,
                     aria-labelledby="appointment-create-success-title"
