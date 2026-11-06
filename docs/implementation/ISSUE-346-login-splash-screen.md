@@ -4,8 +4,8 @@
 
 - Added a short, decorative splash to the initial `GET /login` response. Failed-login and locked responses do not render it, so authentication messages and lockout guidance remain immediate.
 - Reused the official local SaludVital login logo. CSS draws the ECG line, light rings, waves, particles, and indeterminate progress indicator in the existing brand palette; no animation dependency or external request was added.
-- The script waits briefly for visible login images, tolerates image decode failures, holds the splash for approximately five seconds, shows a short completion message, and removes the overlay. Resource waiting is bounded so failed images cannot extend the display indefinitely.
-- Without the splash script, a CSS fallback hides the overlay after five seconds. Reduced-motion users skip the animation. The overlay is decorative, `aria-hidden`, inert, and does not intercept pointer interaction or change the underlying login layout.
+- The script waits for the browser `load` event, which fires after the page's stylesheets, scripts, images, and other load-blocking resources complete. It then waits for visible images to decode before showing a brief completion message and dismissing the splash. A 15-second ceiling prevents stalled resources from trapping the page.
+- A minimum display interval allows the entrance animation to be seen; it is not a fixed five-second hold. Without the splash script, a 15-second CSS fallback keeps the login accessible. Reduced-motion users skip the animation. The overlay is decorative, `aria-hidden`, inert, and does not intercept pointer interaction or change the underlying login layout.
 - The original login form, password controls, registration and recovery links, WhatsApp links, and authentication flow are unchanged.
 
 ## Verification
@@ -17,9 +17,9 @@
 - `npm run lint`: passed.
 - `npm run format:check`: passed.
 - `npm run css:build`: passed.
-- `node tests/e2e/app.e2e.js`: passed, including splash visibility/dismissal, desktop and 320px mobile overflow, reduced motion, no-script fallback, failed decorative image, responsive login, and axe-core checks.
+- `node tests/e2e/app.e2e.js`: passed before the resource-readiness update; rerun after the update to validate delayed resources and responsive splash behavior.
 - Full `npm run test:e2e`: stopped at the existing `admin-appointment-edit.e2e.js` scenario waiting for “Ese horario ya no está disponible.” The preceding application/login E2E checks passed; this failure is outside the login splash change.
 
 ## Limitations
 
-The progress indicator is intentionally indeterminate: it does not represent database, security, or provider health. A CSS-only fallback dismisses after a fixed interval because no JavaScript readiness signal is available in that mode.
+The progress indicator is intentionally indeterminate and does not represent a measured percentage. When JavaScript is available, the splash waits for load-blocking page resources; the CSS-only fallback uses a fixed safety timeout because it cannot observe page readiness.

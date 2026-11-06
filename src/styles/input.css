@@ -1645,7 +1645,7 @@
         linear-gradient(145deg, #f7fcff 4%, #fff 51%, #effaff 100%);
     color: #123b73;
     pointer-events: none;
-    animation: login-splash-fallback 5s ease forwards;
+    animation: login-splash-fallback 15s ease forwards;
 }
 
 .login-splash[data-managed="true"] {

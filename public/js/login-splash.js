@@ -11,30 +11,39 @@
     }
 
     const splashStartedAt = performance.now();
-    const splashDurationMs = 5000;
+    const minimumSplashDurationMs = 1100;
+    const loadWaitTimeoutMs = 15000;
     const completionMessageDurationMs = 180;
     const exitAnimationDurationMs = 360;
     splash.dataset.managed = "true";
 
     const wait = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
+    const waitForPageLoad = async () => {
+        if (document.readyState === "complete") return;
+
+        await Promise.race([
+            new Promise((resolve) => {
+                window.addEventListener("load", resolve, { once: true });
+            }),
+            wait(loadWaitTimeoutMs),
+        ]);
+    };
     const waitForVisibleImages = async () => {
-        const visibleImages = [
-            ...document.querySelectorAll(
-                ".login-splash-logo, .login-brand-logo, .login-doctor-illustration, .login-mobile-logo, .login-mobile-illustration",
-            ),
-        ].filter((image) => image.getClientRects().length > 0 && image.complete === false);
+        const visibleImages = [...document.images].filter(
+            (image) => image.getClientRects().length > 0 && image.complete,
+        );
+
         await Promise.race([
             Promise.all(visibleImages.map((image) => image.decode().catch(() => undefined))),
-            wait(450),
+            wait(1500),
         ]);
     };
 
     const dismissSplash = async () => {
+        await waitForPageLoad();
         await waitForVisibleImages();
         const elapsedTime = performance.now() - splashStartedAt;
-        const remainingTime =
-            splashDurationMs - elapsedTime - completionMessageDurationMs - exitAnimationDurationMs;
-        await wait(Math.max(0, remainingTime));
+        await wait(Math.max(0, minimumSplashDurationMs - elapsedTime));
         const message = splash.querySelector("[data-splash-message]");
         if (message) message.textContent = "¡Todo listo!";
         splash.classList.add("is-ready");
