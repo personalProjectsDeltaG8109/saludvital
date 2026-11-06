@@ -176,8 +176,9 @@ try {
             form.append(token);
             form.requestSubmit(form.querySelector('button[type="submit"]'));
         });
+        await page.locator("[data-logout-confirmation]").waitFor({ state: "visible" });
         await Promise.all([
-            page.waitForURL("**/logout"),
+            page.waitForURL("**/logout", { waitUntil: "domcontentloaded" }),
             page.locator("[data-confirm-logout]").evaluate((button) => {
                 button.click();
                 button.click();
