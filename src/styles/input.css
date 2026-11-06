@@ -522,6 +522,15 @@
     filter: drop-shadow(0 8px 12px rgb(18 59 115 / 14%));
 }
 
+.recovery-security-illustration {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: min(100%, 180px);
+    height: 112px;
+    object-fit: contain;
+}
+
 .recovery-art-slot-compact {
     height: 96px;
 }
@@ -831,7 +840,6 @@
     .recovery-layout {
         grid-template-columns: minmax(0, 1fr) minmax(500px, 0.78fr);
         background: url("/brand/login/background-login.png") center / cover no-repeat;
-        padding: 16px;
     }
 
     .recovery-visual {
@@ -842,7 +850,7 @@
         min-height: calc(100svh - 32px);
         overflow: hidden;
         border-radius: 28px 0 0 28px;
-        background: linear-gradient(135deg, rgb(255 255 255 / 82%), rgb(224 246 255 / 70%));
+        background: transparent;
     }
 
     .recovery-brand {
@@ -921,9 +929,8 @@
     .recovery-panel {
         justify-content: center;
         border-radius: 0 28px 28px 0;
-        background: rgb(255 255 255 / 80%);
+        background: transparent;
         padding: 38px clamp(28px, 4vw, 64px);
-        backdrop-filter: blur(12px);
     }
 
     .recovery-mobile-hero {
@@ -961,6 +968,15 @@
 
     .recovery-art-slot-lock svg {
         filter: none;
+    }
+
+    .recovery-art-slot-lock {
+        height: 142px;
+    }
+
+    .recovery-art-slot-lock .recovery-security-illustration {
+        width: min(100%, 220px);
+        height: 142px;
     }
 
     .recovery-card h1 {

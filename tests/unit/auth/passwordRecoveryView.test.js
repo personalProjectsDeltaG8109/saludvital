@@ -16,7 +16,7 @@ const commonLocals = {
 };
 
 describe("password recovery views", () => {
-    test("renders the recovery request form and reserved artwork slot", () => {
+    test("renders the recovery request form and supplied security illustration", () => {
         const html = renderFile(recoveryViewPath, {
             ...commonLocals,
             error: null,
@@ -25,6 +25,10 @@ describe("password recovery views", () => {
 
         expect(html).toContain('data-image-slot="forgot-password"');
         expect(html).toContain("recovery-art-slot-lock");
+        expect(html).toContain("/brand/login/password-security.png");
+        expect(html).toContain(
+            "Restablece tu contraseña y continúa gestionando tus citas médicas de forma segura y confiable.",
+        );
         expect(html).toContain('action="/forgot-password"');
         expect(html).toContain('name="email"');
         expect(html).toContain("login-benefit-icon");
@@ -61,5 +65,6 @@ describe("password recovery views", () => {
         expect(html).toContain('maxlength="50"');
         expect(html).toContain("al menos tres minúsculas");
         expect(html).toContain('data-image-slot="reset-password"');
+        expect(html).toContain("/brand/login/password-security.png");
     });
 });

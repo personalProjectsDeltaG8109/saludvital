@@ -5,7 +5,9 @@
 - Redesigned the existing password recovery request, generic link-sent confirmation, and password reset screens to follow the supplied SaludVital references.
 - Reused the approved login logo, background, doctor illustration, password visibility behavior, configured WhatsApp contact, and existing recovery routes.
 - Matched the desktop brand panel's calendar, reminder, and health icons to the login panel. The desktop forgot-password card uses a standalone lock icon without the decorative lock backdrop.
-- Reserved artwork slots above the forgot-password and link-sent headings for illustrations the project owner will provide. No sample image is presented as final artwork.
+- Added the supplied password-security illustration to the forgot-password and reset-password screens. The link-sent artwork slot remains reserved for an owner-provided illustration.
+- Matched the desktop recovery page to the login background: the two wide side panels are transparent, while the recovery form remains in its white card. The WhatsApp appointment callout remains available when its contact destination is configured.
+- Updated the desktop recovery copy to explain that patients can reset their password and continue managing appointments safely.
 - Kept recovery tokens, anti-enumeration behavior, rate limits, password validation, and password persistence in the existing services.
 - Added responsive viewport and accessibility coverage for the recovery request and reset screens.
 
@@ -27,4 +29,4 @@ The confirmation remains generic and does not reveal whether an account exists. 
 
 ## Limitations
 
-Final custom illustrations for the forgot-password and link-sent states have not been supplied yet. Their marked artwork slots are intentionally reserved for replacement. No recovery business logic, database schema, or dependencies were changed.
+The link-sent state still uses its existing neutral illustration because a dedicated image for that state has not been supplied. No recovery business logic, database schema, or dependencies were changed.
