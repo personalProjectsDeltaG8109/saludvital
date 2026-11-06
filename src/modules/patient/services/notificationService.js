@@ -499,41 +499,6 @@ export async function updatePatientNotificationChannel(userId, channel, isEnable
     return { channelStates };
 }
 
-export async function markPatientNotificationsAsRead(userId, notificationIds) {
-    if (
-        !Array.isArray(notificationIds) ||
-        notificationIds.length === 0 ||
-        notificationIds.length > 20 ||
-        notificationIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
-        new Set(notificationIds).size !== notificationIds.length
-    ) {
-        const error = new Error("La selección de notificaciones no es válida.");
-        error.status = 400;
-        throw error;
-    }
-
-    const patient = await Patient.findOne({ where: { user_id: userId }, attributes: ["id"] });
-    if (!patient) {
-        const error = new Error("No se encontró el perfil del paciente.");
-        error.status = 404;
-        throw error;
-    }
-
-    await Notification.update(
-        { read_at: new Date() },
-        {
-            where: {
-                patient_id: patient.id,
-                id: { [Op.in]: notificationIds },
-                read_at: null,
-            },
-        },
-    );
-    return {
-        unreadCount: await Notification.count({ where: { patient_id: patient.id, read_at: null } }),
-    };
-}
-
 export async function markPatientNotificationEntriesAsRead(
     userId,
     notificationIds = [],
