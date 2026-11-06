@@ -32,7 +32,9 @@ if (lockCountdown) {
     function unlockLoginForm() {
         emailInput.disabled = false;
         passwordInput.disabled = false;
-        passwordToggle.disabled = false;
+        passwordToggles.forEach((toggle) => {
+            toggle.disabled = false;
+        });
         submitButton.disabled = false;
         lockCountdown.hidden = true;
 
