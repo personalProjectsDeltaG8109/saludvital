@@ -3,21 +3,6 @@ import pug from "pug";
 import { chromium } from "playwright";
 import { readFile } from "node:fs/promises";
 
-function getFutureDateKey(daysAhead = 2) {
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + daysAhead);
-    const dateParts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Bogota",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    }).formatToParts(futureDate);
-    const dateValues = Object.fromEntries(dateParts.map(({ type, value }) => [type, value]));
-
-    return `${dateValues.year}-${dateValues.month}-${dateValues.day}`;
-}
-
-const availableDate = getFutureDateKey();
 const markup = pug.renderFile(path.resolve("views/admin/appointment-edit.pug"), {
     pageTitle: "Editar cita #17 | SaludVital",
     adminName: "Administradora",
@@ -120,6 +105,10 @@ try {
     await page.locator("[data-edit-specialty]").selectOption("5");
     await page.locator('[data-edit-doctor] option[value="7"]').waitFor({ state: "attached" });
     await page.locator("[data-edit-doctor]").selectOption("7");
+    const availableDate = await page.locator("[data-edit-date]").evaluate((input) => {
+        const [year, month, day] = input.min.split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day + 2)).toISOString().slice(0, 10);
+    });
     await page.locator("[data-edit-date]").fill(availableDate);
     await page.locator("[data-edit-time]").selectOption("11:00");
     await page.locator("[data-edit-reason]").fill("Control de seguimiento");
