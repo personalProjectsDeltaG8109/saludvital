@@ -47,7 +47,8 @@ const { authenticateUser, clearLoginFailures, AuthenticationError, LoginTemporar
     await import("../../../src/modules/auth/services/authService.js");
 const { startSession, endSession } =
     await import("../../../src/modules/auth/services/sessionActivity.js");
-const { login, logout } = await import("../../../src/modules/auth/controllers/authController.js");
+const { login, logout, showLogin, showLoginLocked } =
+    await import("../../../src/modules/auth/controllers/authController.js");
 
 describe("Authentication controller", () => {
     let req;
@@ -89,6 +90,24 @@ describe("Authentication controller", () => {
         );
         expect(res.redirect).toHaveBeenCalledWith(303, "/patient/dashboard");
         expect(next).not.toHaveBeenCalled();
+    });
+
+    test("enables the splash only when opening the login page", () => {
+        showLogin({ query: {} }, res);
+
+        expect(res.render).toHaveBeenCalledWith(
+            "auth/login",
+            expect.objectContaining({ showLoginSplash: true }),
+        );
+    });
+
+    test("keeps the splash disabled on the locked login page", () => {
+        showLoginLocked({}, res, new Date(Date.now() + 60_000));
+
+        expect(res.render).toHaveBeenCalledWith(
+            "auth/login",
+            expect.objectContaining({ showLoginSplash: false }),
+        );
     });
 
     test("does not clear lockout state when credentials are invalid", async () => {
