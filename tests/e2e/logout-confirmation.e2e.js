@@ -174,7 +174,12 @@ try {
             token.name = "confirmation_test";
             token.value = "preserved";
             form.append(token);
-            form.requestSubmit(form.querySelector('button[type="submit"]'));
+            const submitButton = form.querySelector('button[type="submit"]');
+            const dialog = document.querySelector("[data-logout-confirmation]");
+            // Reopen before the queued close event from the first open is dispatched.
+            form.requestSubmit(submitButton);
+            dialog.close();
+            form.requestSubmit(submitButton);
         });
         await page.locator("[data-logout-confirmation]").waitFor({ state: "visible" });
         await Promise.all([
