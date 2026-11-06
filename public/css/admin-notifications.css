@@ -171,6 +171,25 @@
     color: #865508;
 }
 
+.admin-notification-webhook {
+    display: grid;
+    gap: 10px;
+    padding: 13px;
+    border: 1px solid #e4edf7;
+    border-radius: 12px;
+    background: #f7faff;
+}
+
+.admin-notification-webhook h3 {
+    margin: 0;
+    color: #123b73;
+    font-size: 0.82rem;
+}
+
+.admin-notification-webhook ul {
+    gap: 8px;
+}
+
 .admin-notification-settings-card footer {
     display: grid;
     gap: 4px;
