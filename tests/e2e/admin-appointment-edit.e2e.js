@@ -107,7 +107,11 @@ try {
     await page.locator("[data-edit-specialty]").selectOption("5");
     await page.locator('[data-edit-doctor] option[value="7"]').waitFor({ state: "attached" });
     await page.locator("[data-edit-doctor]").selectOption("7");
-    await page.locator("[data-edit-date]").fill("2026-11-05");
+    const availableDate = await page.locator("[data-edit-date]").evaluate((input) => {
+        const [year, month, day] = input.min.split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day + 2)).toISOString().slice(0, 10);
+    });
+    await page.locator("[data-edit-date]").fill(availableDate);
     await page.locator("[data-edit-time]").selectOption("11:00");
     await page.locator("[data-edit-reason]").fill("Control de seguimiento");
     await page.getByRole("button", { name: "Guardar cambios" }).click();
@@ -131,7 +135,7 @@ try {
     if (
         submittedBody.specialtyId !== "5" ||
         submittedBody.doctorId !== "7" ||
-        submittedBody.date !== "2026-11-05" ||
+        submittedBody.date !== availableDate ||
         submittedBody.reason !== "Control de seguimiento"
     ) {
         throw new Error(`Unexpected appointment edit payload: ${JSON.stringify(submittedBody)}`);

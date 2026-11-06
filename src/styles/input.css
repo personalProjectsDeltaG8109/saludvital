@@ -1629,6 +1629,587 @@
     }
 }
 
+/* The splash is a decorative, bounded introduction; login remains available underneath. */
+.login-splash {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            ellipse at 50% 37%,
+            rgb(255 255 255 / 99%) 0 18%,
+            rgb(247 252 255 / 95%) 48%,
+            transparent 76%
+        ),
+        linear-gradient(145deg, #f7fcff 4%, #fff 51%, #effaff 100%);
+    color: #123b73;
+    pointer-events: none;
+    animation: login-splash-fallback 15s ease forwards;
+}
+
+.login-splash[data-managed="true"] {
+    animation: none;
+}
+
+.login-splash-content {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+}
+
+.login-splash-logo {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    width: clamp(190px, 18vw, 270px);
+    height: auto;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 12px 22px rgb(18 59 115 / 8%));
+    animation: login-splash-logo-in 850ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.login-splash-pulse {
+    position: absolute;
+    z-index: 1;
+    top: 25%;
+    left: 0;
+    width: 100%;
+    height: 20%;
+}
+
+.login-splash-ecg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    filter: drop-shadow(0 0 8px rgb(19 184 176 / 44%));
+}
+
+.login-splash-ecg path {
+    stroke: #31c9e6;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: login-splash-ecg-draw 1.8s ease-in-out 250ms infinite;
+}
+
+.login-splash-message,
+.login-splash-progress,
+.login-splash-dots {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.login-splash-message {
+    top: 63%;
+    width: calc(100% - 32px);
+    margin: 0;
+    color: #123b73;
+    font-size: clamp(1.15rem, 2.15vw, 2rem);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-align: center;
+}
+
+.login-splash-progress {
+    top: 72%;
+    width: min(46vw, 520px);
+    height: 18px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgb(18 59 115 / 11%);
+    box-shadow: inset 0 1px 2px rgb(18 59 115 / 8%);
+}
+
+.login-splash-progress span {
+    display: block;
+    width: 72%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #168de2 0%, #13b8b0 78%, #43e3d2 100%);
+    box-shadow: 0 0 18px rgb(19 184 176 / 48%);
+    animation: login-splash-progress 1.8s ease-in-out infinite alternate;
+}
+
+.login-splash-dots {
+    top: 78%;
+    display: flex;
+    gap: 1.1rem;
+}
+
+.login-splash-dots span {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #13b8d2;
+    animation: login-splash-dot 900ms ease-in-out infinite alternate;
+    box-shadow: 0 0 12px rgb(19 184 210 / 28%);
+}
+
+.login-splash-dots span:nth-child(2) {
+    animation-delay: 140ms;
+}
+.login-splash-dots span:nth-child(3) {
+    animation-delay: 280ms;
+}
+
+.login-splash-waves,
+.login-splash-wave {
+    position: absolute;
+    pointer-events: none;
+}
+
+.login-splash-waves {
+    inset: 0;
+}
+
+.login-splash-wave {
+    left: -8%;
+    width: 116%;
+    transform-origin: center;
+    will-change: transform;
+}
+
+.login-splash-wave-top {
+    top: -19%;
+    height: 42%;
+    border-radius: 0 0 48% 34%;
+    background: linear-gradient(
+        150deg,
+        rgb(22 141 226 / 73%),
+        rgb(19 184 176 / 67%) 46%,
+        rgb(22 141 226 / 4%) 78%
+    );
+    clip-path: ellipse(74% 57% at 15% 3%);
+    animation: login-splash-wave-top 7s ease-in-out infinite alternate;
+}
+
+.login-splash-wave-top-accent {
+    top: -22%;
+    height: 43%;
+    opacity: 0.66;
+    background: linear-gradient(
+        154deg,
+        transparent 40%,
+        rgb(19 184 176 / 72%) 41% 49%,
+        rgb(22 141 226 / 33%) 63%,
+        transparent 77%
+    );
+    clip-path: ellipse(77% 60% at 17% 1%);
+}
+
+.login-splash-wave-bottom {
+    bottom: -2%;
+    height: 29%;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(160deg, #168de2 5%, #13b8b0 48%, #0879c9 86%);
+    clip-path: polygon(
+        0 42%,
+        14% 45%,
+        29% 62%,
+        44% 77%,
+        58% 82%,
+        72% 74%,
+        86% 52%,
+        100% 34%,
+        100% 100%,
+        0 100%
+    );
+    animation: login-splash-wave-bottom 6s ease-in-out infinite alternate;
+}
+
+.login-splash-wave-bottom-accent {
+    bottom: -5%;
+    height: 25%;
+    left: 0;
+    width: 100%;
+    opacity: 0.9;
+    background: linear-gradient(
+        176deg,
+        rgb(81 202 248 / 89%),
+        rgb(22 141 226 / 72%) 55%,
+        rgb(3 90 166 / 94%)
+    );
+    clip-path: polygon(
+        0 28%,
+        16% 50%,
+        32% 77%,
+        48% 91%,
+        63% 84%,
+        79% 64%,
+        100% 25%,
+        100% 100%,
+        0 100%
+    );
+    animation: login-splash-wave-bottom 7.5s ease-in-out -2s infinite alternate-reverse;
+}
+
+.login-splash-plus {
+    position: absolute;
+    z-index: 1;
+    width: clamp(25px, 3.2vw, 46px);
+    aspect-ratio: 1;
+    opacity: 0.42;
+    animation: login-splash-plus-float 3.5s ease-in-out infinite alternate;
+}
+
+.login-splash-plus::before,
+.login-splash-plus::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #168de2, #51c6ef);
+    content: "";
+    transform: translate(-50%, -50%);
+}
+
+.login-splash-plus::before {
+    width: 100%;
+    height: 34%;
+}
+
+.login-splash-plus::after {
+    width: 34%;
+    height: 100%;
+}
+
+.login-splash-plus-one {
+    top: 24%;
+    left: 10%;
+}
+.login-splash-plus-two {
+    top: 9%;
+    right: 9%;
+    animation-delay: -1.2s;
+}
+.login-splash-plus-three {
+    top: 59%;
+    left: 16%;
+    animation-delay: -2.1s;
+}
+
+.login-splash-orbit-one,
+.login-splash-orbit-two {
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.login-splash-orbit {
+    position: absolute;
+    width: min(28vw, 450px);
+    aspect-ratio: 1;
+    border: 2px solid rgb(22 141 226 / 38%);
+    border-radius: 50%;
+    box-shadow:
+        0 0 18px rgb(19 184 176 / 42%),
+        0 0 50px rgb(22 141 226 / 17%),
+        inset 0 0 24px rgb(19 184 176 / 9%);
+    animation: login-splash-orbit 5s ease-in-out infinite alternate;
+}
+
+.login-splash-orbit-two {
+    width: min(24vw, 390px);
+    border-width: 1px;
+    border-color: rgb(19 184 176 / 28%);
+    box-shadow:
+        0 0 30px rgb(19 184 176 / 17%),
+        inset 0 0 35px rgb(22 141 226 / 6%);
+    animation-delay: -2s;
+}
+
+.login-splash-particle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #13b8b0;
+    box-shadow: 0 0 12px rgb(19 184 176 / 70%);
+    animation: login-splash-particle 1.8s ease-out infinite;
+}
+
+.login-splash-particle:nth-child(1) {
+    --particle-x: -34vw;
+    --particle-y: -18vh;
+    animation-delay: 0ms;
+}
+.login-splash-particle:nth-child(2) {
+    --particle-x: 28vw;
+    --particle-y: -24vh;
+    animation-delay: 250ms;
+}
+.login-splash-particle:nth-child(3) {
+    --particle-x: 38vw;
+    --particle-y: 12vh;
+    animation-delay: 500ms;
+}
+.login-splash-particle:nth-child(4) {
+    --particle-x: -29vw;
+    --particle-y: 26vh;
+    animation-delay: 750ms;
+}
+.login-splash-particle:nth-child(5) {
+    --particle-x: 12vw;
+    --particle-y: 30vh;
+    animation-delay: 1s;
+}
+.login-splash-particle:nth-child(6) {
+    --particle-x: -38vw;
+    --particle-y: -5vh;
+    animation-delay: 1.25s;
+}
+
+.login-splash.is-ready .login-splash-logo {
+    animation: login-splash-ready 350ms ease-in-out both;
+}
+
+.login-splash.is-ready .login-splash-orbit-one {
+    box-shadow:
+        0 0 26px rgb(19 184 176 / 62%),
+        0 0 72px rgb(22 141 226 / 22%);
+}
+
+.login-splash.is-dismissing {
+    animation: login-splash-exit 360ms ease-in forwards;
+}
+
+@keyframes login-splash-fallback {
+    0%,
+    78% {
+        opacity: 1;
+        visibility: visible;
+    }
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes login-splash-logo-in {
+    from {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% + 10px)) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes login-splash-ready {
+    50% {
+        filter: drop-shadow(0 0 12px rgb(19 184 176 / 34%));
+        transform: translate(-50%, -50%) scale(1.035);
+    }
+}
+
+@keyframes login-splash-ecg-draw {
+    0% {
+        stroke-dashoffset: 1000;
+        opacity: 0.35;
+    }
+    55%,
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+    }
+}
+
+@keyframes login-splash-progress {
+    from {
+        transform: translateX(-35%);
+    }
+    to {
+        transform: translateX(145%);
+    }
+}
+
+@keyframes login-splash-dot {
+    to {
+        opacity: 0.35;
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes login-splash-wave {
+    to {
+        transform: translate3d(0, -10px, 0) scale(1.04);
+    }
+}
+
+@keyframes login-splash-wave-top {
+    to {
+        transform: translate3d(1.5%, 1.5%, 0) scale(1.02);
+    }
+}
+
+@keyframes login-splash-wave-bottom {
+    to {
+        transform: translate3d(0, -8px, 0) scale(1.015);
+    }
+}
+
+@keyframes login-splash-plus-float {
+    to {
+        transform: translate3d(0, -10px, 0);
+    }
+}
+
+@keyframes login-splash-orbit {
+    to {
+        transform: translate(-50%, -50%) scale(1.04);
+    }
+}
+
+@keyframes login-splash-particle {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, 0, 0) scale(0.5);
+    }
+    18% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(var(--particle-x), var(--particle-y), 0) scale(0.1);
+    }
+}
+
+@keyframes login-splash-exit {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(1.015);
+    }
+}
+
+@media (max-width: 640px) {
+    .login-splash-content {
+        transform: none;
+    }
+
+    .login-splash-logo {
+        top: 34%;
+        width: clamp(165px, 46vw, 220px);
+    }
+
+    .login-splash-pulse {
+        top: 25%;
+        height: 17%;
+    }
+
+    .login-splash-orbit-one {
+        top: 34%;
+        width: min(74vw, 350px);
+    }
+
+    .login-splash-orbit-two {
+        top: 34%;
+        width: min(64vw, 300px);
+    }
+
+    .login-splash-message {
+        top: 58%;
+        font-size: clamp(1.1rem, 5vw, 1.55rem);
+    }
+
+    .login-splash-progress {
+        top: 67%;
+        width: min(74vw, 390px);
+        height: 14px;
+    }
+
+    .login-splash-dots {
+        top: 75%;
+        gap: 0.75rem;
+    }
+
+    .login-splash-dots span {
+        width: 10px;
+        height: 10px;
+    }
+
+    .login-splash-plus-one {
+        top: 23%;
+        left: 6%;
+    }
+    .login-splash-plus-two {
+        top: 11%;
+        right: 6%;
+    }
+    .login-splash-plus-three {
+        top: 56%;
+        left: 9%;
+    }
+
+    .login-splash-wave-top {
+        top: -21%;
+        height: 35%;
+    }
+
+    .login-splash-wave-top-accent {
+        top: -24%;
+        height: 38%;
+    }
+
+    .login-splash-wave-bottom {
+        height: 21%;
+    }
+
+    .login-splash-wave-bottom-accent {
+        height: 19%;
+    }
+
+    .login-splash-particle:nth-child(n + 5) {
+        display: none;
+    }
+
+    .login-splash-ecg path {
+        stroke-width: 7;
+    }
+}
+
+@media (max-height: 620px) and (min-width: 641px) {
+    .login-splash-logo {
+        top: 33%;
+        width: clamp(180px, 17vw, 240px);
+    }
+    .login-splash-orbit-one {
+        top: 33%;
+        width: min(25vw, 340px);
+    }
+    .login-splash-orbit-two {
+        top: 33%;
+        width: min(22vw, 300px);
+    }
+    .login-splash-message {
+        top: 59%;
+    }
+    .login-splash-progress {
+        top: 70%;
+        height: 20px;
+    }
+    .login-splash-dots {
+        top: 78%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-splash,
+    .login-splash * {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 .login-page .whatsapp-widget {
     display: none;
 }

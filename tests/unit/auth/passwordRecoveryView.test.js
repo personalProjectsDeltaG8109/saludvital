@@ -7,6 +7,7 @@ const recoveryViewPath = fileURLToPath(
 const resetViewPath = fileURLToPath(
     new URL("../../../views/auth/reset-password.pug", import.meta.url),
 );
+const loginViewPath = fileURLToPath(new URL("../../../views/auth/login.pug", import.meta.url));
 
 const commonLocals = {
     pageTitle: "Recuperar contraseña | SaludVital",
@@ -16,6 +17,36 @@ const commonLocals = {
 };
 
 describe("password recovery views", () => {
+    test("includes the optional splash without changing the login form", () => {
+        const html = renderFile(loginViewPath, {
+            pageTitle: "Iniciar sesión | SaludVital",
+            showLoginSplash: true,
+            whatsappContactUrl: null,
+            error: null,
+            loginLockedUntil: null,
+        });
+
+        expect(html).toContain("data-login-splash");
+        expect(html).toContain("/js/login-splash.js");
+        expect(html).toContain("/brand/logo-vertical.png");
+        expect(html).toContain('action="/login"');
+    });
+
+    test("omits the splash for login responses that do not opt in", () => {
+        const html = renderFile(loginViewPath, {
+            pageTitle: "Iniciar sesión | SaludVital",
+            showLoginSplash: false,
+            whatsappContactUrl: null,
+            error: "Credenciales inválidas.",
+            loginLockedUntil: null,
+        });
+
+        expect(html).not.toContain("data-login-splash");
+        expect(html).not.toContain("/js/login-splash.js");
+        expect(html).toContain("Credenciales inválidas.");
+        expect(html).toContain('action="/login"');
+    });
+
     test("renders the recovery request form and supplied security illustration", () => {
         const html = renderFile(recoveryViewPath, {
             ...commonLocals,
