@@ -1,12 +1,17 @@
 const passwordInput = document.querySelector("#password");
-const passwordToggle = document.querySelector("[data-password-toggle]");
+const passwordToggles = document.querySelectorAll("[data-password-toggle]");
 
-if (passwordInput && passwordToggle) {
+passwordToggles.forEach((passwordToggle) => {
+    const targetSelector = passwordToggle.dataset.passwordToggle || "#password";
+    const targetInput = document.querySelector(targetSelector);
+    const toggleLabel = passwordToggle.querySelector("[data-password-toggle-label]");
+
+    if (!targetInput || !toggleLabel) return;
+
     passwordToggle.addEventListener("click", () => {
-        const isPasswordVisible = passwordInput.type === "text";
-        const toggleLabel = passwordToggle.querySelector("[data-password-toggle-label]");
+        const isPasswordVisible = targetInput.type === "text";
 
-        passwordInput.type = isPasswordVisible ? "password" : "text";
+        targetInput.type = isPasswordVisible ? "password" : "text";
         toggleLabel.textContent = isPasswordVisible ? "Mostrar contraseña" : "Ocultar contraseña";
         passwordToggle.setAttribute(
             "aria-label",
@@ -14,7 +19,7 @@ if (passwordInput && passwordToggle) {
         );
         passwordToggle.setAttribute("aria-pressed", String(!isPasswordVisible));
     });
-}
+});
 
 const lockCountdown = document.querySelector("[data-login-lock-countdown]");
 
