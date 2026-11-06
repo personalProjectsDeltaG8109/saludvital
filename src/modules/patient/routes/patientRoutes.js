@@ -33,6 +33,7 @@ import {
     updatePatientAppointmentTime,
     cancelPatientAppointmentRequest,
 } from "../controllers/appointmentController.js";
+import { canPatientRescheduleAppointment } from "../services/appointmentRescheduleEligibility.js";
 import { getReschedulableAppointments } from "../services/appointmentService.js";
 import {
     getPatientChannelStates,
@@ -279,10 +280,9 @@ patientRoutes.get(
                 : null;
 
             if (nextAppointment) {
-                // Add patient-facing fallback labels where the schema has no clinic or doctor name.
+                // Prepare the doctor label and patient rescheduling eligibility.
                 nextAppointment.doctor_label =
                     nextAppointment.doctor.display_name || "Médico asignado";
-                nextAppointment.site_label = "Sede SaludVital";
                 nextAppointment.history = nextAppointment.history
                     .filter((event) => event.event_type === "Rescheduled")
                     .sort(
@@ -290,19 +290,7 @@ patientRoutes.get(
                             new Date(first.occurred_at).getTime() -
                             new Date(second.occurred_at).getTime(),
                     );
-                const isConfirmed = nextAppointment.status.name === "Confirmed";
-                const isFutureAppointment =
-                    new Date(nextAppointment.start_at).getTime() > Date.now();
-                const hasReschedulesLeft = nextAppointment.history.length < 3;
-                nextAppointment.can_reschedule =
-                    isConfirmed && isFutureAppointment && hasReschedulesLeft;
-                nextAppointment.reschedule_unavailable_reason = !isConfirmed
-                    ? "Esta cita ya no está confirmada, por eso no se puede reprogramar."
-                    : !isFutureAppointment
-                      ? "Esta cita ya inició y no se puede reprogramar."
-                      : !hasReschedulesLeft
-                        ? "Esta cita ya alcanzó el máximo de 3 reprogramaciones."
-                        : "Esta cita no está disponible para reprogramación.";
+                nextAppointment.can_reschedule = canPatientRescheduleAppointment(nextAppointment);
             }
 
             return res.render("patient/dashboard", {
