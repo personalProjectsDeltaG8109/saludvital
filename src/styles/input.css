@@ -1640,7 +1640,7 @@
     background: #fff;
     color: #123b73;
     pointer-events: none;
-    animation: login-splash-fallback 2.5s ease forwards;
+    animation: login-splash-fallback 5s ease forwards;
 }
 
 .login-splash[data-managed="true"] {

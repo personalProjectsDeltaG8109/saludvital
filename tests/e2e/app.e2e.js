@@ -135,6 +135,7 @@ try {
             height: viewport.height,
         });
 
+        const loginNavigationStartedAt = Date.now();
         await loginPage.goto(`${baseUrl}/login`);
 
         if (viewport.width === 1440 || viewport.width === 320) {
@@ -149,15 +150,19 @@ try {
             if (viewport.width === 1440) {
                 await loginPage.waitForTimeout(350);
                 await loginPage.screenshot({ path: "test-results/login-splash-desktop.png" });
-            }
-            await loginPage.locator(".login-splash-logo").evaluate((image) => {
-                if (!image.complete || image.naturalWidth === 0) {
-                    throw new Error("The official logo did not load in the splash screen.");
+                await loginPage.locator(".login-splash-logo").evaluate((image) => {
+                    if (!image.complete || image.naturalWidth === 0) {
+                        throw new Error("The official logo did not load in the splash screen.");
+                    }
+                });
+                await splash.waitFor({ state: "detached", timeout: 6500 });
+                const splashDuration = Date.now() - loginNavigationStartedAt;
+                if (splashDuration < 4700) {
+                    throw new Error(`Splash ended too early (${splashDuration}ms).`);
                 }
-            });
-            await splash.waitFor({ state: "detached", timeout: 3000 });
-            await loginPage.locator('input[name="email"]').fill("patient@example.com");
-            await loginPage.locator('input[name="password"]').fill("SafeTestPassword123!");
+                await loginPage.locator('input[name="email"]').fill("patient@example.com");
+                await loginPage.locator('input[name="password"]').fill("SafeTestPassword123!");
+            }
         }
 
         // Verify that the login form and its main controls are available.
@@ -313,7 +318,7 @@ try {
     await noScriptPage.route("**/js/login-splash.js", (route) => route.abort());
     await noScriptPage.setViewportSize({ width: 375, height: 812 });
     await noScriptPage.goto(`${baseUrl}/login`);
-    await noScriptPage.locator("[data-login-splash]").waitFor({ state: "hidden", timeout: 4000 });
+    await noScriptPage.locator("[data-login-splash]").waitFor({ state: "hidden", timeout: 6500 });
     await noScriptPage.locator('input[name="email"]').fill("patient@example.com");
     console.log("PASS: CSS fallback reveals a usable login when splash JavaScript fails.");
 
@@ -322,7 +327,7 @@ try {
     await failedDecorationPage.goto(`${baseUrl}/login`);
     await failedDecorationPage.locator("[data-login-splash]").waitFor({
         state: "detached",
-        timeout: 3000,
+        timeout: 6500,
     });
     await failedDecorationPage.locator('input[name="email"]').waitFor({ state: "visible" });
     console.log("PASS: a failed decorative image does not block login access.");

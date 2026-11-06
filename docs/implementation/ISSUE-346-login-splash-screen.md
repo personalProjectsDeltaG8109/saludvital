@@ -4,8 +4,8 @@
 
 - Added a short, decorative splash to the initial `GET /login` response. Failed-login and locked responses do not render it, so authentication messages and lockout guidance remain immediate.
 - Reused the official local SaludVital login logo. CSS draws the ECG line, light rings, waves, particles, and indeterminate progress indicator in the existing brand palette; no animation dependency or external request was added.
-- The script waits briefly for visible login images, tolerates image decode failures, shows a short completion message, and removes the overlay. Its bounded waits keep the transition under approximately two seconds after script execution.
-- Without the splash script, a CSS fallback hides the overlay after 2.5 seconds. Reduced-motion users skip the animation. The overlay is decorative, `aria-hidden`, inert, and does not intercept pointer interaction or change the underlying login layout.
+- The script waits briefly for visible login images, tolerates image decode failures, holds the splash for approximately five seconds, shows a short completion message, and removes the overlay. Resource waiting is bounded so failed images cannot extend the display indefinitely.
+- Without the splash script, a CSS fallback hides the overlay after five seconds. Reduced-motion users skip the animation. The overlay is decorative, `aria-hidden`, inert, and does not intercept pointer interaction or change the underlying login layout.
 - The original login form, password controls, registration and recovery links, WhatsApp links, and authentication flow are unchanged.
 
 ## Verification

@@ -10,6 +10,10 @@
         return;
     }
 
+    const splashStartedAt = performance.now();
+    const splashDurationMs = 5000;
+    const completionMessageDurationMs = 180;
+    const exitAnimationDurationMs = 360;
     splash.dataset.managed = "true";
 
     const wait = (duration) => new Promise((resolve) => window.setTimeout(resolve, duration));
@@ -27,11 +31,14 @@
 
     const dismissSplash = async () => {
         await waitForVisibleImages();
-        await wait(650);
+        const elapsedTime = performance.now() - splashStartedAt;
+        const remainingTime =
+            splashDurationMs - elapsedTime - completionMessageDurationMs - exitAnimationDurationMs;
+        await wait(Math.max(0, remainingTime));
         const message = splash.querySelector("[data-splash-message]");
         if (message) message.textContent = "¡Todo listo!";
         splash.classList.add("is-ready");
-        await wait(180);
+        await wait(completionMessageDurationMs);
         splash.classList.add("is-dismissing");
         await Promise.race([
             new Promise((resolve) => {
@@ -43,7 +50,7 @@
                     { once: true },
                 );
             }),
-            wait(500),
+            wait(exitAnimationDurationMs + 140),
         ]);
         splash.remove();
     };
