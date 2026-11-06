@@ -1,0 +1,303 @@
+.admin-appointment-create-page {
+    --wizard-blue: #0865ba;
+}
+.admin-booking-steps {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 24px 0;
+    list-style: none;
+}
+.admin-booking-steps li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #516b8c;
+    font-size: 14px;
+}
+.admin-booking-steps li span {
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #b8cfe3;
+    border-radius: 50%;
+    background: #fff;
+    font-weight: 700;
+}
+.admin-booking-steps .is-current,
+.admin-booking-steps .is-complete {
+    color: var(--wizard-blue);
+}
+.admin-booking-steps .is-current span,
+.admin-booking-steps .is-complete span {
+    color: white;
+    background: var(--wizard-blue);
+    border-color: var(--wizard-blue);
+}
+.admin-booking-panel {
+    min-width: 0;
+    padding: clamp(18px, 3vw, 30px);
+    border: 1px solid #dce8f2;
+    border-radius: 18px;
+    background: white;
+}
+.admin-booking-panel h2 {
+    margin: 0 0 8px;
+    color: #123b73;
+    font-size: clamp(20px, 2vw, 26px);
+}
+.admin-booking-panel > p {
+    color: #48617b;
+    margin: 0 0 20px;
+}
+.admin-booking-panel .appointment-create-field {
+    max-width: 680px;
+    margin-bottom: 24px;
+}
+.admin-booking-search {
+    display: grid;
+    gap: 8px;
+    max-width: 400px;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #123b73;
+}
+.admin-booking-search input {
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    border: 1px solid #b7cada;
+    border-radius: 10px;
+}
+.admin-booking-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+.admin-booking-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 114px;
+    padding: 18px;
+    border: 1px solid #c5d8e9;
+    border-radius: 14px;
+    text-align: left;
+    background: #fff;
+    color: #123b73;
+    cursor: pointer;
+}
+.admin-booking-card > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.admin-booking-card strong,
+.admin-booking-card small {
+    display: block;
+}
+.admin-booking-card small {
+    margin-top: 6px;
+    color: #48617b;
+    font-size: 13px;
+}
+.admin-booking-card-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: #eaf6ff;
+    color: var(--wizard-blue);
+    font-size: 22px;
+    font-weight: 700;
+}
+.admin-booking-card:hover,
+.admin-booking-days button:hover:not(:disabled),
+.admin-booking-time-grid button:hover {
+    border-color: var(--wizard-blue);
+    background: #f0f8ff;
+}
+.admin-booking-card.is-selected {
+    border: 2px solid var(--wizard-blue);
+    background: #edf7ff;
+}
+.admin-booking-datetime {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 30px;
+}
+.admin-booking-calendar {
+    min-width: 0;
+    max-width: 480px;
+}
+.admin-booking-calendar-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.admin-booking-calendar-heading h3 {
+    text-transform: capitalize;
+    font-size: 17px;
+    color: #123b73;
+}
+.admin-booking-calendar-heading button {
+    width: 44px;
+    height: 44px;
+    background: #edf7ff;
+    color: #123b73;
+    border: 1px solid #b7cada;
+    border-radius: 10px;
+    font-size: 24px;
+    cursor: pointer;
+}
+.admin-booking-weekdays,
+.admin-booking-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+    text-align: center;
+}
+.admin-booking-weekdays {
+    margin: 16px 0 8px;
+    color: #48617b;
+    font-size: 13px;
+}
+.admin-booking-days button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #123b73;
+    background: #f4f8fc;
+    cursor: pointer;
+}
+.admin-booking-days button:disabled {
+    color: #65758a;
+    background: #f3f4f6;
+    cursor: not-allowed;
+}
+.admin-booking-times h3 {
+    color: #123b73;
+    margin-top: 12px;
+}
+.admin-booking-times p {
+    color: #48617b;
+    font-size: 14px;
+}
+.admin-booking-time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+.admin-booking-time-grid button {
+    min-height: 44px;
+    border: 1px solid #b7cada;
+    border-radius: 10px;
+    color: #123b73;
+    background: white;
+    cursor: pointer;
+}
+.admin-booking-days button.is-selected,
+.admin-booking-time-grid button.is-selected {
+    background: var(--wizard-blue);
+    color: white;
+    border-color: var(--wizard-blue);
+}
+.admin-booking-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin: 24px 0;
+    padding: 22px;
+    background: #eff8ff;
+    border-radius: 14px;
+    overflow-wrap: anywhere;
+}
+.admin-booking-summary dt {
+    color: #48617b;
+    font-size: 13px;
+}
+.admin-booking-summary dd {
+    margin: 5px 0 0;
+    color: #123b73;
+    font-weight: 600;
+}
+.admin-appointment-create-page [hidden] {
+    display: none !important;
+}
+.admin-appointment-create-page button:focus-visible,
+.admin-booking-panel input:focus-visible {
+    outline: 3px solid #123b73;
+    outline-offset: 3px;
+}
+.admin-appointment-create-page button:disabled {
+    cursor: not-allowed;
+}
+@media (max-width: 1100px) {
+    .admin-booking-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .admin-booking-datetime {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 600px) {
+    .admin-booking-steps {
+        gap: 6px;
+    }
+    .admin-booking-steps li {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        font-size: 11px;
+    }
+    .admin-booking-steps strong {
+        font-weight: 600;
+    }
+    .admin-booking-cards,
+    .admin-booking-summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .admin-booking-panel {
+        padding: 16px 12px;
+    }
+    .admin-booking-card {
+        min-height: 94px;
+    }
+    .admin-booking-time-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .admin-booking-days {
+        gap: 2px;
+    }
+    .admin-booking-days button {
+        min-height: 42px;
+    }
+    .admin-appointment-create-page .appointment-create-actions {
+        flex-wrap: wrap;
+    }
+}
+@media (max-width: 1100px) {
+    .admin-booking-steps li {
+        flex-direction: column;
+        text-align: center;
+        font-size: 12px;
+    }
+    .admin-booking-steps strong {
+        overflow-wrap: anywhere;
+    }
+}
+.admin-appointment-create-page .appointment-create-feedback,
+.admin-appointment-create-page .appointment-create-optional {
+    color: #48617b;
+}
+img.admin-booking-card-icon {
+    width: 48px;
+    object-fit: cover;
+}
