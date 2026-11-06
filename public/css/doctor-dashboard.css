@@ -8,6 +8,8 @@
 .doctor-home-page .sv-main { width: calc(100% - 238px); margin-left: 238px; }
 .doctor-home-page .sv-nav-link.is-disabled { cursor: not-allowed; opacity: .62; }
 .doctor-home-page .sv-bell { border: 0; }
+.doctor-home-page #doctor-sidebar .sv-nav-icon { width: 28px; height: 28px; flex-basis: 28px; }
+.doctor-home-page #doctor-sidebar .sv-nav-icon img { display: block; width: 28px; height: 28px; object-fit: contain; }
 .doctor-home-page dialog[data-start-consultation-dialog][open] {
     position: fixed;
     inset: 0;
