@@ -55,18 +55,19 @@ section.login-visual(aria-label="SaludVital, tu salud siempre conectada")
             height="400"
         )
 
-        a.login-whatsapp-banner(
-            href=whatsappContactUrl,
-            target="_blank",
-            rel="noopener noreferrer",
-            aria-label="Solicitar cita por WhatsApp"
-        )
-            span.login-whatsapp-mark(aria-hidden="true")
-                img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="44", height="44")
-            span.login-whatsapp-copy
-                strong ¿Prefieres agendar por WhatsApp?
-                span Solicita tu cita médica de manera fácil y rápida desde nuestro canal oficial.
-            span.login-whatsapp-action
-                img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="26", height="26")
-                | Solicitar cita
-                span(aria-hidden="true") →
+        if whatsappContactUrl
+            a.login-whatsapp-banner(
+                href=whatsappContactUrl,
+                target="_blank",
+                rel="noopener noreferrer",
+                aria-label="Solicitar cita por WhatsApp"
+            )
+                span.login-whatsapp-mark(aria-hidden="true")
+                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="44", height="44")
+                span.login-whatsapp-copy
+                    strong ¿Prefieres agendar por WhatsApp?
+                    span Solicita tu cita médica de manera fácil y rápida desde nuestro canal oficial.
+                span.login-whatsapp-action
+                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="", width="26", height="26")
+                    | Solicitar cita
+                    span(aria-hidden="true") →

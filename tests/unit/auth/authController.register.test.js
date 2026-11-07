@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 // Mock authentication and registration dependencies before importing the controller.
 jest.unstable_mockModule("jsonwebtoken", () => ({
@@ -55,10 +55,12 @@ jest.unstable_mockModule("../../../src/modules/auth/services/passwordResetServic
 const { registerPatient, RegistrationError } =
     await import("../../../src/modules/auth/services/registrationService.js");
 
-const { register } = await import("../../../src/modules/auth/controllers/authController.js");
+const { register, showRegister } =
+    await import("../../../src/modules/auth/controllers/authController.js");
 
 // Build mock Express request and response objects for controller tests.
 describe("Patient registration controller", () => {
+    const originalWhatsAppContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
     const validBody = {
         health_data_consent: "accepted",
         first_name: "Juan",
@@ -73,6 +75,7 @@ describe("Patient registration controller", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = "+57 300 123 4567";
 
         req = { body: { ...validBody } };
 
@@ -88,6 +91,39 @@ describe("Patient registration controller", () => {
             email: "patient@example.com",
             patientId: 20,
         });
+    });
+
+    afterEach(() => {
+        if (originalWhatsAppContactNumber === undefined) {
+            delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+        } else {
+            process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = originalWhatsAppContactNumber;
+        }
+    });
+
+    test("uses the configured WhatsApp contact on the registration page", () => {
+        process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = "+57 300 123 4567";
+
+        showRegister({ query: {} }, res);
+
+        expect(res.render).toHaveBeenCalledWith(
+            "auth/register",
+            expect.objectContaining({
+                whatsappContactUrl:
+                    "https://wa.me/573001234567?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+            }),
+        );
+    });
+
+    test("does not provide a WhatsApp destination when configuration is invalid", () => {
+        process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = "not-a-phone-number";
+
+        showRegister({ query: {} }, res);
+
+        expect(res.render).toHaveBeenCalledWith(
+            "auth/register",
+            expect.objectContaining({ whatsappContactUrl: null }),
+        );
     });
 
     // Require explicit consent before processing a registration.
@@ -136,6 +172,8 @@ describe("Patient registration controller", () => {
                 pageTitle: "Registro completado | SaludVital",
                 error: null,
                 success: expect.stringContaining("patient@example.com"),
+                whatsappContactUrl:
+                    "https://wa.me/573001234567?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
             }),
         );
 
