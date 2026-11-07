@@ -271,6 +271,7 @@ function getEnabledChannelStates(storedPreferences) {
         }),
     );
 
+    // Preserve the required default for legacy rows with no active channel.
     if (!Object.values(states).some(Boolean)) states[DEFAULT_ENABLED_CHANNEL] = true;
     return states;
 }
@@ -323,7 +324,7 @@ export async function getPatientNotificationSettings(userId) {
         .slice(0, 20);
 
     const channelStates = getEnabledChannelStates(storedPreferences);
-    let preferences = notificationChannels.flatMap((channel) => {
+    const preferences = notificationChannels.flatMap((channel) => {
         const isEnabled = channelStates[channel];
 
         return notificationEvents.map((event) => ({
@@ -332,14 +333,6 @@ export async function getPatientNotificationSettings(userId) {
             isEnabled,
         }));
     });
-
-    // Keep SMS enabled when legacy data has every channel disabled.
-    if (!preferences.some((preference) => preference.isEnabled)) {
-        preferences = preferences.map((preference) => ({
-            ...preference,
-            isEnabled: preference.channel === DEFAULT_ENABLED_CHANNEL,
-        }));
-    }
 
     return {
         patient: patient.get({ plain: true }),
