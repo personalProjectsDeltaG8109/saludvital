@@ -287,7 +287,16 @@ html(lang="es")
                                     data-dashboard-notification-feedback
                                 )
                     form.sv-mobile-logout(action="/logout", method="POST")
-                        button(type="submit") Cerrar sesión
+                        button(type="submit")
+                            img(
+                                src="/brand/logout-icon.png",
+                                alt="",
+                                width="28",
+                                height="28",
+                                decoding="async",
+                                aria-hidden="true"
+                            )
+                            | Cerrar sesión
                 include partials/bottom-nav
                 if nextAppointment && nextAppointment.doctor && nextAppointment.doctor.profile_photo_url
                     dialog.doctor-photo-viewer-dialog(
