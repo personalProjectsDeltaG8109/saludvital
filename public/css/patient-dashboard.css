@@ -15,6 +15,7 @@
 
 /* Let long patient pages use document scrolling in short or zoomed desktop viewports. */
 @media (min-width: 761px) and (max-height: 880px) {
+
     .sv-dashboard.appointments-page,
     .sv-dashboard.reschedule-page,
     .sv-dashboard.notifications-page,
@@ -450,6 +451,12 @@
     box-shadow: 0 5px 12px #123b731c;
 }
 
+.sv-action-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
 .action-green {
     background: linear-gradient(145deg, #12c987, #00a974);
 }
@@ -877,12 +884,12 @@
     opacity: 0;
 }
 
-.sv-switch-control input:focus-visible + .sv-toggle {
+.sv-switch-control input:focus-visible+.sv-toggle {
     outline: 3px solid #1578e8;
     outline-offset: 3px;
 }
 
-.sv-switch-control input:disabled + .sv-toggle {
+.sv-switch-control input:disabled+.sv-toggle {
     opacity: .6;
 }
 
@@ -1004,6 +1011,7 @@
 }
 
 @media (max-width: 760px) {
+
     .sv-dashboard .sv-hero,
     .sv-dashboard .appointments-hero,
     .sv-dashboard .reschedule-hero,
@@ -1386,6 +1394,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .sv-sidebar,
     .sv-sidebar-backdrop,
     .booking-sidebar-backdrop,
@@ -1591,6 +1600,11 @@
     .sv-action-icon svg {
         width: 20px;
         height: 20px;
+    }
+
+    .sv-action-icon img {
+        width: 24px;
+        height: 24px;
     }
 
     .sv-action-card strong {
@@ -1800,6 +1814,7 @@
         --sv-text-hero: clamp(0.8125rem, 4.1vw, 1rem);
     }
 }
+
 /* Keep the original horizontal appointment layout with the doctor above the specialty. */
 .sv-appointment-doctor-placeholder {
     display: grid;
@@ -1813,9 +1828,28 @@
     font-size: 12px;
     font-weight: 700;
 }
-.sv-appointment-info .sv-appointment-doctor-name strong { min-width: 0; overflow-wrap: anywhere; }
-.sv-appointment-info .profile-avatar-image { width: 100%; height: 100%; object-fit: cover; }
+
+.sv-appointment-info .sv-appointment-doctor-name strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.sv-appointment-info .profile-avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
 /* Supplied raster icons are decorative; navigation labels retain accessible names. */
-#patient-sidebar .sv-nav-icon { width: 28px; height: 28px; flex-basis: 28px; }
-#patient-sidebar .sv-nav-icon img { display: block; width: 28px; height: 28px; object-fit: contain; }
+#patient-sidebar .sv-nav-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+}
+
+#patient-sidebar .sv-nav-icon img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
