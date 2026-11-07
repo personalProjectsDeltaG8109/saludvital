@@ -90,6 +90,7 @@ a.admin-nav-link:hover, a.admin-nav-link:focus-visible, .admin-nav-link.is-activ
 
 .admin-nav-link.is-unavailable { color: #c8d9ec; opacity: .86; }
 .admin-nav-icon { display: grid; width: 25px; flex: 0 0 25px; place-items: center; font-size: 22px; line-height: 1; }
+.admin-nav-icon > img { display: block; width: 25px; height: 25px; object-fit: contain; }
 .admin-whatsapp-mark img { width: 23px; height: 23px; filter: brightness(0) invert(1); }
 .admin-nav-section { margin: 14px 12px 3px; color: #a8c6e7; font-size: 11px; letter-spacing: .09em; text-transform: uppercase; }
 .admin-nav-section-small { margin-top: 14px; padding-top: 17px; border-top: 1px solid rgb(197 222 244 / 25%); }
