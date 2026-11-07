@@ -350,12 +350,12 @@ export async function login(req, res, next) {
         );
 
         // Associate the authenticated session with its account for future revocation.
-        startSession(sessionId, user.id);
+        await startSession(sessionId, user.id);
 
         try {
             await clearLoginFailures(user.id);
         } catch (error) {
-            endSession(sessionId);
+            await endSession(sessionId);
             throw error;
         }
 
@@ -391,19 +391,23 @@ export async function login(req, res, next) {
 }
 
 // End the server-side session and clear the authentication cookie.
-export function logout(req, res) {
-    const sessionId = req.auth?.sessionId;
+export async function logout(req, res, next) {
+    try {
+        const sessionId = req.auth?.sessionId;
 
-    if (sessionId) {
-        endSession(sessionId);
+        if (sessionId) {
+            await endSession(sessionId);
+        }
+
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: environment.nodeEnv === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+
+        return res.redirect(303, "/login");
+    } catch (error) {
+        return next(error);
     }
-
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: environment.nodeEnv === "production",
-        sameSite: "lax",
-        path: "/",
-    });
-
-    return res.redirect(303, "/login");
 }
