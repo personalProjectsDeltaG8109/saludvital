@@ -41,7 +41,9 @@ describe("patient notification read state", () => {
             get: () => ({ id: 17 }),
         });
         Notification.count.mockResolvedValue(3);
+        Notification.findAll.mockResolvedValue([]);
         Notification.update.mockResolvedValue([2]);
+        NotificationPreference.findAll.mockResolvedValue([]);
         AppointmentHistory.count.mockResolvedValue(0);
         AppointmentHistory.findAll.mockResolvedValue([]);
         AppointmentHistory.findOne.mockResolvedValue(null);
@@ -80,6 +82,25 @@ describe("patient notification read state", () => {
         await getPatientNotificationSettings(91);
         expect(Notification.update).not.toHaveBeenCalled();
         expect(PatientAppointmentHistoryRead.bulkCreate).not.toHaveBeenCalled();
+    });
+
+    test("uses the documented SMS default when no channel preferences are stored", async () => {
+        const result = await getPatientNotificationSettings(91);
+
+        expect(result.preferences).toHaveLength(9);
+        expect(result.preferences.filter((preference) => preference.channel === "SMS")).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ eventType: "appointment_reminder", isEnabled: true }),
+                expect.objectContaining({ eventType: "appointment_reschedule", isEnabled: true }),
+                expect.objectContaining({ eventType: "appointment_cancellation", isEnabled: true }),
+            ]),
+        );
+        expect(result.preferences.filter((preference) => preference.channel !== "SMS")).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ channel: "WhatsApp", isEnabled: false }),
+                expect.objectContaining({ channel: "Email", isEnabled: false }),
+            ]),
+        );
     });
 
     test.each(["Created", "Rescheduled", "Cancelled"])(

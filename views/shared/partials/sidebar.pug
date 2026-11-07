@@ -45,7 +45,14 @@ aside.sv-sidebar(id=sidebarId)
     .sv-sidebar-footer
         form.sv-logout(action="/logout", method="POST")
             button(type="submit")
-                span(aria-hidden="true") ↪
+                img(
+                    src="/brand/logout-icon.png",
+                    alt="",
+                    width="28",
+                    height="28",
+                    decoding="async",
+                    aria-hidden="true"
+                )
                 = ` ${logoutLabel}`
 
 include logout-confirmation.pug
