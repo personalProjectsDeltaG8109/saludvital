@@ -115,6 +115,22 @@ describe("appointment notification automation", () => {
         });
     });
 
+    test("keeps the SMS fallback when every stored channel is disabled", async () => {
+        NotificationPreference.findAll.mockResolvedValue([
+            { channel: "SMS", event_type: "appointment_reminder", is_enabled: false },
+            { channel: "WhatsApp", event_type: "appointment_reminder", is_enabled: false },
+            { channel: "Email", event_type: "appointment_reminder", is_enabled: false },
+        ]);
+
+        const rows = await enqueueAppointmentNotifications({
+            appointmentId: 99,
+            eventType: "appointment_reminder",
+            transaction,
+        });
+
+        expect(rows.map(({ channel }) => channel)).toEqual(["SMS"]);
+    });
+
     test("does not enqueue duplicate appointment confirmations", async () => {
         Notification.count.mockResolvedValueOnce(2);
 

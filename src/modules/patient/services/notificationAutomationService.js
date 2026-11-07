@@ -9,8 +9,8 @@ import {
     Patient,
     Specialities,
 } from "../../../models/associations.js";
+import { getEnabledChannelStates, notificationChannels } from "./notificationChannelRules.js";
 
-const EVENT_CHANNELS = ["WhatsApp", "SMS", "Email"];
 const ENABLED = () => process.env.NOTIFICATION_DELIVERY_ENABLED === "true";
 
 function destinationFor(channel, patient) {
@@ -89,28 +89,21 @@ export async function enqueueAppointmentNotifications({
         where: { patient_id: patient.id },
         transaction,
     });
-    const channelStates = new Map(
-        EVENT_CHANNELS.map((channel) => {
-            const storedChannelPreferences = preferences.filter((item) => item.channel === channel);
-            const active = storedChannelPreferences.some((item) => item.is_enabled);
-            return [channel, storedChannelPreferences.length ? active : channel === "SMS"];
-        }),
-    );
-    const hasEnabledChannel = [...channelStates.values()].some(Boolean);
-    if (!hasEnabledChannel) channelStates.set("SMS", true);
+    const channelStates = getEnabledChannelStates(preferences);
+    const hasEnabledChannel = preferences.some((preference) => preference.is_enabled);
     const rows = [];
-    for (const channel of EVENT_CHANNELS) {
+    for (const channel of notificationChannels) {
         const eventPreference = preferences.find(
             (item) => item.channel === channel && item.event_type === eventType,
         );
         // Confirmations follow enabled channels without adding a preference toggle.
         const enabled =
             eventType === "appointment_confirmation"
-                ? channelStates.get(channel)
+                ? channelStates[channel]
                 : hasEnabledChannel
                   ? eventPreference
                       ? eventPreference.is_enabled
-                      : channelStates.get(channel)
+                      : channelStates[channel]
                   : channel === "SMS";
         const recipient = destinationFor(channel, patient)?.trim();
         if (!enabled || !recipient) continue;
