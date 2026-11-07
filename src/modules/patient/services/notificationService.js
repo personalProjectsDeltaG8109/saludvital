@@ -9,8 +9,8 @@ import {
     PatientAppointmentHistoryRead,
     Specialities,
 } from "../../../models/associations.js";
-
-export const notificationChannels = ["WhatsApp", "SMS", "Email"];
+import { getEnabledChannelStates, notificationChannels } from "./notificationChannelRules.js";
+export { notificationChannels };
 
 // Appointment event switches are fixed; patients choose only the delivery channels.
 export const notificationEvents = [
@@ -30,8 +30,6 @@ export const notificationEvents = [
         description: "Recibe un mensaje si tu cita es cancelada.",
     },
 ];
-
-const DEFAULT_ENABLED_CHANNEL = "SMS";
 
 const channelLabels = {
     WhatsApp: "WhatsApp",
@@ -251,29 +249,6 @@ async function getUnreadCountByPatientId(patientId) {
         countUnreadAppointmentActivity(patientId),
     ]);
     return deliveryCount + appointmentActivityCount;
-}
-
-function getEnabledChannelStates(storedPreferences) {
-    const storedValuesByChannel = new Map();
-    storedPreferences.forEach((preference) => {
-        const channelValues = storedValuesByChannel.get(preference.channel) || [];
-        channelValues.push(preference.is_enabled);
-        storedValuesByChannel.set(preference.channel, channelValues);
-    });
-
-    const states = Object.fromEntries(
-        notificationChannels.map((channel) => {
-            const storedValues = storedValuesByChannel.get(channel) || [];
-            const isEnabled = storedValues.length
-                ? storedValues.some(Boolean)
-                : channel === DEFAULT_ENABLED_CHANNEL;
-            return [channel, isEnabled];
-        }),
-    );
-
-    // Preserve the required default for legacy rows with no active channel.
-    if (!Object.values(states).some(Boolean)) states[DEFAULT_ENABLED_CHANNEL] = true;
-    return states;
 }
 
 export async function getPatientNotificationSettings(userId) {
