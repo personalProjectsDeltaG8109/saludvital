@@ -18,43 +18,49 @@ mixin adminSidebar(activePage)
                 class=activePage === "dashboard" ? "is-active" : null,
                 aria-current=activePage === "dashboard" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ⌂
-                span Dashboard
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/home.png", alt="")
+                span Inicio
             .admin-nav-section Gestión médica
             a.admin-nav-link(
                 href="/admin/users",
                 class=activePage === "users" ? "is-active" : null,
                 aria-current=activePage === "users" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ♙
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/users-roles.png", alt="")
                 span Usuarios y roles
             a.admin-nav-link(
                 href="/admin/doctors",
                 class=activePage === "doctors" ? "is-active" : null,
                 aria-current=activePage === "doctors" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ⚕
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/doctors.png", alt="")
                 span Médicos
             a.admin-nav-link(
                 href="/admin/specialties",
                 class=activePage === "specialties" ? "is-active" : null,
                 aria-current=activePage === "specialties" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ◈
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/specialties.png", alt="")
                 span Especialidades
             a.admin-nav-link(
                 href="/admin/appointments",
                 class=activePage === "appointments" ? "is-active" : null,
                 aria-current=activePage === "appointments" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ▣
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/appointments.png", alt="")
                 span Citas médicas
             a.admin-nav-link(
                 href="/admin/doctor-schedules",
                 class=activePage === "schedules" ? "is-active" : null,
                 aria-current=activePage === "schedules" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ◷
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/schedules.png", alt="")
                 span Horarios y disponibilidad
             .admin-nav-section Canales y comunicación
             a.admin-nav-link(
@@ -62,8 +68,8 @@ mixin adminSidebar(activePage)
                 class=activePage === "whatsapp" ? "is-active" : null,
                 aria-current=activePage === "whatsapp" ? "page" : null
             )
-                span.admin-nav-icon.admin-whatsapp-mark(aria-hidden="true")
-                    img(src="/brand/whatsapp-svgrepo-com.svg", alt="")
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/whatsapp-chatbot.png", alt="")
                 span WhatsApp y chatbot
             a.admin-nav-link(
                 href="/admin/notifications",
@@ -71,16 +77,7 @@ mixin adminSidebar(activePage)
                 aria-current=activePage === "notifications" ? "page" : null
             )
                 span.admin-nav-icon(aria-hidden="true")
-                    svg(
-                        viewBox="0 0 24 24",
-                        fill="none",
-                        stroke="currentColor",
-                        stroke-width="1.8",
-                        stroke-linecap="round",
-                        stroke-linejoin="round"
-                    )
-                        path(d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9")
-                        path(d="M10 21h4")
+                    img(src="/brand/admin-sidebar-icons/notifications.png", alt="")
                 span Notificaciones
             .admin-nav-section.admin-nav-section-small Control y seguimiento
             a.admin-nav-link(
@@ -88,25 +85,29 @@ mixin adminSidebar(activePage)
                 class=activePage === "audit" ? "is-active" : null,
                 aria-current=activePage === "audit" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ◉
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/audit.png", alt="")
                 span Auditoría
             a.admin-nav-link(
                 href="/admin/reports",
                 class=activePage === "reports" ? "is-active" : null,
                 aria-current=activePage === "reports" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ▥
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/reports.png", alt="")
                 span Reportes e indicadores
             a.admin-nav-link(
                 href="/admin/profile",
                 class=activePage === "profile" ? "is-active" : null,
                 aria-current=activePage === "profile" ? "page" : null
             )
-                span.admin-nav-icon(aria-hidden="true") ♙
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/profile.png", alt="")
                 span Mi perfil
         form.admin-logout(action="/logout", method="POST")
             button.admin-nav-link(type="submit")
-                span.admin-nav-icon(aria-hidden="true") ⇥
+                span.admin-nav-icon(aria-hidden="true")
+                    img(src="/brand/admin-sidebar-icons/logout.png", alt="")
                 span Cerrar sesión
 
         include ../../shared/partials/logout-confirmation.pug
