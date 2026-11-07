@@ -450,6 +450,12 @@
     box-shadow: 0 5px 12px #123b731c;
 }
 
+.sv-action-icon img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
 .action-green {
     background: linear-gradient(145deg, #12c987, #00a974);
 }
@@ -1591,6 +1597,11 @@
     .sv-action-icon svg {
         width: 20px;
         height: 20px;
+    }
+
+    .sv-action-icon img {
+        width: 24px;
+        height: 24px;
     }
 
     .sv-action-card strong {
