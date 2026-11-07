@@ -30,7 +30,7 @@ describe("Session activity service", () => {
                 session_id_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
             }),
         );
-        expect(isSessionExpired("active-session")).resolves.toBe(false);
+        await expect(isSessionExpired("active-session")).resolves.toBe(false);
         expect(JSON.stringify(create.mock.calls)).not.toContain("active-session");
     });
 
