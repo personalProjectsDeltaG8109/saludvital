@@ -302,7 +302,8 @@ patientRoutes.get(
                 ),
                 notificationChannelStates: patient
                     ? await getPatientChannelStates(patient.id)
-                    : { WhatsApp: false, SMS: true, Email: false },
+                    : { WhatsApp: false, SMS: false, Email: false },
+                notificationPreferencesAvailable: Boolean(patient),
                 ...(await getPatientHeader(req.auth.userId)),
             });
         } catch (error) {

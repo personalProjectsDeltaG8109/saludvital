@@ -232,6 +232,7 @@ html(lang="es")
                                             role="switch",
                                             aria-label="Activar notificaciones por WhatsApp",
                                             checked=notificationChannelStates.WhatsApp,
+                                            disabled=!notificationPreferencesAvailable,
                                             data-dashboard-channel-toggle="WhatsApp"
                                         )
                                         span(
@@ -251,6 +252,7 @@ html(lang="es")
                                             role="switch",
                                             aria-label="Activar notificaciones por SMS",
                                             checked=notificationChannelStates.SMS,
+                                            disabled=!notificationPreferencesAvailable,
                                             data-dashboard-channel-toggle="SMS"
                                         )
                                         span(
@@ -270,12 +272,15 @@ html(lang="es")
                                             role="switch",
                                             aria-label="Activar notificaciones por correo electrónico",
                                             checked=notificationChannelStates.Email,
+                                            disabled=!notificationPreferencesAvailable,
                                             data-dashboard-channel-toggle="Email"
                                         )
                                         span(
                                             class=notificationChannelStates.Email ? "sv-toggle is-active" : "sv-toggle",
                                             aria-hidden="true"
                                         )
+                                if !notificationPreferencesAvailable
+                                    p No se encontró un perfil de paciente. Las preferencias no están disponibles.
                                 p.sv-notification-feedback(
                                     role="status",
                                     aria-live="polite",

@@ -9,6 +9,7 @@
 - The history query selects only the fields needed to render notification labels, dates, channel, and status; notification payload and destination fields are excluded.
 - The patient dashboard WhatsApp, SMS, and email controls are accessible switches backed by persisted preferences. They use a dedicated protected endpoint, update all appointment-event preferences for a channel in a transaction, and restore the prior switch state if validation or persistence fails.
 - The dashboard continues to enforce the existing rule that at least one notification channel remains enabled.
+- If an authenticated account has no linked patient profile, the dashboard disables notification preference switches and explains that settings are unavailable instead of presenting the default SMS preference as saved data. The documented SMS default still applies to patients with no stored channel preferences.
 
 ## Verification
 
