@@ -147,7 +147,7 @@ export async function resetPassword(token, password, confirmation) {
 
     // Revoke sessions only after the transaction commits successfully.
     if (result.reset) {
-        endUserSessions(result.userId);
+        await endUserSessions(result.userId);
         return { reset: true };
     }
 
