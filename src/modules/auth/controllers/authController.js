@@ -142,6 +142,7 @@ export function showRegister(req, res) {
         pageTitle: "Registro de paciente | SaludVital",
         error,
         success: null,
+        whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
     });
 }
 
@@ -274,6 +275,7 @@ export async function register(req, res, next) {
                 pageTitle: "Registro de paciente | SaludVital",
                 error: "Debes autorizar el tratamiento de datos personales y de salud para registrarte.",
                 success: null,
+                whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             });
         }
 
@@ -291,6 +293,7 @@ export async function register(req, res, next) {
             pageTitle: "Registro completado | SaludVital",
             error: null,
             success: `Tu cuenta fue creada. Revisa el correo ${patient.email} para verificar tu dirección antes de iniciar sesión.`,
+            whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         });
     } catch (error) {
         // Show expected validation errors without exposing internal details.
@@ -302,6 +305,7 @@ export async function register(req, res, next) {
                         ? "No fue posible completar el registro. Inténtalo más tarde."
                         : error.message,
                 success: null,
+                whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             });
         }
 

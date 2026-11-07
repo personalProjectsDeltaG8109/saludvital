@@ -1,6 +1,3 @@
-//- Reuse the registration support destination in the shared branding panel.
-- var whatsappContactUrl = "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.";
-
 doctype html
 html(lang="es")
     head
@@ -307,26 +304,27 @@ html(lang="es")
                         ) Volver a iniciar sesión
 
         //- WhatsApp contact widget, matching the login page.
-        aside.whatsapp-widget(aria-label="Contacto por WhatsApp")
-            .whatsapp-message(aria-live="polite")
-                p.whatsapp-message-title ¡Gestiona tus citas aquí!
-                p Pide tus citas médicas y consulta tus próximas citas.
-                p.whatsapp-message-help ¿Necesitas ayuda? Escríbenos por WhatsApp.
+        if whatsappContactUrl
+            aside.whatsapp-widget(aria-label="Contacto por WhatsApp")
+                .whatsapp-message(aria-live="polite")
+                    p.whatsapp-message-title ¡Gestiona tus citas aquí!
+                    p Pide tus citas médicas y consulta tus próximas citas.
+                    p.whatsapp-message-help ¿Necesitas ayuda? Escríbenos por WhatsApp.
 
-            a.whatsapp-float(
-                href=whatsappContactUrl,
-                target="_blank",
-                rel="noopener noreferrer",
-                aria-label="Contactar a SaludVital por WhatsApp",
-                title="Escríbenos por WhatsApp"
-            )
-                img(
-                    src="/brand/whatsapp-svgrepo-com.svg",
-                    alt="",
-                    aria-hidden="true",
-                    width="32",
-                    height="32"
+                a.whatsapp-float(
+                    href=whatsappContactUrl,
+                    target="_blank",
+                    rel="noopener noreferrer",
+                    aria-label="Contactar a SaludVital por WhatsApp",
+                    title="Escríbenos por WhatsApp"
                 )
+                    img(
+                        src="/brand/whatsapp-svgrepo-com.svg",
+                        alt="",
+                        aria-hidden="true",
+                        width="32",
+                        height="32"
+                    )
 
     script(src="/js/registration-locations.js", defer)
     script(src="/js/registration-form.js", defer)

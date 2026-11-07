@@ -25,6 +25,7 @@ As a SaludVital user, I want a clear, responsive sign-in page so that I can secu
 - Reused the existing `/login` route, Pug layout, CSS build pipeline, and authentication controller.
 - Added the supplied background and doctor illustration under `public/brand/login/`.
 - Added an optional public contact-number setting to `.env.example`. Invalid or missing values hide the WhatsApp contact action; provider credentials and Meta phone-number identifiers are not reused as a public contact number.
+- Reused that validated contact destination on registration and removed the template's hard-coded WhatsApp number. Registration contact controls remain hidden when the public contact number is unavailable.
 - Added an accessible password visibility toggle without changing password submission behavior.
 - No database, dependency, authentication, or session changes were required.
 
