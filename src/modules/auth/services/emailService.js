@@ -49,7 +49,7 @@ export async function sendVerificationEmail(email, verificationUrl) {
             "Para confirmar tu cuenta y comenzar a usar SaludVital, abre este enlace:",
             verificationUrl,
             "",
-            "Este enlace es válido por 15 minutos.",
+            "Por seguridad, el enlace tiene una vigencia limitada.",
             "",
             "Si no creaste esta cuenta, puedes ignorar este mensaje.",
         ].join("\n"),
@@ -71,7 +71,7 @@ export async function sendVerificationEmail(email, verificationUrl) {
                                 <td width="33%" style="padding:8px;text-align:center;color:#087cf0;font-size:14px;font-weight:bold;">♡<br><span style="color:#0756a5;font-size:12px;">Gestiona tu<br>historial médico</span></td>
                             </tr></table>
                         </td></tr>
-                        <tr><td style="padding:0 28px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f6fd;border-radius:12px;"><tr><td style="padding:14px 18px;color:#315b7c;font-size:13px;line-height:1.5;"><strong style="color:#0756a5;">ℹ &nbsp; Este enlace es válido por 15 minutos.</strong><br>Si no solicitaste esta cuenta, puedes ignorar este correo.</td></tr></table></td></tr>
+                        <tr><td style="padding:0 28px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f6fd;border-radius:12px;"><tr><td style="padding:14px 18px;color:#315b7c;font-size:13px;line-height:1.5;"><strong style="color:#0756a5;">ℹ &nbsp; Este enlace tiene una vigencia limitada.</strong><br>Si no solicitaste esta cuenta, puedes ignorar este correo.</td></tr></table></td></tr>
                         <tr><td style="padding:2px 24px 26px;text-align:center;"><p style="margin:0 0 14px;color:#0756a5;font-size:18px;font-weight:bold;">El equipo de SaludVital</p><div style="height:3px;max-width:360px;margin:0 auto;background:linear-gradient(90deg,#b9e8ff,#00c98b,#b9e8ff);"></div></td></tr>
                     </table>
                 </body>
