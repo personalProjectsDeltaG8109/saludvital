@@ -685,8 +685,8 @@
 
 .sv-appointment-buttons {
     margin-top: 14px;
-    display: grid;
-    grid-template-columns: 1fr 1.1fr;
+    display: flex;
+    align-items: center;
     gap: 10px;
 }
 
@@ -711,11 +711,32 @@
 }
 
 .sv-appointment-buttons .appointment-detail-toggle {
+    flex: 1 1 auto;
     min-height: 41px;
     display: grid;
     place-items: center;
     font-size: clamp(0.625rem, 0.78vw, 0.8125rem);
     font-weight: 650;
+    border-color: #079b69;
+    color: #fff;
+    background: #079b69;
+}
+
+.sv-appointment-buttons .appointment-detail-toggle:hover {
+    border-color: #07845a;
+    background: #07845a;
+}
+
+.sv-appointment-buttons .appointment-reschedule-link,
+.sv-appointment-buttons .appointment-cancel-button {
+    flex: 0 0 36px;
+    box-sizing: border-box;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 50%;
 }
 
 .sv-button-short {

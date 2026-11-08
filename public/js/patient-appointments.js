@@ -73,6 +73,9 @@
             dialog.addEventListener("click", (event) => {
                 if (event.target === dialog) dialog.close();
             });
+            dialog.addEventListener("close", () => {
+                if (dialog.dataset.reloadOnClose === "true") window.location.reload();
+            });
         });
 
     // Submit cancellation requests and reflect the saved status without leaving the page.
@@ -131,7 +134,13 @@
                 if (confirmation instanceof HTMLDialogElement) confirmation.close();
                 if (feedbackTitle) feedbackTitle.textContent = "Cita cancelada";
                 if (feedbackMessage) feedbackMessage.textContent = result.message;
-                update();
+                if (rows.length) update();
+                if (
+                    feedback instanceof HTMLDialogElement &&
+                    feedback.dataset.dashboardFeedback !== undefined
+                ) {
+                    feedback.dataset.reloadOnClose = "true";
+                }
             } catch (error) {
                 if (feedbackTitle) feedbackTitle.textContent = "No se pudo cancelar";
                 if (feedbackMessage) feedbackMessage.textContent = error.message;

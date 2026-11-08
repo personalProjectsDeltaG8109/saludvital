@@ -1,6 +1,9 @@
 import { describe, expect, test } from "@jest/globals";
 import pug from "pug";
-import { canPatientRescheduleAppointment } from "../../src/modules/patient/services/appointmentRescheduleEligibility.js";
+import {
+    canPatientCancelAppointment,
+    canPatientRescheduleAppointment,
+} from "../../src/modules/patient/services/appointmentRescheduleEligibility.js";
 
 const now = Date.parse("2026-11-05T12:00:00Z");
 function appointment(hours = 48, status = "Confirmed", count = 0) {
@@ -45,15 +48,30 @@ describe("next appointment rescheduling eligibility", () => {
         expect(canPatientRescheduleAppointment(record, now)).toBe(true);
     });
 });
+describe("next appointment cancellation eligibility", () => {
+    test.each([
+        [48, "Confirmed", true],
+        [24, "Confirmed", true],
+        [23.999, "Confirmed", false],
+        [48, "In Progress", false],
+        [-1, "Confirmed", false],
+    ])("%s hours, %s status => %s", (hours, status, expected) => {
+        expect(canPatientCancelAppointment(appointment(hours, status), now)).toBe(expected);
+    });
+});
 describe("next appointment card", () => {
     test.each([true, false])("renders only eligible rescheduling actions: %s", (eligible) => {
-        const record = { ...appointment(), can_reschedule: eligible };
+        const record = { ...appointment(), can_reschedule: eligible, can_cancel: eligible };
         const html = render(record);
         expect(html).toContain('href="/patient/appointments"');
         expect(html).toContain("Ver detalles");
         expect(html.includes('href="/patient/appointments/reschedule?appointmentId=18"')).toBe(
             eligible,
         );
+        expect(html.includes('data-open-cancel-dialog="18"')).toBe(eligible);
+        expect(html.includes('id="appointment-cancel-18"')).toBe(eligible);
+        expect(html.includes("appointment-reschedule-link")).toBe(eligible);
+        expect(html.includes("appointment-cancel-button")).toBe(eligible);
         expect(html).not.toContain("site_label");
         expect(html).not.toContain("Centro de atención");
         expect(html).not.toContain("Sede SaludVital");
@@ -68,6 +86,15 @@ describe("next appointment card", () => {
         expect(html.indexOf("sv-appointment-doctor-name")).toBeLessThan(
             html.indexOf("sv-appointment-specialty"),
         );
+    });
+    test("shows cancellation independently when rescheduling is unavailable", () => {
+        const html = render({
+            ...appointment(48, "Confirmed", 3),
+            can_reschedule: false,
+            can_cancel: true,
+        });
+        expect(html.includes("appointment-reschedule-link")).toBe(false);
+        expect(html.includes('data-open-cancel-dialog="18"')).toBe(true);
     });
     test("provides initials when the assigned doctor has no photo", () => {
         const record = appointment();

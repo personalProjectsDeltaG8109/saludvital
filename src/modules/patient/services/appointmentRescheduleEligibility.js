@@ -9,3 +9,11 @@ export function canPatientRescheduleAppointment(appointment, now = Date.now()) {
         rescheduleCount < 3
     );
 }
+
+// Mirror the cancellation endpoint's status and 24-hour notice requirements.
+export function canPatientCancelAppointment(appointment, now = Date.now()) {
+    return (
+        appointment.status.name === "Confirmed" &&
+        new Date(appointment.start_at).getTime() >= now + 24 * 60 * 60 * 1000
+    );
+}

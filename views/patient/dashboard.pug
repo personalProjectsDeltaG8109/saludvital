@@ -122,11 +122,51 @@ html(lang="es")
                                             data-open-appointment-details=appointmentId
                                         ) Ver detalles
                                         if nextAppointment.can_reschedule
-                                            a.sv-button-primary(
-                                                href=`/patient/appointments/reschedule?appointmentId=${appointmentId}`
+                                            a.appointment-reschedule-link(
+                                                href=`/patient/appointments/reschedule?appointmentId=${appointmentId}`,
+                                                aria-label=`Reprogramar cita de ${nextAppointment.specialty.name}`,
+                                                title="Reprogramar cita"
                                             )
-                                                span.sv-button-wide Reprogramar cita
-                                                span.sv-button-short Reprogramar
+                                                svg(
+                                                    viewBox="0 0 24 24",
+                                                    fill="none",
+                                                    stroke="currentColor",
+                                                    stroke-width="1.8",
+                                                    stroke-linecap="round",
+                                                    stroke-linejoin="round",
+                                                    aria-hidden="true",
+                                                    focusable="false"
+                                                )
+                                                    rect(
+                                                        x="3",
+                                                        y="5",
+                                                        width="18",
+                                                        height="16",
+                                                        rx="2"
+                                                    )
+                                                    path(d="M16 3v4M8 3v4M3 10h18")
+                                                    path(d="M12 14a3 3 0 1 0 3 3")
+                                                    path(d="M15 14v3h-3")
+                                        if nextAppointment.can_cancel
+                                            button.appointment-cancel-button(
+                                                type="button",
+                                                aria-label=`Cancelar cita de ${nextAppointment.specialty.name}`,
+                                                title="Cancelar cita",
+                                                data-open-cancel-dialog=appointmentId
+                                            )
+                                                svg(
+                                                    viewBox="0 0 24 24",
+                                                    fill="none",
+                                                    stroke="currentColor",
+                                                    stroke-width="1.8",
+                                                    stroke-linecap="round",
+                                                    stroke-linejoin="round",
+                                                    aria-hidden="true",
+                                                    focusable="false"
+                                                )
+                                                    path(d="M4 7h16")
+                                                    path(d="M10 11v6M14 11v6")
+                                                    path(d="M5 7l1 14h12l1-14M9 7V4h6v3")
                                     dialog.appointment-details-dialog(
                                         id="appointment-details-" + appointmentId,
                                         aria-labelledby="appointment-details-title-" + appointmentId
@@ -192,6 +232,32 @@ html(lang="es")
                                                 type="button",
                                                 data-close-appointment-details
                                             ) Listo
+                                    if nextAppointment.can_cancel
+                                        dialog.appointment-details-dialog.appointment-cancel-dialog(
+                                            id=`appointment-cancel-${appointmentId}`,
+                                            aria-labelledby=`appointment-cancel-title-${appointmentId}`
+                                        )
+                                            .appointment-dialog-header
+                                                div
+                                                    span.appointment-dialog-kicker Confirmación
+                                                    h2(id=`appointment-cancel-title-${appointmentId}`) ¿Deseas cancelar esta cita?
+                                                    p= `${nextAppointment.specialty.name} · ${appointmentDate.toLocaleString("es-CO", { dateStyle: "long", timeStyle: "short", timeZone: "America/Bogota" })}`
+                                                button.appointment-dialog-close(
+                                                    type="button",
+                                                    aria-label="Cerrar confirmación",
+                                                    data-close-cancel-dialog
+                                                ) ×
+                                            .appointment-dialog-body
+                                                p Esta acción conservará el registro de tu cita y liberará el horario.
+                                            .appointment-dialog-footer.appointment-cancel-actions
+                                                button.appointment-dialog-done(
+                                                    type="button",
+                                                    data-close-cancel-dialog
+                                                ) Volver
+                                                button.appointment-cancel-confirm(
+                                                    type="button",
+                                                    data-cancel-appointment=appointmentId
+                                                ) Sí, cancelar cita
                                 else
                                     .sv-appointment-empty
                                         strong No tienes citas próximas
@@ -325,6 +391,23 @@ html(lang="es")
                             data-close-doctor-photo-viewer
                         ) ×
                         img(src="", alt="", data-doctor-photo-viewer-image)
+                dialog#appointment-feedback.appointment-details-dialog.appointment-feedback-dialog(
+                    aria-labelledby="appointment-feedback-title",
+                    aria-live="polite",
+                    data-dashboard-feedback
+                )
+                    .appointment-dialog-header
+                        div
+                            span.appointment-dialog-kicker SaludVital
+                            h2#appointment-feedback-title
+                            p(data-appointment-feedback-message)
+                        button.appointment-dialog-close(
+                            type="button",
+                            aria-label="Cerrar mensaje",
+                            data-close-feedback
+                        ) ×
+                    .appointment-dialog-footer
+                        button.appointment-dialog-done(type="button", data-close-feedback) Entendido
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/patient-appointments.js", defer)
