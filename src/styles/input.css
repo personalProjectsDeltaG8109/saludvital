@@ -501,6 +501,43 @@
     object-fit: contain;
 }
 
+.email-verification-card .recovery-art-slot-compact {
+    height: 150px;
+    margin-bottom: 14px;
+}
+
+.email-verification-card .recovery-security-illustration {
+    width: min(100%, 225px);
+    height: 150px;
+}
+
+.email-verification-badge {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    border-radius: 999px;
+    background: #e3f8ef;
+    padding: 6px 14px;
+    color: #05603f;
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+.email-verification-badge > span {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 50%;
+    background: #047857;
+    color: #ffffff;
+    font-size: 0.8rem;
+}
+
 .recovery-card h1 {
     margin: 0;
     color: var(--color-primary);
