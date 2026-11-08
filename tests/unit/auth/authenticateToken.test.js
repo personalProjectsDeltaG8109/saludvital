@@ -39,8 +39,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js"
 const { authenticateToken, requireRole } =
     await import("../../../src/middleware/authenticateToken.js");
 
-const { refreshSession } =
-    await import("../../../src/modules/auth/services/sessionActivity.js");
+const { refreshSession } = await import("../../../src/modules/auth/services/sessionActivity.js");
 
 // Create reusable Express request and response mocks.
 function createMocks(token = undefined) {
@@ -275,5 +274,5 @@ describe("requireRole middleware", () => {
         expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
         expect(next).not.toHaveBeenCalled();
-    });;
+    });
 });
