@@ -27,7 +27,21 @@ describe("Email verification HTTP endpoint", () => {
             .query({ token: "a".repeat(64) });
 
         expect(response.status).toBe(200);
-        expect(response.text).toContain("¡Tu correo está verificado!");
+        expect(response.text).toContain("¡Tu cuenta ha sido confirmada con éxito!");
+        expect(response.text).toContain(
+            "Ahora puedes iniciar sesión y comenzar a gestionar tus citas médicas en SaludVital.",
+        );
+        expect(response.text).toContain("nuestra prioridad.");
+        expect(response.text).toContain(
+            "Accede a tu cuenta, gestiona tus citas médicas o solicita una cita fácilmente por WhatsApp.",
+        );
+        expect(response.text).toContain("de forma rápida y sencilla.");
+        expect(response.text).toContain('data-image-slot="account-confirmed"');
+        expect(response.text).toContain("/brand/login/recovery-link-sent.png");
+        expect(response.text).toContain('href="/login"');
+        expect(response.text).toContain("Tu salud,");
+        expect(response.text).toContain("Tu salud siempre");
+        expect(response.text).not.toContain("a".repeat(64));
         expect(verifyEmail).toHaveBeenCalledWith("a".repeat(64));
     });
 
@@ -42,6 +56,13 @@ describe("Email verification HTTP endpoint", () => {
             .query({ token: "b".repeat(64) });
 
         expect(response.status).toBe(400);
+        expect(response.text).toContain("Este enlace ya no está vigente");
+        expect(response.text).toContain("Enlace caducado o ya utilizado");
+        expect(response.text).toContain("Tu salud,");
+        expect(response.text).toContain("Tu salud siempre");
+        expect(response.text).not.toContain("Verificación pendiente");
+        expect(response.text).not.toContain("¡Tu cuenta ha sido confirmada con éxito!");
+        expect(response.text).not.toContain("/brand/login/recovery-link-sent.png");
         expect(verifyEmail).toHaveBeenCalledWith("b".repeat(64));
     });
 

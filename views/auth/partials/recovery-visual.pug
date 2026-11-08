@@ -2,18 +2,28 @@ section.recovery-visual(aria-label="SaludVital, tu salud en buenas manos")
     a.recovery-brand(href="/login", aria-label="SaludVital, volver al inicio de sesión")
         img(src="/brand/login/logo-login-mobile.png", alt="SaludVital", width="300", height="100")
     .recovery-visual-copy
-        p.recovery-eyebrow Recupera el acceso a tu cuenta
-        h2 Tu salud,
-            br
-            span en buenas manos.
-        p Restablece tu contraseña y continúa gestionando tus citas médicas de forma segura y confiable.
+        if !verified && !isEmailVerificationResult
+            p.recovery-eyebrow Recupera el acceso a tu cuenta
+        if verified || isEmailVerificationResult
+            h2 Tu salud,
+                br
+                span nuestra prioridad.
+            p.login-intro Accede a tu cuenta, gestiona tus citas médicas o solicita una cita fácilmente por WhatsApp.
+        else
+            h2 Tu salud,
+                br
+                span en buenas manos.
+            p Restablece tu contraseña y continúa gestionando tus citas médicas de forma segura y confiable.
         .login-benefits.recovery-benefits(aria-label="Beneficios de SaludVital")
             .login-benefit
                 span.login-benefit-icon(aria-hidden="true")
                     img(src="/brand/calendar-svgrepo-com.svg", alt="")
                 .login-benefit-copy
                     strong Agenda tus citas
-                    span de forma fácil.
+                    if verified || isEmailVerificationResult
+                        span de forma rápida y sencilla.
+                    else
+                        span de forma fácil.
             .login-benefit
                 span.login-benefit-icon(aria-hidden="true")
                     svg(
