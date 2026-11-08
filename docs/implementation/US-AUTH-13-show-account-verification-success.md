@@ -6,7 +6,14 @@
 - The success card tells the patient that the account is confirmed and links to the existing login page. Verification tokens and account identifiers are not rendered.
 - Invalid or expired links keep their failure message and do not display the success artwork or confirmation message.
 - Added HTTP regression assertions for the success design, its Spanish message and login link, token privacy, and the failure state.
+- Verified the rendered confirmation page at 390 px, 768 px, and 1440 px. Each viewport had no horizontal overflow, the confirmation artwork loaded, and axe-core reported no violations.
 - No model, schema, dependency, or verification rule changed.
+
+## Visual Verification
+
+![Mobile confirmation page](assets/US-AUTH-13-verification-mobile.png)
+
+![Desktop confirmation page](assets/US-AUTH-13-verification-desktop.png)
 
 ## Acceptance Criteria
 
