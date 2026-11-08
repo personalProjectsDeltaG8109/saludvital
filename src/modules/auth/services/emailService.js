@@ -32,6 +32,12 @@ export async function sendVerificationEmail(email, verificationUrl) {
 
     const transporter = createTransport();
 
+    const safeVerificationUrl = verificationUrl
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+
     await transporter.sendMail({
         from,
         to: email,
@@ -40,26 +46,36 @@ export async function sendVerificationEmail(email, verificationUrl) {
             "Hola:",
             "",
             "Gracias por registrarte en SaludVital.",
-            "Para confirmar tu correo electrónico, abre este enlace:",
+            "Para confirmar tu cuenta y comenzar a usar SaludVital, abre este enlace:",
             verificationUrl,
             "",
+            "Este enlace es válido por 15 minutos.",
+            "",
             "Si no creaste esta cuenta, puedes ignorar este mensaje.",
-            "Por seguridad, el enlace tiene un tiempo de validez limitado.",
         ].join("\n"),
         html: `
-            <main style="font-family: Arial, sans-serif; color: #123B73; line-height: 1.6;">
-                <h1>Bienvenido a SaludVital</h1>
-                <p>Gracias por crear tu cuenta.</p>
-                <p>Confirma tu correo electrónico haciendo clic en el siguiente enlace:</p>
-                <p>
-                    <a href="${verificationUrl}"
-                       style="display:inline-block;padding:12px 20px;background:#123B73;color:#ffffff;text-decoration:none;border-radius:24px;">
-                        Confirmar mi cuenta
-                    </a>
-                </p>
-                <p>Este enlace tiene un tiempo de validez limitado.</p>
-                <p>Si no creaste esta cuenta, puedes ignorar este mensaje.</p>
-            </main>
+            <!doctype html>
+            <html lang="es">
+                <body style="margin:0;padding:24px 12px;background:#f1f8fc;font-family:Arial,Helvetica,sans-serif;color:#123b73;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;">
+                        <tr><td style="padding:28px 32px 12px;text-align:center;">
+                            <img src="${(process.env.APP_BASE_URL || "").replace(/\/$/, "")}/brand/logo-symbol.png" width="64" height="64" alt="SaludVital" style="display:block;margin:0 auto 18px;object-fit:contain;">
+                            <h1 style="margin:0 0 10px;color:#0756a5;font-size:30px;line-height:1.2;">¡Confirma tu cuenta!</h1>
+                            <p style="margin:0 auto 22px;max-width:460px;color:#496487;font-size:16px;line-height:1.55;">Gracias por registrarte en SaludVital. Para activar tu cuenta y comenzar a disfrutar de nuestros servicios, haz clic en el siguiente botón:</p>
+                            <a href="${safeVerificationUrl}" style="display:inline-block;min-width:250px;padding:14px 24px;border-radius:12px;background:#08b66f;color:#ffffff;text-align:center;text-decoration:none;font-size:17px;font-weight:bold;">✓ &nbsp; Confirmar cuenta &nbsp; →</a>
+                        </td></tr>
+                        <tr><td style="padding:22px 32px 18px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                                <td width="33%" style="padding:8px;text-align:center;border-right:1px solid #dceaf4;color:#087cf0;font-size:14px;font-weight:bold;">▦<br><span style="color:#0756a5;font-size:12px;">Agenda<br>tus citas</span></td>
+                                <td width="34%" style="padding:8px;text-align:center;border-right:1px solid #dceaf4;color:#087cf0;font-size:14px;font-weight:bold;">♧<br><span style="color:#0756a5;font-size:12px;">Recibe<br>notificaciones</span></td>
+                                <td width="33%" style="padding:8px;text-align:center;color:#087cf0;font-size:14px;font-weight:bold;">♡<br><span style="color:#0756a5;font-size:12px;">Gestiona tu<br>historial médico</span></td>
+                            </tr></table>
+                        </td></tr>
+                        <tr><td style="padding:0 28px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#e8f6fd;border-radius:12px;"><tr><td style="padding:14px 18px;color:#315b7c;font-size:13px;line-height:1.5;"><strong style="color:#0756a5;">ℹ &nbsp; Este enlace es válido por 15 minutos.</strong><br>Si no solicitaste esta cuenta, puedes ignorar este correo.</td></tr></table></td></tr>
+                        <tr><td style="padding:2px 24px 26px;text-align:center;"><p style="margin:0 0 14px;color:#0756a5;font-size:18px;font-weight:bold;">El equipo de SaludVital</p><div style="height:3px;max-width:360px;margin:0 auto;background:linear-gradient(90deg,#b9e8ff,#00c98b,#b9e8ff);"></div></td></tr>
+                    </table>
+                </body>
+            </html>
         `,
     });
 }
