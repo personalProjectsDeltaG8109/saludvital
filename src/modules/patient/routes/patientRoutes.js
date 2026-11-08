@@ -33,7 +33,10 @@ import {
     updatePatientAppointmentTime,
     cancelPatientAppointmentRequest,
 } from "../controllers/appointmentController.js";
-import { canPatientRescheduleAppointment } from "../services/appointmentRescheduleEligibility.js";
+import {
+    canPatientCancelAppointment,
+    canPatientRescheduleAppointment,
+} from "../services/appointmentRescheduleEligibility.js";
 import { getReschedulableAppointments } from "../services/appointmentService.js";
 import {
     getPatientChannelStates,
@@ -291,6 +294,7 @@ patientRoutes.get(
                             new Date(second.occurred_at).getTime(),
                     );
                 nextAppointment.can_reschedule = canPatientRescheduleAppointment(nextAppointment);
+                nextAppointment.can_cancel = canPatientCancelAppointment(nextAppointment);
             }
 
             return res.render("patient/dashboard", {

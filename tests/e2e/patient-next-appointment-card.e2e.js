@@ -52,6 +52,7 @@ const root = process.cwd();
                         status: { name: "Confirmed" },
                         history: [],
                         can_reschedule: eligible,
+                        can_cancel: eligible,
                     },
                     upcomingAppointments: [],
                     notificationChannelStates: {},
@@ -71,6 +72,18 @@ const root = process.cwd();
                 assert.equal(
                     await card.locator(".sv-appointment-buttons a").count(),
                     eligible ? 1 : 0,
+                );
+                assert.equal(
+                    await card
+                        .locator(".sv-appointment-buttons .appointment-cancel-button")
+                        .count(),
+                    eligible ? 1 : 0,
+                );
+                assert.equal(
+                    await card
+                        .locator(".sv-appointment-buttons .appointment-detail-toggle")
+                        .evaluate((button) => getComputedStyle(button).backgroundColor),
+                    "rgb(7, 155, 105)",
                 );
                 assert.equal(
                     await card.getByRole("link", { name: "Ver todas" }).getAttribute("href"),
@@ -97,7 +110,7 @@ const root = process.cwd();
                         ),
                     });
             }
-            await p.locator(".sv-appointment-buttons button").click();
+            await p.locator(".sv-appointment-buttons .appointment-detail-toggle").click();
             await p.locator("#appointment-details-18").waitFor({ state: "visible" });
             assert.equal(
                 await p.locator("#appointment-details-18").getByText("Centro de atención").count(),
