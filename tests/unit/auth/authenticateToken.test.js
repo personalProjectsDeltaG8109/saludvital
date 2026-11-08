@@ -31,7 +31,6 @@ const { User } = await import("../../../src/models/associations.js");
 
 // Mock session tracking to isolate middleware tests.
 jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js", () => ({
-    isSessionExpired: jest.fn(() => false),
     refreshSession: jest.fn(() => true),
     startSession: jest.fn(),
     endSession: jest.fn(),
@@ -40,8 +39,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js"
 const { authenticateToken, requireRole } =
     await import("../../../src/middleware/authenticateToken.js");
 
-const { isSessionExpired, refreshSession } =
-    await import("../../../src/modules/auth/services/sessionActivity.js");
+const { refreshSession } = await import("../../../src/modules/auth/services/sessionActivity.js");
 
 // Create reusable Express request and response mocks.
 function createMocks(token = undefined) {
@@ -64,8 +62,7 @@ function createMocks(token = undefined) {
 describe("authenticateToken middleware", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        isSessionExpired.mockReturnValue(false);
-        refreshSession.mockReturnValue(true);
+        refreshSession.mockResolvedValue(true);
     });
 
     test("redirects to login when the authentication cookie is missing", async () => {
@@ -255,13 +252,8 @@ describe("requireRole middleware", () => {
         expect(next).not.toHaveBeenCalled();
     });
 
-    test("redirects to login when the session has expired", async () => {
+    test("redirects to login when the persisted session has expired", async () => {
         const { req, res, next } = createMocks("valid-token");
-
-        User.findByPk.mockClear();
-        isSessionExpired.mockClear();
-        res.clearCookie.mockClear();
-        res.redirect.mockClear();
 
         jwt.verify.mockReturnValue({
             sub: "12",
@@ -269,14 +261,18 @@ describe("requireRole middleware", () => {
             sid: "expired-session",
         });
 
-        isSessionExpired.mockReturnValue(true);
+        User.findByPk.mockResolvedValue({
+            id: 12,
+            is_active: true,
+            rol: { name: "Patient" },
+        });
+        refreshSession.mockResolvedValue(false);
 
         await authenticateToken(req, res, next);
 
-        expect(isSessionExpired).toHaveBeenCalledWith("expired-session");
+        expect(refreshSession).toHaveBeenCalledWith("expired-session", 12);
         expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
-        expect(User.findByPk).not.toHaveBeenCalled();
         expect(next).not.toHaveBeenCalled();
     });
 });

@@ -148,10 +148,10 @@ describe("Authentication controller", () => {
         );
     });
 
-    test("logout ends the session without changing failed login state", () => {
+    test("logout ends the session without changing failed login state", async () => {
         req.auth = { sessionId: "existing-session" };
 
-        logout(req, res);
+        await logout(req, res, next);
 
         expect(endSession).toHaveBeenCalledWith("existing-session");
         expect(clearLoginFailures).not.toHaveBeenCalled();
