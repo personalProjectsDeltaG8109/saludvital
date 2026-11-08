@@ -2,9 +2,9 @@ section.recovery-visual(aria-label="SaludVital, tu salud en buenas manos")
     a.recovery-brand(href="/login", aria-label="SaludVital, volver al inicio de sesión")
         img(src="/brand/login/logo-login-mobile.png", alt="SaludVital", width="300", height="100")
     .recovery-visual-copy
-        if !verified
+        if !verified && !isEmailVerificationResult
             p.recovery-eyebrow Recupera el acceso a tu cuenta
-        if verified
+        if verified || isEmailVerificationResult
             h2 Tu salud,
                 br
                 span nuestra prioridad.
@@ -20,7 +20,7 @@ section.recovery-visual(aria-label="SaludVital, tu salud en buenas manos")
                     img(src="/brand/calendar-svgrepo-com.svg", alt="")
                 .login-benefit-copy
                     strong Agenda tus citas
-                    if verified
+                    if verified || isEmailVerificationResult
                         span de forma rápida y sencilla.
                     else
                         span de forma fácil.

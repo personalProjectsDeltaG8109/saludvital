@@ -28,12 +28,14 @@ export async function verifyEmailAddress(req, res, next) {
         if (!result.verified) {
             return res.status(400).render("auth/email-verification-result", {
                 verified: false,
+                isEmailVerificationResult: true,
                 whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             });
         }
 
         return res.status(200).render("auth/email-verification-result", {
             verified: true,
+            isEmailVerificationResult: true,
             whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         });
     } catch (error) {

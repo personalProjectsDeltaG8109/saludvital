@@ -39,6 +39,8 @@ describe("Email verification HTTP endpoint", () => {
         expect(response.text).toContain('data-image-slot="account-confirmed"');
         expect(response.text).toContain("/brand/login/recovery-link-sent.png");
         expect(response.text).toContain('href="/login"');
+        expect(response.text).toContain("Tu salud,");
+        expect(response.text).toContain("Tu salud siempre");
         expect(response.text).not.toContain("a".repeat(64));
         expect(verifyEmail).toHaveBeenCalledWith("a".repeat(64));
     });
@@ -54,7 +56,11 @@ describe("Email verification HTTP endpoint", () => {
             .query({ token: "b".repeat(64) });
 
         expect(response.status).toBe(400);
-        expect(response.text).toContain("No pudimos verificar tu correo");
+        expect(response.text).toContain("Este enlace ya no está vigente");
+        expect(response.text).toContain("Enlace caducado o ya utilizado");
+        expect(response.text).toContain("Tu salud,");
+        expect(response.text).toContain("Tu salud siempre");
+        expect(response.text).not.toContain("Verificación pendiente");
         expect(response.text).not.toContain("¡Tu cuenta ha sido confirmada con éxito!");
         expect(response.text).not.toContain("/brand/login/recovery-link-sent.png");
         expect(verifyEmail).toHaveBeenCalledWith("b".repeat(64));

@@ -5,7 +5,7 @@ html(lang="es")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         meta(name="robots", content="noindex, nofollow")
         meta(name="theme-color", content="#123B73")
-        title= verified ? "Cuenta confirmada | SaludVital" : "Verificación de correo | SaludVital"
+        title= verified ? "Cuenta confirmada | SaludVital" : "Enlace de verificación no vigente | SaludVital"
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
 
@@ -63,11 +63,12 @@ html(lang="es")
                                 path(d="M12 8v4")
                                 path(d="M12 16h.01")
 
-                        span.mb-4.inline-flex.items-center.rounded-full.bg-amber-50.px-3.py-1.text-xs.font-bold.uppercase.tracking-wider.text-amber-700
-                            | Verificación pendiente
+                        span.email-verification-badge.email-verification-badge-warning(role="status")
+                            span(aria-hidden="true") !
+                            | Enlace caducado o ya utilizado
 
-                        h1#verification-title No pudimos verificar tu correo
-                        p.recovery-description El enlace puede haber caducado, ser inválido o haber sido utilizado anteriormente. Puedes volver a intentarlo solicitando un nuevo enlace de verificación.
+                        h1#verification-title Este enlace ya no está vigente
+                        p.recovery-description El enlace pudo haber caducado, ser inválido o ya haberse utilizado. Si tu cuenta ya fue confirmada, inicia sesión. Si aún no, comunícate con soporte para solicitar ayuda.
 
                         a.recovery-primary-action(href="/login") Volver al inicio de sesión
 

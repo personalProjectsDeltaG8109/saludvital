@@ -538,6 +538,15 @@
     font-size: 0.8rem;
 }
 
+.email-verification-badge-warning {
+    background: #fff4d6;
+    color: #8a4b08;
+}
+
+.email-verification-badge-warning > span {
+    background: #b45309;
+}
+
 .recovery-card h1 {
     margin: 0;
     color: var(--color-primary);
