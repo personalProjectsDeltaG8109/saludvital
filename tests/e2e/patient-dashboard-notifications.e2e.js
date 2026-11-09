@@ -161,8 +161,44 @@ try {
         }
     }
 
+    for (const viewport of [
+        { width: 1024, height: 600 },
+        { width: 1280, height: 720 },
+        { width: 1366, height: 768 },
+        { width: 1440, height: 900 },
+        { width: 1920, height: 1080 },
+    ]) {
+        await page.setViewportSize(viewport);
+        const cardContentOverflows = await page.locator(".sv-action-card").evaluateAll((cards) =>
+            cards.some((card) => {
+                const cardBounds = card.getBoundingClientRect();
+                const content = [card.querySelector("strong"), card.querySelector("small")];
+                return content.some((element) => {
+                    const bounds = element.getBoundingClientRect();
+                    return bounds.top < cardBounds.top || bounds.bottom > cardBounds.bottom;
+                });
+            }),
+        );
+        if (cardContentOverflows) {
+            throw new Error(
+                `Patient dashboard action card text is outside its card at ${viewport.width}x${viewport.height}.`,
+            );
+        }
+        const cardsOverlapPanels = await page.evaluate(() => {
+            const panelsTop = document.querySelector(".sv-panels").getBoundingClientRect().top;
+            return [...document.querySelectorAll(".sv-action-card")].some(
+                (card) => card.getBoundingClientRect().bottom > panelsTop,
+            );
+        });
+        if (cardsOverlapPanels) {
+            throw new Error(
+                `Patient dashboard action cards overlap the panels at ${viewport.width}x${viewport.height}.`,
+            );
+        }
+    }
+
     console.log(
-        "PASS: patient dashboard profile removal, navigation, channel switches, responsive widths, and axe-core.",
+        "PASS: patient dashboard cards, navigation, channel switches, responsive widths, and axe-core.",
     );
 } finally {
     await browser.close();
