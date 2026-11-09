@@ -46,6 +46,11 @@ app.get("/", (req, res) => {
     res.redirect(303, "/login");
 });
 
+app.use("/api", (_req, res) => {
+    res.set("Cache-Control", "no-store");
+    return res.status(404).json({ error: "No encontramos este recurso." });
+});
+
 // Preserve the verified role for personalized recovery links on the 404 page.
 app.use(authenticateTokenOptional);
 app.use((req, res) => {
