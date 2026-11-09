@@ -212,7 +212,6 @@ async function getPatientAppointmentActivity(patientId) {
             ["occurred_at", "DESC"],
             ["id", "DESC"],
         ],
-        limit: 20,
     });
 
     return history.map(toAppointmentActivityItem);
@@ -289,14 +288,13 @@ export async function getPatientNotificationSettings(userId) {
                 "read_at",
             ],
             order: [["scheduled_at", "DESC"]],
-            limit: 20,
         }),
         getPatientAppointmentActivity(patient.id),
     ]);
 
-    const history = [...notifications.map(toHistoryItem), ...appointmentActivity]
-        .sort((first, second) => new Date(second.date) - new Date(first.date))
-        .slice(0, 20);
+    const history = [...notifications.map(toHistoryItem), ...appointmentActivity].sort(
+        (first, second) => new Date(second.date) - new Date(first.date),
+    );
 
     const channelStates = getEnabledChannelStates(storedPreferences);
     const preferences = notificationChannels.flatMap((channel) => {

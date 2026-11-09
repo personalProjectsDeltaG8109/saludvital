@@ -194,7 +194,7 @@ html(lang="es")
                             .notifications-section-heading
                                 h2#history-heading Historial de notificaciones
                                 p Consulta los movimientos de tus citas y el estado de los avisos enviados por tus canales.
-                            button(type="button", data-history-toggle, aria-expanded="false") Ver todas
+                            span.notifications-history-count(data-history-count)
                             button.notifications-mark-all(type="button", data-mark-all-read) Marcar todas como leídas
                         if history.length
                             .notifications-history-table-wrap
@@ -202,17 +202,22 @@ html(lang="es")
                                     thead
                                         tr
                                             th Fecha y hora
-                                            th Tipo
-                                            th Canal
-                                            th Mensaje
+                                            th Notificación
                                             th Estado
                                     tbody
-                                        each notification, index in history
+                                        each notification in history
                                             tr(
-                                                class=[index > 1 ? "is-history-extra" : "", notification.readAt ? "" : "is-unread"].filter(Boolean).join(" "),
+                                                class=notification.readAt ? "" : "is-unread",
+                                                tabindex="0",
+                                                aria-label=`Abrir notificación: ${notification.eventLabel}`,
+                                                data-history-row,
                                                 data-notification-id=notification.isInAppActivity ? undefined : notification.id,
                                                 data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
-                                                data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined
+                                                data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined,
+                                                data-history-details=notification.details,
+                                                data-history-channel=notification.channel,
+                                                data-history-status=notification.statusLabel,
+                                                data-history-date=notification.date.toISOString()
                                             )
                                                 td(data-label="Fecha y hora")
                                                     if !notification.readAt
@@ -220,46 +225,36 @@ html(lang="es")
                                                     time(datetime=notification.date.toISOString())= notification.date.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
                                                 td(data-label="Tipo")
                                                     span.notifications-history-kind= notification.eventLabel
-                                                td(data-label="Canal")
-                                                    span(
-                                                        class=`notifications-history-channel is-${notification.channelKey.toLowerCase()}`
-                                                    )
-                                                        if notification.channelKey === "WhatsApp"
-                                                            img(
-                                                                src="/brand/whatsapp-svgrepo-com.svg",
-                                                                alt=""
-                                                            )
-                                                        else if notification.channelKey === "SMS"
-                                                            | ▣
-                                                        else if notification.channelKey === "System"
-                                                            svg(
-                                                                viewBox="0 0 24 24",
-                                                                aria-hidden="true"
-                                                            )
-                                                                path(
-                                                                    d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9m-8 12h4"
-                                                                )
-                                                        else
-                                                            | ✉
-                                                        | #{ notification.channel }
-                                                td(data-label="Mensaje")= notification.details
+                                                    span.notifications-history-summary= notification.details
                                                 td(data-label="Estado")
                                                     span(
                                                         class=`notifications-delivery-status is-${notification.status ? notification.status.toLowerCase() : "registered"}`
                                                     )= notification.statusLabel
-                                                td.notifications-history-actions(
-                                                    data-label="Acciones"
+                                    tfoot
+                                        tr
+                                            td(colspan="3")
+                                                nav.notifications-history-pagination(
+                                                    aria-label="Páginas del historial",
+                                                    data-history-pagination,
+                                                    hidden
                                                 )
-                                                    if notification.isInAppActivity
-                                                        button.notifications-detail-button(
+                                                    span(
+                                                        role="status",
+                                                        aria-live="polite",
+                                                        data-history-page-summary
+                                                    )
+                                                    .notifications-history-page-controls
+                                                        button(
                                                             type="button",
-                                                            data-open-appointment-details
-                                                        ) Ver detalle
-                                                    else if !notification.readAt
-                                                        button.notifications-detail-button(
+                                                            data-history-previous,
+                                                            aria-label="Página anterior"
+                                                        ) ‹
+                                                        span(data-history-page-number)
+                                                        button(
                                                             type="button",
-                                                            data-mark-notification-read
-                                                        ) Marcar leída
+                                                            data-history-next,
+                                                            aria-label="Página siguiente"
+                                                        ) ›
                         else
                             .notifications-history-empty
                                 span.notifications-empty-icon(aria-hidden="true") ♧
@@ -302,6 +297,12 @@ html(lang="es")
                             div
                                 dt Actividad registrada
                                 dd(data-appointment-occurred-at) —
+                            div
+                                dt Canal
+                                dd(data-appointment-channel) —
+                            div
+                                dt Mensaje
+                                dd(data-appointment-message) —
                         p#appointment-details-status.notifications-appointment-detail-status(
                             role="status",
                             aria-live="polite",
