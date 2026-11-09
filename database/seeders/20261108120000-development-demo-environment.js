@@ -330,6 +330,20 @@ async function upsertAppointment(
 }
 
 async function upsertHistory(queryInterface, appointmentId, history, transaction) {
+
+    const serializedHistory = {
+        ...history,
+        appointment_id: appointmentId,
+        previous_values:
+            history.previous_values == null
+                ? null
+                : JSON.stringify(history.previous_values),
+        new_values:
+            history.new_values == null
+                ? null
+                : JSON.stringify(history.new_values),
+    };
+
     const rows = await selectRows(
         queryInterface,
         "SELECT id FROM appointment_history WHERE appointment_id = :appointmentId AND reason = :reason LIMIT 1",
@@ -339,14 +353,14 @@ async function upsertHistory(queryInterface, appointmentId, history, transaction
     if (rows[0]) {
         await queryInterface.bulkUpdate(
             "appointment_history",
-            { ...history, appointment_id: appointmentId },
+            serializedHistory,
             { id: rows[0].id },
             { transaction },
         );
     } else {
         await queryInterface.bulkInsert(
             "appointment_history",
-            [{ ...history, appointment_id: appointmentId }],
+            [serializedHistory],
             { transaction },
         );
     }
@@ -601,7 +615,10 @@ async function upsertNotification(queryInterface, patientId, record, timestamp, 
         channel: record.channel,
         recipient_address: record.recipient,
         event_type: record.eventType,
-        payload: { demo: true, message: record.message },
+        payload: JSON.stringify({
+            demo: true,
+            message: record.message,
+        }),
         status: "Sent",
         scheduled_at: record.sentAt,
         sent_at: record.sentAt,
@@ -683,7 +700,10 @@ async function upsertAuditLog(queryInterface, adminId, record, timestamp, transa
         target_type: record.targetType,
         target_id: String(record.targetId),
         target_description: record.description,
-        changes: record.changes,
+        changes:
+            record.changes == null
+                ? null
+                : JSON.stringify(record.changes),
         reason,
         result: "Success",
         occurred_at: record.occurredAt,
