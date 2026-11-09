@@ -157,4 +157,16 @@ describe("Authentication controller", () => {
         expect(clearLoginFailures).not.toHaveBeenCalled();
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
     });
+
+    test("does not report successful logout when session revocation fails", async () => {
+        req.auth = { sessionId: "existing-session" };
+        const error = new Error("Database unavailable");
+        endSession.mockRejectedValue(error);
+
+        await logout(req, res, next);
+
+        expect(res.redirect).not.toHaveBeenCalled();
+        expect(res.clearCookie).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledWith(error);
+    });
 });
