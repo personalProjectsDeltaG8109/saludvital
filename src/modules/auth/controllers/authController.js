@@ -9,7 +9,7 @@ import {
 } from "../services/authService.js";
 
 import { randomUUID } from "node:crypto";
-import { startSession, endSession } from "../services/sessionActivity.js";
+import { startSession, endSession, refreshSession } from "../services/sessionActivity.js";
 
 import { verifyEmail } from "../services/emailVerificationService.js";
 
@@ -397,6 +397,27 @@ export async function login(req, res, next) {
 }
 
 // End the server-side session and clear the authentication cookie.
+// Renew the session only after the browser reports a qualifying user interaction.
+export async function reportSessionActivity(req, res, next) {
+    try {
+        const refreshed = await refreshSession(req.auth.sessionId, req.auth.userId);
+
+        if (!refreshed) {
+            res.clearCookie("token", {
+                httpOnly: true,
+                secure: environment.nodeEnv === "production",
+                sameSite: "lax",
+                path: "/",
+            });
+            return res.sendStatus(401);
+        }
+
+        return res.sendStatus(204);
+    } catch (error) {
+        return next(error);
+    }
+}
+
 export async function logout(req, res, next) {
     try {
         const sessionId = req.auth?.sessionId;

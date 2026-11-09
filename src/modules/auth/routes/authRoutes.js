@@ -13,6 +13,7 @@ import {
     showResetPassword,
     resetPasswordController,
     verifyEmailAddress,
+    reportSessionActivity,
 } from "../controllers/authController.js";
 
 import {
@@ -109,8 +110,6 @@ authRoutes.post("/logout", authenticateTokenOptional, logout);
 // Confirm an email address using its verification token.
 authRoutes.get("/verify-email", verifyEmailAddress);
 // Refresh the authenticated session when the browser reports activity.
-authRoutes.post("/session/activity", authenticateToken, (req, res) => {
-    return res.sendStatus(204);
-});
+authRoutes.post("/session/activity", authenticateToken, reportSessionActivity);
 
 export default authRoutes;
