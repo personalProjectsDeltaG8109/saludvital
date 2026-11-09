@@ -139,4 +139,28 @@ describe("administrator notification detail service", () => {
         expect(JSON.stringify(detail)).not.toContain("secret-token-123");
         expect(JSON.stringify(detail)).not.toContain("Bearer");
     });
+
+    test("shows uncertain outcome explicitly without inventing delivery or failure", async () => {
+        Notification.findByPk.mockResolvedValue(
+            notificationRecord({
+                status: "OutcomeUnknown",
+                sent_at: null,
+                provider_delivery_status: null,
+                provider_message_id: null,
+                last_error:
+                    "El proveedor no confirmó el resultado del envío. Verifica el estado antes de reintentar.",
+            }),
+        );
+
+        const detail = await getAdminNotificationDetails("52");
+
+        expect(detail.applicationStatus).toBe("Resultado incierto");
+        expect(detail.failure).toBeNull();
+        expect(detail.acceptedAt).toBeNull();
+        expect(detail.events.at(-1)).toMatchObject({
+            type: "outcome_unknown",
+            label: "Resultado incierto",
+        });
+        expect(JSON.stringify(detail)).not.toContain("Fallida en el envío");
+    });
 });
