@@ -102,6 +102,66 @@ describe("appointment notification worker", () => {
         );
     });
 
+    test("marks an ambiguous provider response without scheduling another send", async () => {
+        deliverNotification.mockRejectedValue(
+            Object.assign(new Error("Provider response timed out"), {
+                deliveryOutcome: "unknown",
+                retryable: false,
+            }),
+        );
+
+        await processNotificationBatch();
+
+        expect(notification.update).toHaveBeenLastCalledWith({
+            status: "OutcomeUnknown",
+            last_error:
+                "El proveedor no confirmó el resultado del envío. Verifica el estado antes de reintentar.",
+        });
+        expect(notification.update).not.toHaveBeenCalledWith(
+            expect.objectContaining({ status: "Pending" }),
+        );
+    });
+
+    test("does not resend when the provider accepted but saving Sent failed", async () => {
+        notification.update
+            .mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new Error("Database write failed"));
+
+        await processNotificationBatch();
+
+        expect(deliverNotification).toHaveBeenCalledTimes(1);
+        expect(Notification.update).toHaveBeenCalledWith(
+            {
+                status: "OutcomeUnknown",
+                last_error:
+                    "El proveedor no confirmó el resultado del envío. Verifica el estado antes de reintentar.",
+            },
+            { where: { id: notification.id, status: "Processing" } },
+        );
+    });
+
+    test("moves an interrupted processing record to uncertain instead of retrying it", async () => {
+        Notification.findAll.mockResolvedValue([]);
+
+        await processNotificationBatch();
+
+        expect(Notification.update).toHaveBeenCalledWith(
+            expect.objectContaining({ status: "OutcomeUnknown" }),
+            expect.objectContaining({
+                where: expect.objectContaining({ status: "Processing" }),
+                transaction,
+            }),
+        );
+        expect(Notification.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: { status: "Pending", scheduled_at: expect.any(Object) },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+                skipLocked: true,
+            }),
+        );
+    });
+
     // Retry transient provider failures using the configured progressive delay.
     test("reschedules transient provider errors for a retry", async () => {
         deliverNotification.mockRejectedValue(

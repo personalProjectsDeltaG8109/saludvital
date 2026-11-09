@@ -82,4 +82,18 @@ describe("appointment confirmation delivery", () => {
         });
         expect(sendResendEmail.mock.calls[0][0].body).toContain(payload.specialty);
     });
+
+    test("uses a stable Resend idempotency key for a persisted notification", async () => {
+        await deliverNotification({
+            id: 418,
+            channel: "Email",
+            recipient_address: "patient@example.test",
+            event_type: "appointment_confirmation",
+            payload,
+        });
+
+        expect(sendResendEmail).toHaveBeenCalledWith(
+            expect.objectContaining({ idempotencyKey: "notification-418" }),
+        );
+    });
 });

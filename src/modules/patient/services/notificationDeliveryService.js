@@ -54,6 +54,9 @@ export async function deliverNotification(notification) {
             to: notification.recipient_address,
             eventType: notification.event_type,
             body: message,
+            ...(Number.isSafeInteger(notification.id)
+                ? { idempotencyKey: `notification-${notification.id}` }
+                : {}),
         });
     }
     throw new Error("Unsupported notification channel.");

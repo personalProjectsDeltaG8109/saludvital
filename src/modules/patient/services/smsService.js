@@ -1,8 +1,9 @@
 const INALAMBRIA_SEND_URL = "https://api.inalambria.express/v1/messages/send";
 
-function serviceError(message, retryable = false) {
+function serviceError(message, retryable = false, deliveryOutcome = "rejected") {
     const error = new Error(message);
     error.retryable = retryable;
+    error.deliveryOutcome = deliveryOutcome;
     return error;
 }
 
@@ -72,21 +73,34 @@ function isRetryableInalambriaError(result, status) {
 export async function sendSms({ to, body }) {
     const { recipient, message } = validateSms(to, body);
     const apiKey = getApiKey();
-    const response = await fetch(INALAMBRIA_SEND_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({ recipients: [recipient], content: message, async: true }),
-    });
+    let response;
+    try {
+        response = await fetch(INALAMBRIA_SEND_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            signal: AbortSignal.timeout(15_000),
+            body: JSON.stringify({ recipients: [recipient], content: message, async: true }),
+        });
+    } catch {
+        throw serviceError("Inalambria no confirmó el resultado del SMS.", false, "unknown");
+    }
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+        const errorCode = result?.data?.errorCode || result?.errorCode;
+        const hasDocumentedRetrySignal = RETRYABLE_INALAMBRIA_CODES.has(errorCode);
+        const partialSend = errorCode === "PARTIAL_SEND";
+        const ambiguous =
+            response.status === 408 ||
+            partialSend ||
+            (response.status >= 500 && !hasDocumentedRetrySignal);
         throw serviceError(
             `Inalambria Express rechazó el SMS (HTTP ${response.status}).`,
             isRetryableInalambriaError(result, response.status),
+            ambiguous ? "unknown" : "rejected",
         );
     }
 
