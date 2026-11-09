@@ -182,6 +182,49 @@ describe("Email outbox worker", () => {
         expect(sendVerificationEmail).toHaveBeenCalledWith(
             user.email,
             expect.stringContaining("/verify-email?token="),
+            { isEmailChange: false },
+        );
+    });
+
+    test("sends email-change verification to the pending address using the request time", async () => {
+        const requestedAt = new Date(Date.now() - 2 * 60 * 1000);
+        const user = {
+            id: 45,
+            email: "current@example.com",
+            pending_email: "replacement@example.com",
+            email_verified_at: new Date("2025-01-01T12:00:00.000Z"),
+            email_verification_requested_at: requestedAt,
+            created_at: new Date("2024-01-01T12:00:00.000Z"),
+            is_active: true,
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const job = {
+            id: 11,
+            user_id: user.id,
+            event_type: "email_verification",
+            attempts: 0,
+            update: jest.fn(async (values) => {
+                Object.assign(job, values);
+            }),
+        };
+
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+        User.findByPk.mockResolvedValue(user);
+
+        await expect(processNextEmailOutboxJob()).resolves.toEqual({
+            processed: true,
+            status: "sent",
+        });
+
+        const verificationData = user.update.mock.calls[0][0];
+        expect(verificationData.email_verification_expires_at).toEqual(
+            new Date(requestedAt.getTime() + 30 * 60 * 1000),
+        );
+        expect(sendVerificationEmail).toHaveBeenCalledWith(
+            user.pending_email,
+            expect.stringContaining("/verify-email?token="),
+            { isEmailChange: true },
         );
     });
 

@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { Op } from "sequelize";
 
 // Mock the user model to isolate the verification service from MySQL.
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
+    EmailOutbox: { create: jest.fn(), findOne: jest.fn(), update: jest.fn() },
     User: {
         sequelize: {
             transaction: jest.fn(),
@@ -14,6 +16,9 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
 const { User } = await import("../../../src/models/associations.js");
 const { verifyEmail } =
     await import("../../../src/modules/auth/services/emailVerificationService.js");
+
+const notEqual = Op.ne;
+const or = Op.or;
 
 // Calculate the expected database hash without exposing the original token.
 function hashToken(token) {
@@ -33,6 +38,8 @@ describe("Email verification service", () => {
 
         user = {
             id: 42,
+            email_verified_at: null,
+            pending_email: null,
             update: jest.fn().mockResolvedValue(undefined),
         };
 
@@ -57,12 +64,12 @@ describe("Email verification service", () => {
         expect(result).toEqual({ verified: true });
 
         expect(User.findOne).toHaveBeenCalledWith({
-            where: {
+            where: expect.objectContaining({
                 email_verification_token_hash: hashToken(token),
                 email_verification_expires_at: expect.objectContaining({}),
-                email_verified_at: null,
                 is_active: true,
-            },
+                [or]: [{ email_verified_at: null }, { pending_email: { [notEqual]: null } }],
+            }),
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
@@ -74,6 +81,48 @@ describe("Email verification service", () => {
         expect(updateCall.email_verification_expires_at).toBeNull();
 
         expect(user.update).toHaveBeenCalledWith(updateCall, { transaction });
+    });
+
+    test("promotes a pending address only after its valid token is confirmed", async () => {
+        user.email = "current@example.com";
+        user.email_verified_at = new Date("2026-10-01T10:00:00.000Z");
+        user.pending_email = "replacement@example.com";
+        User.findOne.mockResolvedValueOnce(user).mockResolvedValueOnce(null);
+
+        await expect(verifyEmail(token)).resolves.toEqual({ verified: true, emailChanged: true });
+
+        expect(user.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                email: "replacement@example.com",
+                pending_email: null,
+                email_verification_requested_at: null,
+                email_verification_token_hash: null,
+                email_verification_expires_at: null,
+            }),
+            { transaction },
+        );
+    });
+
+    test("keeps the verified address when the pending address is no longer available", async () => {
+        user.email = "current@example.com";
+        user.email_verified_at = new Date("2026-10-01T10:00:00.000Z");
+        user.pending_email = "replacement@example.com";
+        User.findOne.mockResolvedValueOnce(user).mockResolvedValueOnce({ id: 84 });
+
+        await expect(verifyEmail(token)).resolves.toEqual({
+            verified: false,
+            reason: "address_in_use",
+        });
+
+        expect(user.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                pending_email: null,
+                email_verification_token_hash: null,
+                email_verification_expires_at: null,
+            }),
+            { transaction },
+        );
+        expect(user.email).toBe("current@example.com");
     });
 
     test("rejects tokens that do not match an eligible account", async () => {

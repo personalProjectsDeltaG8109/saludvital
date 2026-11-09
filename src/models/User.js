@@ -83,6 +83,22 @@ const User = database.define(
             allowNull: true,
             defaultValue: null,
         },
+
+        // Keep the verified address active until a replacement address is confirmed.
+        pending_email: {
+            type: DataTypes.STRING(320),
+            allowNull: true,
+            defaultValue: null,
+            validate: {
+                isEmail: true,
+            },
+        },
+
+        email_verification_requested_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null,
+        },
     },
     {
         // Preserve the existing table name and timestamp columns.
