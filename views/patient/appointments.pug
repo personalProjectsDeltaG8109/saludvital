@@ -239,7 +239,11 @@ html(lang="es")
                                                                             - const previousStart = event.previous_values?.start_at ? new Date(event.previous_values.start_at) : null;
                                                                             - const newStart = event.new_values?.start_at ? new Date(event.new_values.start_at) : null;
                                                                             li
-                                                                                if event.event_type === "Cancelled"
+                                                                                if event.event_type === "Created"
+                                                                                    span Cita de demostración creada.
+                                                                                else if event.event_type === "NoShowMarked"
+                                                                                    span Cita marcada como inasistencia.
+                                                                                else if event.event_type === "Cancelled"
                                                                                     span Cita cancelada; el registro y su historial se conservaron.
                                                                                 else if previousStart && newStart
                                                                                     span= `Reprogramada de ${previousStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })} a ${newStart.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short", timeZone: "America/Bogota" })}`

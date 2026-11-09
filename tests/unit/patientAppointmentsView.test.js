@@ -9,7 +9,7 @@ const patientRoutesSource = await readFile(
 );
 const appointmentsTemplate = path.join(projectRoot, "views/patient/appointments.pug");
 
-function renderAppointmentsPage() {
+function renderAppointmentsPage(history = []) {
     const inProgressAppointment = {
         id: 27,
         start_at: "2026-11-03T15:00:00.000Z",
@@ -18,7 +18,7 @@ function renderAppointmentsPage() {
         specialty: { name: "Medicina General" },
         doctor: { display_name: "Doctor de prueba" },
         doctor_label: "Doctor de prueba",
-        history: [],
+        history,
     };
 
     return pug.renderFile(appointmentsTemplate, {
@@ -67,5 +67,20 @@ describe("patient appointments view", () => {
         expect(html).toContain("Doctor de prueba");
         expect(html).toContain("Fecha y hora");
         expect(html).toContain("Estado actual");
+    });
+
+    test("labels appointment creation and no-show history events accurately", () => {
+        const html = renderAppointmentsPage([
+            { event_type: "Created", previous_values: null, new_values: { status: "Confirmed" } },
+            {
+                event_type: "NoShowMarked",
+                previous_values: { status: "Confirmed" },
+                new_values: { status: "No Show" },
+            },
+        ]);
+
+        expect(html).toContain("Cita de demostración creada.");
+        expect(html).toContain("Cita marcada como inasistencia.");
+        expect(html).not.toContain("Fecha de reprogramación registrada");
     });
 });
