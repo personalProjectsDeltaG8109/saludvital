@@ -94,14 +94,15 @@ describe("Email verification HTTP endpoint", () => {
             expect(response.status).toBe(500);
             expect(response.text).not.toContain("Controlled verification failure");
 
-            // Verify that the middleware logs the unexpected error.
-            expect(errorLogSpy).toHaveBeenCalledWith(
-                "Unhandled application error.",
-                expect.objectContaining({
-                    method: "GET",
-                    path: "/verify-email",
-                    error: "Controlled verification failure",
-                }),
+            // Diagnostics must identify the failure without logging its raw message.
+            expect(errorLogSpy).toHaveBeenCalledWith("Application request failed.", {
+                method: "GET",
+                scope: "page",
+                status: 500,
+                category: "UNEXPECTED_ERROR",
+            });
+            expect(JSON.stringify(errorLogSpy.mock.calls)).not.toContain(
+                "Controlled verification failure",
             );
         } finally {
             // Restore console.error even if an assertion fails.

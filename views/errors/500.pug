@@ -73,10 +73,10 @@ html(lang="es")
             .error-500-content
                 section.error-500-copy
                     h1#error-500-title
-                        span.error-500-code 500
-                        span.error-500-heading Error del servidor
-                    p.error-500-description Lo sentimos, ha ocurrido un error inesperado en nuestros servidores.
-                    p.error-500-help Por favor, intenta nuevamente en unos minutos.
+                        span.error-500-code= errorCode || 500
+                        span.error-500-heading= errorHeading || "Error del servidor"
+                    p.error-500-description= errorDescription || "Lo sentimos, ha ocurrido un error inesperado en nuestros servidores."
+                    p.error-500-help= errorHelp || "Por favor, intenta nuevamente en unos minutos."
                     nav.error-500-actions(aria-label="Opciones para continuar")
                         a.error-500-button.error-500-button-primary(href=retryHref || "/login")
                             svg(viewBox="0 0 24 24", aria-hidden="true", focusable="false")
