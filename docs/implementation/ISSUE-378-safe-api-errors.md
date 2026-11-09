@@ -16,14 +16,15 @@
 - Baseline: `tests/integration/errorHandler.http.test.js` passed 9 tests before adding regressions.
 - The new malformed JSON, oversized body, and unexpected API error tests initially failed against the original handler.
 - After the fix, the focused HTTP suite passed 14 tests, including unknown API 404 and browser request-error status cases.
-- Full Jest run: 123 suites and 987 tests passed. The first full run found one older assertion that expected raw error text in the log; that assertion was updated to verify safe diagnostics before the successful rerun.
+- Full Jest run after rebasing on the latest `develop`: 124 suites and 992 tests passed. An earlier run found one older assertion that expected raw error text in the log; that assertion was updated to verify safe diagnostics.
 - `npm run lint`: passed.
-- `npm run format:check`: passed after formatting the updated verification test.
+- `npm run format` and the repository's targeted Prettier write command: completed with files unchanged.
+- `npm run format:check`: passed.
 - `npm run css:build`: passed; generated CSS did not change.
 - `npm run test:e2e`: exited 0; browser flows and accessibility checks reported PASS.
-- `git diff --check`: passed; final diff contains only the error handler, API fallback, HTML error copy, regressions, and these implementation notes.
+- `git diff --check`: passed; branch diff contains only this issue's error handling, tests, and documentation.
 
 ## Workflow Status
 
 - Local implementation and review are complete; focused commits are recorded on the feature branch.
-- Push and pull request wait for the owner's explicit instruction.
+- Branch was rebased onto the latest remote `develop` before publication.
