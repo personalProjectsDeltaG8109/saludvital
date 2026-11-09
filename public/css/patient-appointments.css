@@ -330,7 +330,7 @@
     place-items: center;
     border: 1px solid #cfe5f7;
     border-radius: 50%;
-    color: var(--appointments-secondary);
+    color: var(--appointments-secondary, #168DE2);
     background: #f3faff;
     transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
 }
@@ -373,9 +373,9 @@
 }
 
 .appointment-reschedule-link:hover {
-    border-color: var(--appointments-secondary);
+    border-color: var(--appointments-secondary, #168DE2);
     color: #fff;
-    background: var(--appointments-secondary);
+    background: var(--appointments-secondary, #168DE2);
 }
 
 .appointment-detail-toggle:hover {
