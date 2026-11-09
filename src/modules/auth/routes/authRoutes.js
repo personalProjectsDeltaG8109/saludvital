@@ -15,7 +15,10 @@ import {
     verifyEmailAddress,
 } from "../controllers/authController.js";
 
-import { authenticateToken } from "../../../middleware/authenticateToken.js";
+import {
+    authenticateToken,
+    authenticateTokenOptional,
+} from "../../../middleware/authenticateToken.js";
 
 // Limit repeated login attempts to reduce password-guessing attacks.
 const loginLimiter = rateLimit({
@@ -102,7 +105,7 @@ authRoutes.get("/register", showRegister);
 // Process patient registration.
 authRoutes.post("/register", registerLimiter, register);
 authRoutes.post("/login", loginLimiter, login);
-authRoutes.post("/logout", logout);
+authRoutes.post("/logout", authenticateTokenOptional, logout);
 // Confirm an email address using its verification token.
 authRoutes.get("/verify-email", verifyEmailAddress);
 // Refresh the authenticated session when the browser reports activity.
