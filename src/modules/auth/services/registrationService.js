@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
 import { resolveLocation } from "./locationService.js";
+import { isEmailUnavailable, isEmailUniqueConstraintError } from "./emailChangeService.js";
 import { isValidPassword } from "./passwordPolicy.js";
 
 // Represent expected registration failures with safe, user-facing messages.
@@ -211,12 +212,7 @@ export async function registerPatient(data) {
     try {
         return await database.transaction(async (transaction) => {
             // Check existing email and document before creating the account.
-            const existingUser = await User.findOne({
-                where: { email },
-                transaction,
-            });
-
-            if (existingUser) {
+            if (await isEmailUnavailable(email, null, transaction)) {
                 throw new RegistrationError(
                     "Ya existe una cuenta registrada con este correo electrónico.",
                     409,
@@ -305,7 +301,10 @@ export async function registerPatient(data) {
         });
     } catch (error) {
         // Translate database uniqueness conflicts into safe registration errors.
-        if (error.name === "SequelizeUniqueConstraintError") {
+        if (
+            isEmailUniqueConstraintError(error) ||
+            error.name === "SequelizeUniqueConstraintError"
+        ) {
             throw new RegistrationError(
                 "Ya existe una cuenta o un paciente registrado con estos datos.",
                 409,

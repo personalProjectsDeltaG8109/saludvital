@@ -1,8 +1,7 @@
-import { Op } from "sequelize";
 import database from "../../../../config/database.js";
-import EmailOutbox from "../../../models/EmailOutbox.js";
 import EmergencyContact from "../../../models/EmergencyContact.js";
 import { Appointment, Patient, User } from "../../../models/associations.js";
+import { isEmailUnavailable, requestEmailChange } from "../../auth/services/emailChangeService.js";
 import { resolveLocation } from "../../auth/services/locationService.js";
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -154,7 +153,12 @@ export async function getPatientProfile(userId) {
             "profile_photo_url",
             "created_at",
         ],
-        include: [{ association: "user", attributes: ["email", "email_verified_at"] }],
+        include: [
+            {
+                association: "user",
+                attributes: ["email", "email_verified_at", "pending_email"],
+            },
+        ],
     });
 
     if (!patient) throw profileError("No se encontró el perfil del paciente.", 404);
@@ -206,14 +210,13 @@ export async function updatePatientProfile(userId, payload) {
             });
             if (!user) throw profileError("No se encontró la cuenta del paciente.", 404);
 
-            const emailChanged = input.personal.email !== user.email.toLowerCase();
+            const emailChanged =
+                input.personal.email !== user.email.toLowerCase() &&
+                input.personal.email !== user.pending_email;
             if (emailChanged) {
-                const existingUser = await User.findOne({
-                    where: { email: input.personal.email, id: { [Op.ne]: user.id } },
-                    transaction,
-                });
-                if (existingUser)
+                if (await isEmailUnavailable(input.personal.email, user.id, transaction)) {
                     throw profileError("Ese correo electrónico ya está registrado.", 409);
+                }
             }
 
             const patientDetails = { ...input.personal };
@@ -221,25 +224,7 @@ export async function updatePatientProfile(userId, payload) {
             await patient.update({ ...patientDetails, ...input.medical }, { transaction });
 
             if (emailChanged) {
-                await user.update(
-                    {
-                        email: input.personal.email,
-                        email_verified_at: null,
-                        email_verification_token_hash: null,
-                        email_verification_expires_at: null,
-                    },
-                    { transaction },
-                );
-                await EmailOutbox.create(
-                    {
-                        user_id: user.id,
-                        event_type: "email_verification",
-                        status: "pending",
-                        attempts: 0,
-                        next_attempt_at: new Date(),
-                    },
-                    { transaction },
-                );
+                await requestEmailChange(user, input.personal.email, transaction);
             }
 
             const emergencyContact = await EmergencyContact.findOne({
@@ -265,7 +250,11 @@ export async function updatePatientProfile(userId, payload) {
                 });
             }
 
-            return { emailChanged, email: input.personal.email };
+            return {
+                emailChanged,
+                email: user.email,
+                pendingEmail: user.pending_email,
+            };
         });
     } catch (error) {
         if (error.name === "SequelizeUniqueConstraintError") {

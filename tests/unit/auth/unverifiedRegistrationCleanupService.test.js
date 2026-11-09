@@ -106,6 +106,20 @@ describe("Unverified registration cleanup service", () => {
         expect(user.destroy).not.toHaveBeenCalled();
     });
 
+    test("preserves an account with a pending email change", async () => {
+        user.pending_email = "replacement@example.com";
+
+        await cleanExpiredUnverifiedRegistrations({ now });
+
+        expect(models.User.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ pending_email: null }),
+            }),
+        );
+        expect(patient.destroy).not.toHaveBeenCalled();
+        expect(user.destroy).not.toHaveBeenCalled();
+    });
+
     test("preserves non-patient accounts", async () => {
         models.Rol.findByPk.mockResolvedValue({ name: "Doctor" });
 

@@ -24,7 +24,29 @@ html(lang="es")
                         height="80"
                     )
 
-                    if verified
+                    if verified && emailChanged
+                        .recovery-art-slot.recovery-art-slot-plain.recovery-art-slot-compact(
+                            data-image-slot="account-confirmed",
+                            aria-hidden="true"
+                        )
+                            img.recovery-security-illustration(
+                                src="/brand/login/recovery-link-sent.png",
+                                alt="",
+                                width="1536",
+                                height="1024"
+                            )
+
+                        span.email-verification-badge(role="status")
+                            span(aria-hidden="true") ✓
+                            | Correo actualizado
+
+                        h1#verification-title Tu correo se actualizó correctamente
+                        p.recovery-description Ya puedes iniciar sesión con tu nueva dirección de correo.
+
+                        a.recovery-primary-action(href="/login")
+                            | Ir al inicio de sesión
+                            span(aria-hidden="true") →
+                    else if verified
                         .recovery-art-slot.recovery-art-slot-plain.recovery-art-slot-compact(
                             data-image-slot="account-confirmed",
                             aria-hidden="true"
@@ -69,8 +91,12 @@ html(lang="es")
                             span(aria-hidden="true") !
                             | Enlace caducado o ya utilizado
 
-                        h1#verification-title Este enlace ya no está vigente
-                        p.recovery-description El enlace pudo haber caducado, ser inválido o ya haberse utilizado. Si tu cuenta ya fue confirmada, inicia sesión. Si aún no, comunícate con soporte para solicitar ayuda.
+                        if verificationReason === "address_in_use"
+                            h1#verification-title No se pudo confirmar el nuevo correo
+                            p.recovery-description Ese correo ya está asociado a otra cuenta. Tu correo actual sigue activo; inicia sesión con él y solicita otro cambio de dirección.
+                        else
+                            h1#verification-title Este enlace ya no está vigente
+                            p.recovery-description El enlace pudo haber caducado, ser inválido o ya haberse utilizado. Si tu cuenta ya fue confirmada, inicia sesión. Si aún no, comunícate con soporte para solicitar ayuda.
 
                         a.recovery-primary-action(href="/login") Volver al inicio de sesión
 

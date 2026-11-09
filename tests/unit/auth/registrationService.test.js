@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { Op } from "sequelize";
 
 // Mock password hashing to keep registration tests fast and deterministic.
 jest.unstable_mockModule("bcrypt", () => ({
@@ -60,7 +61,7 @@ describe("Patient registration service", () => {
         existing_conditions: "",
     };
 
-    const transaction = { id: "mock-transaction" };
+    const transaction = { id: "mock-transaction", LOCK: { UPDATE: "UPDATE" } };
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -443,7 +444,13 @@ describe("Patient registration service", () => {
         expect(database.transaction).toHaveBeenCalledTimes(1);
 
         expect(User.findOne).toHaveBeenCalledWith({
-            where: { email: "patient@example.com" },
+            where: {
+                [Op.or]: [
+                    { email: "patient@example.com" },
+                    { pending_email: "patient@example.com" },
+                ],
+            },
+            attributes: ["id"],
             transaction,
         });
 

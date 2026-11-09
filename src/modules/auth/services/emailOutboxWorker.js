@@ -167,12 +167,20 @@ async function prepareVerificationToken(userId) {
             lock: transaction.LOCK.UPDATE,
         });
 
-        if (!user || !user.is_active || user.email_verified_at) {
+        if (!user || !user.is_active || (user.email_verified_at && !user.pending_email)) {
             throw new Error("The account is unavailable for email verification.");
         }
 
+        const isEmailChange = Boolean(user.pending_email);
+        const verificationStartedAt = isEmailChange
+            ? user.email_verification_requested_at
+            : user.created_at;
+        if (!verificationStartedAt) {
+            throw new Error("The email verification request is unavailable.");
+        }
+
         const expiresAt = new Date(
-            new Date(user.created_at).getTime() + VERIFICATION_TOKEN_MINUTES * 60 * 1000,
+            new Date(verificationStartedAt).getTime() + VERIFICATION_TOKEN_MINUTES * 60 * 1000,
         );
 
         if (expiresAt <= now) {
@@ -187,7 +195,7 @@ async function prepareVerificationToken(userId) {
             { transaction },
         );
 
-        return { email: user.email, token };
+        return { email: isEmailChange ? user.pending_email : user.email, token, isEmailChange };
     });
 }
 
@@ -301,10 +309,12 @@ export async function processNextEmailOutboxJob() {
 
     try {
         if (job.eventType === "email_verification") {
-            const { email, token } = await prepareVerificationToken(job.userId);
+            const { email, token, isEmailChange } = await prepareVerificationToken(job.userId);
             const verificationUrl = buildVerificationUrl(token);
 
-            await sendVerificationEmail(email, verificationUrl);
+            await sendVerificationEmail(email, verificationUrl, {
+                isEmailChange,
+            });
         } else if (job.eventType === "password_reset") {
             // Validate configuration before creating or invalidating reset tokens.
             validatePasswordResetBaseUrl();

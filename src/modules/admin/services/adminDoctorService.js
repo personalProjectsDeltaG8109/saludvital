@@ -19,6 +19,10 @@ import {
 } from "../../patient/services/notificationAutomationService.js";
 import { isValidPassword } from "../../auth/services/passwordPolicy.js";
 import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
+import {
+    isEmailUnavailable,
+    isEmailUniqueConstraintError,
+} from "../../auth/services/emailChangeService.js";
 
 const PAGE_SIZE = 10;
 const MAX_SEARCH_LENGTH = 100;
@@ -437,19 +441,19 @@ export async function createAdminDoctor(actorId, payload) {
 
     try {
         return await database.transaction(async (transaction) => {
-            const [doctorRole, specialty, existingUser, actor] = await Promise.all([
+            const [doctorRole, specialty, emailUnavailable, actor] = await Promise.all([
                 Rol.findOne({ where: { name: "Doctor" }, transaction }),
                 Specialities.findOne({
                     where: { id: values.specialtyId, is_active: true },
                     transaction,
                 }),
-                User.findOne({ where: { email: values.email }, transaction }),
+                isEmailUnavailable(values.email, null, transaction),
                 User.findByPk(actorId, { attributes: ["id", "email"], transaction }),
             ]);
 
             if (!doctorRole) throw serviceError("El rol de médico no está configurado.", 500);
             if (!specialty) throw serviceError("Selecciona una especialidad activa.");
-            if (existingUser)
+            if (emailUnavailable)
                 throw serviceError("Ya existe una cuenta con ese correo electrónico.", 409);
             if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
 
@@ -511,7 +515,10 @@ export async function createAdminDoctor(actorId, payload) {
         });
     } catch (error) {
         if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl);
-        if (error.name === "SequelizeUniqueConstraintError") {
+        if (
+            isEmailUniqueConstraintError(error) ||
+            error.name === "SequelizeUniqueConstraintError"
+        ) {
             throw serviceError("Ya existe una cuenta con ese correo electrónico.", 409);
         }
         throw error;

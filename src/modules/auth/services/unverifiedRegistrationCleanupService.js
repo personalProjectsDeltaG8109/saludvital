@@ -97,7 +97,12 @@ async function deleteExpiredRegistration(userId, expiredBefore) {
             lock: transaction.LOCK.UPDATE,
         });
 
-        if (!user || user.email_verified_at || new Date(user.created_at) > expiredBefore) {
+        if (
+            !user ||
+            user.email_verified_at ||
+            user.pending_email ||
+            new Date(user.created_at) > expiredBefore
+        ) {
             return false;
         }
 
@@ -172,6 +177,7 @@ export async function cleanExpiredUnverifiedRegistrations({
         where: {
             id: { [Op.gt]: afterUserId },
             email_verified_at: null,
+            pending_email: null,
             created_at: { [Op.lte]: expiredBefore },
         },
         attributes: ["id"],

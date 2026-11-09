@@ -2,14 +2,7 @@ import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import AuditLog from "../../../models/AuditLog.js";
 import EmergencyContact from "../../../models/EmergencyContact.js";
-import {
-    Doctor,
-    EmailOutbox,
-    Patient,
-    Rol,
-    Specialities,
-    User,
-} from "../../../models/associations.js";
+import { Doctor, Patient, Rol, Specialities, User } from "../../../models/associations.js";
 import {
     getDepartments,
     getMunicipalities,
@@ -21,6 +14,11 @@ import {
     normalizeProfilePhone,
     normalizeProfileText,
 } from "./adminProfileFieldValidation.js";
+import {
+    isEmailUnavailable,
+    isEmailUniqueConstraintError,
+    requestEmailChange,
+} from "../../auth/services/emailChangeService.js";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
@@ -617,15 +615,12 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
             if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
             const role = await Rol.findByPk(user.role_id, { attributes: ["name"], transaction });
             const currentEmail = user.email.toLowerCase();
-            const changes = { email: currentEmail === email ? [] : ["email"] };
+            const emailChanged = currentEmail !== email && email !== user.pending_email;
+            const changes = { email: emailChanged ? ["email"] : [] };
 
-            const duplicateEmail = await User.findOne({
-                where: { email, id: { [Op.ne]: user.id } },
-                attributes: ["id"],
-                transaction,
-            });
-            if (duplicateEmail)
+            if (emailChanged && (await isEmailUnavailable(email, user.id, transaction))) {
                 throw serviceError("Ese correo electrónico ya está registrado.", 409);
+            }
 
             let patient;
             let doctor;
@@ -719,25 +714,7 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
             }
 
             if (changes.email.length) {
-                await user.update(
-                    {
-                        email,
-                        email_verified_at: null,
-                        email_verification_token_hash: null,
-                        email_verification_expires_at: null,
-                    },
-                    { transaction },
-                );
-                await EmailOutbox.create(
-                    {
-                        user_id: user.id,
-                        event_type: "email_verification",
-                        status: "pending",
-                        attempts: 0,
-                        next_attempt_at: new Date(),
-                    },
-                    { transaction },
-                );
+                await requestEmailChange(user, email, transaction);
             }
 
             const actor = await User.findByPk(actorId, {
@@ -761,7 +738,12 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 { transaction },
             );
 
-            return { message: "La información del usuario se actualizó correctamente." };
+            return {
+                emailVerificationRequired: changes.email.length > 0,
+                message: changes.email.length
+                    ? "La información se actualizó. El correo actual sigue activo; verifica el nuevo correo para confirmar el cambio."
+                    : "La información del usuario se actualizó correctamente.",
+            };
         })
         .then(async (result) => {
             if (
@@ -775,6 +757,9 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
         })
         .catch(async (error) => {
             if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl).catch(() => {});
+            if (isEmailUniqueConstraintError(error)) {
+                throw serviceError("Ese correo electrónico ya está registrado.", 409);
+            }
             throw error;
         });
 }

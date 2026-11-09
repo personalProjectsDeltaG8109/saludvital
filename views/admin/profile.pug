@@ -210,6 +210,9 @@ html(lang="es")
                             .admin-profile-field
                                 dt Correo electrónico
                                 dd(data-profile-value="email")= profile.email
+                                if profile.pendingEmail
+                                    p.admin-profile-field-help(data-profile-pending-email)
+                                        | Cambio pendiente: #{ profile.pendingEmail }. Tu correo actual sigue activo hasta confirmar el nuevo.
                             .admin-profile-field
                                 dt Teléfono
                                 dd(data-profile-value="phone")= profile.phone || "Sin información registrada"
@@ -246,7 +249,7 @@ html(lang="es")
                                 aria-describedby="profile-email-help",
                                 data-profile-email
                             )
-                            p#profile-email-help.admin-profile-field-help Si cambias el correo, tendrás que verificar la nueva dirección.
+                            p#profile-email-help.admin-profile-field-help Si cambias el correo, el actual seguirá activo hasta que confirmes el nuevo.
                             label.admin-profile-input-field(for="profile-phone") Teléfono
                             input#profile-phone(
                                 type="tel",
@@ -307,6 +310,9 @@ html(lang="es")
                         .admin-profile-field.admin-profile-verification-date
                             dt Correo verificado el
                             dd= new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(profile.emailVerifiedAt))
+                    if profile.pendingEmail
+                        p.admin-profile-field-help(role="status")
+                            | Cambio pendiente: #{ profile.pendingEmail }. Tu correo actual sigue activo hasta confirmar el nuevo.
                     .admin-profile-security-card
                         .admin-profile-security-card-icon(aria-hidden="true")
                             svg(

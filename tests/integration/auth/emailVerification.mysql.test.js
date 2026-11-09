@@ -95,6 +95,73 @@ describe("Email verification with real MySQL", () => {
         expect(user.email_verification_expires_at).toBeNull();
     });
 
+    test("promotes a verified account's pending address after confirmation", async () => {
+        const data = createVerificationData();
+        const currentEmail = `current-${randomUUID().replaceAll("-", "")}@example.test`;
+        createdEmails.push(currentEmail, data.email);
+        const verifiedAt = new Date("2026-10-01T10:00:00.000Z");
+
+        await User.create({
+            role_id: patientRole.id,
+            email: currentEmail,
+            password_hash: "integration-test-hash-not-for-authentication",
+            is_active: true,
+            email_verified_at: verifiedAt,
+            email_verification_token_hash: data.tokenHash,
+            email_verification_expires_at: new Date(Date.now() + 5 * 60 * 1000),
+            pending_email: data.email,
+            email_verification_requested_at: new Date(),
+        });
+
+        await expect(verifyEmail(data.token)).resolves.toEqual({
+            verified: true,
+            emailChanged: true,
+        });
+
+        const user = await User.findOne({ where: { email: data.email } });
+        expect(user.email_verified_at).toBeInstanceOf(Date);
+        expect(user.pending_email).toBeNull();
+        expect(user.email_verification_requested_at).toBeNull();
+        expect(user.email_verification_token_hash).toBeNull();
+    });
+
+    test("keeps the current address when the requested address belongs to another account", async () => {
+        const data = createVerificationData();
+        const currentEmail = `current-${randomUUID().replaceAll("-", "")}@example.test`;
+        createdEmails.push(currentEmail, data.email);
+        const verifiedAt = new Date("2026-10-01T10:00:00.000Z");
+
+        await User.create({
+            role_id: patientRole.id,
+            email: currentEmail,
+            password_hash: "integration-test-hash-not-for-authentication",
+            is_active: true,
+            email_verified_at: verifiedAt,
+            email_verification_token_hash: data.tokenHash,
+            email_verification_expires_at: new Date(Date.now() + 5 * 60 * 1000),
+            pending_email: data.email,
+            email_verification_requested_at: new Date(),
+        });
+        await User.create({
+            role_id: patientRole.id,
+            email: data.email,
+            password_hash: "integration-test-hash-not-for-authentication",
+            is_active: true,
+            email_verified_at: verifiedAt,
+        });
+
+        await expect(verifyEmail(data.token)).resolves.toEqual({
+            verified: false,
+            reason: "address_in_use",
+        });
+
+        const user = await User.findOne({ where: { email: currentEmail } });
+        expect(user.email).toBe(currentEmail);
+        expect(user.email_verified_at).toEqual(verifiedAt);
+        expect(user.pending_email).toBeNull();
+        expect(user.email_verification_token_hash).toBeNull();
+    });
+
     test("rejects an expired token without verifying the account", async () => {
         const data = createVerificationData();
 

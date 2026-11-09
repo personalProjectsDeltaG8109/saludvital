@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 const notEqual = Symbol("notEqual");
+const or = Symbol("or");
 const transaction = { LOCK: { UPDATE: "UPDATE" }, rolledBack: false };
 
-jest.unstable_mockModule("sequelize", () => ({ Op: { ne: notEqual } }));
+jest.unstable_mockModule("sequelize", () => ({ Op: { ne: notEqual, or } }));
 jest.unstable_mockModule("../../config/database.js", () => ({
     default: {
         transaction: jest.fn(async (callback) => {
@@ -21,7 +22,7 @@ jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: {},
-    EmailOutbox: { create: jest.fn() },
+    EmailOutbox: { create: jest.fn(), findOne: jest.fn(), update: jest.fn() },
     Patient: {},
     Rol: {},
     User: { findByPk: jest.fn(), findOne: jest.fn() },
@@ -64,6 +65,8 @@ describe("administrator personal information updates", () => {
         User.findByPk.mockResolvedValue(createAdministrator());
         User.findOne.mockResolvedValue(null);
         EmailOutbox.create.mockResolvedValue({ id: 1 });
+        EmailOutbox.findOne.mockResolvedValue(null);
+        EmailOutbox.update.mockResolvedValue([0]);
         AuditLog.create.mockResolvedValue({ id: 3 });
         toAdminProfile.mockClear();
     });
@@ -128,6 +131,26 @@ describe("administrator personal information updates", () => {
             { transaction },
         );
         expect(result.emailVerificationRequired).toBe(true);
+    });
+
+    test("preserves the verified address until the administrator confirms its replacement", async () => {
+        const verifiedAt = new Date("2026-10-01T10:00:00.000Z");
+        const user = createAdministrator();
+        user.email_verified_at = verifiedAt;
+        User.findByPk.mockResolvedValue(user);
+
+        const result = await updateAdminProfilePersonalInformation(7, {
+            displayName: "Laura Méndez",
+            email: "laura.new@example.com",
+            phone: "",
+        });
+
+        expect(user.email).toBe("laura@example.com");
+        expect(user.email_verified_at).toBe(verifiedAt);
+        expect(user.pending_email).toBe("laura.new@example.com");
+        expect(user.email_verification_requested_at).toBeInstanceOf(Date);
+        expect(result.message).toContain("Tu correo actual sigue activo");
+        expect(EmailOutbox.create).toHaveBeenCalledTimes(1);
     });
 
     test("rejects duplicate email, invalid values, and protected fields", async () => {
