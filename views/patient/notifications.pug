@@ -193,7 +193,7 @@ html(lang="es")
                         .notifications-history-heading
                             .notifications-section-heading
                                 h2#history-heading Historial de notificaciones
-                                p Consulta los movimientos de tus citas y el estado de los avisos enviados por tus canales.
+                                p Consulta los cambios de tus citas y los avisos recibidos, agrupados por fecha.
                             span.notifications-history-count(data-history-count)
                             button.notifications-mark-all(type="button", data-mark-all-read) Marcar todas como leídas
                         if history.length
@@ -201,15 +201,24 @@ html(lang="es")
                                 table.notifications-history-table
                                     thead
                                         tr
-                                            th Fecha y hora
-                                            th Notificación
+                                            th Hora
+                                            th Actividad
                                             th Estado
+                                            th(aria-label="Abrir detalle")
                                     tbody
+                                        - let previousHistoryDay = null;
                                         each notification in history
+                                            - const historyDay = notification.date.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "America/Bogota" });
+                                            if historyDay !== previousHistoryDay
+                                                tr.notifications-history-day-heading(
+                                                    data-history-day-heading
+                                                )
+                                                    th(colspan="4", scope="colgroup")= historyDay
+                                                - previousHistoryDay = historyDay;
                                             tr(
                                                 class=notification.readAt ? "" : "is-unread",
                                                 tabindex="0",
-                                                aria-label=`Abrir notificación: ${notification.eventLabel}`,
+                                                aria-label=`Abrir notificación: ${notification.eventLabel}, ${historyDay}`,
                                                 data-history-row,
                                                 data-notification-id=notification.isInAppActivity ? undefined : notification.id,
                                                 data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
@@ -217,22 +226,27 @@ html(lang="es")
                                                 data-history-details=notification.details,
                                                 data-history-channel=notification.channel,
                                                 data-history-status=notification.statusLabel,
-                                                data-history-date=notification.date.toISOString()
+                                                data-history-date=notification.date.toISOString(),
+                                                data-history-day=historyDay
                                             )
-                                                td(data-label="Fecha y hora")
-                                                    if !notification.readAt
-                                                        span.notifications-unread-label Nueva
-                                                    time(datetime=notification.date.toISOString())= notification.date.toLocaleString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota" })
-                                                td(data-label="Tipo")
-                                                    span.notifications-history-kind= notification.eventLabel
+                                                td.notifications-history-time(data-label="Hora")
+                                                    time(datetime=notification.date.toISOString())= notification.date.toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", timeZone: "America/Bogota" })
+                                                td.notifications-history-content(
+                                                    data-label="Actividad"
+                                                )
+                                                    span.notifications-history-title
+                                                        span.notifications-history-kind= notification.eventLabel
+                                                        if !notification.readAt
+                                                            span.notifications-unread-label Nueva
                                                     span.notifications-history-summary= notification.details
                                                 td(data-label="Estado")
                                                     span(
                                                         class=`notifications-delivery-status is-${notification.status ? notification.status.toLowerCase() : "registered"}`
                                                     )= notification.statusLabel
+                                                td.notifications-history-open(aria-hidden="true") ›
                                     tfoot
                                         tr
-                                            td(colspan="3")
+                                            td(colspan="4")
                                                 nav.notifications-history-pagination(
                                                     aria-label="Páginas del historial",
                                                     data-history-pagination,
