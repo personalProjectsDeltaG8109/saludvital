@@ -14,6 +14,10 @@ import {
     stopUnverifiedRegistrationCleanupScheduler,
 } from "./src/modules/auth/services/unverifiedRegistrationCleanupScheduler.js";
 import {
+    startSessionCleanupScheduler,
+    stopSessionCleanupScheduler,
+} from "./src/modules/auth/services/sessionCleanupScheduler.js";
+import {
     startNotificationScheduler,
     stopNotificationScheduler,
 } from "./src/modules/patient/services/notificationScheduler.js";
@@ -33,6 +37,8 @@ async function startServer() {
         startEmailOutboxScheduler();
         // Remove expired unverified registrations while preserving linked records.
         startUnverifiedRegistrationCleanupScheduler();
+        // Keep expired session rows bounded without running cleanup in test servers.
+        if (environment.nodeEnv !== "test") startSessionCleanupScheduler();
         // Process appointment notifications only when explicitly enabled in the environment.
         startNotificationScheduler();
         startWhatsAppRetentionScheduler();
@@ -55,6 +61,7 @@ async function startServer() {
             // Stop scheduling email jobs and wait for the active batch.
             await stopEmailOutboxScheduler();
             await stopUnverifiedRegistrationCleanupScheduler();
+            await stopSessionCleanupScheduler();
             await stopNotificationScheduler();
             await stopWhatsAppRetentionScheduler();
             await stopNoShowAppointmentScheduler();

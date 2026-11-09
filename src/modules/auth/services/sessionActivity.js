@@ -24,8 +24,7 @@ export async function startSession(sessionId, userId) {
 
 // Atomically extend activity only when the persisted session is still valid.
 // A conditional update prevents simultaneous requests from reviving expired sessions.
-export async function refreshSession(sessionId, userId) {
-    const now = new Date();
+export async function refreshSession(sessionId, userId, now = new Date()) {
     const cutoff = new Date(now.getTime() - INACTIVITY_LIMIT_MS);
     const [updated] = await AuthSession.update(
         { last_activity_at: now },
@@ -41,17 +40,49 @@ export async function refreshSession(sessionId, userId) {
     return updated === 1;
 }
 
-// Retain the existing query interface for callers that need an expiry check.
-export async function isSessionExpired(sessionId) {
-    const cutoff = new Date(Date.now() - INACTIVITY_LIMIT_MS);
-    const active = await AuthSession.count({
+// Check validity without extending activity for background or read-only requests.
+export async function hasActiveSession(sessionId, userId, now = new Date()) {
+    const cutoff = new Date(now.getTime() - INACTIVITY_LIMIT_MS);
+    const session = await AuthSession.findOne({
         where: {
+            user_id: userId,
             session_id_hash: hashSessionId(sessionId),
             last_activity_at: { [Op.gt]: cutoff },
         },
+        attributes: ["session_id_hash"],
     });
 
-    return active === 0;
+    return Boolean(session);
+}
+
+// Delete at most one ordered batch so cleanup work stays bounded.
+export async function cleanupExpiredSessions({ batchSize = 100, now = new Date() } = {}) {
+    if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 500) {
+        throw new TypeError("The session cleanup batch size must be between 1 and 500.");
+    }
+
+    const cutoff = new Date(now.getTime() - INACTIVITY_LIMIT_MS);
+    const expiredSessions = await AuthSession.findAll({
+        where: { last_activity_at: { [Op.lte]: cutoff } },
+        attributes: ["session_id_hash"],
+        order: [
+            ["last_activity_at", "ASC"],
+            ["session_id_hash", "ASC"],
+        ],
+        limit: batchSize,
+    });
+    const sessionHashes = expiredSessions.map((session) => session.session_id_hash);
+
+    if (sessionHashes.length === 0) {
+        return 0;
+    }
+
+    return AuthSession.destroy({
+        where: {
+            session_id_hash: { [Op.in]: sessionHashes },
+            last_activity_at: { [Op.lte]: cutoff },
+        },
+    });
 }
 
 // Revoke the current session across every application instance.

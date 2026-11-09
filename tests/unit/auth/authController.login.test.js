@@ -27,6 +27,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/authService.js", ()
 jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js", () => ({
     startSession: jest.fn(),
     endSession: jest.fn(),
+    refreshSession: jest.fn(),
 }));
 
 jest.unstable_mockModule("../../../src/modules/auth/services/emailVerificationService.js", () => ({
@@ -45,9 +46,9 @@ jest.unstable_mockModule("../../../src/modules/auth/services/passwordResetServic
 
 const { authenticateUser, clearLoginFailures, AuthenticationError, LoginTemporarilyLockedError } =
     await import("../../../src/modules/auth/services/authService.js");
-const { startSession, endSession } =
+const { startSession, endSession, refreshSession } =
     await import("../../../src/modules/auth/services/sessionActivity.js");
-const { login, logout, showLogin, showLoginLocked } =
+const { login, logout, reportSessionActivity, showLogin, showLoginLocked } =
     await import("../../../src/modules/auth/controllers/authController.js");
 
 describe("Authentication controller", () => {
@@ -63,12 +64,14 @@ describe("Authentication controller", () => {
             role: "Patient",
         });
         clearLoginFailures.mockResolvedValue(undefined);
+        refreshSession.mockResolvedValue(true);
         req = { body: { email: "patient@example.com", password: "CorrectPassword123!" } };
         res = {
             cookie: jest.fn(),
             clearCookie: jest.fn(),
             redirect: jest.fn(),
             status: jest.fn().mockReturnThis(),
+            sendStatus: jest.fn().mockReturnThis(),
             render: jest.fn().mockReturnThis(),
             set: jest.fn(),
         };
@@ -168,5 +171,41 @@ describe("Authentication controller", () => {
         expect(res.redirect).not.toHaveBeenCalled();
         expect(res.clearCookie).not.toHaveBeenCalled();
         expect(next).toHaveBeenCalledWith(error);
+    });
+
+    test("renews an active session after qualifying browser activity", async () => {
+        req.auth = { sessionId: "active-session", userId: "15" };
+        refreshSession.mockResolvedValue(true);
+
+        await reportSessionActivity(req, res, next);
+
+        expect(refreshSession).toHaveBeenCalledWith("active-session", "15");
+        expect(res.sendStatus).toHaveBeenCalledWith(204);
+        expect(res.clearCookie).not.toHaveBeenCalled();
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("clears the cookie when activity arrives after the session expires", async () => {
+        req.auth = { sessionId: "expired-session", userId: "15" };
+        refreshSession.mockResolvedValue(false);
+
+        await reportSessionActivity(req, res, next);
+
+        expect(res.sendStatus).toHaveBeenCalledWith(401);
+        expect(res.clearCookie).toHaveBeenCalledWith(
+            "token",
+            expect.objectContaining({ httpOnly: true, path: "/" }),
+        );
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("forwards activity persistence failures to Express", async () => {
+        const error = new Error("Database unavailable");
+        refreshSession.mockRejectedValue(error);
+
+        await reportSessionActivity({ auth: { sessionId: "session", userId: "15" } }, res, next);
+
+        expect(next).toHaveBeenCalledWith(error);
+        expect(res.sendStatus).not.toHaveBeenCalled();
     });
 });

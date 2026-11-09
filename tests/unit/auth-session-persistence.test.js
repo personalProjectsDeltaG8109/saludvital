@@ -2,15 +2,22 @@ import { jest, describe, beforeEach, afterEach, it, expect } from "@jest/globals
 
 const create = jest.fn();
 const update = jest.fn();
-const count = jest.fn();
+const findOne = jest.fn();
+const findAll = jest.fn();
 const destroy = jest.fn();
 
 jest.unstable_mockModule("../../src/models/AuthSession.js", () => ({
-    default: { create, update, count, destroy },
+    default: { create, update, findOne, findAll, destroy },
 }));
 
-const { startSession, refreshSession, isSessionExpired, endSession, endUserSessions } =
-    await import("../../src/modules/auth/services/sessionActivity.js");
+const {
+    startSession,
+    refreshSession,
+    hasActiveSession,
+    cleanupExpiredSessions,
+    endSession,
+    endUserSessions,
+} = await import("../../src/modules/auth/services/sessionActivity.js");
 
 describe("persistent authentication sessions", () => {
     beforeEach(() => {
@@ -48,10 +55,21 @@ describe("persistent authentication sessions", () => {
         await expect(refreshSession("session-id", 42)).resolves.toBe(false);
     });
 
-    it("treats missing or expired sessions as expired", async () => {
-        count.mockResolvedValueOnce(0).mockResolvedValueOnce(1);
-        await expect(isSessionExpired("session-id")).resolves.toBe(true);
-        await expect(isSessionExpired("session-id")).resolves.toBe(false);
+    it("checks expiry without extending the active session", async () => {
+        findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ session_id_hash: "hash" });
+        await expect(hasActiveSession("session-id", 42)).resolves.toBe(false);
+        await expect(hasActiveSession("session-id", 42)).resolves.toBe(true);
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it("removes expired sessions in one bounded batch", async () => {
+        findAll.mockResolvedValue([{ session_id_hash: "expired-hash" }]);
+        destroy.mockResolvedValue(1);
+
+        await expect(cleanupExpiredSessions({ batchSize: 1 })).resolves.toBe(1);
+
+        expect(findAll).toHaveBeenCalledWith(expect.objectContaining({ limit: 1 }));
+        expect(destroy).toHaveBeenCalledTimes(1);
     });
 
     it("revokes one session or all sessions for an account", async () => {

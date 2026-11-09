@@ -31,7 +31,7 @@ const { User } = await import("../../../src/models/associations.js");
 
 // Mock session tracking to isolate middleware tests.
 jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js", () => ({
-    refreshSession: jest.fn(() => true),
+    hasActiveSession: jest.fn(() => true),
     startSession: jest.fn(),
     endSession: jest.fn(),
 }));
@@ -39,7 +39,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js"
 const { authenticateToken, requireRole } =
     await import("../../../src/middleware/authenticateToken.js");
 
-const { refreshSession } = await import("../../../src/modules/auth/services/sessionActivity.js");
+const { hasActiveSession } = await import("../../../src/modules/auth/services/sessionActivity.js");
 
 // Create reusable Express request and response mocks.
 function createMocks(token = undefined) {
@@ -62,7 +62,7 @@ function createMocks(token = undefined) {
 describe("authenticateToken middleware", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        refreshSession.mockResolvedValue(true);
+        hasActiveSession.mockResolvedValue(true);
     });
 
     test("redirects to login when the authentication cookie is missing", async () => {
@@ -266,11 +266,11 @@ describe("requireRole middleware", () => {
             is_active: true,
             rol: { name: "Patient" },
         });
-        refreshSession.mockResolvedValue(false);
+        hasActiveSession.mockResolvedValue(false);
 
         await authenticateToken(req, res, next);
 
-        expect(refreshSession).toHaveBeenCalledWith("expired-session", 12);
+        expect(hasActiveSession).toHaveBeenCalledWith("expired-session", 12);
         expect(res.clearCookie).toHaveBeenCalledWith("token", expect.any(Object));
         expect(res.redirect).toHaveBeenCalledWith(303, "/login");
         expect(next).not.toHaveBeenCalled();

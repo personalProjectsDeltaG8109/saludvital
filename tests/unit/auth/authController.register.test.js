@@ -28,6 +28,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/authService.js", ()
 jest.unstable_mockModule("../../../src/modules/auth/services/sessionActivity.js", () => ({
     startSession: jest.fn(),
     endSession: jest.fn(),
+    refreshSession: jest.fn(),
 }));
 
 jest.unstable_mockModule("../../../src/modules/auth/services/emailVerificationService.js", () => ({

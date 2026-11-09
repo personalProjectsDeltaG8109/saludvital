@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import environment from "../../config/environment.js";
 import { Rol, User } from "../models/associations.js";
 
-import { refreshSession } from "../modules/auth/services/sessionActivity.js";
+import { hasActiveSession } from "../modules/auth/services/sessionActivity.js";
 
 // Clear the authentication cookie using the same security settings.
 function clearAuthenticationCookie(res) {
@@ -80,8 +80,8 @@ async function authenticateRequest(req, res, next, { optional = false } = {}) {
             return optional ? next() : res.redirect(303, "/login");
         }
 
-        // Atomically refresh only a valid, unexpired session owned by this user.
-        if (!(await refreshSession(payload.sid, user.id))) {
+        // Check the stored session without treating every request as user activity.
+        if (!(await hasActiveSession(payload.sid, user.id))) {
             clearAuthenticationCookie(res);
             return optional ? next() : res.redirect(303, "/login");
         }
