@@ -2,7 +2,7 @@
 
 **Issue:** https://github.com/personalProjectsDeltaG8109/saludvital/issues/381  
 **Branch:** `fix/381-email-reverification-lifecycle`  
-**Status:** Implementation and verification complete; no commit, push, or pull request yet.
+**Status:** Implementation and verification complete. Focused local commits are present; branch push and pull request are awaiting explicit authorization.
 
 ## Behavior
 
@@ -29,5 +29,4 @@ The existing user record did not retain a pending replacement address or the tim
 
 ## Remaining Checks
 
-- Review the final diff and commit the implementation locally.
 - Push and open a pull request only after explicit authorization.
