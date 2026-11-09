@@ -46,6 +46,7 @@
     const errorMessage = page.querySelector("[data-profile-error]");
     const displayNameInput = page.querySelector("[data-profile-display-name]");
     const emailInput = page.querySelector("[data-profile-email]");
+    const pendingEmailNote = page.querySelector("[data-profile-pending-email]");
     const phoneInput = page.querySelector("[data-profile-phone]");
 
     function setMessage(element, message) {
@@ -77,6 +78,12 @@
         page.querySelector('[data-profile-value="displayName"]').textContent =
             profile.displayName || "Nombre no registrado";
         page.querySelector('[data-profile-value="email"]').textContent = profile.email;
+        if (pendingEmailNote) {
+            pendingEmailNote.textContent = profile.pendingEmail
+                ? `Cambio pendiente: ${profile.pendingEmail}. Tu correo actual sigue activo hasta confirmar el nuevo.`
+                : "";
+            pendingEmailNote.hidden = !profile.pendingEmail;
+        }
         page.querySelector('[data-profile-value="phone"]').textContent =
             profile.phone || "Sin información registrada";
         page.querySelector("[data-profile-identity-name]").textContent =

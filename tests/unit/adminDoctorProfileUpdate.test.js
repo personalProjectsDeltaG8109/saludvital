@@ -14,7 +14,7 @@ jest.unstable_mockModule("../../src/models/EmergencyContact.js", () => ({
 }));
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { findOne: jest.fn() },
-    EmailOutbox: { create: jest.fn() },
+    EmailOutbox: { create: jest.fn(), findOne: jest.fn(), update: jest.fn() },
     Patient: {},
     Rol: { findByPk: jest.fn(), findOne: jest.fn() },
     Specialities: { findOne: jest.fn() },
@@ -32,7 +32,8 @@ jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js
 
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { Doctor, Rol, Specialities, User } = await import("../../src/models/associations.js");
+const { Doctor, EmailOutbox, Rol, Specialities, User } =
+    await import("../../src/models/associations.js");
 const photoService = await import("../../src/modules/admin/services/doctorPhotoService.js");
 const { updateAdminUser, updateAdminUserProfile } =
     await import("../../src/modules/admin/services/adminUserManagementService.js");
@@ -51,6 +52,9 @@ function prepareDoctorUpdate() {
         .mockResolvedValueOnce({ id: 7, email: "doctor@example.com", role_id: 4 })
         .mockResolvedValueOnce({ id: 1, email: "admin@example.com" });
     User.findOne.mockResolvedValue(null);
+    EmailOutbox.findOne.mockResolvedValue(null);
+    EmailOutbox.update.mockResolvedValue([0]);
+    EmailOutbox.create.mockResolvedValue({ id: 18 });
     Rol.findByPk.mockResolvedValue({ name: "Doctor" });
     Doctor.findOne.mockResolvedValue(doctor);
     Specialities.findOne.mockResolvedValue({ id: 5 });
@@ -233,5 +237,43 @@ describe("Admin doctor profile updates", () => {
         ).rejects.toMatchObject({ statusCode: 409 });
 
         expect(doctor.update).not.toHaveBeenCalled();
+    });
+
+    test("keeps a doctor's current email until the replacement address is verified", async () => {
+        const { doctor, transaction } = prepareDoctorUpdate();
+        const verifiedUser = {
+            id: 7,
+            email: "doctor@example.com",
+            email_verified_at: new Date("2026-10-01T12:00:00.000Z"),
+            role_id: 4,
+            update: jest.fn(async (values) => Object.assign(verifiedUser, values)),
+        };
+        User.findByPk
+            .mockReset()
+            .mockResolvedValueOnce(verifiedUser)
+            .mockResolvedValueOnce({ id: 1, email: "admin@example.com" });
+
+        const result = await updateAdminUserProfile(1, 7, {
+            email: "replacement@example.com",
+            doctor: {
+                displayName: "Dra. Actualizada",
+                specialtyId: "3",
+                professionalInformation: "",
+                profilePhotoUrl: "/uploads/profile-photos/old.jpg",
+            },
+        });
+
+        expect(verifiedUser.email).toBe("doctor@example.com");
+        expect(verifiedUser.pending_email).toBe("replacement@example.com");
+        expect(verifiedUser.update).toHaveBeenCalledWith(
+            expect.objectContaining({ pending_email: "replacement@example.com" }),
+            { transaction },
+        );
+        expect(EmailOutbox.create).toHaveBeenCalledWith(
+            expect.objectContaining({ event_type: "email_verification", status: "pending" }),
+            { transaction },
+        );
+        expect(result.message).toContain("El correo actual sigue activo");
+        expect(doctor.update).toHaveBeenCalled();
     });
 });

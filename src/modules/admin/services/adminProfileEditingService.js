@@ -1,13 +1,17 @@
-import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import AuditLog from "../../../models/AuditLog.js";
-import { Doctor, EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
+import { Doctor, Patient, Rol, User } from "../../../models/associations.js";
 import {
     normalizeProfileEmail,
     normalizeProfilePhone,
     normalizeProfileText,
 } from "./adminProfileFieldValidation.js";
 import { toAdminProfile } from "./adminProfileService.js";
+import {
+    isEmailUnavailable,
+    isEmailUniqueConstraintError,
+    requestEmailChange,
+} from "../../auth/services/emailChangeService.js";
 
 function serviceError(message, statusCode) {
     const error = new Error(message);
@@ -46,7 +50,16 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
     try {
         result = await database.transaction(async (transaction) => {
             const user = await User.findByPk(userId, {
-                attributes: ["id", "role_id", "display_name", "email", "phone", "is_active"],
+                attributes: [
+                    "id",
+                    "role_id",
+                    "display_name",
+                    "email",
+                    "email_verified_at",
+                    "pending_email",
+                    "phone",
+                    "is_active",
+                ],
                 include: [
                     { model: Rol, as: "rol", attributes: ["name"], required: true },
                     { model: Doctor, as: "doctor", attributes: ["display_name"], required: false },
@@ -75,7 +88,8 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
                 user.doctor?.display_name?.trim() ||
                 patientName ||
                 null;
-            const emailChanged = nextValues.email !== currentEmail;
+            const emailChanged =
+                nextValues.email !== currentEmail && nextValues.email !== user.pending_email;
             const changedFields = [];
 
             if (nextValues.display_name !== currentDisplayName) {
@@ -93,12 +107,7 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
             }
 
             if (emailChanged) {
-                const duplicateEmail = await User.findOne({
-                    where: { email: nextValues.email, id: { [Op.ne]: user.id } },
-                    attributes: ["id"],
-                    transaction,
-                });
-                if (duplicateEmail) {
+                if (await isEmailUnavailable(nextValues.email, user.id, transaction)) {
                     throw serviceError("Ese correo electrónico ya está registrado.", 409);
                 }
             }
@@ -108,27 +117,8 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
                 updates.display_name = nextValues.display_name;
             }
             if (changedFields.includes("phone")) updates.phone = nextValues.phone;
-            if (emailChanged) {
-                updates.email = nextValues.email;
-                updates.email_verified_at = null;
-                updates.email_verification_token_hash = null;
-                updates.email_verification_expires_at = null;
-            }
-
-            await user.update(updates, { transaction });
-
-            if (emailChanged) {
-                await EmailOutbox.create(
-                    {
-                        user_id: user.id,
-                        event_type: "email_verification",
-                        status: "pending",
-                        attempts: 0,
-                        next_attempt_at: new Date(),
-                    },
-                    { transaction },
-                );
-            }
+            if (Object.keys(updates).length) await user.update(updates, { transaction });
+            if (emailChanged) await requestEmailChange(user, nextValues.email, transaction);
 
             await AuditLog.create(
                 {
@@ -156,10 +146,7 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
             };
         });
     } catch (error) {
-        const emailConstraintFailed =
-            error.name === "SequelizeUniqueConstraintError" &&
-            (error.fields?.email || error.errors?.some((item) => item.path === "email"));
-        if (emailConstraintFailed) {
+        if (isEmailUniqueConstraintError(error)) {
             throw serviceError("Ese correo electrónico ya está registrado.", 409);
         }
         throw error;
@@ -167,7 +154,7 @@ export async function updateAdminProfilePersonalInformation(rawUserId, payload) 
 
     return {
         message: result.emailVerificationRequired
-            ? "Tus datos se actualizaron. Verifica el nuevo correo electrónico para continuar usando tu cuenta."
+            ? "Tus datos se actualizaron. Tu correo actual sigue activo; verifica el nuevo correo para confirmar el cambio."
             : result.changed
               ? "Tus datos personales se actualizaron correctamente."
               : "No se detectaron cambios en tu perfil.",

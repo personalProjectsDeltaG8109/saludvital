@@ -169,6 +169,9 @@ html(lang="es")
                                                 div
                                                     dt Correo electrónico
                                                     dd= patient.user.email
+                                                    if patient.user.pending_email
+                                                        small.profile-email-pending(role="status")
+                                                            | Cambio pendiente: #{ patient.user.pending_email }. Tu correo actual sigue activo hasta confirmar el nuevo.
                                                 div
                                                     dt Dirección de residencia
                                                     dd= patient.address || "Sin registrar"
@@ -180,6 +183,9 @@ html(lang="es")
                                             data-profile-form="personal"
                                         )
                                             p.profile-required-legend Los campos marcados con * son obligatorios.
+                                            if patient.user.pending_email
+                                                p.profile-email-pending(role="status")
+                                                    | Ya solicitaste cambiar el correo a #{ patient.user.pending_email }. Tu correo actual sigue activo mientras confirmas el nuevo.
                                             .profile-form-grid
                                                 label
                                                     span

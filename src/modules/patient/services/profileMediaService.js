@@ -119,6 +119,8 @@ export async function deactivatePatientAccount(userId, password) {
                     is_active: false,
                     email_verification_token_hash: null,
                     email_verification_expires_at: null,
+                    pending_email: null,
+                    email_verification_requested_at: null,
                 },
                 { transaction },
             );

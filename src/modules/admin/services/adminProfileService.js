@@ -32,6 +32,7 @@ export function toAdminProfile(user) {
     return {
         displayName,
         email: user.email,
+        pendingEmail: user.pending_email || null,
         emailVerified: Boolean(user.email_verified_at),
         emailVerifiedAt: user.email_verified_at,
         phone: user.phone,
@@ -59,6 +60,7 @@ export async function getAdminProfile(rawUserId) {
             "display_name",
             "email",
             "email_verified_at",
+            "pending_email",
             "phone",
             "profile_photo_url",
             "admin_notifications_enabled",

@@ -11,7 +11,7 @@ export async function savePatientProfile(req, res, next) {
         return res.status(200).json({
             success: true,
             message: result.emailChanged
-                ? "Perfil actualizado. Revisa tu nuevo correo para confirmar el cambio."
+                ? "Tu perfil se actualizó. Tu correo actual sigue activo; revisa el nuevo correo para confirmar el cambio."
                 : "Tu perfil se actualizó correctamente.",
             data: result,
         });
