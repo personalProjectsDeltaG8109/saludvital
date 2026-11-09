@@ -36,7 +36,14 @@ const Notification = database.define(
             allowNull: true,
         },
         status: {
-            type: DataTypes.ENUM("Pending", "Processing", "Sent", "Failed", "Cancelled"),
+            type: DataTypes.ENUM(
+                "Pending",
+                "Processing",
+                "Sent",
+                "Failed",
+                "Cancelled",
+                "OutcomeUnknown",
+            ),
             allowNull: false,
             defaultValue: "Pending",
         },

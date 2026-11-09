@@ -128,6 +128,7 @@ function getDeliveryStatusLabel(status) {
         Sent: "Aceptado por el proveedor",
         Failed: "Fallido",
         Cancelled: "Cancelado",
+        OutcomeUnknown: "En verificación",
     };
     return labels[status] || "Estado no disponible";
 }

@@ -39,6 +39,7 @@ if (whatsappPage) {
         Sent: "Aceptado por proveedor",
         Processing: "En proceso",
         Failed: "Fallido",
+        OutcomeUnknown: "Resultado incierto",
         delivered: "Entregado",
         read: "Leído",
         Received: "Recibido",

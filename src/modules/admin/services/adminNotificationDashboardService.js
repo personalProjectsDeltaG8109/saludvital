@@ -28,6 +28,7 @@ const APPLICATION_STATUS_LABELS = {
     Sent: "Aceptado por el proveedor",
     Failed: "Fallido en el envío",
     Cancelled: "Cancelado",
+    OutcomeUnknown: "Resultado incierto",
 };
 
 const PROVIDER_STATUS_LABELS = {
@@ -201,7 +202,11 @@ function parseQuery(query) {
     if (!Object.hasOwn(CHANNEL_LABELS, channel) && channel !== "all") {
         throw createServiceError("Selecciona un canal disponible.");
     }
-    if (!["all", "pending", "accepted", "delivered", "failed", "cancelled"].includes(status)) {
+    if (
+        !["all", "pending", "accepted", "delivered", "failed", "cancelled", "unknown"].includes(
+            status,
+        )
+    ) {
         throw createServiceError("Selecciona un estado disponible.");
     }
     if (search.length > 100) {
@@ -231,6 +236,8 @@ function buildListWhere({ channel, status, search, range }) {
         });
     } else if (status === "cancelled") {
         conditions.push({ status: "Cancelled" });
+    } else if (status === "unknown") {
+        conditions.push({ status: "OutcomeUnknown" });
     }
 
     return { [Op.and]: conditions };
@@ -318,13 +325,15 @@ function toHistoryItem(notification) {
     const failed = row.status === "Failed" || providerFailed;
     const confirmedDelivered = ["delivered", "read"].includes(row.provider_delivery_status);
     const applicationTone =
-        row.status === "Failed"
-            ? "error"
-            : row.status === "Cancelled"
-              ? "neutral"
-              : row.status === "Sent"
-                ? "success"
-                : "pending";
+        row.status === "OutcomeUnknown"
+            ? "unknown"
+            : row.status === "Failed"
+              ? "error"
+              : row.status === "Cancelled"
+                ? "neutral"
+                : row.status === "Sent"
+                  ? "success"
+                  : "pending";
 
     return {
         id: row.id,
@@ -345,8 +354,16 @@ function toHistoryItem(notification) {
               ? "Fallida"
               : row.status === "Cancelled"
                 ? "Cancelada"
-                : "Pendiente",
-        tone: confirmedDelivered ? "success" : failed ? "error" : "pending",
+                : row.status === "OutcomeUnknown"
+                  ? "Resultado incierto"
+                  : "Pendiente",
+        tone: confirmedDelivered
+            ? "success"
+            : failed
+              ? "error"
+              : row.status === "OutcomeUnknown"
+                ? "unknown"
+                : "pending",
         failureSummary: failed
             ? providerFailed
                 ? "El proveedor reportó un fallo de entrega."

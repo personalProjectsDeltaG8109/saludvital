@@ -15,9 +15,10 @@ const TEMPLATE_CONFIGURATION = {
     },
 };
 
-function serviceError(message, retryable = false) {
+function serviceError(message, retryable = false, deliveryOutcome = "rejected") {
     const error = new Error(message);
     error.retryable = retryable;
+    error.deliveryOutcome = deliveryOutcome;
     return error;
 }
 
@@ -67,30 +68,44 @@ function buildTemplateParameters(inputVariables) {
 
 function isRetryableStatus(status, result) {
     if (typeof result?.error?.is_transient === "boolean") return result.error.is_transient;
-    return status === 408 || status === 429 || status >= 500;
+    return status === 429;
+}
+
+function isAmbiguousStatus(status) {
+    return status === 408 || status >= 500;
 }
 
 async function sendMetaRequest({ accessToken, phoneNumberId, apiVersion, recipient, template }) {
-    const response = await fetch(`${GRAPH_API_BASE_URL}/${apiVersion}/${phoneNumberId}/messages`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: recipient,
-            type: "template",
-            template,
-        }),
-    });
+    let response;
+    try {
+        response = await fetch(`${GRAPH_API_BASE_URL}/${apiVersion}/${phoneNumberId}/messages`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            signal: AbortSignal.timeout(15_000),
+            body: JSON.stringify({
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: recipient,
+                type: "template",
+                template,
+            }),
+        });
+    } catch {
+        throw serviceError(
+            "Meta no confirmó el resultado del mensaje de WhatsApp.",
+            false,
+            "unknown",
+        );
+    }
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
         throw serviceError(
             `Meta WhatsApp rechazó el mensaje (HTTP ${response.status}).`,
             isRetryableStatus(response.status, result),
+            isAmbiguousStatus(response.status) ? "unknown" : "rejected",
         );
     }
 
@@ -98,25 +113,31 @@ async function sendMetaRequest({ accessToken, phoneNumberId, apiVersion, recipie
 }
 
 async function sendMetaPayload({ accessToken, phoneNumberId, apiVersion, recipient, payload }) {
-    const response = await fetch(`${GRAPH_API_BASE_URL}/${apiVersion}/${phoneNumberId}/messages`, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: recipient,
-            ...payload,
-        }),
-    });
+    let response;
+    try {
+        response = await fetch(`${GRAPH_API_BASE_URL}/${apiVersion}/${phoneNumberId}/messages`, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json",
+            },
+            signal: AbortSignal.timeout(15_000),
+            body: JSON.stringify({
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: recipient,
+                ...payload,
+            }),
+        });
+    } catch {
+        throw serviceError("Meta no confirmó el resultado de la respuesta.", false, "unknown");
+    }
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
         throw serviceError(
             `Meta WhatsApp rechazó la respuesta (HTTP ${response.status}).`,
             isRetryableStatus(response.status, result),
+            isAmbiguousStatus(response.status) ? "unknown" : "rejected",
         );
     }
     return { id: result.messages?.[0]?.id || null, status: "accepted" };

@@ -57,6 +57,7 @@ describe("administrator notification dashboard service", () => {
             { status: "Sent", provider_delivery_status: "sent", count: "1" },
             { status: "Sent", provider_delivery_status: null, count: "1" },
             { status: "Cancelled", provider_delivery_status: null, count: "4" },
+            { status: "OutcomeUnknown", provider_delivery_status: null, count: "3" },
         ]);
         Notification.findAndCountAll.mockResolvedValue({
             count: 1,
@@ -184,6 +185,32 @@ describe("administrator notification dashboard service", () => {
         });
     });
 
+    test("filters uncertain outcomes without labeling them pending or failed", async () => {
+        Notification.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [
+                notificationRow({
+                    status: "OutcomeUnknown",
+                    provider_delivery_status: null,
+                    sent_at: null,
+                }),
+            ],
+        });
+
+        const data = await getAdminNotificationDashboard({ status: "unknown" });
+
+        expect(data.rows[0]).toMatchObject({
+            applicationStatus: "Resultado incierto",
+            applicationTone: "unknown",
+            deliveryStatus: "Resultado incierto",
+            tone: "unknown",
+            failureSummary: null,
+        });
+        expect(Notification.findAndCountAll.mock.calls[0][0].where[and]).toEqual(
+            expect.arrayContaining([expect.objectContaining({ status: "OutcomeUnknown" })]),
+        );
+    });
+
     test("returns zero metrics and a useful empty page when there are no records", async () => {
         Notification.findAll.mockResolvedValue([]);
         Notification.findAndCountAll.mockResolvedValue({ count: 0, rows: [] });
@@ -213,7 +240,7 @@ describe("administrator notification dashboard service", () => {
     test.each([
         [{ period: "14" }, "período"],
         [{ channel: "System" }, "canal"],
-        [{ status: "unknown" }, "estado"],
+        [{ status: "unsupported" }, "estado"],
         [{ page: "0" }, "página"],
         [{ search: "x".repeat(101) }, "100 caracteres"],
         [{ period: "custom" }, "ambas fechas"],

@@ -128,4 +128,16 @@ describe("Meta WhatsApp Cloud API", () => {
             }),
         ).rejects.toMatchObject({ retryable: true });
     });
+
+    test("classifies a Meta transport timeout as an uncertain send result", async () => {
+        global.fetch = jest.fn().mockRejectedValue(new Error("socket closed"));
+
+        await expect(
+            sendWhatsApp({
+                to: "+573001234567",
+                eventType: "appointment_reminder",
+                contentVariables: ["fecha", "hora"],
+            }),
+        ).rejects.toMatchObject({ retryable: false, deliveryOutcome: "unknown" });
+    });
 });

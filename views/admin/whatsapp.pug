@@ -266,6 +266,10 @@ html(lang="es")
                                             value="Cancelled",
                                             selected=whatsapp.deliveryFilters.status === "Cancelled"
                                         ) Cancelado
+                                        option(
+                                            value="OutcomeUnknown",
+                                            selected=whatsapp.deliveryFilters.status === "OutcomeUnknown"
+                                        ) Resultado incierto
                                 label.admin-whatsapp-request-control(
                                     for="whatsapp-provider-delivery-status"
                                 )

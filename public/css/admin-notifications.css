@@ -830,6 +830,11 @@
     background: #fff0cc;
 }
 
+.admin-notifications-badge.is-unknown {
+    color: #6741a5;
+    background: #eee6ff;
+}
+
 .admin-notifications-provider-status {
     display: block;
     margin-top: 5px;

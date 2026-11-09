@@ -29,7 +29,14 @@ const SUPPORTED_TABS = [
     "templates",
     "settings",
 ];
-const DELIVERY_STATUSES = ["Pending", "Processing", "Sent", "Failed", "Cancelled"];
+const DELIVERY_STATUSES = [
+    "Pending",
+    "Processing",
+    "Sent",
+    "Failed",
+    "Cancelled",
+    "OutcomeUnknown",
+];
 const PROVIDER_DELIVERY_STATUSES = ["sent", "delivered", "read", "failed"];
 const PROVIDER_DELIVERY_LABELS = {
     sent: "Aceptado por Meta",
@@ -302,6 +309,7 @@ function getDeliveryStatusLabel(status) {
         Sent: "Aceptado por proveedor",
         Failed: "Fallido",
         Cancelled: "Cancelado",
+        OutcomeUnknown: "Resultado incierto",
     };
     return labels[status] || "Estado registrado";
 }

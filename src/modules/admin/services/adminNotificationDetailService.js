@@ -27,6 +27,7 @@ const APPLICATION_STATUS_LABELS = {
     Sent: "Aceptada por el proveedor",
     Failed: "Fallida en el envío",
     Cancelled: "Cancelada",
+    OutcomeUnknown: "Resultado incierto",
     "No Show": "No asistió",
 };
 
@@ -166,6 +167,14 @@ function buildDeliveryEvents(record) {
             label: "En proceso",
             occurredAt: updatedAt,
             description: "El sistema está procesando el envío.",
+        });
+    } else if (record.status === "OutcomeUnknown" && updatedAt) {
+        events.push({
+            type: "outcome_unknown",
+            label: "Resultado incierto",
+            occurredAt: updatedAt,
+            description:
+                "El proveedor no confirmó el resultado. Verifica su registro antes de reintentar.",
         });
     } else if (record.last_error && record.attempt_count > 0 && updatedAt) {
         events.push({

@@ -7,9 +7,10 @@ const EVENT_SUBJECTS = {
     appointment_cancellation: "Cancelación de tu cita en SaludVital",
 };
 
-function serviceError(message, retryable = false) {
+function serviceError(message, retryable = false, deliveryOutcome = "rejected") {
     const error = new Error(message);
     error.retryable = retryable;
+    error.deliveryOutcome = deliveryOutcome;
     return error;
 }
 
@@ -40,15 +41,25 @@ function getConfiguration() {
 }
 
 function isRetryableStatus(status) {
-    return status === 408 || status === 429 || status >= 500;
+    return status === 429;
 }
 
-export async function sendResendEmail({ to, eventType, body }) {
+function isAmbiguousStatus(status) {
+    return status === 408 || status >= 500;
+}
+
+export async function sendResendEmail({ to, eventType, body, idempotencyKey }) {
     const recipient = typeof to === "string" ? to.trim() : "";
     const message = typeof body === "string" ? body.trim() : "";
     const defaultSubject = EVENT_SUBJECTS[eventType];
     if (!recipient || !defaultSubject || !message) {
         throw serviceError("La notificación de correo no tiene los datos requeridos.");
+    }
+    if (
+        idempotencyKey !== undefined &&
+        (typeof idempotencyKey !== "string" || !/^[A-Za-z0-9._-]{1,256}$/.test(idempotencyKey))
+    ) {
+        throw serviceError("La referencia de idempotencia del correo no es válida.");
     }
 
     const { apiKey, from } = getConfiguration();
@@ -63,21 +74,28 @@ export async function sendResendEmail({ to, eventType, body }) {
         process.env[`RESEND_${eventKey}_HTML`]?.trim() ||
         `<p>${escapeHtml(message)}</p><p>SaludVital</p>`;
 
-    const response = await fetch(RESEND_SEND_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({ from, to: [recipient], subject, html }),
-    });
+    let response;
+    try {
+        response = await fetch(RESEND_SEND_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+                ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
+            },
+            signal: AbortSignal.timeout(15_000),
+            body: JSON.stringify({ from, to: [recipient], subject, html }),
+        });
+    } catch {
+        throw serviceError("Resend no confirmó el resultado del correo.", false, "unknown");
+    }
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
         throw serviceError(
             `Resend rechazó el correo (HTTP ${response.status}).`,
             isRetryableStatus(response.status),
+            isAmbiguousStatus(response.status) ? "unknown" : "rejected",
         );
     }
 
@@ -91,26 +109,36 @@ export async function sendWhatsAppIdentityCode({ to, code }) {
     }
     const { apiKey, from } = getConfiguration();
     const safeCode = escapeHtml(code);
-    const response = await fetch(RESEND_SEND_URL, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-        },
-        signal: AbortSignal.timeout(15_000),
-        body: JSON.stringify({
-            from,
-            to: [recipient],
-            subject: "Código de seguridad de SaludVital",
-            text: `Tu código de verificación es ${code}. Vence en 10 minutos. Si no solicitaste este código, ignora este mensaje.`,
-            html: `<p>Tu código de verificación es <strong>${safeCode}</strong>.</p><p>Vence en 10 minutos. Si no solicitaste este código, ignora este mensaje.</p>`,
-        }),
-    });
+    let response;
+    try {
+        response = await fetch(RESEND_SEND_URL, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            signal: AbortSignal.timeout(15_000),
+            body: JSON.stringify({
+                from,
+                to: [recipient],
+                subject: "Código de seguridad de SaludVital",
+                text: `Tu código de verificación es ${code}. Vence en 10 minutos. Si no solicitaste este código, ignora este mensaje.`,
+                html: `<p>Tu código de verificación es <strong>${safeCode}</strong>.</p><p>Vence en 10 minutos. Si no solicitaste este código, ignora este mensaje.</p>`,
+            }),
+        });
+    } catch {
+        throw serviceError(
+            "Resend no confirmó el resultado del código de seguridad.",
+            false,
+            "unknown",
+        );
+    }
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
         throw serviceError(
             `Resend no pudo enviar el código de seguridad (HTTP ${response.status}).`,
             isRetryableStatus(response.status),
+            isAmbiguousStatus(response.status) ? "unknown" : "rejected",
         );
     }
     return { id: result.id || null, status: "accepted" };
