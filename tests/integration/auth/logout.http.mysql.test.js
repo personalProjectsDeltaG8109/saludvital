@@ -1,11 +1,12 @@
 import bcrypt from "bcrypt";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "@jest/globals";
 import request from "supertest";
 import app from "../../../app.js";
 import database from "../../../config/database.js";
 import AuthSession from "../../../src/models/AuthSession.js";
 import { Rol, User } from "../../../src/models/associations.js";
+import { cleanupExpiredSessions } from "../../../src/modules/auth/services/sessionActivity.js";
 
 if (process.env.NODE_ENV !== "test" || process.env.DB_NAME !== "saludvital_test") {
     throw new Error(
@@ -153,5 +154,61 @@ describe("Logout HTTP integration with persisted sessions", () => {
 
         expect(replayResponse.status).toBe(303);
         expect(replayResponse.headers.location).toBe("/login");
+    });
+
+    test("does not refresh a session for notification polling but refreshes explicit activity", async () => {
+        const { user, email } = await createVerifiedUser("Patient");
+        createdUserIds.push(user.id);
+
+        const loginResponse = await request(app)
+            .post("/login")
+            .type("form")
+            .send({ email, password });
+        const authenticationCookie = getAuthenticationCookie(loginResponse);
+        const session = await AuthSession.findOne({ where: { user_id: user.id } });
+        const priorActivityAt = new Date(Date.now() - 60_000);
+        await session.update({ last_activity_at: priorActivityAt });
+
+        const pollingResponses = await Promise.all(
+            Array.from({ length: 2 }, () =>
+                request(app)
+                    .get("/api/patient/notifications/unread-count")
+                    .set("Cookie", authenticationCookie),
+            ),
+        );
+        expect(pollingResponses.map((response) => response.status)).toEqual([200, 200]);
+        await session.reload();
+        expect(session.last_activity_at.getTime()).toBe(priorActivityAt.getTime());
+
+        const activityResponses = await Promise.all(
+            Array.from({ length: 2 }, () =>
+                request(app).post("/session/activity").set("Cookie", authenticationCookie),
+            ),
+        );
+        expect(activityResponses.map((response) => response.status)).toEqual([204, 204]);
+        await session.reload();
+        expect(session.last_activity_at.getTime()).toBeGreaterThan(priorActivityAt.getTime());
+    });
+
+    test("cleans expired sessions in bounded, repeatable batches", async () => {
+        const { user } = await createVerifiedUser("Patient");
+        createdUserIds.push(user.id);
+        const now = new Date();
+        const expiredAt = new Date(now.getTime() - 10 * 60 * 1000);
+        const activeAt = new Date(now.getTime() - 60 * 1000);
+        const sessionRows = ["old-one", "old-two", "old-three", "active"].map((value) => ({
+            session_id_hash: createHash("sha256").update(`${user.id}:${value}`).digest("hex"),
+            user_id: user.id,
+            last_activity_at: value === "active" ? activeAt : expiredAt,
+        }));
+        await AuthSession.bulkCreate(sessionRows);
+
+        await expect(cleanupExpiredSessions({ batchSize: 2, now })).resolves.toBe(2);
+        expect(await AuthSession.count({ where: { user_id: user.id } })).toBe(2);
+
+        await expect(cleanupExpiredSessions({ batchSize: 2, now })).resolves.toBe(1);
+        const remaining = await AuthSession.findAll({ where: { user_id: user.id } });
+        expect(remaining).toHaveLength(1);
+        expect(remaining[0].last_activity_at.getTime()).toBe(activeAt.getTime());
     });
 });
