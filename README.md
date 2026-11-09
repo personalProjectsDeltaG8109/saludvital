@@ -225,13 +225,25 @@ Create the database named by `DB_NAME` on your MySQL server and grant your confi
 npm run db:migrate
 ```
 
-For a fresh, isolated **development** database, review [database/seeders](database/seeders) and populate the initial roles, statuses, and development fixtures:
+For a fresh, isolated **development** database, populate the initial roles, appointment statuses, and demonstration environment:
 
 ```bash
 npm run db:seed
 ```
 
-The seeders include synthetic accounts and clinical examples for local development. They are not a production account-provisioning process, and several intentionally reject production execution. Seeded appointment dates may need preparation for a current demonstration. Do not run development seeders against real patient data.
+The consolidated demo seeder creates fictional patient, doctor, and administrator accounts; appointments in confirmed, rescheduled, cancelled, no-show, and attended states; completed consultations and diagnoses; sample notification history; and administrator audit activity. Appointment dates are recalculated from the current date in Colombia, and the fixture records are refreshed without duplicating them when the seeder is run again. The older development seeder filenames remain as no-op compatibility entries for databases that already recorded them.
+
+Use these local-only credentials for all seeded accounts:
+
+| Role          | Email                                      | Password              |
+| ------------- | ------------------------------------------ | --------------------- |
+| Patient       | `test@saludvital.local`                    | `SaludVitalTest2026!` |
+| Doctor        | `doctor.test@saludvital.local`             | `SaludVitalTest2026!` |
+| Doctor        | `doctor.pediatrics.test@saludvital.local`  | `SaludVitalTest2026!` |
+| Doctor        | `doctor.dermatology.test@saludvital.local` | `SaludVitalTest2026!` |
+| Administrator | `admin.test@saludvital.local`              | `SaludVitalTest2026!` |
+
+Every clinical value and notification is marked as demonstration data; the seeder does not send messages to email, SMS, or WhatsApp providers. It refuses to run when `NODE_ENV=production`. Run it only against an isolated local development database, never against a database containing real patient data.
 
 ### 4. Build Styles and Run
 
