@@ -144,7 +144,6 @@ describe("patient notification read state", () => {
                             required: true,
                         }),
                     ]),
-                    limit: 20,
                 }),
             );
             expect(result.history).toEqual([
@@ -163,7 +162,7 @@ describe("patient notification read state", () => {
         },
     );
 
-    test("merges in-app activity with channel records newest first and limits the result", async () => {
+    test("merges in-app activity with channel records newest first", async () => {
         NotificationPreference.findAll.mockResolvedValue([]);
         Notification.findAll.mockResolvedValue([
             {
@@ -190,6 +189,43 @@ describe("patient notification read state", () => {
 
         expect(result.history.map((item) => item.id)).toEqual(["appointment-10", 9]);
         expect(result.history[1].statusLabel).toBe("Aceptado por el proveedor");
+    });
+
+    test("returns the full history when it contains more than twenty entries", async () => {
+        Notification.findAll.mockResolvedValue(
+            Array.from({ length: 12 }, (_, index) => ({
+                id: index + 1,
+                event_type: "appointment_reminder",
+                channel: "SMS",
+                status: "Sent",
+                scheduled_at: new Date(
+                    `2026-11-${String(index + 1).padStart(2, "0")}T15:00:00.000Z`,
+                ),
+                sent_at: null,
+                read_at: null,
+            })),
+        );
+        AppointmentHistory.findAll.mockResolvedValue(
+            Array.from({ length: 13 }, (_, index) => ({
+                id: index + 1,
+                event_type: "Created",
+                new_values: { start_at: "2026-11-30T16:00:00.000Z" },
+                occurred_at: new Date(
+                    `2026-10-${String(index + 1).padStart(2, "0")}T15:00:00.000Z`,
+                ),
+                appointment: { id: index + 1, start_at: new Date("2026-11-30T16:00:00.000Z") },
+            })),
+        );
+
+        const result = await getPatientNotificationSettings(91);
+
+        expect(result.history).toHaveLength(25);
+        expect(Notification.findAll).toHaveBeenCalledWith(
+            expect.not.objectContaining({ limit: 20 }),
+        );
+        expect(AppointmentHistory.findAll).toHaveBeenCalledWith(
+            expect.not.objectContaining({ limit: 20 }),
+        );
     });
 
     test("leaves notification and appointment activity unread until explicitly opened or marked", async () => {
