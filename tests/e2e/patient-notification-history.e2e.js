@@ -27,14 +27,28 @@ try {
             <dialog data-notification-confirm-dialog><p data-notification-confirm-summary></p></dialog>
             <dialog data-notification-result-dialog></dialog>
         </section>
-        <section class="notifications-card notifications-history" aria-labelledby="history-heading"><div class="notifications-history-heading"><div class="notifications-section-heading"><h2 id="history-heading">Historial de notificaciones</h2><p>Consulta los movimientos de tus citas y el estado de los avisos enviados por tus canales.</p></div>
+        <section class="notifications-card notifications-history" aria-labelledby="history-heading"><div class="notifications-history-heading"><div class="notifications-section-heading"><h2 id="history-heading">Historial de notificaciones</h2><p>Consulta los cambios de tus citas y los avisos recibidos, agrupados por fecha.</p></div>
             <span class="notifications-history-count" data-history-count></span><button class="notifications-mark-all" data-mark-all-read>Marcar todas como leídas</button></div>
-            <div class="notifications-history-table-wrap"><table class="notifications-history-table"><thead><tr><th>Fecha y hora</th><th>Notificación</th><th>Estado</th></tr></thead><tbody>
+            <div class="notifications-history-table-wrap"><table class="notifications-history-table"><thead><tr><th>Hora</th><th>Actividad</th><th>Estado</th><th aria-label="Abrir detalle"></th></tr></thead><tbody>
             ${Array.from({ length: 24 }, (_, index) => {
                 const appointment = index === 0;
-                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : "Aviso de cita ${index + 1}"}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-channel="${appointment ? "En SaludVital" : "Correo electrónico"}" data-history-status="${appointment ? "Registrada" : "Enviado"}" data-history-date="2026-11-04T15:00:00.000Z"><td><span class="notifications-unread-label">Nueva</span><time>04 nov 2026, 10:00</time></td><td><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td><span class="notifications-delivery-status">${appointment ? "Registrada" : "Enviado"}</span></td></tr>`;
+                const date = new Date(Date.UTC(2026, 10, 9 - Math.floor(index / 3), 15));
+                const dateIso = date.toISOString();
+                const day = new Intl.DateTimeFormat("es-CO", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                    timeZone: "America/Bogota",
+                }).format(date);
+                const time = date.toLocaleTimeString("es-CO", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    timeZone: "America/Bogota",
+                });
+                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}, ${day}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-channel="${appointment ? "En SaludVital" : "Correo electrónico"}" data-history-status="${appointment ? "Registrada" : "Enviado"}" data-history-date="${dateIso}" data-history-day="${day}"><td class="notifications-history-time"><time datetime="${dateIso}">${time}</time></td><td class="notifications-history-content"><span class="notifications-history-title"><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-unread-label">Nueva</span></span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td><span class="notifications-delivery-status">${appointment ? "Registrada" : "Enviado"}</span></td><td class="notifications-history-open" aria-hidden="true">›</td></tr>`;
             }).join("")}
-            </tbody><tfoot><tr><td colspan="3"><nav class="notifications-history-pagination" aria-label="Páginas del historial" data-history-pagination hidden><span role="status" aria-live="polite" data-history-page-summary></span><div class="notifications-history-page-controls"><button type="button" data-history-previous aria-label="Página anterior">‹</button><span data-history-page-number></span><button type="button" data-history-next aria-label="Página siguiente">›</button></div></nav></td></tr></tfoot></table></div>
+            </tbody><tfoot><tr><td colspan="4"><nav class="notifications-history-pagination" aria-label="Páginas del historial" data-history-pagination hidden><span role="status" aria-live="polite" data-history-page-summary></span><div class="notifications-history-page-controls"><button type="button" data-history-previous aria-label="Página anterior">‹</button><span data-history-page-number></span><button type="button" data-history-next aria-label="Página siguiente">›</button></div></nav></td></tr></tfoot></table></div>
             <p data-notification-read-status role="status" aria-live="polite"></p>
         </section></main>
         <dialog class="notifications-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-status">
@@ -76,6 +90,9 @@ try {
     await page.addStyleTag({ content: stylesheet });
     await page.addScriptTag({ content: browserScript });
 
+    if ((await page.locator("[data-history-day-heading]:visible").count()) !== 4) {
+        throw new Error("The first page did not group notifications under their dates.");
+    }
     await page.locator(".notifications-history").screenshot({
         path: path.resolve("..", "patient-notification-history-preview.png"),
     });
@@ -83,21 +100,17 @@ try {
     await page.locator(".notifications-history").screenshot({
         path: path.resolve("..", "patient-notification-history-mobile-preview.png"),
     });
-    const mobileOverflow = await page.evaluate(() => ({
-        overflows: document.documentElement.scrollWidth > window.innerWidth,
-        elements: [...document.querySelectorAll("body *")]
-            .filter((element) => element.getBoundingClientRect().right > window.innerWidth + 1)
-            .slice(0, 5)
-            .map((element) => ({
-                tag: element.tagName,
-                className: element.className,
-                right: element.getBoundingClientRect().right,
-            })),
-    }));
-    if (mobileOverflow.overflows) {
-        throw new Error(
-            `The compact notification history overflowed the mobile viewport: ${JSON.stringify(mobileOverflow)}`,
-        );
+    for (const width of [390, 360, 320, 768, 1365]) {
+        await page.setViewportSize({ width, height: 844 });
+        const pageWidth = await page.evaluate(() => ({
+            viewport: window.innerWidth,
+            document: document.documentElement.scrollWidth,
+        }));
+        if (pageWidth.document > pageWidth.viewport) {
+            throw new Error(
+                `The activity history overflowed at ${width}px: ${JSON.stringify(pageWidth)}`,
+            );
+        }
     }
     if ((await page.locator("[data-history-row]:visible").count()) !== 10) {
         throw new Error("The first history page did not show exactly ten rows.");
@@ -145,6 +158,9 @@ try {
     if ((await page.locator("[data-history-row]:visible").count()) !== 4) {
         throw new Error("The last history page did not show the remaining four rows.");
     }
+    if ((await page.locator("[data-history-day-heading]:visible").count()) !== 2) {
+        throw new Error("The last page did not rebuild date groups for the remaining entries.");
+    }
     await page.getByRole("button", { name: "Marcar todas como leídas" }).click();
     await page.getByText("Todas las notificaciones están marcadas como leídas.").waitFor();
     if (await page.locator("tr.is-unread").count()) {
@@ -155,7 +171,7 @@ try {
         throw new Error("The mark-all control did not call the protected read-all endpoint.");
     }
     console.log(
-        "Patient notification pagination, row details, read state, and accessibility checks passed.",
+        "Patient notification date groups, pagination, row details, read state, responsive widths, and accessibility checks passed.",
     );
 } finally {
     await browser.close();

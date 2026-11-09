@@ -370,8 +370,28 @@
         const pageCount = Math.max(1, Math.ceil(historyRows.length / historyPageSize));
         historyPage = Math.min(historyPage, pageCount);
         const start = (historyPage - 1) * historyPageSize;
+        const visibleRows = historyRows.slice(start, start + historyPageSize);
+        historyTable?.querySelectorAll("[data-history-day-heading]").forEach((heading) => {
+            heading.remove();
+        });
         historyRows.forEach((row, index) => {
             row.hidden = index < start || index >= start + historyPageSize;
+        });
+        let currentDay = "";
+        visibleRows.forEach((row) => {
+            const day = row.dataset.historyDay;
+            if (day !== currentDay) {
+                const heading = document.createElement("tr");
+                heading.className = "notifications-history-day-heading";
+                heading.dataset.historyDayHeading = "true";
+                const label = document.createElement("th");
+                label.colSpan = 4;
+                label.scope = "colgroup";
+                label.textContent = day;
+                heading.append(label);
+                row.before(heading);
+                currentDay = day;
+            }
         });
         if (historyCount) {
             historyCount.textContent = `${historyRows.length} ${historyRows.length === 1 ? "notificación" : "notificaciones"}`;
