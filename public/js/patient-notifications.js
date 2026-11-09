@@ -16,10 +16,18 @@
     const resultTitle = settings.querySelector("[data-notification-result-title]");
     const resultMessage = settings.querySelector("[data-notification-result-message]");
     const closeResultButton = settings.querySelector("[data-close-notification-result]");
-    const historyToggle = document.querySelector("[data-history-toggle]");
     const historyTable = document.querySelector(".notifications-history-table");
+    const historyRows = [...(historyTable?.querySelectorAll("[data-history-row]") || [])];
+    const historyCount = document.querySelector("[data-history-count]");
+    const historyPagination = document.querySelector("[data-history-pagination]");
+    const historyPageSummary = document.querySelector("[data-history-page-summary]");
+    const historyPageNumber = document.querySelector("[data-history-page-number]");
+    const historyPrevious = document.querySelector("[data-history-previous]");
+    const historyNext = document.querySelector("[data-history-next]");
     const markAllReadButton = document.querySelector("[data-mark-all-read]");
     const appointmentDetailsDialog = document.querySelector("[data-appointment-details-dialog]");
+    const historyPageSize = 10;
+    let historyPage = 1;
     let preferences = JSON.parse(settings.dataset.preferences || "[]");
     let savedPreferences = structuredClone(preferences);
     let savedContacts = getContacts();
@@ -239,6 +247,7 @@
                 row.querySelector(".notifications-unread-label")?.remove();
                 row.querySelector("[data-mark-notification-read]")?.remove();
             });
+            renderHistoryPage();
             updateNotificationBell(payload.data.unreadCount);
             if (readStatus) readStatus.textContent = "Notificaciones marcadas como leídas.";
         } catch {
@@ -263,19 +272,37 @@
             schedule: appointmentDetailsDialog.querySelector("[data-appointment-schedule]"),
             appointmentStatus: appointmentDetailsDialog.querySelector("[data-appointment-status]"),
             occurredAt: appointmentDetailsDialog.querySelector("[data-appointment-occurred-at]"),
+            channel: appointmentDetailsDialog.querySelector("[data-appointment-channel]"),
+            message: appointmentDetailsDialog.querySelector("[data-appointment-message]"),
         };
 
         status.textContent = "Cargando el detalle de la cita…";
         title.textContent =
             row.querySelector(".notifications-history-kind")?.textContent.trim() ||
             "Detalle de la cita";
-        doctorName.textContent = "Cargando información del médico…";
+        doctorName.textContent = "";
         photo.hidden = true;
         photo.removeAttribute("src");
         photoPlaceholder.hidden = false;
         Object.values(fields).forEach((field) => (field.textContent = "—"));
         appointmentDetailsDialog.showModal();
 
+        if (row.dataset.inAppActivity !== "true") {
+            doctorName.textContent = "Notificación recibida";
+            fields.specialty.textContent = "—";
+            fields.schedule.textContent = "—";
+            fields.appointmentStatus.textContent = row.dataset.historyStatus || "—";
+            fields.occurredAt.textContent = formatDate(row.dataset.historyDate);
+            fields.channel.textContent = row.dataset.historyChannel || "—";
+            fields.message.textContent = row.dataset.historyDetails || "—";
+            status.textContent = "Detalle cargado.";
+            if (row.classList.contains("is-unread")) await markRowsAsRead([row]);
+            return;
+        }
+
+        doctorName.textContent = "Cargando información del médico…";
+        fields.message.textContent = row.dataset.historyDetails || "—";
+        fields.channel.textContent = row.dataset.historyChannel || "En SaludVital";
         try {
             const response = await fetch(
                 `/api/patient/notifications/appointment-activity/${historyId}`,
@@ -296,6 +323,7 @@
             fields.schedule.textContent = formatDate(details.appointmentStartAt);
             fields.appointmentStatus.textContent = details.appointmentStatus;
             fields.occurredAt.textContent = formatDate(details.occurredAt);
+            fields.message.textContent = row.dataset.historyDetails || details.eventLabel;
             if (details.doctor.photoUrl) {
                 photo.src = details.doctor.photoUrl;
                 photo.alt = `Foto de ${details.doctor.name}`;
@@ -338,11 +366,42 @@
         else count.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
     }
 
-    historyToggle?.addEventListener("click", async () => {
-        if (!historyTable) return;
-        const isExpanded = historyTable.classList.toggle("is-expanded");
-        historyToggle.setAttribute("aria-expanded", String(isExpanded));
-        historyToggle.textContent = isExpanded ? "Ver menos" : "Ver todas";
+    function renderHistoryPage() {
+        const pageCount = Math.max(1, Math.ceil(historyRows.length / historyPageSize));
+        historyPage = Math.min(historyPage, pageCount);
+        const start = (historyPage - 1) * historyPageSize;
+        historyRows.forEach((row, index) => {
+            row.hidden = index < start || index >= start + historyPageSize;
+        });
+        if (historyCount) {
+            historyCount.textContent = `${historyRows.length} ${historyRows.length === 1 ? "notificación" : "notificaciones"}`;
+        }
+        if (markAllReadButton) {
+            markAllReadButton.disabled = !historyRows.some((row) =>
+                row.classList.contains("is-unread"),
+            );
+        }
+        if (!historyPagination || !historyRows.length) return;
+        const end = Math.min(start + historyPageSize, historyRows.length);
+        historyPagination.hidden = historyRows.length <= historyPageSize;
+        historyPageSummary.textContent = `Mostrando ${start + 1}–${end} de ${historyRows.length}`;
+        historyPageNumber.textContent = `Página ${historyPage} de ${pageCount}`;
+        historyPrevious.disabled = historyPage === 1;
+        historyNext.disabled = historyPage === pageCount;
+    }
+
+    historyPrevious?.addEventListener("click", () => {
+        if (historyPage > 1) {
+            historyPage -= 1;
+            renderHistoryPage();
+        }
+    });
+    historyNext?.addEventListener("click", () => {
+        const pageCount = Math.ceil(historyRows.length / historyPageSize);
+        if (historyPage < pageCount) {
+            historyPage += 1;
+            renderHistoryPage();
+        }
     });
 
     markAllReadButton?.addEventListener("click", async () => {
@@ -361,24 +420,27 @@
                 row.querySelector(".notifications-unread-label")?.remove();
                 row.querySelector("[data-mark-notification-read]")?.remove();
             });
+            renderHistoryPage();
             updateNotificationBell(payload.data.unreadCount);
             if (readStatus)
                 readStatus.textContent = "Todas las notificaciones están marcadas como leídas.";
         } catch (error) {
             if (readStatus) readStatus.textContent = error.message;
         } finally {
-            markAllReadButton.disabled = false;
+            renderHistoryPage();
         }
     });
 
     historyTable?.addEventListener("click", (event) => {
-        const row = event.target.closest("tr");
+        const row = event.target.closest("[data-history-row]");
         if (!row) return;
-        if (event.target.closest("[data-open-appointment-details]")) {
-            loadAppointmentDetails(row);
-        } else if (event.target.closest("[data-mark-notification-read]")) {
-            markRowsAsRead([row]);
-        }
+        loadAppointmentDetails(row);
+    });
+    historyTable?.addEventListener("keydown", (event) => {
+        const row = event.target.closest("[data-history-row]");
+        if (!row || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        loadAppointmentDetails(row);
     });
 
     appointmentDetailsDialog
@@ -391,4 +453,5 @@
     });
 
     render();
+    renderHistoryPage();
 })();

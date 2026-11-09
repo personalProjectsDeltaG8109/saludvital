@@ -233,13 +233,19 @@
 .notifications-history-heading { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .notifications-history-heading .notifications-section-heading { margin: 0; }
 .notifications-history-heading button { min-height: 34px; padding: 0 12px; border: 1px solid #dceaf6; border-radius: 8px; color: #174c7e; background: #fff; font-size: 11px; cursor: pointer; }
+.notifications-history-count { margin-left: auto; color: #71849b; font-size: 11px; white-space: nowrap; }
 .notifications-history-table-wrap { overflow-x: auto; }
 .notifications-history-table { width: 100%; border-collapse: collapse; text-align: left; }
 .notifications-history-table thead { background: #eff7fc; }
-.notifications-history-table th { padding: 9px 10px; color: #123b73; font-size: 10px; white-space: nowrap; }
-.notifications-history-table td { padding: 9px 10px; border-bottom: 1px solid #edf3f8; color: #536b8c; font-size: 10px; line-height: 1.4; }
+.notifications-history-table th { padding: 10px; color: #123b73; font-size: 11px; white-space: nowrap; }
+.notifications-history-table td { padding: 10px; border-bottom: 1px solid #edf3f8; color: #536b8c; font-size: 12px; line-height: 1.4; }
 .notifications-history-table tbody tr:last-child td { border-bottom: 0; }
+.notifications-history-table tbody tr[data-history-row] { cursor: pointer; transition: background-color .16s ease; }
+.notifications-history-table tbody tr[data-history-row]:hover,.notifications-history-table tbody tr[data-history-row]:focus-visible { background: #f4f9fd; outline: none; }
+.notifications-history-table tbody tr[data-history-row]:focus-visible { box-shadow: inset 0 0 0 2px #168de2; }
+.notifications-history-table tr[hidden] { display: none !important; }
 .notifications-history-kind { color: #264c77; }
+.notifications-history-summary { margin-top: 3px; display: block; color: #71849b; }
 .notifications-history-channel { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .notifications-history-channel img { width: 16px; height: 16px; }
 .notifications-history-channel.is-whatsapp { color: #06a976; }
@@ -257,6 +263,13 @@
 .notifications-history-empty p { margin: 0; font-size: 12px; }
 .notifications-empty-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 50%; color: #078bed; background: #e9f6ff; }
 .notifications-mark-all { margin-left: auto; white-space: nowrap; }
+.notifications-mark-all:disabled { cursor: default; opacity: .55; }
+.notifications-history-pagination td { padding: 10px 4px 2px; border: 0; }
+.notifications-history-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #71849b; font-size: 11px; }
+.notifications-history-page-controls { display: flex; align-items: center; gap: 8px; color: #174c7e; }
+.notifications-history-page-controls button { width: 30px; height: 30px; border: 1px solid #dceaf6; border-radius: 8px; color: #174c7e; background: #fff; font-size: 18px; line-height: 1; cursor: pointer; }
+.notifications-history-page-controls button:disabled { cursor: default; opacity: .45; }
+.notifications-history-pagination[hidden] { display: none; }
 .notifications-history-actions { white-space: nowrap; }
 .notifications-detail-button { padding: 5px 8px; border: 1px solid #cfe3f5; border-radius: 7px; color: #075db8; background: #fff; font: inherit; font-size: 10px; cursor: pointer; }
 .notifications-detail-button:hover { background: #eff7ff; }
@@ -266,19 +279,17 @@
 .notifications-appointment-dialog-close { float: right; width: 34px; height: 34px; border: 1px solid #dceaf6; border-radius: 50%; color: #174c7e; background: #fff; font-size: 22px; cursor: pointer; }
 .notifications-appointment-doctor { display: flex; align-items: center; gap: 14px; padding: 10px 30px 18px 0; }
 .notifications-appointment-doctor img,.notifications-doctor-placeholder { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 50%; object-fit: cover; background: #e9f6ff; }
-.notifications-doctor-placeholder { display: grid; place-items: center; color: #087bd2; font-weight: 800; }
+.notifications-doctor-placeholder { display: grid; place-items: center; color: #07599a; font-weight: 800; }
 .notifications-appointment-doctor h2 { margin: 0 0 4px; color: #123b73; font-size: 18px; }
 .notifications-appointment-doctor p { margin: 0; color: #536b8c; font-size: 13px; }
 .notifications-appointment-facts { margin: 0; border-top: 1px solid #edf3f8; }
 .notifications-appointment-facts div { padding: 11px 0; border-bottom: 1px solid #edf3f8; }
-.notifications-appointment-facts dt { margin-bottom: 3px; color: #71849b; font-size: 11px; }
+.notifications-appointment-facts dt { margin-bottom: 3px; color: #536b8c; font-size: 11px; }
 .notifications-appointment-facts dd { margin: 0; color: #123b73; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
 .notifications-appointment-detail-status { min-height: 20px; margin: 12px 0 0; color: #536b8c; font-size: 12px; }
 @media (max-width: 760px) {
     .notifications-history-heading { flex-wrap: wrap; }
     .notifications-mark-all { margin-left: 0; padding: 0 8px !important; }
-    .notifications-history-table td.notifications-history-actions { grid-column: 2 / 4; grid-row: 4; }
-    .notifications-history-table tr { padding-bottom: 7px; }
     .notifications-appointment-dialog { padding: 18px 16px; }
     .notifications-appointment-doctor img,.notifications-doctor-placeholder { width: 54px; height: 54px; flex-basis: 54px; }
 }
@@ -336,20 +347,21 @@
     .notifications-history-heading .notifications-section-heading h2 { font-size: 14px; }
     .notifications-history-heading .notifications-section-heading p { display: none; }
     .notifications-history-heading button { padding: 0 4px; border: 0; color: #078bed; background: transparent; font-size: 10px; }
+    .notifications-history-count { width: 100%; margin: -4px 0 0; font-size: 9px; }
     .notifications-history-table,.notifications-history-table tbody { width: 100%; display: grid; gap: 6px; }
     .notifications-history-table thead { display: none; }
     .notifications-history-table tr { min-width: 0; padding: 8px; display: grid; grid-template-columns: 48px minmax(0, 1fr) 17px; gap: 2px 8px; border: 1px solid #e8f0f7; border-radius: 10px; background: #fff; }
-    .notifications-history-table td { min-width: 0; padding: 0; border: 0; font-size: 9px; }
+    .notifications-history-table td { min-width: 0; padding: 0; border: 0; font-size: 10px; }
     .notifications-history-table td:first-child { grid-column: 1; grid-row: 1 / span 3; align-self: start; }
-    .notifications-history-table td:nth-child(2) { grid-column: 2; grid-row: 1; color: #123b73; font-size: 10px; font-weight: 700; }
-    .notifications-history-table td:nth-child(3) { grid-column: 2; grid-row: 2; }
-    .notifications-history-table td:nth-child(4) { grid-column: 2; grid-row: 3; }
-    .notifications-history-table td:nth-child(5) { grid-column: 3; grid-row: 1 / span 3; }
+    .notifications-history-table td:nth-child(2) { grid-column: 2; grid-row: 1; color: #123b73; font-size: 12px; font-weight: 700; }
+    .notifications-history-table td:nth-child(3) { grid-column: 3; grid-row: 1 / span 3; }
+    .notifications-history-summary { font-size: 10px; font-weight: 400; }
     .notifications-history-table td:first-child time { width: 45px; min-height: 46px; padding: 5px 2px; display: grid; place-content: center; border-radius: 8px; color: #123b73; background: #eaf6ff; font-weight: 700; line-height: 1.2; text-align: center; }
     .notifications-delivery-status { padding: 0; color: #078357; background: transparent; font-size: 0; }
     .notifications-delivery-status::before { content: "›"; color: #164c84; font-size: 19px; }
-    .notifications-history-table tr.is-history-extra { display: none; }
-    .notifications-history-table.is-expanded tr.is-history-extra { display: grid; }
+    .notifications-history-pagination { padding-top: 4px; flex-wrap: wrap; }
+    .notifications-history-pagination td { grid-column: 1 / -1; }
+    .notifications-history-table tfoot { display: block; }
     .notifications-history-empty { min-height: 125px; }
 }
 
