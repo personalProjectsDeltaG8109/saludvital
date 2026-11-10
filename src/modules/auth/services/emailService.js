@@ -28,10 +28,10 @@ export async function sendVerificationEmail(
     verificationUrl,
     { isEmailChange = false } = {},
 ) {
-    const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    const from = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_NAME;
 
     if (!from) {
-        throw new Error("EMAIL_FROM or EMAIL_USER must be configured.");
+        throw new Error("RESEND_FROM_EMAIL or RESEND_FROM_NAME must be configured.");
     }
 
     const transporter = createTransport();
@@ -108,10 +108,10 @@ export async function sendVerificationEmail(
  * Send a password recovery link to the account email address.
  */
 export async function sendPasswordResetEmail(email, resetUrl) {
-    const from = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+    const from = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_NAME;
 
     if (!from) {
-        throw new Error("EMAIL_FROM or EMAIL_USER must be configured.");
+        throw new Error("RESEND_FROM_EMAIL or RESEND_FROM_NAME must be configured.");
     }
 
     const transporter = createTransport();
