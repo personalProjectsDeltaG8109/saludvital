@@ -28,6 +28,7 @@ async function refreshNotificationCount() {
         });
         if (!response.ok) return;
         const result = await response.json();
+        if (!result.success) return;
         updateNotificationCount(result.unreadCount);
     } catch {
         // Keep the bell usable if the unread count cannot be refreshed.
