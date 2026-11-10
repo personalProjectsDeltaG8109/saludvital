@@ -18,6 +18,8 @@ The doctor unread-count endpoint returned `{ unreadCount }`, while the shared si
 - After implementation: 3 Jest suites / 99 tests passed, including doctor notification service, doctor route authorization, and shared application route checks.
 - `tests/e2e/doctor-notifications.e2e.js` passed, including responsive and axe-core checks.
 - `tests/e2e/patient-notification-history.e2e.js` passed, including responsive and axe-core checks.
-- ESLint passed for changed JavaScript files; Prettier formatting passed.
-- Changed-file ESLint, Prettier, and `git diff --check` passed.
-- Full Jest, full Playwright, full lint, and CSS build checks are reserved for the pre-PR verification pass.
+- `npm run format` and the repository's targeted Prettier write command passed; no files changed during formatting.
+- `npm test -- --runInBand` passed: 131 suites and 1,053 tests.
+- `npm run lint`, `npm run format:check`, `npm run css:build`, and `npm run test:e2e` passed.
+- `git diff --check` passed. The pre-existing local `public/css/app.css` file was backed up and restored around the CSS build, and was not included in the branch.
+- Pull request #409 targets `develop`; GitHub Actions status could not be queried from this environment after creation.
