@@ -16,7 +16,9 @@ The notification worker previously treated a database error while saving a succe
 
 ## Provider Limitations
 
-Meta and Inalambria requests do not currently have an application-level idempotency or reconciliation workflow in this project. Inalambria may provide job-status lookup when a job ID has been persisted, but this issue does not add a reconciliation operation. An uncertain result must be checked with the provider before any manual retry. The application does not claim exactly-once external delivery.
+Meta and Inalambria do not have an application-level idempotency or reconciliation workflow in this project. Inalambria may offer job-status lookup when a job ID is saved, but this application does not check it automatically.
+
+A provider may accept a message just before the application fails to save the result. After a worker restart, stale `Processing` records become `OutcomeUnknown` and are not sent again automatically. This prevents a blind retry, but the final delivery result remains uncertain until it is checked with the provider. If someone retries manually without checking first, the patient could receive a duplicate. The system cannot promise exactly-once delivery.
 
 ## Verification
 
