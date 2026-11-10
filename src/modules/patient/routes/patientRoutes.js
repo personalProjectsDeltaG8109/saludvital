@@ -386,6 +386,7 @@ patientRoutes.get(
                     doctor_label: "Dra. Laura Vélez",
                 },
             ];
+            const now = Date.now();
             const appointments = (previewMode ? previewAppointments : storedAppointments).map(
                 (item) => {
                     const appointment =
@@ -397,11 +398,12 @@ patientRoutes.get(
                                 new Date(first.occurred_at).getTime() -
                                 new Date(second.occurred_at).getTime(),
                         );
+                    appointment.can_reschedule =
+                        !previewMode && canPatientRescheduleAppointment(appointment, now);
                     return appointment;
                 },
             );
             // Keep the closest future confirmed appointments first and retain recent history after them.
-            const now = Date.now();
             appointments.sort((first, second) => {
                 const firstDate = new Date(first.start_at).getTime();
                 const secondDate = new Date(second.start_at).getTime();

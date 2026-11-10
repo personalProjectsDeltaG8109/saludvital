@@ -83,9 +83,7 @@ html(lang="es")
                                             - const doctorName = appointment.doctor_label || (appointment.doctor && appointment.doctor.display_name) || "Médico asignado";
                                             - const statusClass = status === "In Progress" ? "in-progress" : status.toLowerCase().replaceAll(" ", "-");
                                             - const statusLabel = status === "Attended" ? "Atendida" : status === "Cancelled" ? "Cancelada" : status === "In Progress" ? "En curso" : status === "No Show" ? "No asistió" : "Confirmada";
-                                            //- Only confirmed future appointments with remaining attempts can be rescheduled.
-                                            - const reschedulesUsed = (appointment.history || []).filter((event) => event.event_type === "Rescheduled").length;
-                                            - const canReschedule = !previewMode && status === "Confirmed" && date.getTime() > Date.now() && reschedulesUsed < 3;
+                                            //- The route applies the shared 24-hour notice and rescheduling limit.
                                             //- Cancellation requires a confirmed appointment at least 24 hours away.
                                             - const canCancel = !previewMode && status === "Confirmed" && date.getTime() - Date.now() >= 24 * 60 * 60 * 1000;
                                             tr(
@@ -133,7 +131,7 @@ html(lang="es")
                                                             aria-controls=`appointment-details-${appointment.id}`,
                                                             data-open-appointment-details=appointment.id
                                                         ) Ver detalles
-                                                        if canReschedule
+                                                        if appointment.can_reschedule
                                                             a.appointment-reschedule-link(
                                                                 href=`/patient/appointments/reschedule?appointmentId=${appointment.id}`,
                                                                 aria-label=`Reprogramar cita de ${(appointment.specialty && appointment.specialty.name) || "consulta médica"}`,
