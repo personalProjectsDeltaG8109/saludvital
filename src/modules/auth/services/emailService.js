@@ -1,25 +1,33 @@
-import nodemailer from "nodemailer";
+function getResendConfiguration() {
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    const fromEmail = process.env.RESEND_FROM_EMAIL?.trim();
+    const fromName = process.env.RESEND_FROM_NAME?.trim();
 
-// Configure the SMTP transport using environment variables.
-function createTransport() {
-    const host = process.env.EMAIL_HOST;
-    const port = Number(process.env.EMAIL_PORT);
-    const user = process.env.EMAIL_USER;
-    const password = process.env.EMAIL_PASS;
-
-    if (!host || ![465, 587].includes(port) || !user || !password) {
-        throw new Error("Email SMTP configuration is incomplete.");
+    if (!apiKey || !fromEmail) {
+        throw new Error("RESEND_API_KEY and RESEND_FROM_EMAIL must be configured.");
     }
 
-    return nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: {
-            user,
-            pass: password,
+    return {
+        apiKey,
+        from: fromName ? `${fromName} <${fromEmail}>` : fromEmail,
+    };
+}
+
+async function sendResendEmail({ to, subject, text, html }) {
+    const { apiKey, from } = getResendConfiguration();
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
         },
+        signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({ from, to: [to], subject, text, html }),
     });
+
+    if (!response.ok) {
+        throw new Error(`Resend rejected the email (HTTP ${response.status}).`);
+    }
 }
 
 // Send the account verification link to the registered email address.
@@ -28,14 +36,6 @@ export async function sendVerificationEmail(
     verificationUrl,
     { isEmailChange = false } = {},
 ) {
-    const from = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_NAME;
-
-    if (!from) {
-        throw new Error("RESEND_FROM_EMAIL or RESEND_FROM_NAME must be configured.");
-    }
-
-    const transporter = createTransport();
-
     const safeVerificationUrl = verificationUrl
         .replaceAll("&", "&amp;")
         .replaceAll('"', "&quot;")
@@ -72,8 +72,7 @@ export async function sendVerificationEmail(
               "Si no creaste esta cuenta, puedes ignorar este mensaje.",
           ].join("\n");
 
-    await transporter.sendMail({
-        from,
+    await sendResendEmail({
         to: email,
         subject,
         text: textContent,
@@ -108,16 +107,7 @@ export async function sendVerificationEmail(
  * Send a password recovery link to the account email address.
  */
 export async function sendPasswordResetEmail(email, resetUrl) {
-    const from = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM_NAME;
-
-    if (!from) {
-        throw new Error("RESEND_FROM_EMAIL or RESEND_FROM_NAME must be configured.");
-    }
-
-    const transporter = createTransport();
-
-    await transporter.sendMail({
-        from,
+    await sendResendEmail({
         to: email,
         subject: "Recupera tu contraseña de SaludVital",
         text: [
