@@ -7,7 +7,7 @@ html(lang="es")
         title= pageTitle
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
-
+        link(rel="stylesheet", href="/css/login-footer.css")
     body.login-page.min-h-screen.text-primary.antialiased
         if showLoginSplash
             include ./partials/login-splash
@@ -28,6 +28,8 @@ html(lang="es")
                             strong ¿Prefieres agendar por WhatsApp?
                             small Solicita tu cita médica de manera fácil desde nuestro canal oficial.
                         span.login-mobile-whatsapp-action Solicitar cita →
+        
+        include ./partials/footer/public-footer
 
         if whatsappContactUrl
             aside.whatsapp-widget(aria-label="Contacto por WhatsApp")

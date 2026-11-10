@@ -1,0 +1,23 @@
+- const year = new Date().getFullYear()
+
+footer.sv-public-footer(role="contentinfo")
+    .sv-public-footer__inner
+        .sv-public-footer__brand
+            img.sv-public-footer__logo(
+                src="/brand/logo-symbol.png",
+                alt="SaludVital",
+                width="32",
+                height="32"
+            )
+            p.sv-public-footer__copyright
+                strong © #{year} SaludVital
+                span  · Todos los derechos reservados.
+
+        nav.sv-public-footer__nav(aria-label="Enlaces del pie de página")
+            a.sv-public-footer__link(href="/privacy") Política de privacidad
+            a.sv-public-footer__link(href="/terms") Términos y condiciones
+            a.sv-public-footer__link(href="/help") Ayuda
+
+        .sv-public-footer__tagline
+            span.sv-public-footer__tagline-icon(aria-hidden="true") ❤
+            strong Tu bienestar, nuestra prioridad.
