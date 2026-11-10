@@ -7,10 +7,16 @@ const mockModels = {
     WhatsAppVerification: { destroy: jest.fn(), findOne: jest.fn(), create: jest.fn() },
     WhatsAppChatbotRuntimeSetting: { findByPk: jest.fn() },
     ChatbotFlowVersion: {},
-    Notification: { update: jest.fn() },
+    Notification: { findOne: jest.fn(), update: jest.fn() },
 };
 const mockConversation = { findOne: jest.fn(), create: jest.fn(), update: jest.fn() };
-const mockMessage = { create: jest.fn(), update: jest.fn() };
+const mockMessage = { create: jest.fn(), findOne: jest.fn(), update: jest.fn() };
+const mockTransaction = {
+    LOCK: { UPDATE: "UPDATE" },
+    commit: jest.fn(),
+    rollback: jest.fn(),
+};
+const mockDatabase = { transaction: jest.fn() };
 const mockAppointmentService = {
     bookAppointment: jest.fn(),
     cancelPatientAppointment: jest.fn(),
@@ -25,7 +31,7 @@ const mockSendEmail = { sendWhatsAppIdentityCode: jest.fn() };
 const mockSendWhatsApp = { sendWhatsAppReply: jest.fn() };
 
 jest.unstable_mockModule("sequelize", () => ({ Op: { gt: gte, gte, ne: Symbol("ne") } }));
-jest.unstable_mockModule("../../config/database.js", () => ({ default: {} }));
+jest.unstable_mockModule("../../config/database.js", () => ({ default: mockDatabase }));
 jest.unstable_mockModule("../../src/models/associations.js", () => mockModels);
 jest.unstable_mockModule("../../src/models/WhatsAppConversation.js", () => ({
     default: mockConversation,
@@ -92,8 +98,22 @@ describe("WhatsApp chatbot appointment safeguards", () => {
             id: "outbound-id",
             status: "accepted",
         });
+        mockTransaction.commit.mockResolvedValue(undefined);
+        mockTransaction.rollback.mockResolvedValue(undefined);
+        mockDatabase.transaction.mockResolvedValue(mockTransaction);
         mockMessage.update.mockResolvedValue([1]);
+        mockModels.Notification.update.mockResolvedValue([1]);
         mockMessage.create.mockResolvedValue({ id: 11 });
+        mockMessage.findOne.mockResolvedValue({
+            delivery_status: null,
+            delivery_status_at: null,
+            update: jest.fn().mockResolvedValue(undefined),
+        });
+        mockModels.Notification.findOne.mockResolvedValue({
+            provider_delivery_status: null,
+            provider_delivery_status_at: null,
+            update: jest.fn().mockResolvedValue(undefined),
+        });
         mockModels.Patient.findAll.mockResolvedValue([]);
         mockModels.WhatsAppChatbotRuntimeSetting.findByPk.mockResolvedValue({
             activeFlowVersion: {
@@ -246,8 +266,16 @@ describe("WhatsApp chatbot appointment safeguards", () => {
                             value: {
                                 metadata: { phone_number_id: "phone-number" },
                                 statuses: [
-                                    { id: "provider-message", status: "delivered" },
-                                    { id: "untrusted-message", status: "connected" },
+                                    {
+                                        id: "provider-message",
+                                        status: "delivered",
+                                        timestamp: "1793235025",
+                                    },
+                                    {
+                                        id: "untrusted-message",
+                                        status: "connected",
+                                        timestamp: "1793235025",
+                                    },
                                 ],
                             },
                         },
@@ -256,15 +284,22 @@ describe("WhatsApp chatbot appointment safeguards", () => {
             ],
         });
 
-        expect(mockModels.Notification.update).toHaveBeenCalledTimes(1);
-        expect(mockModels.Notification.update).toHaveBeenCalledWith(
-            { provider_delivery_status: "delivered" },
-            {
+        expect(mockMessage.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({ provider_message_id: "provider-message" }),
+                lock: "UPDATE",
+            }),
+        );
+        expect(mockModels.Notification.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({
                 where: {
                     channel: "WhatsApp",
                     provider_message_id: "provider-message",
                 },
-            },
+                lock: "UPDATE",
+            }),
         );
+        expect(mockTransaction.commit).toHaveBeenCalledTimes(1);
+        expect(mockModels.Notification.update).not.toHaveBeenCalled();
     });
 });

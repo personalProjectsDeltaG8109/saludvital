@@ -19,4 +19,4 @@ Existing status rows are not assigned guessed timestamps. The transition rules s
 
 ## Verification
 
-Focused Jest verification passed: 3 suites and 14 tests covering callback ordering, duplicate delivery, safe failure details, transaction rollback, and migration rollback. ESLint, Prettier, and `git diff --check` passed for the changed files. Tests use synthetic callbacks and mocked database records; no provider request is sent.
+Focused Jest verification passed: 4 suites and 19 tests covering callback ordering, duplicate delivery, safe failure details, transaction rollback, migration rollback, and webhook integration. The full Jest suite passed with 131 suites and 1,053 tests. ESLint, Prettier formatting, CSS build, and `git diff --check` passed. Tests use synthetic callbacks and mocked database records; no provider request is sent.
