@@ -330,18 +330,12 @@ async function upsertAppointment(
 }
 
 async function upsertHistory(queryInterface, appointmentId, history, transaction) {
-
     const serializedHistory = {
         ...history,
         appointment_id: appointmentId,
         previous_values:
-            history.previous_values == null
-                ? null
-                : JSON.stringify(history.previous_values),
-        new_values:
-            history.new_values == null
-                ? null
-                : JSON.stringify(history.new_values),
+            history.previous_values == null ? null : JSON.stringify(history.previous_values),
+        new_values: history.new_values == null ? null : JSON.stringify(history.new_values),
     };
 
     const rows = await selectRows(
@@ -358,11 +352,9 @@ async function upsertHistory(queryInterface, appointmentId, history, transaction
             { transaction },
         );
     } else {
-        await queryInterface.bulkInsert(
-            "appointment_history",
-            [serializedHistory],
-            { transaction },
-        );
+        await queryInterface.bulkInsert("appointment_history", [serializedHistory], {
+            transaction,
+        });
     }
 }
 
@@ -700,10 +692,7 @@ async function upsertAuditLog(queryInterface, adminId, record, timestamp, transa
         target_type: record.targetType,
         target_id: String(record.targetId),
         target_description: record.description,
-        changes:
-            record.changes == null
-                ? null
-                : JSON.stringify(record.changes),
+        changes: record.changes == null ? null : JSON.stringify(record.changes),
         reason,
         result: "Success",
         occurred_at: record.occurredAt,
