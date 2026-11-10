@@ -17,6 +17,7 @@ const notificationScript = await readFile(
     path.resolve("public/js/doctor-notifications.js"),
     "utf8",
 );
+const sidebarScript = await readFile(path.resolve("public/js/patient-sidebar.js"), "utf8");
 const html = pug.renderFile(path.resolve("views/doctor/notifications.pug"), {
     pageTitle: "Notificaciones | SaludVital",
     activeNav: "notifications",
@@ -66,6 +67,37 @@ try {
         await page.locator(".sv-sidebar").evaluate((sidebar) => getComputedStyle(sidebar).position),
         "fixed",
     );
+    await page.evaluate((source) => {
+        window.__notificationIntervals = [];
+        window.__setUnreadCount = (count) => {
+            window.__unreadCount = count;
+        };
+        window.__unreadCount = 1;
+        window.setInterval = (callback) => {
+            window.__notificationIntervals.push(callback);
+            return 1;
+        };
+        window.fetch = async () => ({
+            ok: true,
+            json: async () => ({ success: true, unreadCount: window.__unreadCount }),
+        });
+        const script = document.createElement("script");
+        script.textContent = source;
+        document.body.append(script);
+    }, sidebarScript);
+    await page.locator(".sv-notification-count").getByText("1").waitFor();
+    await page.evaluate(async () => {
+        window.__setUnreadCount(2);
+        await window.__notificationIntervals[0]();
+    });
+    await page.locator(".sv-notification-count").getByText("2").waitFor();
+    await page.evaluate(() => {
+        window.__setUnreadCount(0);
+        document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.locator(".sv-notification-count").waitFor({ state: "detached" });
+    assert.equal(await page.locator(".sv-bell").getAttribute("aria-label"), "Notificaciones");
+
     await page.setViewportSize({ width: 1280, height: 900 });
     assert.equal(
         await page.locator(".sv-layout").evaluate((layout) => getComputedStyle(layout).display),
@@ -75,7 +107,7 @@ try {
     await page.evaluate((source) => {
         window.fetch = async () => ({
             ok: true,
-            json: async () => ({ unreadCount: 0 }),
+            json: async () => ({ success: true, unreadCount: 0 }),
         });
         const script = document.createElement("script");
         script.textContent = source;
