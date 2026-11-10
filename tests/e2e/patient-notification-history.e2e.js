@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
@@ -93,12 +93,13 @@ try {
     if ((await page.locator("[data-history-day-heading]:visible").count()) !== 4) {
         throw new Error("The first page did not group notifications under their dates.");
     }
+    await mkdir(path.resolve("test-results"), { recursive: true });
     await page.locator(".notifications-history").screenshot({
-        path: path.resolve("..", "patient-notification-history-preview.png"),
+        path: path.resolve("test-results", "patient-notification-history-preview.png"),
     });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator(".notifications-history").screenshot({
-        path: path.resolve("..", "patient-notification-history-mobile-preview.png"),
+        path: path.resolve("test-results", "patient-notification-history-mobile-preview.png"),
     });
     for (const width of [390, 360, 320, 768, 1365]) {
         await page.setViewportSize({ width, height: 844 });
@@ -122,7 +123,7 @@ try {
     await page.locator("[data-history-row]").nth(1).click();
     await page.getByText("Notificación recibida").waitFor();
     await page.locator("[data-appointment-details-dialog]").screenshot({
-        path: path.resolve("..", "patient-notification-detail-preview.png"),
+        path: path.resolve("test-results", "patient-notification-detail-preview.png"),
     });
     if ((await page.locator("[data-appointment-channel]").textContent()) !== "Correo electrónico") {
         throw new Error("The notification channel was missing from its detail dialog.");

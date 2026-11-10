@@ -72,6 +72,7 @@ doctorRoutes.get(
     async (req, res, next) => {
         try {
             return res.json({
+                success: true,
                 unreadCount: await getDoctorUnreadNotificationCount(req.auth.userId),
             });
         } catch (error) {
