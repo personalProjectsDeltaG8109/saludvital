@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import pug from "pug";
+import { canPatientRescheduleAppointment } from "../../src/modules/patient/services/appointmentRescheduleEligibility.js";
 
 const projectRoot = process.cwd();
 const patientRoutesSource = await readFile(
@@ -9,16 +10,20 @@ const patientRoutesSource = await readFile(
 );
 const appointmentsTemplate = path.join(projectRoot, "views/patient/appointments.pug");
 
-function renderAppointmentsPage(history = []) {
-    const inProgressAppointment = {
+function renderAppointmentsPage(
+    history = [],
+    { status = "In Progress", startAt = "2026-11-03T15:00:00.000Z", canReschedule = false } = {},
+) {
+    const appointmentRecord = {
         id: 27,
-        start_at: "2026-11-03T15:00:00.000Z",
-        end_at: "2026-11-03T15:30:00.000Z",
-        status: { name: "In Progress" },
+        start_at: startAt,
+        end_at: new Date(new Date(startAt).getTime() + 30 * 60 * 1000),
+        status: { name: status },
         specialty: { name: "Medicina General" },
         doctor: { display_name: "Doctor de prueba" },
         doctor_label: "Doctor de prueba",
         history,
+        can_reschedule: canReschedule,
     };
 
     return pug.renderFile(appointmentsTemplate, {
@@ -28,7 +33,7 @@ function renderAppointmentsPage(history = []) {
         patientPhotoUrl: null,
         notificationCount: 0,
         notificationLabel: "Notificaciones",
-        appointments: [inProgressAppointment],
+        appointments: [appointmentRecord],
         appointmentStats: [
             { key: "all", label: "Total de citas", status: null },
             { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
@@ -67,6 +72,48 @@ describe("patient appointments view", () => {
         expect(html).toContain("Doctor de prueba");
         expect(html).toContain("Fecha y hora");
         expect(html).toContain("Estado actual");
+    });
+
+    test("hides rescheduling for confirmed appointments with less than 24 hours remaining", () => {
+        const now = Date.parse("2026-11-09T12:00:00.000Z");
+        const appointment = {
+            start_at: new Date(now + 23 * 60 * 60 * 1000),
+            status: { name: "Confirmed" },
+            history: [],
+        };
+        const canReschedule = canPatientRescheduleAppointment(appointment, now);
+        const html = renderAppointmentsPage([], {
+            status: appointment.status.name,
+            startAt: appointment.start_at,
+            canReschedule,
+        });
+
+        expect(canReschedule).toBe(false);
+        expect(html).not.toContain("appointment-reschedule-link");
+    });
+
+    test("keeps rescheduling available at the exact 24-hour boundary", () => {
+        const now = Date.parse("2026-11-09T12:00:00.000Z");
+        const appointment = {
+            start_at: new Date(now + 24 * 60 * 60 * 1000),
+            status: { name: "Confirmed" },
+            history: [],
+        };
+        const canReschedule = canPatientRescheduleAppointment(appointment, now);
+        const html = renderAppointmentsPage([], {
+            status: appointment.status.name,
+            startAt: appointment.start_at,
+            canReschedule,
+        });
+
+        expect(canReschedule).toBe(true);
+        expect(html).toContain("appointment-reschedule-link");
+    });
+
+    test("prepares the list action with the shared rescheduling eligibility rule", () => {
+        expect(patientRoutesSource).toMatch(
+            /appointment\.can_reschedule\s*=\s*!previewMode\s*&&\s*canPatientRescheduleAppointment\(appointment, now\)/,
+        );
     });
 
     test("labels appointment creation and no-show history events accurately", () => {

@@ -6,7 +6,18 @@
 - Pediatrics bookings and reschedules now calculate the patient's age from the persisted date of birth and the appointment's local calendar date in `America/Bogota`. Patients may use Pediatrics through age 17; an appointment on or after their 18th birthday is rejected.
 - The eligibility check runs when listing available appointment times and again in the transactional booking or rescheduling service. It recognizes the persisted specialty names `Pediatría` and `Pediatrics`; missing or invalid birth dates fail safely.
 - Patient rescheduling is available only when the original appointment is at least 24 hours away. The list and protected endpoint enforce this rule. The replacement appointment must also start at least five hours after the request; this boundary applies to available-time results and the protected endpoint used by web and WhatsApp rescheduling. New bookings and administrator edits retain their existing 30-minute minimum.
+- The “My Appointments” rescheduling shortcut uses the same shared eligibility rule as the dashboard. It is hidden when fewer than 24 hours remain and remains available at the exact 24-hour boundary.
 - No schema or dependency change was needed. Existing patient birth dates, specialty records, appointment transactions, and schedule services are reused.
+
+## Regression coverage
+
+- `tests/unit/patientAppointmentsView.test.js` covers the hidden shortcut below 24 hours, the exact 24-hour boundary, and use of the shared eligibility rule in the appointments route.
+
+## Follow-up verification
+
+- Patient appointments unit suite: 7 tests passed. All unit suites: 104 suites and 823 tests passed.
+- `npm run lint` and `npm run css:build` passed in the isolated validation copy.
+- Full Jest suite: 104 of 126 suites and 824 of 1,022 tests passed. The other 22 suites require local HTTP sockets or MySQL, which were blocked in the sandbox (`EACCES` / connection errors).
 
 ## Verification
 
