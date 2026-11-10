@@ -7,7 +7,6 @@ import {
     WhatsAppVerification,
     WhatsAppChatbotRuntimeSetting,
     ChatbotFlowVersion,
-    Notification,
 } from "../../../models/associations.js";
 import WhatsAppConversation from "../../../models/WhatsAppConversation.js";
 import WhatsAppMessage from "../../../models/WhatsAppMessage.js";
@@ -23,6 +22,7 @@ import {
 } from "./appointmentService.js";
 import { sendWhatsAppIdentityCode } from "./resendEmailService.js";
 import { sendWhatsAppReply } from "./whatsappService.js";
+import { processMetaDeliveryStatus } from "./whatsappDeliveryStatusService.js";
 
 const META_PROVIDER = "Meta WhatsApp Cloud API";
 const DEFAULT_RETENTION_DAYS = 30;
@@ -946,41 +946,6 @@ async function processInboundMessage(message, accountId) {
     }
 }
 
-async function processDeliveryStatus(status, accountId) {
-    if (!status || typeof status.id !== "string") return;
-    const allowedStatuses = new Set(["sent", "delivered", "read", "failed"]);
-    if (!allowedStatuses.has(status.status)) return;
-    await WhatsAppMessage.update(
-        { delivery_status: status.status },
-        {
-            where: {
-                provider_name: META_PROVIDER,
-                provider_account_id: accountId,
-                provider_message_id: status.id,
-            },
-        },
-    );
-    const providerErrorCode = Number(status.errors?.[0]?.code);
-    await Notification.update(
-        {
-            provider_delivery_status: status.status,
-            ...(status.status === "failed"
-                ? {
-                      last_error: Number.isSafeInteger(providerErrorCode)
-                          ? `Meta WhatsApp delivery failed with provider code ${providerErrorCode}.`
-                          : "Meta WhatsApp reported a delivery failure.",
-                  }
-                : {}),
-        },
-        {
-            where: {
-                channel: "WhatsApp",
-                provider_message_id: status.id,
-            },
-        },
-    );
-}
-
 export function verifyMetaWebhookSignature(rawBody, signature, appSecret) {
     if (!Buffer.isBuffer(rawBody) || typeof signature !== "string" || !appSecret) return false;
     const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
@@ -1014,7 +979,7 @@ export async function processMetaWhatsAppWebhook(payload) {
             const phoneNumberId = value.metadata?.phone_number_id;
             if (phoneNumberId !== accountId || change.field !== "messages") continue;
             for (const status of value.statuses || [])
-                await processDeliveryStatus(status, accountId);
+                await processMetaDeliveryStatus(status, accountId);
             for (const message of value.messages || [])
                 await processInboundMessage(message, accountId);
         }

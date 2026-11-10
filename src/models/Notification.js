@@ -72,6 +72,10 @@ const Notification = database.define(
             type: DataTypes.STRING(30),
             allowNull: true,
         },
+        provider_delivery_status_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         last_error: {
             type: DataTypes.TEXT,
             allowNull: true,
