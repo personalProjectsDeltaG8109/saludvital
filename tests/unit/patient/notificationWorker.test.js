@@ -1,4 +1,5 @@
-﻿import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { Op } from "sequelize";
 
 jest.unstable_mockModule("../../../config/database.js", () => ({
     default: {
@@ -140,15 +141,25 @@ describe("appointment notification worker", () => {
         );
     });
 
-    test("moves an interrupted processing record to uncertain instead of retrying it", async () => {
+    test("marks processing records older than ten minutes uncertain without redelivering them", async () => {
         Notification.findAll.mockResolvedValue([]);
 
         await processNotificationBatch();
 
-        expect(Notification.update).toHaveBeenCalledWith(
-            expect.objectContaining({ status: "OutcomeUnknown" }),
+        const [recoveryValues, recoveryOptions] = Notification.update.mock.calls.find(
+            ([values]) => values.status === "OutcomeUnknown",
+        );
+        expect(recoveryValues).toEqual({
+            status: "OutcomeUnknown",
+            last_error:
+                "El proveedor no confirmó el resultado del envío. Verifica el estado antes de reintentar.",
+        });
+        expect(recoveryOptions).toEqual(
             expect.objectContaining({
-                where: expect.objectContaining({ status: "Processing" }),
+                where: {
+                    status: "Processing",
+                    updated_at: { [Op.lt]: new Date("2026-11-01T14:50:00.000Z") },
+                },
                 transaction,
             }),
         );
@@ -160,8 +171,8 @@ describe("appointment notification worker", () => {
                 skipLocked: true,
             }),
         );
+        expect(deliverNotification).not.toHaveBeenCalled();
     });
-
     // Retry transient provider failures using the configured progressive delay.
     test("reschedules transient provider errors for a retry", async () => {
         deliverNotification.mockRejectedValue(
