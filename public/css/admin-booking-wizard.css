@@ -115,9 +115,9 @@
     font-size: 22px;
     font-weight: 700;
 }
-.admin-booking-card:hover,
-.admin-booking-days button:hover:not(:disabled),
-.admin-booking-time-grid button:hover {
+.admin-booking-card:hover:not(.is-selected),
+.admin-booking-days button:hover:not(:disabled):not(.is-selected),
+.admin-booking-time-grid button:hover:not(.is-selected) {
     border-color: var(--wizard-blue);
     background: #f0f8ff;
 }

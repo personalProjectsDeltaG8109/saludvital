@@ -93,7 +93,7 @@ Implementation: [appointmentService.js](src/modules/patient/services/appointment
 | Data access               | Sequelize 6, Sequelize CLI                          | Models, associations, transactions, migrations, and seeders.                           |
 | Authentication            | bcrypt, jsonwebtoken, cookie-parser                 | Password hashing and verification, signed JWT cookies, and cookie parsing.             |
 | Request protection        | Helmet, express-rate-limit                          | Security headers and request throttling.                                               |
-| Account email             | Resend API                                           | Asynchronous email verification and password recovery through an outbox.               |
+| Account email             | Resend API                                          | Asynchronous email verification and password recovery through an outbox.               |
 | Messaging                 | Meta WhatsApp Cloud API, Resend, Inalambria Express | Provider adapters for WhatsApp, notification email, identity codes, and Colombian SMS. |
 | Automated tests           | Jest, Supertest                                     | Unit tests, HTTP integration tests, and database integration tests.                    |
 | Browser and accessibility | Playwright, @axe-core/playwright                    | Browser workflows, viewport checks, and automated accessibility checks.                |
@@ -206,14 +206,14 @@ cp .env.example .env
 
 Set these values for your local environment:
 
-| Variables                                                            | Purpose                                                                     |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `NODE_ENV`, `PORT`                                                   | Execution mode and HTTP port. Use `development` locally.                    |
-| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`            | Connection to your local development database.                              |
-| `JWT_SECRET`, `JWT_EXPIRES_IN`                                       | A generated signing secret and token lifetime.                              |
-| `APP_BASE_URL`                                                       | Public or local base address used in account email links.                   |
-| `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME` | Resend settings for account email and email notifications.                    |
-| `NOTIFICATION_DELIVERY_ENABLED`                                      | Leave `false` until messaging providers and test recipients are configured. |
+| Variables                                                 | Purpose                                                                     |
+| --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `NODE_ENV`, `PORT`                                        | Execution mode and HTTP port. Use `development` locally.                    |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Connection to your local development database.                              |
+| `JWT_SECRET`, `JWT_EXPIRES_IN`                            | A generated signing secret and token lifetime.                              |
+| `APP_BASE_URL`                                            | Public or local base address used in account email links.                   |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME` | Resend settings for account email and email notifications.                  |
+| `NOTIFICATION_DELIVERY_ENABLED`                           | Leave `false` until messaging providers and test recipients are configured. |
 
 Additional provider variables are documented in `.env.example`. Replace example values locally; do not commit the resulting file.
 
