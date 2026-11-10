@@ -40,6 +40,10 @@ const WhatsAppMessage = database.define(
             type: DataTypes.STRING(30),
             allowNull: true,
         },
+        delivery_status_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         received_at: {
             type: DataTypes.DATE,
             allowNull: true,
