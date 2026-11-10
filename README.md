@@ -93,7 +93,7 @@ Implementation: [appointmentService.js](src/modules/patient/services/appointment
 | Data access               | Sequelize 6, Sequelize CLI                          | Models, associations, transactions, migrations, and seeders.                           |
 | Authentication            | bcrypt, jsonwebtoken, cookie-parser                 | Password hashing and verification, signed JWT cookies, and cookie parsing.             |
 | Request protection        | Helmet, express-rate-limit                          | Security headers and request throttling.                                               |
-| Account email             | Nodemailer, SMTP                                    | Asynchronous email verification and password recovery through an outbox.               |
+| Account email             | Resend API                                           | Asynchronous email verification and password recovery through an outbox.               |
 | Messaging                 | Meta WhatsApp Cloud API, Resend, Inalambria Express | Provider adapters for WhatsApp, notification email, identity codes, and Colombian SMS. |
 | Automated tests           | Jest, Supertest                                     | Unit tests, HTTP integration tests, and database integration tests.                    |
 | Browser and accessibility | Playwright, @axe-core/playwright                    | Browser workflows, viewport checks, and automated accessibility checks.                |
@@ -118,7 +118,7 @@ flowchart TD
     S --> V["Pug templates"]
     V --> U
     DB --> W["Outbox and notification workers"]
-    W --> P["SMTP, Resend, WhatsApp, SMS"]
+    W --> P["Resend, WhatsApp, SMS"]
     P -->|"WhatsApp webhook events"| A
 ```
 
@@ -162,7 +162,7 @@ These are implemented controls, not a security certification. Deployment-related
 
 | Component                     | Implementation and requirements                                                                                                                                                                                                                               |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Account email**             | `EmailOutbox` jobs are processed through Nodemailer/SMTP for verification and recovery. Requires SMTP credentials and a correct `APP_BASE_URL`.                                                                                                               |
+| **Account email**             | `EmailOutbox` jobs are processed through the Resend API for verification and recovery. Requires a verified sender and a correct `APP_BASE_URL`.                                                                                                               |
 | **Appointment notifications** | Workers process reminders, rescheduling, and cancellation events using patient channel preferences. Delivery remains disabled unless `NOTIFICATION_DELIVERY_ENABLED=true`.                                                                                    |
 | **Email notifications**       | Resend adapter with configurable sender and message content.                                                                                                                                                                                                  |
 | **SMS**                       | Inalambria Express adapter for Colombian mobile numbers, with error classification for retry decisions.                                                                                                                                                       |
@@ -178,7 +178,7 @@ Provider acceptance, delivery, and reading are different events. A configured ke
 - **Node.js 24** and npm, matching the CI runtime.
 - A reachable **MySQL server**; CI uses MySQL 8.4.
 - Git.
-- SMTP access if you want to exercise registration verification or password recovery by email.
+- A Resend API key and verified sender if you want to exercise registration verification or password recovery by email.
 
 ### 1. Install the Application
 
@@ -212,7 +212,7 @@ Set these values for your local environment:
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`            | Connection to your local development database.                              |
 | `JWT_SECRET`, `JWT_EXPIRES_IN`                                       | A generated signing secret and token lifetime.                              |
 | `APP_BASE_URL`                                                       | Public or local base address used in account email links.                   |
-| `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM` | SMTP settings for account email.                                            |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME` | Resend settings for account email and email notifications.                    |
 | `NOTIFICATION_DELIVERY_ENABLED`                                      | Leave `false` until messaging providers and test recipients are configured. |
 
 Additional provider variables are documented in `.env.example`. Replace example values locally; do not commit the resulting file.
