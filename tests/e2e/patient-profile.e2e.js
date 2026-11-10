@@ -11,17 +11,17 @@ const sidebarScript = await readFile(path.resolve("public/js/patient-sidebar.js"
 const html = pug.renderFile(path.resolve("views/patient/profile.pug"), {
     pageTitle: "Mi perfil | SaludVital",
     activeNav: "profile",
-    patientName: "Juan Esteban Montoya Marín",
+    patientName: "Paciente Ejemplo",
     patientPhotoUrl: null,
     notificationCount: 2,
     patient: {
-        first_name: "Juan Esteban",
-        last_name: "Montoya Marín",
+        first_name: "Paciente",
+        last_name: "Ejemplo",
         profile_photo_url: null,
-        user: { email: "juan@example.com", pending_email: null },
-        phone: "3001234567",
+        user: { email: "paciente.ejemplo@example.com", pending_email: null },
+        phone: "3000000000",
         document_type: "CC",
-        document_number: "1002576545",
+        document_number: "1234567890",
         municipality: "Chinchiná",
         department: "Caldas",
         date_of_birth: "2002-05-02",
@@ -104,7 +104,7 @@ try {
     assert.equal(await page.getByRole("heading", { name: "Contacto de emergencia" }).count(), 1);
     assert.equal(
         (await page.locator(".profile-identity-copy h2").textContent()).trim(),
-        "Juan Esteban Montoya Marín",
+        "Paciente Ejemplo",
     );
 
     if (process.env.PATIENT_PROFILE_SCREENSHOT_DIR) {
