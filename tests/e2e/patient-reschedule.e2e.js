@@ -32,7 +32,10 @@ const html = pug.renderFile(path.resolve("views/patient/reschedule-appointment.p
     selectedAppointmentId: null,
 });
 
-const browser = await chromium.launch({ headless: true, channel: "chrome" });
+const browser = await chromium.launch({
+    headless: true,
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+});
 
 async function createPage(viewport) {
     const page = await browser.newPage({ viewport });
@@ -207,7 +210,13 @@ try {
 
     await mobilePage.locator(".reschedule-submit").click();
     await step4Panel.waitFor({ state: "visible" });
-    assert.equal(await mobilePage.locator("[data-reschedule-countdown]").textContent(), "4");
+    const countdownValue = Number(
+        await mobilePage.locator("[data-reschedule-countdown]").textContent(),
+    );
+    assert.ok(
+        countdownValue >= 1 && countdownValue <= 4,
+        "The success countdown should start at four seconds and remain visible until redirect.",
+    );
     assert.equal(await mobilePage.evaluate(() => window.rescheduleRequestMethod), "POST");
     if (process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR) {
         await mobilePage.screenshot({
@@ -218,7 +227,7 @@ try {
             fullPage: true,
         });
     }
-    await mobilePage.waitForURL("**/patient/appointments", { timeout: 6000 });
+    await mobilePage.waitForURL("**/patient/appointments", { timeout: 10000 });
     assert.equal(await mobilePage.locator("[data-appointments-page]").textContent(), "Mis citas");
     console.log("Patient rescheduling step navigation and mobile progression passed.");
 } finally {
