@@ -165,8 +165,25 @@
 .appointment-tools {
     padding: 11px 13px;
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(150px, .8fr));
+    grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(125px, .8fr));
     gap: 9px;
+}
+
+.appointment-filter-submit {
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--appointments-secondary);
+    border-radius: 8px;
+    color: #fff;
+    background: var(--appointments-secondary);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.appointment-filter-submit:hover {
+    background: var(--appointments-primary);
 }
 
 .appointment-search,
@@ -578,6 +595,21 @@
     font-size: 12px;
 }
 
+.appointment-pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.appointment-pagination a {
+    color: var(--appointments-secondary);
+    font-weight: 700;
+}
+
+.appointment-pagination span[aria-disabled="true"] {
+    color: #9aaabd;
+}
+
 .appointment-no-results a {
     color: var(--appointments-secondary);
     font-weight: 700;
@@ -621,7 +653,15 @@
 
 @media (max-width: 1000px) and (min-width: 761px) {
     .appointment-tools {
-        grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(130px, .8fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .appointment-search {
+        grid-column: 1 / -1;
+    }
+
+    .appointment-filter-submit {
+        grid-column: 1 / -1;
     }
 
     .appointment-table th,
@@ -741,7 +781,7 @@
 
     .appointment-search {
         height: 38px;
-        grid-column: 1;
+        grid-column: 1 / -1;
     }
 
     .appointment-select {
@@ -789,6 +829,22 @@
     .appointment-select.desktop-filter {
         display: flex;
         grid-column: 3;
+    }
+
+    .appointment-page-size {
+        width: 100%;
+        grid-column: 1 / -1;
+        padding: 0 10px;
+    }
+
+    .appointment-page-size select {
+        position: static;
+        width: 100%;
+        opacity: 1;
+    }
+
+    .appointment-filter-submit {
+        grid-column: 1 / -1;
     }
 
     .appointment-table-wrap {
@@ -882,7 +938,16 @@
 
     .appointment-summary {
         padding: 8px 0 0;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
         font-size: 10px;
+    }
+
+    .appointment-pagination {
+        width: 100%;
+        justify-content: space-between;
+        font-size: 11px;
     }
 
     .appointment-details-dialog {

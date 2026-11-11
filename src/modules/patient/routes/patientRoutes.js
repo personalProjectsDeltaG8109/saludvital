@@ -46,6 +46,7 @@ import {
 } from "../services/notificationService.js";
 import { getPatientProfile } from "../services/profileService.js";
 import { getPatientClinicalHistory } from "../services/clinicalHistoryService.js";
+import { getPatientAppointmentList } from "../services/patientAppointmentListService.js";
 import { getDepartments, getMunicipalities } from "../../auth/services/locationService.js";
 
 // Define the routes available to patients.
@@ -323,32 +324,11 @@ patientRoutes.get(
     requireRole("Patient"),
     async (req, res, next) => {
         try {
-            const patient = await PatientModel.findOne({
-                where: { user_id: req.auth.userId },
-                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
-            });
-            const storedAppointments = patient
-                ? await Appointment.findAll({
-                      where: { patient_id: patient.id },
-                      include: [
-                          { model: Doctor, as: "doctor" },
-                          { model: Specialities, as: "specialty", attributes: ["name"] },
-                          { model: AppointmentStatus, as: "status", attributes: ["name"] },
-                          {
-                              model: AppointmentHistory,
-                              as: "history",
-                              attributes: [
-                                  "event_type",
-                                  "previous_values",
-                                  "new_values",
-                                  "occurred_at",
-                              ],
-                          },
-                      ],
-                      order: [["start_at", "DESC"]],
-                  })
-                : [];
             const previewMode = process.env.NODE_ENV !== "production" && req.query.preview === "1";
+            const appointmentList = previewMode
+                ? null
+                : await getPatientAppointmentList(req.auth.userId, req.query);
+            const storedAppointments = appointmentList?.appointments || [];
             const previewAppointments = [
                 {
                     id: "demo-1",
@@ -403,29 +383,42 @@ patientRoutes.get(
                     return appointment;
                 },
             );
-            // Keep the closest future confirmed appointments first and retain recent history after them.
-            appointments.sort((first, second) => {
-                const firstDate = new Date(first.start_at).getTime();
-                const secondDate = new Date(second.start_at).getTime();
-                const firstIsUpcomingConfirmed =
-                    first.status?.name === "Confirmed" && firstDate > now;
-                const secondIsUpcomingConfirmed =
-                    second.status?.name === "Confirmed" && secondDate > now;
-
-                if (firstIsUpcomingConfirmed !== secondIsUpcomingConfirmed) {
-                    return firstIsUpcomingConfirmed ? -1 : 1;
-                }
-
-                return firstIsUpcomingConfirmed ? firstDate - secondDate : secondDate - firstDate;
-            });
             return res.render("patient/appointments", {
                 pageTitle: "Mis citas | SaludVital",
                 activeNav: "appointments",
                 appointments,
-                appointmentStats,
-                specialties: [
-                    ...new Set(appointments.map((item) => item.specialty?.name).filter(Boolean)),
-                ],
+                appointmentStats: previewMode
+                    ? appointmentStats.map((stat) => ({
+                          ...stat,
+                          count: stat.status
+                              ? previewAppointments.filter(
+                                    (appointment) => appointment.status.name === stat.status,
+                                ).length
+                              : previewAppointments.length,
+                      }))
+                    : appointmentList.stats,
+                specialties: previewMode
+                    ? [
+                          ...new Set(
+                              previewAppointments
+                                  .map((item) => item.specialty?.name)
+                                  .filter(Boolean),
+                          ),
+                      ]
+                    : appointmentList.specialties,
+                filters: previewMode
+                    ? { filter: "all", status: "", search: "", specialty: "" }
+                    : appointmentList.filters,
+                pagination: previewMode
+                    ? {
+                          page: 1,
+                          pageSize: 10,
+                          total: previewAppointments.length,
+                          totalPages: 1,
+                          firstResult: 1,
+                          lastResult: previewAppointments.length,
+                      }
+                    : appointmentList.pagination,
                 ...(await getPatientHeader(req.auth.userId)),
                 previewMode,
                 previewAvailable: process.env.NODE_ENV !== "production",
