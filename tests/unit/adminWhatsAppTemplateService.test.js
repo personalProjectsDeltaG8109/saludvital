@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "@jest/globals";
 import { getAdminWhatsAppTemplateConfiguration } from "../../src/modules/admin/services/adminWhatsAppTemplateService.js";
 
 const environmentKeys = [
+    "META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME",
     "META_WHATSAPP_REMINDER_TEMPLATE_NAME",
     "META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME",
     "META_WHATSAPP_CANCELLATION_TEMPLATE_NAME",
@@ -19,6 +20,7 @@ afterEach(() => {
 
 describe("administrator WhatsApp template configuration", () => {
     test("reports supported application templates and their local configuration only", () => {
+        delete process.env.META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME;
         process.env.META_WHATSAPP_REMINDER_TEMPLATE_NAME = "appointment_reminder";
         delete process.env.META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME;
         delete process.env.META_WHATSAPP_CANCELLATION_TEMPLATE_NAME;
@@ -26,11 +28,12 @@ describe("administrator WhatsApp template configuration", () => {
         const templates = getAdminWhatsAppTemplateConfiguration();
 
         expect(templates.map(({ eventType }) => eventType)).toEqual([
+            "appointment_confirmation",
             "appointment_reminder",
             "appointment_reschedule",
             "appointment_cancellation",
         ]);
-        expect(templates[0]).toMatchObject({
+        expect(templates[1]).toMatchObject({
             name: "Recordatorio de cita",
             configured: true,
             configurationStatus: "Configured",
@@ -38,18 +41,30 @@ describe("administrator WhatsApp template configuration", () => {
         });
         expect(templates[0]).not.toHaveProperty("content");
         expect(templates[0]).not.toHaveProperty("language");
-        expect(templates.slice(1).every((template) => !template.configured)).toBe(true);
+        expect(
+            templates
+                .filter(({ eventType }) => eventType !== "appointment_reminder")
+                .every((template) => !template.configured),
+        ).toBe(true);
         expect(JSON.stringify(templates)).not.toContain("META_WHATSAPP_REMINDER_TEMPLATE_NAME");
         expect(JSON.stringify(templates)).not.toContain("Aprobada");
     });
 
     test("reports provider template names only as configured state", () => {
+        process.env.META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME = "confirmation_notice";
         delete process.env.META_WHATSAPP_REMINDER_TEMPLATE_NAME;
         process.env.META_WHATSAPP_RESCHEDULE_TEMPLATE_NAME = "reschedule_notice";
 
         const templates = getAdminWhatsAppTemplateConfiguration();
 
-        expect(templates[1].configured).toBe(true);
+        expect(templates[0]).toMatchObject({
+            eventType: "appointment_confirmation",
+            name: "Confirmación de cita",
+            configured: true,
+            providerStatus: "Unknown",
+        });
+        expect(templates[2].configured).toBe(true);
         expect(JSON.stringify(templates)).not.toContain("reschedule_notice");
+        expect(JSON.stringify(templates)).not.toContain("confirmation_notice");
     });
 });
