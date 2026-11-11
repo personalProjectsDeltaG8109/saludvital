@@ -1,0 +1,48 @@
+extends ./layout
+
+block legalBody
+    main.legal-article(aria-label="Ayuda de SaludVital")
+        p.legal-version Respuestas para tu cuenta de demostración
+
+        section#sign-in.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") ↗
+                h3 ¿Cómo ingreso?
+            p Abre la página de inicio de sesión y utiliza una cuenta de prueba habilitada para el rol correspondiente.
+
+        section#patient-help.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") P
+                h3 ¿Qué puedo hacer como paciente?
+            p Puedes revisar tu panel, gestionar citas de demostración, consultar notificaciones y ver la información ficticia disponible para tu cuenta.
+
+        section#doctor-help.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") +
+                h3 ¿Qué puedo hacer como médico?
+            p Según los permisos de la cuenta de prueba, puedes revisar la agenda, consultar pacientes asignados y completar consultas simuladas.
+
+        section#admin-help.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") ⚙
+                h3 ¿Qué puedo hacer como administrador?
+            p El panel administrativo permite revisar y gestionar la información ficticia de demostración según el acceso asignado.
+
+        section#more-help.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") ?
+                h3 ¿Necesitas más ayuda?
+            p Comunícate con el equipo responsable de tu demostración o actividad académica para recibir ayuda con tu cuenta de prueba.
+
+        .legal-callout.legal-callout-warning(role="note")
+            span.legal-callout-symbol(aria-hidden="true") !
+            p SaludVital es un proyecto académico y no presta servicios médicos reales. No registres datos personales ni clínicos verdaderos y no utilices la plataforma para emergencias.
+
+        a.legal-primary-link(href="/login")
+            | Ir al inicio de sesión
+            span(aria-hidden="true") →

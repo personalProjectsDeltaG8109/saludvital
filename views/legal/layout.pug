@@ -1,0 +1,102 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#123B73")
+        meta(name="description", content=pageDescription)
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/login-footer.css")
+
+    body.legal-page
+        main.legal-split(aria-label="Información legal de SaludVital")
+            aside.legal-brand-panel
+                a.legal-brand(href="/login", aria-label="SaludVital, ir al inicio de sesión")
+                    img.legal-brand-logo(
+                        src="/brand/login/logo-login-mobile.png",
+                        alt="SaludVital",
+                        width="280",
+                        height="94"
+                    )
+
+                .legal-brand-copy
+                    p.legal-eyebrow Proyecto académico ADSO · SENA
+                    h1
+                        | Tu salud,
+                        br
+                        span nuestra prioridad.
+                    p= brandMessage
+
+                ul.legal-benefits(aria-label="Información para usuarios")
+                    li
+                        span.legal-benefit-icon(aria-hidden="true")
+                            span.legal-icon-symbol ✓
+                        span Información clara y fácil de consultar.
+                    li
+                        span.legal-benefit-icon(aria-hidden="true")
+                            span.legal-icon-symbol ◇
+                        span Privacidad y uso responsable de datos ficticios.
+                    li
+                        span.legal-benefit-icon(aria-hidden="true")
+                            span.legal-icon-symbol ♥
+                        span Ayuda para conocer la plataforma.
+
+                img.legal-doctor-image(
+                    src="/brand/login/girl.png",
+                    alt="",
+                    aria-hidden="true",
+                    width="600",
+                    height="400"
+                )
+
+                p.legal-brand-note
+                    span(aria-hidden="true") ♥
+                    | SaludVital · Proyecto educativo del SENA
+
+            section.legal-document-panel(aria-labelledby="legal-page-title")
+                header.legal-document-header
+                    a.legal-mobile-brand(href="/login", aria-label="Volver al inicio de sesión")
+                        img(
+                            src="/brand/login/logo-login-mobile.png",
+                            alt="SaludVital",
+                            width="220",
+                            height="74"
+                        )
+
+                    nav.legal-nav(aria-label="Enlaces legales")
+                        a(
+                            class=activeLegalPage === "privacy" ? "is-active" : "",
+                            href="/privacy",
+                            aria-current=activeLegalPage === "privacy" ? "page" : undefined
+                        ) Privacidad
+                        a(
+                            class=activeLegalPage === "terms" ? "is-active" : "",
+                            href="/terms",
+                            aria-current=activeLegalPage === "terms" ? "page" : undefined
+                        ) Términos
+                        a(
+                            class=activeLegalPage === "help" ? "is-active" : "",
+                            href="/help",
+                            aria-current=activeLegalPage === "help" ? "page" : undefined
+                        ) Ayuda
+
+                    a.legal-login-button(href="/login")
+                        | Iniciar sesión
+                        span(aria-hidden="true") →
+
+                .legal-breadcrumb(aria-label="Ruta de navegación")
+                    a(href="/login") Inicio
+                    span(aria-hidden="true") /
+                    span(aria-current="page")= pageHeading
+
+                header.legal-page-heading
+                    p.legal-eyebrow= pageEyebrow
+                    h2#legal-page-title= pageHeading
+                    p= pageDescription
+
+                .legal-document-body
+                    block legalBody
+
+        include ../auth/partials/footer/public-footer

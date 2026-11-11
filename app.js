@@ -11,6 +11,7 @@ import { errorHandler } from "./src/middleware/errorHandler.js";
 import { authenticateTokenOptional } from "./src/middleware/authenticateToken.js";
 import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
 import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookRoutes.js";
+import legalRoutes from "./src/modules/legal/routes/legalRoutes.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFile);
@@ -40,6 +41,8 @@ app.use(authRoutes);
 app.use(adminRoutes);
 app.use(doctorRoutes);
 app.use(patientRoutes);
+// Legal Routes
+app.use(legalRoutes);
 
 // Redirect the application root to the login page.
 app.get("/", (req, res) => {
