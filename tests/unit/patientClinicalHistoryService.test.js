@@ -56,6 +56,10 @@ describe("patient clinical history service", () => {
             where: { user_id: 72 },
             attributes: ["id"],
         });
+        const countQuery = models.Consultation.count.mock.calls[0][0];
+        expect(countQuery).toMatchObject({ distinct: true, where: { status: "Completed" } });
+        expect(countQuery).not.toHaveProperty("attributes");
+        expect(countQuery).not.toHaveProperty("order");
         expect(models.Consultation.findAll).toHaveBeenCalledWith(
             expect.objectContaining({ limit: 10, offset: 10 }),
         );

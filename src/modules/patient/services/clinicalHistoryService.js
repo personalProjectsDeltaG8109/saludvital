@@ -139,7 +139,11 @@ export async function getPatientClinicalHistory(userId, query = {}) {
 
     const summaryQuery = getConsultationSummaryQuery(patientId);
     const [total, diagnosisTotal, treatmentTotal] = await Promise.all([
-        Consultation.count({ ...summaryQuery, distinct: true }),
+        Consultation.count({
+            where: summaryQuery.where,
+            include: summaryQuery.include,
+            distinct: true,
+        }),
         Diagnosis.count({
             include: [
                 {
