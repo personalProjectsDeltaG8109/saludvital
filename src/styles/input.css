@@ -2280,8 +2280,7 @@
     min-height: 100vh;
     min-height: 100svh;
     overflow-x: hidden;
-    background:
-        url("/brand/login/background-login.png") center / cover fixed no-repeat;
+    background: url("/brand/login/background-login.png") center / cover fixed no-repeat;
     color: var(--color-primary);
 }
 
