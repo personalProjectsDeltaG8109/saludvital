@@ -83,9 +83,9 @@ jobs:
             - name: Build Tailwind CSS
               run: npm run css:build
 
-            # Install Chromium and its Linux system dependencies.
+            # Install Chromium; the GitHub runner already provides its system dependencies.
             - name: Install Playwright browser
-              run: npx playwright install --with-deps chromium
+              run: npx playwright install chromium
 
             # Test the homepage, brand colors, responsiveness, and accessibility.
             - name: Run Playwright and accessibility tests
