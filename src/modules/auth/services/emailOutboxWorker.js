@@ -13,41 +13,8 @@ const VERIFICATION_TOKEN_MINUTES = environment.unverifiedRegistrationRetentionMi
 // Keep password reset tokens valid for 30 minutes.
 const PASSWORD_RESET_TOKEN_MINUTES = 30;
 
-// Build a verification URL using the configured public application URL.
-function buildVerificationUrl(token) {
-    const baseUrl = process.env.APP_BASE_URL;
-
-    if (!baseUrl) {
-        throw new Error("APP_BASE_URL must be configured.");
-    }
-
-    const parsedUrl = new URL(baseUrl);
-
-    if (
-        !["http:", "https:"].includes(parsedUrl.protocol) ||
-        parsedUrl.username ||
-        parsedUrl.password ||
-        parsedUrl.search ||
-        parsedUrl.hash
-    ) {
-        throw new Error("APP_BASE_URL is invalid.");
-    }
-
-    // Require HTTPS outside local development.
-    if (process.env.NODE_ENV === "production" && parsedUrl.protocol !== "https:") {
-        throw new Error("APP_BASE_URL must use HTTPS in production.");
-    }
-
-    parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/verify-email`;
-    parsedUrl.search = new URLSearchParams({ token }).toString();
-
-    return parsedUrl.toString();
-}
-
-/**
- * Validate the public application URL before creating a reset token.
- */
-function validatePasswordResetBaseUrl() {
+// Validate the public URL before creating either account email link.
+function getValidatedPublicBaseUrl() {
     const baseUrl = process.env.APP_BASE_URL;
 
     if (!baseUrl) {
@@ -74,11 +41,20 @@ function validatePasswordResetBaseUrl() {
     return parsedUrl;
 }
 
+function buildVerificationUrl(token) {
+    const parsedUrl = getValidatedPublicBaseUrl();
+
+    parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/verify-email`;
+    parsedUrl.search = new URLSearchParams({ token }).toString();
+
+    return parsedUrl.toString();
+}
+
 /**
  * Build a password reset URL using the validated application URL.
  */
 function buildPasswordResetUrl(token) {
-    const parsedUrl = validatePasswordResetBaseUrl();
+    const parsedUrl = getValidatedPublicBaseUrl();
 
     parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/reset-password`;
     parsedUrl.search = new URLSearchParams({ token }).toString();
@@ -317,7 +293,7 @@ export async function processNextEmailOutboxJob() {
             });
         } else if (job.eventType === "password_reset") {
             // Validate configuration before creating or invalidating reset tokens.
-            validatePasswordResetBaseUrl();
+            getValidatedPublicBaseUrl();
 
             const { email, token } = await preparePasswordResetToken(job.userId);
             const resetUrl = buildPasswordResetUrl(token);
