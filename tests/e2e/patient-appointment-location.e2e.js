@@ -113,8 +113,8 @@ async function verifyRescheduleStepper(page) {
         const invalidStep = await page.locator(".reschedule-stepper li").evaluateAll(
             (steps) =>
                 steps.find((step) => {
-                    const number = step.querySelector(".reschedule-step-button > span").getBoundingClientRect();
-                    const label = step.querySelector(".reschedule-step-button > strong").getBoundingClientRect();
+                    const number = step.querySelector(":scope > span").getBoundingClientRect();
+                    const label = step.querySelector(":scope > strong").getBoundingClientRect();
                     const stepBounds = step.getBoundingClientRect();
                     const connector = getComputedStyle(step, "::after").content;
 

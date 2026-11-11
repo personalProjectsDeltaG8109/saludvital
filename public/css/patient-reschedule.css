@@ -407,33 +407,44 @@
 .reschedule-stepper li {
     min-width: 0;
     min-height: 50px;
-    display: block;
-    border: 1px solid #e0ebf5;
-    border-radius: 10px;
-    color: #59718d;
-    background: #fff;
-}
-.reschedule-stepper li:not(:last-child)::after {
-    display: none;
-    content: none;
-}
-.reschedule-stepper .reschedule-step-button {
-    min-height: 50px;
     padding: 8px 10px;
     display: grid;
     grid-template-columns: 31px minmax(0, 1fr);
     align-items: center;
     gap: 8px;
-    border-radius: inherit;
-    background: transparent;
+    border: 1px solid #e0ebf5;
+    border-radius: 10px;
+    color: #59718d;
+    background: #fff;
+    font-size: 12px;
+    line-height: 1.3;
 }
-.reschedule-stepper .reschedule-step-button > strong {
+.reschedule-stepper li:not(:last-child)::after {
+    display: none;
+    content: none;
+}
+.reschedule-stepper li > span {
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #b9cde0;
+    border-radius: 50%;
+    color: #45627f;
+    background: #f5faff;
+    font-size: 14px;
+    font-weight: 700;
+}
+.reschedule-stepper li > strong {
     min-width: 0;
     max-width: none;
     padding: 0;
     overflow: visible;
     color: inherit;
     background: transparent;
+    font-size: 12px;
+    font-weight: 500;
     line-height: 1.3;
     text-overflow: clip;
     white-space: normal;
@@ -444,14 +455,20 @@
     color: var(--reschedule-blue);
     background: #eff8ff;
 }
+.reschedule-stepper li.is-current > span,
+.reschedule-stepper li.is-complete > span {
+    border-color: var(--reschedule-blue);
+    color: #fff;
+    background: var(--reschedule-blue);
+}
 .reschedule-stepper li.is-complete:not(.is-current) {
     border-color: #cdebdc;
-    color: #25845c;
+    color: #1d6d4a;
     background: #f2fbf6;
 }
-.reschedule-stepper li.is-complete:not(.is-current) .reschedule-step-button > span {
-    border-color: #36a96b;
-    background: #36a96b;
+.reschedule-stepper li.is-complete:not(.is-current) > span {
+    border-color: #1d6d4a;
+    background: #1d6d4a;
 }
 @media (max-width: 540px) {
     .reschedule-stepper {
