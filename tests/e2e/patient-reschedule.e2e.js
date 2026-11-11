@@ -26,7 +26,7 @@ const html = pug.renderFile(path.resolve("views/patient/reschedule-appointment.p
             doctor_label: "Dr. Carlos Ejemplo",
             specialty: { name: "Medicina general" },
             start_at: "2027-01-15T15:00:00.000Z",
-            history: [],
+            history: [{ event_type: "Rescheduled" }],
         },
     ],
     selectedAppointmentId: null,
@@ -37,7 +37,17 @@ const browser = await chromium.launch({ headless: true, channel: "chrome" });
 async function createPage(viewport) {
     const page = await browser.newPage({ viewport });
     await page.route("http://saludvital.test/**", async (route) => {
-        const assetPath = path.resolve("public", `.${new URL(route.request().url()).pathname}`);
+        const pathname = new URL(route.request().url()).pathname;
+        if (pathname === "/patient/appointments") {
+            await route.fulfill({
+                status: 200,
+                contentType: "text/html",
+                body: "<main data-appointments-page>Mis citas</main>",
+            });
+            return;
+        }
+
+        const assetPath = path.resolve("public", `.${pathname}`);
         const publicPath = path.resolve("public");
 
         if (!assetPath.startsWith(`${publicPath}${path.sep}`)) {
@@ -87,35 +97,29 @@ async function createPage(viewport) {
 
 try {
     const desktopPage = await createPage({ width: 1440, height: 1000 });
-    assert.equal(await desktopPage.locator("[data-reschedule-panel]").count(), 3);
-    assert.equal(await desktopPage.locator('[data-reschedule-step-button="2"]').isDisabled(), true);
+    assert.equal(await desktopPage.locator("[data-reschedule-panel]").count(), 4);
 
     await desktopPage.locator('input[name="appointmentId"]').check();
+    assert.equal(await desktopPage.locator('[data-next-step="2"]').isEnabled(), true);
+    await desktopPage.locator('[data-next-step="2"]').click();
+    assert.equal(await desktopPage.locator('[data-reschedule-panel="1"]').isVisible(), false);
+    assert.equal(await desktopPage.locator('[data-reschedule-panel="2"]').isVisible(), true);
     await desktopPage.locator(".reschedule-time-option").first().waitFor();
     await desktopPage.locator(".reschedule-time-option").first().click();
-    assert.equal(
-        await desktopPage.locator('[data-reschedule-step="3"] button').getAttribute("aria-current"),
-        "step",
-    );
-    assert.equal(
-        await desktopPage.locator('[data-reschedule-step-button="3"]').isDisabled(),
-        false,
-    );
+    assert.equal(await desktopPage.locator(".reschedule-summary").isVisible(), false);
+    assert.equal(await desktopPage.locator('[data-next-step="3"]').isEnabled(), true);
+    await desktopPage.locator('[data-next-step="3"]').click();
+    assert.equal(await desktopPage.locator('[data-reschedule-panel="3"]').isVisible(), true);
     assert.equal(
         await desktopPage.locator("img[data-patient-photo]").getAttribute("src"),
         patientPhoto,
     );
 
-    await desktopPage.locator('[data-reschedule-step-button="1"]').click();
-    assert.equal(
-        await desktopPage.locator('[data-reschedule-step-button="1"]').getAttribute("aria-current"),
-        "step",
-    );
-    await desktopPage.locator('[data-reschedule-step-button="3"]').click();
-    assert.equal(
-        await desktopPage.locator('[data-reschedule-step-button="3"]').getAttribute("aria-current"),
-        "step",
-    );
+    await desktopPage.locator('[data-back-step="2"]').click();
+    assert.equal(await desktopPage.locator('[data-reschedule-panel="2"]').isVisible(), true);
+    assert.equal(await desktopPage.locator(".reschedule-time-option.is-selected").count(), 1);
+    await desktopPage.locator('[data-next-step="3"]').click();
+    assert.equal(await desktopPage.locator('[data-reschedule-panel="3"]').isVisible(), true);
     assert.ok(
         (await desktopPage.evaluate(() => document.documentElement.scrollWidth)) <= 1440,
         "Desktop layout should not overflow horizontally",
@@ -134,11 +138,12 @@ try {
     const step1Panel = mobilePage.locator('[data-reschedule-panel="1"]');
     const step2Panel = mobilePage.locator('[data-reschedule-panel="2"]');
     const step3Panel = mobilePage.locator('[data-reschedule-panel="3"]');
+    const step4Panel = mobilePage.locator('[data-reschedule-panel="4"]');
 
     assert.equal(await step1Panel.isVisible(), true);
     assert.equal(await step2Panel.isVisible(), false);
     assert.equal(await step3Panel.isVisible(), false);
-    assert.equal(await mobilePage.locator('[data-reschedule-step-button="2"]').isDisabled(), true);
+    assert.equal(await step4Panel.isVisible(), false);
 
     if (process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR) {
         await mobilePage.screenshot({
@@ -151,12 +156,11 @@ try {
     }
 
     await mobilePage.locator('input[name="appointmentId"]').check();
+    assert.equal(await step1Panel.isVisible(), true);
+    assert.equal(await mobilePage.locator('[data-next-step="2"]').isEnabled(), true);
+    await mobilePage.locator('[data-next-step="2"]').click();
     assert.equal(await step2Panel.isVisible(), true);
     assert.equal(await step3Panel.isVisible(), false);
-    assert.equal(
-        await mobilePage.locator('[data-reschedule-step-button="2"]').getAttribute("aria-current"),
-        "step",
-    );
     assert.equal(
         await mobilePage.locator("img[data-patient-photo]").getAttribute("src"),
         patientPhoto,
@@ -164,18 +168,32 @@ try {
 
     await mobilePage.locator(".reschedule-time-option").first().waitFor();
     await mobilePage.locator(".reschedule-time-option").first().click();
-    assert.equal(await step3Panel.isVisible(), true);
-    assert.equal(await step1Panel.isVisible(), false);
-    assert.equal(await step2Panel.isVisible(), false);
-    assert.equal(await mobilePage.locator(".reschedule-submit").isEnabled(), true);
-    assert.equal(
-        await mobilePage.locator('[data-reschedule-step-button="3"]').getAttribute("aria-current"),
-        "step",
-    );
+    assert.equal(await step2Panel.isVisible(), true);
+    assert.equal(await mobilePage.locator(".reschedule-summary").isVisible(), false);
+    assert.equal(await mobilePage.locator('[data-next-step="3"]').isEnabled(), true);
     assert.ok(
         (await mobilePage.evaluate(() => document.documentElement.scrollWidth)) <= 390,
         "Mobile layout should not overflow horizontally",
     );
+
+    if (process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR) {
+        await mobilePage.screenshot({
+            path: path.join(
+                path.resolve(process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR),
+                "patient-reschedule-mobile-step-2.png",
+            ),
+            fullPage: true,
+        });
+    }
+
+    await mobilePage.locator('[data-back-step="1"]').click();
+    assert.equal(await step1Panel.isVisible(), true);
+    await mobilePage.locator('[data-next-step="2"]').click();
+    assert.equal(await step2Panel.isVisible(), true);
+    await mobilePage.locator('[data-next-step="3"]').click();
+    assert.equal(await step3Panel.isVisible(), true);
+    assert.equal(await step2Panel.isVisible(), false);
+    assert.equal(await mobilePage.locator(".reschedule-submit").isEnabled(), true);
 
     if (process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR) {
         await mobilePage.screenshot({
@@ -187,25 +205,21 @@ try {
         });
     }
 
-    await mobilePage.locator('[data-reschedule-step-button="1"]').focus();
-    await mobilePage.keyboard.press("Enter");
-    assert.equal(
-        await mobilePage.locator('[data-reschedule-step-button="1"]').getAttribute("aria-current"),
-        "step",
-    );
-    assert.equal(await step1Panel.isVisible(), true);
-    assert.equal(await step2Panel.isVisible(), false);
-    await mobilePage.locator('[data-reschedule-step-button="3"]').click();
-    assert.equal(await step3Panel.isVisible(), true);
-
     await mobilePage.locator(".reschedule-submit").click();
-    await mobilePage.locator("[data-confirm-reschedule]").click();
-    await mobilePage.locator("[data-feedback-dialog]").waitFor({ state: "visible" });
-    assert.equal(
-        await mobilePage.locator('[data-reschedule-step-button="4"]').getAttribute("aria-current"),
-        "step",
-    );
+    await step4Panel.waitFor({ state: "visible" });
+    assert.equal(await mobilePage.locator("[data-reschedule-countdown]").textContent(), "4");
     assert.equal(await mobilePage.evaluate(() => window.rescheduleRequestMethod), "POST");
+    if (process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR) {
+        await mobilePage.screenshot({
+            path: path.join(
+                path.resolve(process.env.PATIENT_RESCHEDULE_SCREENSHOT_DIR),
+                "patient-reschedule-mobile-step-4.png",
+            ),
+            fullPage: true,
+        });
+    }
+    await mobilePage.waitForURL("**/patient/appointments", { timeout: 6000 });
+    assert.equal(await mobilePage.locator("[data-appointments-page]").textContent(), "Mis citas");
     console.log("Patient rescheduling step navigation and mobile progression passed.");
 } finally {
     await browser.close();
