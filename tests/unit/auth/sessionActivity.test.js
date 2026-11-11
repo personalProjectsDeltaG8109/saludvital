@@ -80,6 +80,22 @@ describe("Session activity service", () => {
         await expect(refreshSession("missing-session", 101)).resolves.toBe(false);
     });
 
+    test("accepts a concurrent refresh when the still-active session timestamp did not change", async () => {
+        const now = new Date("2026-11-09T15:00:00.000Z");
+        update.mockResolvedValue([0]);
+        findOne.mockResolvedValue({ session_id_hash: "stored-hash" });
+
+        await expect(refreshSession("active-session", 101, now)).resolves.toBe(true);
+        expect(findOne).toHaveBeenCalledWith(
+            expect.objectContaining({
+                where: expect.objectContaining({
+                    user_id: 101,
+                    last_activity_at: { [Op.gt]: new Date(now.getTime() - 180_000) },
+                }),
+            }),
+        );
+    });
+
     test("uses the exact 180-second cutoff for validity and refresh", async () => {
         const now = new Date("2026-11-09T15:00:00.000Z");
 

@@ -169,6 +169,16 @@ describe("administrator WhatsApp overview view", () => {
                     credentialsConfigured: true,
                     templates: [
                         {
+                            eventType: "appointment_confirmation",
+                            name: "Confirmación de cita",
+                            purpose: "Confirmar que la cita fue creada.",
+                            configured: true,
+                            configurationStatus: "Configured",
+                            providerStatus: "Unknown",
+                            content: null,
+                            language: null,
+                        },
+                        {
                             eventType: "appointment_reminder",
                             name: "Recordatorio de cita",
                             purpose: "Recordar una cita programada.",
@@ -184,8 +194,9 @@ describe("administrator WhatsApp overview view", () => {
         });
 
         expect(html).toContain("Tipos compatibles");
+        expect(html).toContain("Confirmación de cita");
         expect(html).toContain("Recordatorio de cita");
-        expect(html).toContain("ID configurado");
+        expect(html).toContain("Nombre configurado");
         expect(html).toContain("Aprobación en Meta");
         expect(html).toContain("No consultada");
         expect(html).toContain("Buscar plantillas por nombre o propósito");

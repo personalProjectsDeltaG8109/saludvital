@@ -28,6 +28,20 @@ function overviewData(tab = "summary", period = 7) {
             credentialsConfigured: false,
             templates: [
                 {
+                    eventType: "appointment_reschedule",
+                    name: "Reprogramación de cita",
+                    purpose: "Informar al paciente que su cita fue reprogramada.",
+                    configured: false,
+                    providerStatus: "Unknown",
+                },
+                {
+                    eventType: "appointment_confirmation",
+                    name: "Confirmación de cita",
+                    purpose: "Confirmar al paciente que su cita fue creada.",
+                    configured: true,
+                    providerStatus: "Unknown",
+                },
+                {
                     eventType: "appointment_reminder",
                     name: "Recordatorio de cita",
                     purpose: "Recordar al paciente una cita programada.",
@@ -435,6 +449,21 @@ try {
         throw new Error("Draft-only flow management must not expose an activation control.");
     }
     await page.getByRole("tab", { name: "Plantillas de mensajes" }).click();
+    const templateRecords = page.locator("[data-template-record]");
+    if ((await templateRecords.count()) !== 4) {
+        throw new Error("The catalog must include all four appointment template types.");
+    }
+    const templateSummaryCounts = page.locator(".admin-whatsapp-count-card strong");
+    if ((await templateSummaryCounts.first().textContent()) !== "4") {
+        throw new Error("The supported template total must include appointment confirmation.");
+    }
+    const templateSearch = page.getByLabel("Buscar plantillas por nombre o propósito");
+    await templateSearch.fill("confirmación");
+    await page.getByText("Confirmación de cita", { exact: true }).waitFor();
+    if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
+        throw new Error("Appointment confirmation must be searchable by its name and purpose.");
+    }
+    await templateSearch.fill("");
     await page.getByText("Recordatorio de cita", { exact: true }).waitFor();
     await page.getByLabel("Buscar plantillas por nombre o propósito").fill("cancelación");
     if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
@@ -445,8 +474,13 @@ try {
         throw new Error("Template configuration filters must combine with the current search.");
     }
     await page.getByLabel("Buscar plantillas por nombre o propósito").fill("");
-    if ((await page.locator("[data-template-record]:visible").count()) !== 1) {
-        throw new Error("The local configuration filter must show only configured templates.");
+    if ((await page.locator("[data-template-record]:visible").count()) !== 2) {
+        throw new Error(
+            "The local filter must include configured confirmation and reminder templates.",
+        );
+    }
+    if ((await templateSummaryCounts.nth(1).textContent()) !== "2") {
+        throw new Error("Configured template totals must include the confirmation template.");
     }
     for (const width of [320, 375, 760, 761, 762, 768, 1440]) {
         await page.setViewportSize({ width, height: 900 });

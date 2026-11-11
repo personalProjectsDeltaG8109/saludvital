@@ -1027,7 +1027,7 @@ if (whatsappPage) {
         const status = element(
             "span",
             `admin-whatsapp-record-status ${template.configured ? "is-active" : "is-incomplete"}`,
-            template.configured ? "ID configurado" : "Sin configurar",
+            template.configured ? "Nombre configurado" : "Sin configurar",
         );
         header.append(titleGroup, status);
 
@@ -1082,9 +1082,9 @@ if (whatsappPage) {
                 "is-blue",
             ),
             createTemplateStatusCard(
-                "ID local configurado",
+                "Nombre local configurado",
                 String(configuredCount),
-                "Identificadores ocultos",
+                "Nombres de plantilla ocultos",
                 "is-green",
             ),
             createTemplateStatusCard(
@@ -1127,7 +1127,7 @@ if (whatsappPage) {
         statusSelect.dataset.templateConfigurationFilter = "";
         [
             ["", "Todas"],
-            ["configured", "ID configurado"],
+            ["configured", "Nombre configurado"],
             ["missing", "Sin configurar"],
         ].forEach(([value, label]) => {
             const option = element("option", "", label);
@@ -1151,7 +1151,7 @@ if (whatsappPage) {
         const limitation = element(
             "p",
             "admin-whatsapp-template-limitation",
-            "La aplicación guarda los identificadores en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.",
+            "La aplicación guarda los nombres de plantilla en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.",
         );
         section.append(heading, filters, list, emptyState, limitation);
         content.append(summary, section);
