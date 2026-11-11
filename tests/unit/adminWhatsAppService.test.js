@@ -425,4 +425,75 @@ describe("administrator WhatsApp overview service", () => {
         expect(result.chatbotFlows).toBe(drafts);
         expect(getAdminChatbotFlows).toHaveBeenCalledTimes(1);
     });
+
+    test("conversation searches load only the shared alert count and conversation page", async () => {
+        WhatsAppConversation.findAndCountAll.mockResolvedValueOnce({ count: 17, rows: [] });
+        await getAdminWhatsAppData({ tab: "conversations", search: "Laura", page: "2" });
+
+        expect(Notification.count).toHaveBeenCalledTimes(1);
+        expect(WhatsAppConversation.findAndCountAll).toHaveBeenCalledTimes(1);
+        expect(WhatsAppConversation.findAndCountAll.mock.calls[0][0].offset).toBe(8);
+        expect(WhatsAppConversation.count).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.count).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppMessage.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAndCountAll).not.toHaveBeenCalled();
+    });
+
+    test("request filters skip the unrelated WhatsApp overview queries", async () => {
+        Specialities.findAll.mockResolvedValue([{ id: 4, name: "Pediatría" }]);
+
+        await getAdminWhatsAppData({ tab: "requests", status: "Pending" });
+
+        expect(Notification.count).toHaveBeenCalledTimes(1);
+        expect(WhatsAppAppointmentRequest.findAndCountAll).toHaveBeenCalledTimes(1);
+        expect(WhatsAppAppointmentRequest.count).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.count).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppMessage.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAll).not.toHaveBeenCalled();
+    });
+
+    test("delivery monitoring loads its own aggregates and paginated list", async () => {
+        await getAdminWhatsAppData({ tab: "deliveries", status: "Failed" });
+
+        expect(Notification.count).toHaveBeenCalledTimes(1);
+        expect(Notification.findAll).toHaveBeenCalledTimes(2);
+        expect(Notification.findAndCountAll).toHaveBeenCalledTimes(1);
+        expect(WhatsAppConversation.count).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.count).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppMessage.findAll).not.toHaveBeenCalled();
+    });
+
+    test("flow configuration does not query overview charts or notification lists", async () => {
+        await getAdminWhatsAppData({ tab: "flows" });
+
+        expect(Notification.count).toHaveBeenCalledTimes(1);
+        expect(WhatsAppConversation.count).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.count).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppMessage.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAndCountAll).not.toHaveBeenCalled();
+    });
+
+    test("template configuration skips database overview queries", async () => {
+        const result = await getAdminWhatsAppData({ tab: "templates" });
+
+        expect(result.integrationConfiguration.templates).toHaveLength(4);
+        expect(Notification.count).toHaveBeenCalledTimes(1);
+        expect(WhatsAppConversation.count).not.toHaveBeenCalled();
+        expect(WhatsAppConversation.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.count).not.toHaveBeenCalled();
+        expect(WhatsAppAppointmentRequest.findAll).not.toHaveBeenCalled();
+        expect(WhatsAppMessage.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAll).not.toHaveBeenCalled();
+        expect(Notification.findAndCountAll).not.toHaveBeenCalled();
+    });
 });
