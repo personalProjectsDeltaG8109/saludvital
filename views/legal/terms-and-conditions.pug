@@ -1,0 +1,51 @@
+extends ./layout
+
+block legalBody
+    main.legal-article(aria-label="Términos y condiciones")
+        p.legal-version Versión 1.0 · Actualizada el 11 de noviembre de 2026
+
+        section#academic.legal-section
+            .legal-section-heading
+                span.legal-section-number 01
+                h3 Uso académico
+            p SaludVital es un proyecto académico del programa de Análisis y Desarrollo de Software del SENA. La plataforma demuestra flujos de gestión de citas y no presta servicios médicos reales.
+
+        section#demo-data.legal-section
+            .legal-section-heading
+                span.legal-section-number 02
+                h3 Datos de demostración
+            p Usa únicamente datos ficticios. No ingreses información personal real, historias clínicas, diagnósticos ni datos de contacto de otras personas.
+
+        section#accounts.legal-section
+            .legal-section-heading
+                span.legal-section-number 03
+                h3 Cuentas y acceso
+            p Cada persona debe usar solo la cuenta que le fue asignada o creada para las pruebas. No intentes acceder a cuentas, citas o información de otros usuarios.
+
+        section#permitted-use.legal-section
+            .legal-section-heading
+                span.legal-section-number 04
+                h3 Uso permitido
+            p Utiliza la plataforma de forma respetuosa y para aprendizaje, demostraciones y pruebas autorizadas. No intentes interrumpir el servicio, alterar datos ajenos ni evadir los controles de acceso.
+
+        section#availability.legal-section
+            .legal-section-heading
+                span.legal-section-number 05
+                h3 Disponibilidad y cambios
+            p Las funciones y los datos de prueba pueden cambiar o restablecerse durante el desarrollo. El equipo puede actualizar estas condiciones para reflejar cambios en el proyecto.
+
+        section#medical-care.legal-section
+            .legal-section-heading
+                span.legal-section-number 06
+                h3 Atención médica
+            p La información de esta plataforma no reemplaza la evaluación ni las indicaciones de profesionales de la salud. No uses SaludVital para emergencias o para tomar decisiones sobre tu tratamiento.
+
+        section#contact.legal-section
+            .legal-section-heading
+                span.legal-section-number 07
+                h3 Contacto
+            p Si tienes preguntas sobre estas condiciones o sobre el proyecto, consulta con el equipo responsable de la demostración académica.
+
+        .legal-callout(role="note")
+            span.legal-callout-symbol(aria-hidden="true") i
+            p SaludVital es una plataforma académica. No se debe usar para atención médica real ni para emergencias.

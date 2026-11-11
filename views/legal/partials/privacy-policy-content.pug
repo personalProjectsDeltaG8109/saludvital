@@ -1,0 +1,242 @@
+main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
+    class="sm:px-6 lg:grid-cols-[270px_minmax(0,1fr)] lg:px-8"
+)
+    //- Sidebar
+    aside.space-y-5(class="lg:sticky lg:top-24", aria-label="Índice de la política")
+        .rounded-2xl.border.border-slate-200.bg-white.p-5.shadow-sm
+            h2.mb-5.text-lg.font-extrabold(class="text-[#123B73]") Contenido
+
+            nav(aria-label="Secciones de privacidad")
+                ul.text-sm(class="space-y-1.5")
+                    - const sections = [{id:"about",title:"Sobre SaludVital"},{id:"information",title:"Información recopilada"},{id:"purposes",title:"Finalidad de los datos"},{id:"sensitive",title:"Información sensible"},{id:"security",title:"Seguridad y acceso"},{id:"providers",title:"Servicios externos"},{id:"rights",title:"Derechos de los usuarios"},{id:"retention",title:"Conservación"},{id:"academic",title:"Uso académico"},{id:"updates",title:"Actualizaciones"},{id:"contact",title:"Responsable y contacto"}]
+
+                    each section, index in sections
+                        li
+                            a.flex.items-center.gap-3.rounded-xl.px-3.font-medium.text-slate-600(
+                                href=`#${section.id}`,
+                                class="py-2.5 hover:bg-[#E7F7F8]"
+                            )
+                                span.flex.h-7.w-7.shrink-0.items-center.justify-center.rounded-full.bg-slate-100.text-xs.font-bold(
+                                    class="text-[#123B73]"
+                                )= index + 1
+                                span= section.title
+
+        .overflow-hidden.rounded-2xl.border.border-cyan-100.bg-gradient-to-br.from-white.to-cyan-50.p-5.shadow-sm
+            .mb-4.flex.h-12.w-12.items-center.justify-center.rounded-xl.text-white(class="bg-[#13B8B0]")
+                svg.h-7.w-7(
+                    fill="none",
+                    stroke="currentColor",
+                    viewBox="0 0 24 24",
+                    stroke-width="1.8",
+                    aria-hidden="true"
+                )
+                    rect(x="5", y="10", width="14", height="11", rx="2")
+                    path(stroke-linecap="round", d="M8 10V7a4 4 0 0 1 8 0v3")
+            h3.text-lg.font-extrabold(class="text-[#123B73]") Tu información importa
+            p.mt-2.text-sm.leading-relaxed.text-slate-600 Promovemos el uso responsable de la información y la protección de datos en nuestro proyecto académico.
+
+    //- Content
+    article.min-w-0.space-y-8
+        .inline-flex.items-center.gap-2.rounded-full.border.border-cyan-100.bg-white.px-4.py-2.text-xs.font-semibold(
+            class="text-[#123B73]"
+        )
+            span.h-2.w-2.rounded-full(class="bg-[#13B8B0]")
+            | Versión 1.0 · 11 de noviembre de 2026
+
+        //- Section 1
+        section#about.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 01
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Sobre SaludVital
+
+            p.leading-7.text-slate-600 SaludVital es una plataforma web desarrollada como proyecto académico del programa de Análisis y Desarrollo de Software (ADSO) del Servicio Nacional de Aprendizaje (SENA). Su objetivo es demostrar la gestión de citas médicas mediante los roles de paciente, médico y administrador.
+
+            .mt-6.flex.items-start.gap-3.rounded-xl.border.border-blue-100.bg-blue-50.p-4
+                span.text-xl(class="text-[#168DE2]", aria-hidden="true") ⓘ
+                p.text-sm.font-semibold.leading-6(class="text-[#123B73]") SaludVital no es una clínica, no presta servicios médicos reales y no sustituye la atención de profesionales de la salud.
+
+        //- Section 2
+        section#information.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 02
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Información recopilada
+
+            p.mb-6.leading-7.text-slate-600 Dependiendo de las funcionalidades utilizadas, el aplicativo puede tratar las siguientes categorías de información:
+
+            .grid.gap-4(class="sm:grid-cols-2 xl:grid-cols-4")
+                - const dataCards = [{icon:"👤",title:"Datos personales",description:"Nombre, documento, fecha de nacimiento y ubicación."},{icon:"✉",title:"Datos de contacto",description:"Correo electrónico y número de celular."},{icon:"📅",title:"Datos de citas",description:"Especialidad, médico, horarios y estados."},{icon:"✚",title:"Información clínica",description:"Consultas, diagnósticos y registros ficticios."}]
+
+                each card in dataCards
+                    .rounded-xl.border.border-slate-200.p-4(class="bg-[#F7FBFD]")
+                        span.text-3xl(aria-hidden="true")= card.icon
+                        h3.mt-3.text-sm.font-bold(class="text-[#123B73]")= card.title
+                        p.mt-2.text-xs.leading-5.text-slate-600= card.description
+
+        //- Section 3
+        section#purposes.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 03
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Finalidad de los datos
+
+            p.mb-5.text-slate-600 La información se utiliza para las siguientes finalidades:
+
+            - const purposes = ["Crear y administrar cuentas de usuarios.", "Verificar correos electrónicos y recuperar accesos.", "Gestionar citas, cancelaciones y reprogramaciones.", "Demostrar las funcionalidades del sistema.", "Enviar notificaciones relacionadas con el aplicativo.", "Realizar pruebas técnicas y académicas."];
+
+            ul.grid.gap-4(class="sm:grid-cols-2")
+                each purpose in purposes
+                    li.flex.items-start.gap-3.text-sm.leading-6.text-slate-700
+                        span.mt-1.flex.h-5.w-5.shrink-0.items-center.justify-center.rounded-full.text-xs.font-bold.text-white(
+                            class="bg-[#13B8B0]"
+                        ) ✓
+                        span= purpose
+
+        //- Section 4
+        section#sensitive.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 04
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Información sensible
+
+            p.leading-7.text-slate-600 Los datos relacionados con la salud son considerados información sensible conforme a la legislación colombiana. SaludVital está diseñado para demostraciones académicas con datos ficticios.
+
+            .mt-5.rounded-xl.border.border-amber-200.bg-amber-50.p-4
+                p.text-sm.font-medium.leading-6.text-amber-900 No ingreses historias clínicas reales, diagnósticos personales ni información médica sensible en el entorno de demostración.
+
+        //- Section 5
+        section#security.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 05
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Seguridad y acceso
+
+            p.leading-7.text-slate-600 SaludVital contempla autenticación de usuarios, protección de contraseñas y controles de acceso basados en roles. Cada usuario debe acceder únicamente a la información autorizada para sus funciones.
+
+            .mt-5.grid.gap-3(class="sm:grid-cols-3")
+                each feature in ["Autenticación", "Control por roles", "Protección de cuentas"]
+                    .rounded-xl.p-4.text-center(class="bg-[#F3F7FA]")
+                        span.mb-2.block.text-xl(class="text-[#13B8B0]", aria-hidden="true") ✓
+                        p.text-sm.font-semibold(class="text-[#123B73]")= feature
+
+            p.mt-5.text-sm.leading-6.text-slate-500 Ningún sistema informático puede garantizar seguridad absoluta. Las medidas deben verificarse y mantenerse actualizadas.
+
+        //- Section 6
+        section#providers.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 06
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Servicios externos
+
+            p.leading-7.text-slate-600 SaludVital utiliza MySQL para gestionar su información y puede emplear servicios tecnológicos externos según la configuración del entorno.
+
+            ul.mt-5.grid.gap-3(class="sm:grid-cols-2")
+                each provider in ["Railway: alojamiento y base de datos.", "Resend: correos electrónicos.", "Inalámbria Express: mensajes SMS.", "Meta WhatsApp: comunicaciones por WhatsApp."]
+                    li.rounded-xl.border.border-slate-200.px-4.py-3.text-sm.text-slate-700(
+                        class="bg-[#F7FBFD]"
+                    )= provider
+
+            p.mt-4.text-sm.text-slate-500 La disponibilidad de cada integración depende de su configuración y habilitación.
+
+        //- Section 7
+        section#rights.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 07
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Derechos de los usuarios
+
+            p.mb-5.leading-7.text-slate-600 Los titulares de datos personales cuentan con derechos reconocidos por la legislación colombiana.
+
+            - const rights = ["Conocer sus datos personales.", "Solicitar la actualización de información.", "Solicitar la corrección de datos incorrectos.", "Consultar el uso de su información.", "Solicitar la supresión cuando proceda legalmente.", "Presentar consultas y reclamos sobre el tratamiento de datos."];
+
+            ul.space-y-3
+                each right in rights
+                    li.flex.items-start.gap-3.text-sm.text-slate-700
+                        span.font-bold(class="text-[#13B8B0]", aria-hidden="true") ✓
+                        span= right
+
+        //- Section 8
+        section#retention.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 08
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Conservación de información
+
+            p.leading-7.text-slate-600 Los datos se conservarán durante el tiempo necesario para las finalidades autorizadas y las obligaciones legales aplicables. Los registros ficticios de demostración podrán eliminarse durante las pruebas y el mantenimiento del proyecto.
+
+        //- Section 9
+        section#academic.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 09
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Uso académico
+
+            .rounded-xl.border.border-blue-100.bg-blue-50.p-5
+                h3.mb-2.text-lg.font-bold(class="text-[#123B73]") Proyecto educativo SENA
+                p.text-sm.leading-7.text-slate-700 SaludVital se desarrolla con fines de aprendizaje y demostración. Los pacientes, médicos, citas y registros clínicos utilizados en las presentaciones deben ser ficticios. La plataforma no presta servicios médicos reales ni está destinada a emergencias.
+
+        //- Section 10
+        section#updates.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 10
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Actualizaciones
+
+            p.leading-7.text-slate-600 Esta política podrá actualizarse cuando cambien las funcionalidades, los proveedores tecnológicos o las obligaciones legales aplicables. La versión vigente estará disponible en esta página.
+
+        //- Section 11
+        section#contact.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
+            class="sm:p-8"
+        )
+            .mb-5.flex.items-center.gap-4
+                span.flex.h-11.w-11.shrink-0.items-center.justify-center.rounded-xl.text-xl.font-extrabold(
+                    class="bg-[#DDF7F5] text-[#008F8B]"
+                ) 11
+                h2.text-2xl.font-extrabold(class="text-[#123B73]") Responsable y contacto
+
+            p.mb-5.leading-7.text-slate-600 Para consultas relacionadas con el tratamiento de datos personales, los usuarios podrán comunicarse con el responsable del proyecto.
+
+            .space-y-3.rounded-xl.p-5.text-sm(class="bg-[#F3F7FA]")
+                p
+                    strong(class="text-[#123B73]") Responsable:
+                    |
+                    | Juan Esteban Montoya Marín
+                p
+                    strong(class="text-[#123B73]") Correo de privacidad:
+                    |
+                    | montoyajuanes11@gmail.com
+                p
+                    strong(class="text-[#123B73]") Ubicación:
+                    |
+                    | Chinchina,Caldas,Colombia
