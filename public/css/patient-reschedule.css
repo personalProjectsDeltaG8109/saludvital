@@ -283,6 +283,12 @@
     margin: 12px 0 0;
 }
 
+.reschedule-confirm-panel .reschedule-actions button {
+    border-color: #168de2;
+    color: #fff;
+    background-color: #168de2;
+}
+
 @media (max-width: 760px) {
     .reschedule-stepper li {
         flex-direction: row;
