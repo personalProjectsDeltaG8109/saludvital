@@ -485,19 +485,7 @@ function buildDeliveryWhere(status, providerStatus, dateFrom, dateTo) {
     return where;
 }
 
-/** Return administrator-only WhatsApp metrics and bounded, safe records. */
-export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
-    const {
-        page,
-        tab,
-        activityDays,
-        search,
-        status,
-        providerStatus,
-        specialtyId,
-        dateFrom,
-        dateTo,
-    } = parsePagination(query);
+async function getWhatsAppOverview(activityDays, referenceDate) {
     const today = getPeriodRange(referenceDate, 1);
     const activityRange = getPeriodRange(referenceDate, activityDays);
     const requestsRange = getPeriodRange(referenceDate, REQUEST_METRIC_DAYS);
@@ -508,21 +496,17 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
     const [
         conversationCounts,
         todayRequestCounts,
-        notificationAlertCount,
         activityRows,
         requestStatusCounts,
         todayConversations,
         sentToday,
         failedToday,
-        deliveryStatusCounts,
-        providerDeliveryStatusCounts,
         recentMessages,
         recentRequests,
         recentEvents,
     ] = await Promise.all([
         countByField(WhatsAppConversation, "status"),
         countByField(WhatsAppAppointmentRequest, "status", todayRequestWhere),
-        Notification.count({ where: { status: "Failed" } }),
         WhatsAppConversation.findAll({
             attributes: [
                 [fn("DATE", col("started_at")), "date"],
@@ -551,12 +535,6 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
                 updated_at: { [Op.gte]: today.start, [Op.lt]: today.end },
             },
         }),
-        tab === "deliveries"
-            ? countByField(Notification, "status", { channel: "WhatsApp" })
-            : Promise.resolve({}),
-        tab === "deliveries"
-            ? countByField(Notification, "provider_delivery_status", { channel: "WhatsApp" })
-            : Promise.resolve({}),
         WhatsAppMessage.findAll({
             attributes: ["direction", "message_type", "processing_status", "created_at"],
             include: [
@@ -605,8 +583,7 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         0,
     );
 
-    const dashboard = {
-        selectedTab: tab,
+    return {
         summary: {
             conversationsToday: Number(todayConversations) || 0,
             requestsToday,
@@ -616,7 +593,6 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
             activeConversations: Number(conversationCounts.Active) || 0,
             configurationStatus: integrationStatus,
         },
-        integrationConfiguration: getSafeIntegrationConfiguration(),
         chatbotStatus: "Unknown",
         chatbotStatusMessage: "No hay una verificación operativa del chatbot disponible.",
         conversationsByDay: buildConversationActivity(activityRows, activityRange, activityDays),
@@ -626,131 +602,110 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
         recentRequests: recentRequests.map(mapAppointmentRequest),
         recentSystemEvents,
         recentMessagePreviews,
-        notificationAlertCount: Number(notificationAlertCount) || 0,
         activityPeriodDays: activityDays,
-        deliveryStatuses: addStatusLabels(deliveryStatusCounts, {
-            Pending: "Pendiente",
-            Processing: "En proceso",
-            Sent: "Aceptado por proveedor",
-            Failed: "Fallido",
-            Cancelled: "Cancelado",
-        }),
-        providerDeliveryStatuses: addStatusLabels(
-            providerDeliveryStatusCounts,
-            PROVIDER_DELIVERY_LABELS,
-        ),
-        deliveryTotal: Object.values(deliveryStatusCounts).reduce(
-            (total, count) => total + (Number(count) || 0),
-            0,
-        ),
+        rows: recentMessagePreviews,
+        pagination: buildPagination(0, 1),
     };
+}
 
-    if (tab === "flows") dashboard.chatbotFlows = await getAdminChatbotFlows();
+async function getConversationSection({ page, search, status }) {
+    const result = await findPage(
+        WhatsAppConversation,
+        {
+            attributes: ["id", "status", "started_at", "last_activity_at"],
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["first_name", "last_name", "phone", "notification_whatsapp_phone"],
+                    required: Boolean(search),
+                },
+            ],
+            where: buildConversationWhere(search, status),
+            order: [
+                ["last_activity_at", "DESC"],
+                ["id", "DESC"],
+            ],
+            distinct: true,
+        },
+        page,
+    );
 
-    let rows = [];
-    let pagination = buildPagination(0, page);
+    const rows = result.rows.map((conversation) => {
+        const record = conversation.get({ plain: true });
+        return {
+            id: record.id,
+            patientName: getPatientName(record.patient),
+            contactNumber: maskPhoneNumber(
+                record.patient?.notification_whatsapp_phone || record.patient?.phone,
+            ),
+            status: record.status,
+            statusLabel:
+                {
+                    Active: "Activa",
+                    Completed: "Finalizada",
+                    Expired: "Vencida",
+                    Blocked: "Bloqueada",
+                }[record.status] || "Estado registrado",
+            startedAt: record.started_at,
+            lastActivityAt: record.last_activity_at,
+        };
+    });
 
-    if (tab === "summary") rows = recentMessagePreviews;
+    return { rows, pagination: result.pagination };
+}
 
-    if (tab === "conversations") {
-        const result = await findPage(
-            WhatsAppConversation,
-            {
-                attributes: ["id", "status", "started_at", "last_activity_at"],
-                include: [
-                    {
-                        model: Patient,
-                        as: "patient",
-                        attributes: [
-                            "first_name",
-                            "last_name",
-                            "phone",
-                            "notification_whatsapp_phone",
-                        ],
-                        required: Boolean(search),
-                    },
-                ],
-                where: buildConversationWhere(search, status),
-                order: [
-                    ["last_activity_at", "DESC"],
-                    ["id", "DESC"],
-                ],
-                distinct: true,
-            },
-            page,
-        );
-        pagination = result.pagination;
-        rows = result.rows.map((conversation) => {
-            const record = conversation.get({ plain: true });
-            return {
-                id: record.id,
-                patientName: getPatientName(record.patient),
-                contactNumber: maskPhoneNumber(
-                    record.patient?.notification_whatsapp_phone || record.patient?.phone,
-                ),
-                status: record.status,
-                statusLabel:
-                    {
-                        Active: "Activa",
-                        Completed: "Finalizada",
-                        Expired: "Vencida",
-                        Blocked: "Bloqueada",
-                    }[record.status] || "Estado registrado",
-                startedAt: record.started_at,
-                lastActivityAt: record.last_activity_at,
-            };
-        });
+async function getRequestSection({ page, search, status, specialtyId, dateFrom, dateTo }) {
+    const specialties = await Specialities.findAll({
+        attributes: ["id", "name"],
+        order: [["name", "ASC"]],
+    });
+    if (
+        specialtyId &&
+        !specialties.some((specialty) => Number(specialty.id) === Number(specialtyId))
+    ) {
+        throw createServiceError("La especialidad seleccionada no existe.", 400);
     }
 
-    if (tab === "requests") {
-        const specialties = await Specialities.findAll({
-            attributes: ["id", "name"],
-            order: [["name", "ASC"]],
-        });
-        if (
-            specialtyId &&
-            !specialties.some((specialty) => Number(specialty.id) === Number(specialtyId))
-        ) {
-            throw createServiceError("La especialidad seleccionada no existe.", 400);
-        }
-        const result = await findPage(
-            WhatsAppAppointmentRequest,
-            {
-                attributes: ["id", "requested_start_at", "status", "created_at", "updated_at"],
-                include: [
-                    {
-                        model: Patient,
-                        as: "patient",
-                        attributes: [
-                            "first_name",
-                            "last_name",
-                            "phone",
-                            "notification_whatsapp_phone",
-                        ],
-                        required: Boolean(search),
-                    },
-                    { model: Specialities, as: "requestedSpecialty", attributes: ["name"] },
-                ],
-                where: buildRequestWhere({ search, status, specialtyId, dateFrom, dateTo }),
-                order: [
-                    ["created_at", "DESC"],
-                    ["id", "DESC"],
-                ],
-                distinct: true,
-            },
-            page,
-        );
-        pagination = result.pagination;
-        rows = result.rows.map(mapAppointmentRequest);
-        dashboard.requestFilters = { search, status, specialtyId, dateFrom, dateTo };
-        dashboard.requestSpecialties = specialties.map((specialty) => ({
+    const result = await findPage(
+        WhatsAppAppointmentRequest,
+        {
+            attributes: ["id", "requested_start_at", "status", "created_at", "updated_at"],
+            include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["first_name", "last_name", "phone", "notification_whatsapp_phone"],
+                    required: Boolean(search),
+                },
+                { model: Specialities, as: "requestedSpecialty", attributes: ["name"] },
+            ],
+            where: buildRequestWhere({ search, status, specialtyId, dateFrom, dateTo }),
+            order: [
+                ["created_at", "DESC"],
+                ["id", "DESC"],
+            ],
+            distinct: true,
+        },
+        page,
+    );
+
+    return {
+        rows: result.rows.map(mapAppointmentRequest),
+        pagination: result.pagination,
+        requestFilters: { search, status, specialtyId, dateFrom, dateTo },
+        requestSpecialties: specialties.map((specialty) => ({
             id: Number(specialty.id),
             name: specialty.name,
-        }));
-    }
+        })),
+    };
+}
 
-    if (tab === "deliveries") {
-        const result = await findPage(
+async function getDeliverySection({ page, status, providerStatus, dateFrom, dateTo }) {
+    const [deliveryStatusCounts, providerDeliveryStatusCounts, result] = await Promise.all([
+        countByField(Notification, "status", { channel: "WhatsApp" }),
+        countByField(Notification, "provider_delivery_status", { channel: "WhatsApp" }),
+        findPage(
             Notification,
             {
                 attributes: [
@@ -778,13 +733,72 @@ export async function getAdminWhatsAppData(query = {}, referenceDate = new Date(
                 ],
             },
             page,
-        );
-        pagination = result.pagination;
-        rows = result.rows.map(mapDeliveryRecord);
-        dashboard.deliveryFilters = { status, providerStatus, dateFrom, dateTo };
-    }
+        ),
+    ]);
 
-    return { ...dashboard, rows, pagination, search, status, providerStatus };
+    return {
+        rows: result.rows.map(mapDeliveryRecord),
+        pagination: result.pagination,
+        deliveryFilters: { status, providerStatus, dateFrom, dateTo },
+        deliveryStatuses: addStatusLabels(deliveryStatusCounts, {
+            Pending: "Pendiente",
+            Processing: "En proceso",
+            Sent: "Aceptado por proveedor",
+            Failed: "Fallido",
+            Cancelled: "Cancelado",
+        }),
+        providerDeliveryStatuses: addStatusLabels(
+            providerDeliveryStatusCounts,
+            PROVIDER_DELIVERY_LABELS,
+        ),
+        deliveryTotal: Object.values(deliveryStatusCounts).reduce(
+            (total, count) => total + (Number(count) || 0),
+            0,
+        ),
+    };
+}
+
+async function getWhatsAppSectionData(filters, referenceDate) {
+    if (filters.tab === "summary") {
+        return getWhatsAppOverview(filters.activityDays, referenceDate);
+    }
+    if (filters.tab === "conversations") {
+        return getConversationSection(filters);
+    }
+    if (filters.tab === "requests") {
+        return getRequestSection(filters);
+    }
+    if (filters.tab === "deliveries") {
+        return getDeliverySection(filters);
+    }
+    if (filters.tab === "flows") {
+        return { chatbotFlows: await getAdminChatbotFlows() };
+    }
+    if (filters.tab === "templates" || filters.tab === "settings") {
+        return { integrationConfiguration: getSafeIntegrationConfiguration() };
+    }
+    return {};
+}
+
+/** Load shared navigation data and only the persisted data needed by the selected section. */
+export async function getAdminWhatsAppData(query = {}, referenceDate = new Date()) {
+    const filters = parsePagination(query);
+    const [notificationAlertCount, sectionData] = await Promise.all([
+        Notification.count({ where: { status: "Failed" } }),
+        getWhatsAppSectionData(filters, referenceDate),
+    ]);
+    const emptyPage = buildPagination(0, filters.page);
+
+    return {
+        selectedTab: filters.tab,
+        notificationAlertCount: Number(notificationAlertCount) || 0,
+        rows: [],
+        pagination: emptyPage,
+        search: filters.search,
+        status: filters.status,
+        providerStatus: filters.providerStatus,
+        ...sectionData,
+    };
 }
 
 /** Return one persisted conversation and a bounded chronological message page. */
