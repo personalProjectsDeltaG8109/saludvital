@@ -45,7 +45,11 @@ import {
     notificationEvents,
 } from "../services/notificationService.js";
 import { getPatientProfile } from "../services/profileService.js";
-import { getPatientClinicalHistory } from "../services/clinicalHistoryService.js";
+import {
+    getPatientClinicalHistory,
+    getPatientClinicalHistoryDetail,
+} from "../services/clinicalHistoryService.js";
+import { AppointmentError } from "../errors/appointmentError.js";
 import { getPatientAppointmentList } from "../services/patientAppointmentListService.js";
 import { getDepartments, getMunicipalities } from "../../auth/services/locationService.js";
 
@@ -498,6 +502,26 @@ patientRoutes.get(
 );
 
 patientRoutes.get(
+    "/api/patient/clinical-history/:consultationId",
+    authenticateToken,
+    requireRole("Patient"),
+    async (req, res, next) => {
+        try {
+            const consultation = await getPatientClinicalHistoryDetail(
+                req.auth.userId,
+                req.params.consultationId,
+            );
+            return res.json({ consultation });
+        } catch (error) {
+            if (error instanceof AppointmentError) {
+                return res.status(error.statusCode).json({ message: error.message });
+            }
+            return next(error);
+        }
+    },
+);
+
+patientRoutes.get(
     "/patient/clinical-history",
     authenticateToken,
     requireRole("Patient"),
@@ -630,29 +654,58 @@ patientRoutes.get(
                     ],
                 },
             ];
-            const consultations = previewMode
-                ? sampleConsultations
-                : await getPatientClinicalHistory(req.auth.userId);
-            const totals = consultations.reduce(
-                (counts, consultation) => {
-                    counts.diagnoses += consultation.diagnoses.length;
-                    counts.treatments += consultation.prescriptions.reduce(
-                        (prescriptionCount, prescription) =>
-                            prescriptionCount + (prescription.items?.length || 0),
-                        0,
-                    );
-                    return counts;
-                },
-                { diagnoses: 0, treatments: 0 },
-            );
+            const history = previewMode
+                ? {
+                      consultations: sampleConsultations.map((consultation) => ({
+                          id: consultation.id,
+                          date_label: consultation.date_label,
+                          time_label: consultation.time_label,
+                          specialty_label: consultation.specialty_label,
+                          doctor_label: consultation.doctor_label,
+                          doctor_photo_url: null,
+                          diagnosis_count: consultation.diagnoses.length,
+                          treatment_count: consultation.prescriptions.reduce(
+                              (count, prescription) => count + (prescription.items?.length || 0),
+                              0,
+                          ),
+                      })),
+                      totals: {
+                          consultations: sampleConsultations.length,
+                          diagnoses: sampleConsultations.reduce(
+                              (count, consultation) => count + consultation.diagnoses.length,
+                              0,
+                          ),
+                          treatments: sampleConsultations.reduce(
+                              (count, consultation) =>
+                                  count +
+                                  consultation.prescriptions.reduce(
+                                      (itemCount, prescription) =>
+                                          itemCount + (prescription.items?.length || 0),
+                                      0,
+                                  ),
+                              0,
+                          ),
+                      },
+                      pagination: {
+                          page: 1,
+                          pageSize: 10,
+                          total: sampleConsultations.length,
+                          totalPages: 1,
+                          firstResult: 1,
+                          lastResult: sampleConsultations.length,
+                      },
+                  }
+                : await getPatientClinicalHistory(req.auth.userId, req.query);
 
             return res.render("patient/clinical-history", {
                 pageTitle: "Historial clínico | SaludVital",
                 activeNav: "clinical-history",
                 welcomeMessage: "Aquí puedes consultar el registro de tus atenciones médicas.",
                 ...(await getPatientHeader(req.auth.userId)),
-                consultations,
-                totals: { consultations: consultations.length, ...totals },
+                consultations: history.consultations,
+                previewConsultations: previewMode ? sampleConsultations : [],
+                totals: history.totals,
+                pagination: history.pagination,
                 previewMode,
                 previewAvailable: process.env.NODE_ENV !== "production",
             });
