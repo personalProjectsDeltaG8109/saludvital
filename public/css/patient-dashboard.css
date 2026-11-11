@@ -710,6 +710,18 @@
     cursor: pointer;
 }
 
+.sv-appointment-buttons button:nth-of-type(2) {
+    width: 36px;
+    height: 36px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid #f2c9cf;
+    border-radius: 50%;
+    color: #b83245;
+    background: #fff7f8;
+    cursor: pointer;
+}
+
 .sv-appointment-buttons .appointment-detail-toggle {
     flex: 1 1 auto;
     min-height: 41px;
