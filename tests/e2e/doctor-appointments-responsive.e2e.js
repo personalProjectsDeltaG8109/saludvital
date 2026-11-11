@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import pug from "pug";
 import { chromium } from "playwright";
@@ -9,6 +9,7 @@ const stylesheetPaths = [
     "public/css/patient-dashboard.css",
     "public/css/doctor-dashboard.css",
 ];
+await mkdir("test-results", { recursive: true });
 const stylesheets = await Promise.all(stylesheetPaths.map((path) => readFile(path, "utf8")));
 const html = pug.renderFile("views/doctor/appointments.pug", {
     pageTitle: "Mis citas | SaludVital",
