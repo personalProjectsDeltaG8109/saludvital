@@ -119,13 +119,23 @@ try {
 
     await loadPage(page, rescheduleHtml);
     await page.evaluate(() => {
-        window.fetch = async () =>
-            new Response(JSON.stringify({ success: true, data: [] }), {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-            });
+        window.fetch = async (url) =>
+            new Response(
+                JSON.stringify({
+                    success: true,
+                    data: String(url).includes("/availability") ? ["09:00"] : [],
+                }),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
     });
     await page.addScriptTag({ content: rescheduleScript });
+    await page.locator('[data-next-step="2"]').click();
+    await page.locator(".reschedule-time-option").first().click();
+    await page.locator('[data-next-step="3"]').click();
+    await page.locator('[data-reschedule-panel="3"]').waitFor({ state: "visible" });
     await page.locator("[data-summary-doctor]").getByText("Doctora de prueba").waitFor();
     await page.locator("[data-summary-specialty]").getByText("Medicina General").waitFor();
     if (await page.getByText("Sede", { exact: true }).count()) {
