@@ -11,9 +11,9 @@
         article.admin-whatsapp-count-card
             span.admin-whatsapp-stat-icon.is-green(aria-hidden="true") ✓
             div
-                span ID local configurado
+                span Nombre local configurado
                 strong= configuredCount.toLocaleString("es-CO")
-                small Identificadores ocultos
+                small Nombres de plantilla ocultos
         article.admin-whatsapp-count-card
             span.admin-whatsapp-stat-icon.is-amber(aria-hidden="true") ◷
             div
@@ -47,7 +47,7 @@
                     data-template-configuration-filter
                 )
                     option(value="") Todas
-                    option(value="configured") ID configurado
+                    option(value="configured") Nombre configurado
                     option(value="missing") Sin configurar
         .admin-whatsapp-template-grid
             each template in templates
@@ -62,7 +62,7 @@
                             p= template.purpose
                         span.admin-whatsapp-record-status(
                             class=template.configured ? "is-active" : "is-incomplete"
-                        )= template.configured ? "ID configurado" : "Sin configurar"
+                        )= template.configured ? "Nombre configurado" : "Sin configurar"
                     dl.admin-whatsapp-template-details
                         dt Contenido
                         dd No disponible en la configuración local
@@ -75,4 +75,4 @@
         p.admin-whatsapp-empty(data-template-empty, hidden=templates.length > 0)
             | No hay plantillas que coincidan con la búsqueda.
         p.admin-whatsapp-template-limitation
-            | La aplicación guarda los identificadores en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.
+            | La aplicación guarda los nombres de plantilla en la configuración de despliegue. El contenido, idioma y aprobación del proveedor no están disponibles aquí; esta vista no crea ni modifica plantillas.

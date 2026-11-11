@@ -1,5 +1,11 @@
 const SUPPORTED_NOTIFICATION_TEMPLATES = [
     {
+        eventType: "appointment_confirmation",
+        name: "Confirmación de cita",
+        purpose: "Confirmar al paciente que su cita fue creada.",
+        environmentKey: "META_WHATSAPP_CONFIRMATION_TEMPLATE_NAME",
+    },
+    {
         eventType: "appointment_reminder",
         name: "Recordatorio de cita",
         purpose: "Recordar al paciente una cita programada.",
