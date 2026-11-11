@@ -1,4 +1,5 @@
 ﻿import { Router } from "express";
+import createAdminDoctorRoutes from "./adminDoctorRoutes.js";
 import { authenticateToken, requireRole } from "../../../middleware/authenticateToken.js";
 import { getAdminDashboardData } from "../services/adminDashboardService.js";
 import { getAdminAuditEvent, getAdminAuditLogs } from "../services/adminAuditService.js";
@@ -69,14 +70,6 @@ import {
     updateAdminSpecialty,
     updateAdminSpecialtyStatus,
 } from "../services/adminSpecialtyService.js";
-import {
-    createAdminDoctor,
-    getActiveDoctorSpecialties,
-    getAdminDoctorDetails,
-    getAdminDoctors,
-    getAdminDoctorStatusImpact,
-    updateAdminDoctorStatus,
-} from "../services/adminDoctorService.js";
 
 // Define the routes available to administrators.
 const adminRoutes = Router();
@@ -100,6 +93,8 @@ const requireAdministrator = [
     requireRole("Administrator"),
     loadAdminHeaderIdentity,
 ];
+
+adminRoutes.use(createAdminDoctorRoutes(requireAdministrator));
 
 adminRoutes.get(
     "/api/admin/doctor-schedule-exceptions",
@@ -529,72 +524,6 @@ adminRoutes.patch(
     },
 );
 
-adminRoutes.get("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
-    try {
-        return res.json(await getAdminDoctors(req.query));
-    } catch (error) {
-        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
-        return next(error);
-    }
-});
-adminRoutes.get(
-    "/api/admin/doctors/:doctorId/status-impact",
-    ...requireAdministrator,
-    async (req, res, next) => {
-        try {
-            return res.json(await getAdminDoctorStatusImpact(req.params.doctorId));
-        } catch (error) {
-            if (error.statusCode)
-                return res.status(error.statusCode).json({ message: error.message });
-            return next(error);
-        }
-    },
-);
-adminRoutes.patch(
-    "/api/admin/doctors/:doctorId/status",
-    ...requireAdministrator,
-    async (req, res, next) => {
-        try {
-            return res.json(
-                await updateAdminDoctorStatus(
-                    req.auth.userId,
-                    req.params.doctorId,
-                    req.body?.isActive,
-                ),
-            );
-        } catch (error) {
-            if (error.statusCode)
-                return res.status(error.statusCode).json({ message: error.message });
-            return next(error);
-        }
-    },
-);
-adminRoutes.get("/api/admin/doctors/:doctorId", ...requireAdministrator, async (req, res, next) => {
-    try {
-        return res.json(await getAdminDoctorDetails(req.params.doctorId));
-    } catch (error) {
-        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
-        return next(error);
-    }
-});
-adminRoutes.post("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
-    try {
-        return res.status(201).json(await createAdminDoctor(req.auth.userId, req.body));
-    } catch (error) {
-        if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
-        return next(error);
-    }
-});
-adminRoutes.get("/admin/doctors", ...requireAdministrator, async (_req, res, next) => {
-    try {
-        return res.render("admin/doctors", {
-            pageTitle: "Médicos | SaludVital",
-            adminName: "Administrador",
-        });
-    } catch (error) {
-        return next(error);
-    }
-});
 adminRoutes.get("/admin/doctor-schedules", ...requireAdministrator, (_req, res) => {
     return res.render("admin/doctor-schedules", {
         pageTitle: "Horarios y disponibilidad | SaludVital",
@@ -751,35 +680,6 @@ adminRoutes.get(
         }
     },
 );
-adminRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res) => {
-    return res.render("admin/doctor-form", {
-        pageTitle: "Crear médico | SaludVital",
-        adminName: "Administrador",
-        specialties: await getActiveDoctorSpecialties(),
-        formAction: "/api/admin/doctors",
-    });
-});
-adminRoutes.get("/admin/doctors/:doctorId", ...requireAdministrator, async (req, res, next) => {
-    try {
-        const doctor = await getAdminDoctorDetails(req.params.doctorId);
-        return res.render("admin/doctor-details", {
-            pageTitle: `${doctor.name} | Médicos SaludVital`,
-            adminName: "Administrador",
-            doctor,
-        });
-    } catch (error) {
-        if (error.statusCode === 404) {
-            return res.status(404).render("errors/404", {
-                pageTitle: "Médico no encontrado | SaludVital",
-                homeHref: "/admin/doctors",
-                appointmentsHref: null,
-                supportHref:
-                    "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
-            });
-        }
-        return next(error);
-    }
-});
 adminRoutes.get("/api/admin/dashboard", ...requireAdministrator, async (req, res, next) => {
     try {
         return res.json(await getAdminDashboardData(req.query, req.auth.userId));
