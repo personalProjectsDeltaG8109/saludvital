@@ -70,8 +70,8 @@
 .reschedule-actions a,.reschedule-actions button { min-width: 180px; min-height: 40px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--reschedule-blue); border-radius: 8px; color: var(--reschedule-blue); background: white; font-size: 12px; font-weight: 650; cursor: pointer; }
 .reschedule-actions button { min-width: 235px; color: white; background: var(--reschedule-blue); }
 .reschedule-actions button:disabled { opacity: .55; cursor: not-allowed; }
-.reschedule-actions .reschedule-back { border-color: #168de2; color: #168de2; background: #fff; }
-.reschedule-actions .reschedule-next { border-color: #168de2; color: #fff; background: #168de2; }
+.reschedule-actions .reschedule-back { border-color: #0878c6; color: #0878c6; background: #fff; }
+.reschedule-actions .reschedule-next { border-color: #0878c6; color: #fff; background: #0878c6; }
 .reschedule-dialog {
     position: fixed;
     inset: 50% auto auto 50%;
@@ -285,14 +285,14 @@
 }
 
 .reschedule-confirm-panel .reschedule-actions button {
-    border-color: #168de2;
+    border-color: #0878c6;
     color: #fff;
-    background-color: #168de2;
+    background-color: #0878c6;
 }
 
 .reschedule-confirm-panel .reschedule-actions .reschedule-back {
-    border-color: #168de2;
-    color: #168de2;
+    border-color: #0878c6;
+    color: #0878c6;
     background-color: #fff;
 }
 
