@@ -138,6 +138,61 @@
     gap: 12px;
 }
 
+.clinical-history-pagination {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #465f85;
+    font-size: 12px;
+}
+
+.clinical-history-pagination p {
+    margin: 0;
+}
+
+.clinical-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clinical-pagination-controls a,
+.clinical-pagination-controls span,
+.clinical-page-size select {
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid #d9e8f5;
+    border-radius: 8px;
+    background: #fff;
+    color: #123b73;
+    text-decoration: none;
+}
+
+.clinical-pagination-controls [aria-disabled="true"] {
+    color: #8292a8;
+    background: #f5f8fb;
+}
+
+.clinical-page-size {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.clinical-detail-loading,
+.clinical-detail-error {
+    margin: 16px;
+    color: #315a88;
+}
+
+.clinical-detail-error {
+    color: #a32626;
+}
+
 .clinical-list-panel,
 .clinical-detail-panel {
     min-width: 0;
@@ -349,7 +404,7 @@
 
 .clinical-list-empty {
     margin: 14px 0;
-    color: #687d96;
+    color: #586f89;
     font-size: 12px;
     text-align: center;
 }
@@ -599,7 +654,7 @@
 
 .clinical-tab-empty {
     margin: 18px 4px;
-    color: #687d96;
+    color: #586f89;
     font-size: 12px;
     text-align: center;
 }
@@ -925,6 +980,18 @@
 
     .clinical-vitals dl {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .clinical-history-pagination {
+        align-items: stretch;
+    }
+
+    .clinical-pagination-controls {
+        justify-content: space-between;
+    }
+
+    .clinical-page-size {
+        justify-content: space-between;
     }
 }
 
