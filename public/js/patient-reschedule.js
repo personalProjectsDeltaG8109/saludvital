@@ -26,10 +26,15 @@
     const summaryTime = document.querySelector("[data-summary-time]");
     const rescheduleLimitNote = document.querySelector("[data-reschedule-limit-note]");
     const stepItems = [...document.querySelectorAll("[data-reschedule-step]")];
+    const stepButtons = [...document.querySelectorAll("[data-reschedule-step-button]")];
+    const stepPanels = [...document.querySelectorAll("[data-reschedule-panel]")];
+    const mobileFlow = window.matchMedia("(max-width: 760px)");
     const maxReschedules = 3;
-    let selectedRow = rows.find((row) => row.querySelector("input").checked) || rows[0];
+    let selectedRow = rows.find((row) => row.querySelector("input").checked) || null;
     let selectedDate = "";
     let selectedTime = "";
+    let currentStep = selectedRow ? 2 : 1;
+    let highestStepReached = currentStep;
     let monthCursor = new Date();
     monthCursor.setDate(1);
 
@@ -70,16 +75,42 @@
     }
 
     function setCurrentStep(step) {
+        currentStep = step;
+        highestStepReached = Math.max(highestStepReached, step);
+
         stepItems.forEach((item) => {
             const itemStep = Number(item.dataset.rescheduleStep);
             const isComplete = itemStep <= step;
+            const button = item.querySelector("[data-reschedule-step-button]");
 
             // Keep completed steps filled while highlighting the current step for assistive technology.
             item.classList.toggle("is-complete", isComplete);
             item.classList.toggle("is-current", itemStep === step);
-            if (itemStep === step) item.setAttribute("aria-current", "step");
-            else item.removeAttribute("aria-current");
+            button.disabled = itemStep > highestStepReached;
+            if (itemStep === step) button.setAttribute("aria-current", "step");
+            else button.removeAttribute("aria-current");
         });
+
+        stepPanels.forEach((panel) => {
+            panel.hidden = mobileFlow.matches && Number(panel.dataset.reschedulePanel) !== step;
+        });
+    }
+
+    function goToStep(step) {
+        if (step > highestStepReached) return;
+        setCurrentStep(step);
+
+        if (step === 4) {
+            if (!feedbackDialog.open) feedbackDialog.showModal();
+            return;
+        }
+
+        const panel = stepPanels.find((item) => Number(item.dataset.reschedulePanel) === step);
+        panel?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (mobileFlow.matches) {
+            const focusTarget = panel?.querySelector("input:not(:disabled), button:not(:disabled)");
+            focusTarget?.focus({ preventScroll: true });
+        }
     }
 
     function updateSummary() {
@@ -105,8 +136,8 @@
                 ? "Te queda 1 reprogramación para esta cita."
                 : `Puedes reprogramar esta cita ${remainingReschedules} veces más.`;
         submitButton.disabled = !(selectedDate && selectedTime);
-        // A date alone is not enough; step 2 starts once a time is selected as well.
-        setCurrentStep(selectedTime ? 2 : 1);
+        // The confirmation step unlocks only after both a date and a time are selected.
+        setCurrentStep(selectedTime ? 3 : 2);
     }
 
     function clearFormAfterSuccess() {
@@ -136,6 +167,15 @@
     }
 
     async function loadTimes(date) {
+        if (!selectedRow) {
+            selectedDate = "";
+            selectedTime = "";
+            timeList.replaceChildren();
+            setMessage("Selecciona una cita para consultar horarios.");
+            updateSummary();
+            return;
+        }
+
         selectedDate = date;
         selectedTime = "";
         dateLabel.textContent = formatDate(date);
@@ -207,7 +247,7 @@
             button.type = "button";
             button.className = "reschedule-calendar-day";
             button.textContent = String(day);
-            button.disabled = dateAtTime(key, "23:30").getTime() < Date.now();
+            button.disabled = !selectedRow || dateAtTime(key, "23:30").getTime() < Date.now();
             button.classList.toggle("is-selected", key === selectedDate);
             button.addEventListener("click", () => {
                 calendarDays
@@ -225,12 +265,22 @@
             rows.forEach((item) => item.classList.toggle("is-selected", item === row));
             const existingDate = new Date(row.dataset.startAt);
             monthCursor = new Date(existingDate.getFullYear(), existingDate.getMonth(), 1);
+            selectedDate = "";
             selectedTime = "";
+            setCurrentStep(2);
             updateSummary();
             renderCalendar();
             loadTimes(dateKey(existingDate));
         }),
     );
+
+    stepButtons.forEach((button) =>
+        button.addEventListener("click", () => {
+            goToStep(Number(button.dataset.rescheduleStepButton));
+        }),
+    );
+
+    mobileFlow.addEventListener("change", () => setCurrentStep(currentStep));
 
     document.querySelectorAll("[data-month-shift]").forEach((button) =>
         button.addEventListener("click", () => {
@@ -271,7 +321,7 @@
             submitButton.disabled = false;
             submitButton.textContent = "Confirmar reprogramación";
             confirmDialog.close();
-            setCurrentStep(4);
+            setCurrentStep(3);
             showFeedback({
                 title: "No se pudo reprogramar la cita",
                 message: error.message || "Ocurrió un error al reprogramar la cita.",
@@ -300,7 +350,13 @@
         setCurrentStep(3);
         saveRescheduledAppointment();
     });
-    feedbackClose.addEventListener("click", () => feedbackDialog.close());
+    feedbackClose.addEventListener("click", () => {
+        if (feedbackDialog.classList.contains("is-error")) {
+            highestStepReached = 3;
+            setCurrentStep(3);
+        }
+        feedbackDialog.close();
+    });
 
     [confirmDialog, feedbackDialog].forEach((dialog) =>
         dialog.addEventListener("click", (event) => {
@@ -308,9 +364,15 @@
         }),
     );
 
-    const initialDate = new Date(selectedRow.dataset.startAt);
-    monthCursor = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
     renderCalendar();
-    loadTimes(dateKey(initialDate));
+    if (selectedRow) {
+        const initialDate = new Date(selectedRow.dataset.startAt);
+        monthCursor = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
+        renderCalendar();
+        loadTimes(dateKey(initialDate));
+    } else {
+        setMessage("Selecciona una cita para consultar horarios.");
+        setCurrentStep(1);
+    }
     updateSummary();
 })();

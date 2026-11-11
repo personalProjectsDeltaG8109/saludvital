@@ -468,7 +468,7 @@ patientRoutes.get(
                 (appointment) => appointment.id === requestedAppointmentId,
             )
                 ? requestedAppointmentId
-                : appointments[0]?.id;
+                : null;
 
             return res.render("patient/reschedule-appointment", {
                 pageTitle: "Reprogramar cita | SaludVital",

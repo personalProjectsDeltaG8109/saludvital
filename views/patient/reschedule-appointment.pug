@@ -27,20 +27,47 @@ html(lang="es")
                             p Selecciona la cita que deseas reprogramar y elige una nueva fecha y hora disponible con el mismo médico.
                     ol.reschedule-stepper(aria-label="Pasos para reprogramar una cita")
                         li.is-current(data-reschedule-step="1")
-                            span 1
-                            strong Seleccionar cita
+                            button.reschedule-step-button(
+                                type="button",
+                                data-reschedule-step-button="1",
+                                aria-current="step",
+                                aria-controls="reschedule-step-panel-1"
+                            )
+                                span 1
+                                strong Seleccionar cita
                         li(data-reschedule-step="2")
-                            span 2
-                            strong Nueva fecha y hora
+                            button.reschedule-step-button(
+                                type="button",
+                                data-reschedule-step-button="2",
+                                aria-controls="reschedule-step-panel-2",
+                                disabled
+                            )
+                                span 2
+                                strong Nueva fecha y hora
                         li(data-reschedule-step="3")
-                            span 3
-                            strong Confirmar
+                            button.reschedule-step-button(
+                                type="button",
+                                data-reschedule-step-button="3",
+                                aria-controls="reschedule-step-panel-3",
+                                disabled
+                            )
+                                span 3
+                                strong Confirmar
                         li(data-reschedule-step="4")
-                            span 4
-                            strong Resultado
+                            button.reschedule-step-button(
+                                type="button",
+                                data-reschedule-step-button="4",
+                                aria-controls="reschedule-step-panel-4",
+                                disabled
+                            )
+                                span 4
+                                strong Resultado
                     if appointments.length
                         form#reschedule-form.reschedule-form
-                            section.reschedule-panel(aria-labelledby="reschedule-select-title")
+                            section#reschedule-step-panel-1.reschedule-panel(
+                                aria-labelledby="reschedule-select-title",
+                                data-reschedule-panel="1"
+                            )
                                 .reschedule-panel-heading
                                     div
                                         h2#reschedule-select-title 1. Selecciona la cita a reprogramar
@@ -89,7 +116,11 @@ html(lang="es")
                                                     td(data-label="Médico")= doctorName
                                                     td(data-label="Estado")
                                                         span.reschedule-status Confirmada
-                            section.reschedule-panel(aria-labelledby="reschedule-date-title")
+                            section#reschedule-step-panel-2.reschedule-panel(
+                                aria-labelledby="reschedule-date-title",
+                                data-reschedule-panel="2",
+                                hidden
+                            )
                                 .reschedule-panel-heading
                                     div
                                         h2#reschedule-date-title 2. Elige una nueva fecha y hora
@@ -126,7 +157,18 @@ html(lang="es")
                                         h3 Resumen de la nueva cita
                                         p.reschedule-limit-note(data-reschedule-limit-note)
                                         .reschedule-summary-person
-                                            span.reschedule-doctor-avatar(aria-hidden="true")= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
+                                            if patientPhotoUrl
+                                                img.reschedule-patient-avatar(
+                                                    src=patientPhotoUrl,
+                                                    alt="",
+                                                    aria-hidden="true",
+                                                    data-patient-photo
+                                                )
+                                            else
+                                                span.reschedule-patient-avatar(
+                                                    aria-hidden="true",
+                                                    data-patient-photo-fallback
+                                                )= patientName.split(" ").map((name) => name.charAt(0)).slice(0, 2).join("").toUpperCase()
                                             span
                                                 strong(data-summary-doctor) Médico asignado
                                                 small(data-summary-specialty) Especialidad
@@ -136,9 +178,18 @@ html(lang="es")
                                         p
                                             span(aria-hidden="true") ◷
                                             span(data-summary-time) Selecciona un horario
-                            .reschedule-actions
-                                a.reschedule-cancel(href="/patient/dashboard") Cancelar
-                                button.reschedule-submit(type="submit", disabled) Confirmar reprogramación
+                            section#reschedule-step-panel-3.reschedule-panel.reschedule-confirm-panel(
+                                aria-labelledby="reschedule-confirm-step-title",
+                                data-reschedule-panel="3",
+                                hidden
+                            )
+                                .reschedule-panel-heading
+                                    div
+                                        h2#reschedule-confirm-step-title 3. Revisa y confirma el cambio
+                                        p Verifica el nuevo horario antes de guardar la reprogramación.
+                                .reschedule-actions
+                                    a.reschedule-cancel(href="/patient/dashboard") Cancelar
+                                    button.reschedule-submit(type="submit", disabled) Confirmar reprogramación
                             dialog.reschedule-dialog(
                                 data-confirm-reschedule-dialog,
                                 aria-labelledby="reschedule-confirm-title"
@@ -166,7 +217,7 @@ html(lang="es")
                                             type="button",
                                             data-confirm-reschedule
                                         ) Sí, reprogramar
-                            dialog.reschedule-dialog(
+                            dialog#reschedule-step-panel-4.reschedule-dialog(
                                 data-feedback-dialog,
                                 aria-labelledby="reschedule-feedback-title",
                                 aria-describedby="reschedule-feedback-message"

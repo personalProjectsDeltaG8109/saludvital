@@ -188,3 +188,148 @@
     .reschedule-content { padding-right: 7px; padding-left: 7px; }
     .reschedule-stepper li strong { font-size: 8px; }
 }
+
+.reschedule-panel[hidden] {
+    display: none !important;
+}
+
+.reschedule-stepper li {
+    gap: 0;
+}
+
+.reschedule-step-button {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 3px 5px 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border: 0;
+    color: inherit;
+    background: #f5fbff;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.reschedule-step-button > span {
+    position: relative;
+    z-index: 1;
+    width: 31px;
+    height: 31px;
+    flex: 0 0 31px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #b9cde0;
+    border-radius: 50%;
+    color: #45627f;
+    background: #f5faff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.reschedule-step-button > strong {
+    position: relative;
+    z-index: 1;
+    padding-right: 8px;
+    color: inherit;
+    background: #f5fbff;
+    font-size: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.reschedule-stepper li.is-current .reschedule-step-button > span,
+.reschedule-stepper li.is-complete .reschedule-step-button > span {
+    border-color: var(--reschedule-blue);
+    color: #fff;
+    background: var(--reschedule-blue);
+}
+
+.reschedule-step-button:disabled {
+    cursor: not-allowed;
+}
+
+.reschedule-step-button:not(:disabled):hover > strong {
+    color: var(--reschedule-blue);
+}
+
+.reschedule-step-button:focus-visible {
+    outline: 3px solid #13b8b0;
+    outline-offset: 3px;
+    border-radius: 8px;
+}
+
+.reschedule-patient-avatar {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 2px solid #d8efff;
+    border-radius: 50%;
+    color: #0878c6;
+    background: linear-gradient(145deg, #e1f3ff, #c8e7fa);
+    font-size: 12px;
+    font-weight: 750;
+    object-fit: cover;
+}
+
+.reschedule-confirm-panel .reschedule-actions {
+    margin: 12px 0 0;
+}
+
+@media (max-width: 760px) {
+    .reschedule-stepper li {
+        flex-direction: row;
+        gap: 0;
+    }
+
+    .reschedule-step-button {
+        min-height: 58px;
+        padding: 3px 1px;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 3px;
+        background: #f5fbff;
+        text-align: center;
+    }
+
+    .reschedule-step-button > span {
+        width: 27px;
+        height: 27px;
+        flex-basis: 27px;
+        font-size: 12px;
+    }
+
+    .reschedule-step-button > strong {
+        max-width: 76px;
+        padding: 0;
+        overflow: hidden;
+        background: transparent;
+        font-size: 9px;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+    }
+
+    .reschedule-stepper li:not(:last-child)::after {
+        top: 14px;
+        left: calc(50% + 17px);
+        right: calc(-50% + 17px);
+    }
+
+    .reschedule-confirm-panel .reschedule-actions {
+        margin: 8px -9px -10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .reschedule-step-button > strong {
+        max-width: 67px;
+        font-size: 8px;
+    }
+}
