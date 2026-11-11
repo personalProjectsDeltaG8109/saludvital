@@ -37,7 +37,12 @@ export async function refreshSession(sessionId, userId, now = new Date()) {
         },
     );
 
-    return updated === 1;
+    if (updated === 1) {
+        return true;
+    }
+
+    // MySQL may report no changed rows when concurrent requests write the same timestamp.
+    return hasActiveSession(sessionId, userId, now);
 }
 
 // Check validity without extending activity for background or read-only requests.
