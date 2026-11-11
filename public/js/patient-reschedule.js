@@ -9,32 +9,27 @@
     const timeMessage = document.querySelector("[data-time-message]");
     const dateLabel = document.querySelector("[data-selected-date-label]");
     const submitButton = document.querySelector(".reschedule-submit");
-    const confirmDialog = document.querySelector("[data-confirm-reschedule-dialog]");
-    const confirmDoctor = document.querySelector("[data-confirm-doctor]");
-    const confirmCurrentDateTime = document.querySelector("[data-confirm-current-datetime]");
-    const confirmNewDateTime = document.querySelector("[data-confirm-new-datetime]");
-    const confirmAction = document.querySelector("[data-confirm-reschedule]");
+    const nextAppointmentButton = document.querySelector('[data-next-step="2"]');
+    const nextDateTimeButton = document.querySelector('[data-next-step="3"]');
     const feedbackDialog = document.querySelector("[data-feedback-dialog]");
     const feedbackTitle = document.querySelector("[data-feedback-title]");
     const feedbackMessage = document.querySelector("[data-feedback-message]");
     const feedbackIcon = document.querySelector("[data-feedback-icon]");
     const feedbackClose = document.querySelector("[data-close-feedback]");
-    const viewAppointments = document.querySelector("[data-view-appointments]");
     const summaryDoctor = document.querySelector("[data-summary-doctor]");
     const summarySpecialty = document.querySelector("[data-summary-specialty]");
     const summaryDate = document.querySelector("[data-summary-date]");
     const summaryTime = document.querySelector("[data-summary-time]");
     const rescheduleLimitNote = document.querySelector("[data-reschedule-limit-note]");
+    const successCountdown = document.querySelector("[data-reschedule-countdown]");
     const stepItems = [...document.querySelectorAll("[data-reschedule-step]")];
-    const stepButtons = [...document.querySelectorAll("[data-reschedule-step-button]")];
     const stepPanels = [...document.querySelectorAll("[data-reschedule-panel]")];
-    const mobileFlow = window.matchMedia("(max-width: 760px)");
     const maxReschedules = 3;
     let selectedRow = rows.find((row) => row.querySelector("input").checked) || null;
     let selectedDate = "";
     let selectedTime = "";
-    let currentStep = selectedRow ? 2 : 1;
-    let highestStepReached = currentStep;
+    let currentStep = 1;
+    let highestStepReached = 1;
     let monthCursor = new Date();
     monthCursor.setDate(1);
 
@@ -56,21 +51,13 @@
             minute: "2-digit",
             timeZone: "America/Bogota",
         }).format(dateAtTime("2000-01-01", time));
-    const formatDateTime = (date) =>
-        new Intl.DateTimeFormat("es-CO", {
-            dateStyle: "long",
-            timeStyle: "short",
-            timeZone: "America/Bogota",
-        }).format(date);
-
     function showFeedback({ title, message, isSuccess }) {
         feedbackTitle.textContent = title;
         feedbackMessage.textContent = message;
         feedbackIcon.textContent = isSuccess ? "✓" : "!";
         feedbackDialog.classList.toggle("is-success", isSuccess);
         feedbackDialog.classList.toggle("is-error", !isSuccess);
-        feedbackClose.textContent = isSuccess ? "Cerrar" : "Intentar de nuevo";
-        viewAppointments.hidden = !isSuccess;
+        feedbackClose.textContent = "Entendido";
         feedbackDialog.showModal();
     }
 
@@ -81,36 +68,23 @@
         stepItems.forEach((item) => {
             const itemStep = Number(item.dataset.rescheduleStep);
             const isComplete = itemStep <= step;
-            const button = item.querySelector("[data-reschedule-step-button]");
 
-            // Keep completed steps filled while highlighting the current step for assistive technology.
             item.classList.toggle("is-complete", isComplete);
             item.classList.toggle("is-current", itemStep === step);
-            button.disabled = itemStep > highestStepReached;
-            if (itemStep === step) button.setAttribute("aria-current", "step");
-            else button.removeAttribute("aria-current");
+            if (itemStep === step) item.setAttribute("aria-current", "step");
+            else item.removeAttribute("aria-current");
         });
 
         stepPanels.forEach((panel) => {
-            panel.hidden = mobileFlow.matches && Number(panel.dataset.reschedulePanel) !== step;
+            panel.hidden = Number(panel.dataset.reschedulePanel) !== step;
         });
     }
 
     function goToStep(step) {
-        if (step > highestStepReached) return;
+        if (step > highestStepReached + 1) return;
         setCurrentStep(step);
-
-        if (step === 4) {
-            if (!feedbackDialog.open) feedbackDialog.showModal();
-            return;
-        }
-
         const panel = stepPanels.find((item) => Number(item.dataset.reschedulePanel) === step);
         panel?.scrollIntoView({ behavior: "smooth", block: "start" });
-        if (mobileFlow.matches) {
-            const focusTarget = panel?.querySelector("input:not(:disabled), button:not(:disabled)");
-            focusTarget?.focus({ preventScroll: true });
-        }
     }
 
     function updateSummary() {
@@ -120,8 +94,9 @@
             summaryDate.textContent = "Selecciona una fecha";
             summaryTime.textContent = "Selecciona un horario";
             rescheduleLimitNote.textContent = "";
+            nextAppointmentButton.disabled = true;
+            nextDateTimeButton.disabled = true;
             submitButton.disabled = true;
-            setCurrentStep(1);
             return;
         }
 
@@ -135,30 +110,9 @@
             remainingReschedules === 1
                 ? "Te queda 1 reprogramación para esta cita."
                 : `Puedes reprogramar esta cita ${remainingReschedules} veces más.`;
+        nextAppointmentButton.disabled = false;
+        nextDateTimeButton.disabled = !(selectedDate && selectedTime);
         submitButton.disabled = !(selectedDate && selectedTime);
-        // The confirmation step unlocks only after both a date and a time are selected.
-        setCurrentStep(selectedTime ? 3 : 2);
-    }
-
-    function clearFormAfterSuccess() {
-        // Clear the selected appointment and new date after a successful reschedule.
-        selectedRow = null;
-        selectedDate = "";
-        selectedTime = "";
-        rows.forEach((row) => {
-            row.classList.remove("is-selected");
-            row.querySelector("input").checked = false;
-        });
-        calendarDays.replaceChildren();
-        timeList.replaceChildren();
-        dateLabel.textContent = "Selecciona una fecha disponible.";
-        setMessage("Selecciona una cita para consultar horarios.");
-        summaryDoctor.textContent = "Selecciona una cita";
-        summarySpecialty.textContent = "Especialidad";
-        summaryDate.textContent = "Selecciona una fecha";
-        summaryTime.textContent = "Selecciona un horario";
-        rescheduleLimitNote.textContent = "";
-        submitButton.disabled = true;
     }
 
     function setMessage(message, isError = false) {
@@ -263,24 +217,40 @@
         row.querySelector("input").addEventListener("change", () => {
             selectedRow = row;
             rows.forEach((item) => item.classList.toggle("is-selected", item === row));
-            const existingDate = new Date(row.dataset.startAt);
-            monthCursor = new Date(existingDate.getFullYear(), existingDate.getMonth(), 1);
             selectedDate = "";
             selectedTime = "";
-            setCurrentStep(2);
+            nextDateTimeButton.disabled = true;
+            submitButton.disabled = true;
+            timeList.replaceChildren();
+            dateLabel.textContent = "Selecciona una fecha disponible.";
+            setMessage("Selecciona una cita para consultar horarios.");
             updateSummary();
-            renderCalendar();
+        }),
+    );
+
+    nextAppointmentButton.addEventListener("click", () => {
+        if (!selectedRow) return;
+        const existingDate = new Date(selectedRow.dataset.startAt);
+        const calendarDate = selectedDate ? dateAtTime(selectedDate, "12:00") : existingDate;
+        monthCursor = new Date(calendarDate.getFullYear(), calendarDate.getMonth(), 1);
+        goToStep(2);
+        renderCalendar();
+        if (selectedDate) {
+            dateLabel.textContent = formatDate(selectedDate);
+        } else {
             loadTimes(dateKey(existingDate));
-        }),
-    );
+        }
+    });
 
-    stepButtons.forEach((button) =>
-        button.addEventListener("click", () => {
-            goToStep(Number(button.dataset.rescheduleStepButton));
-        }),
-    );
-
-    mobileFlow.addEventListener("change", () => setCurrentStep(currentStep));
+    document.querySelector('[data-back-step="1"]').addEventListener("click", () => {
+        goToStep(1);
+    });
+    nextDateTimeButton.addEventListener("click", () => {
+        if (selectedDate && selectedTime) goToStep(3);
+    });
+    document.querySelector('[data-back-step="2"]').addEventListener("click", () => {
+        goToStep(2);
+    });
 
     document.querySelectorAll("[data-month-shift]").forEach((button) =>
         button.addEventListener("click", () => {
@@ -292,7 +262,6 @@
     async function saveRescheduledAppointment() {
         submitButton.disabled = true;
         submitButton.textContent = "Guardando cambio…";
-        confirmAction.disabled = true;
 
         try {
             const response = await fetch(
@@ -307,72 +276,47 @@
             const payload = await response.json();
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudo reprogramar la cita.");
-            submitButton.textContent = "Cita reprogramada";
-            confirmDialog.close();
-            clearFormAfterSuccess();
             setCurrentStep(4);
-            showFeedback({
-                title: "¡Cita reprogramada!",
-                message:
-                    "Tu cita fue reprogramada correctamente. Puedes consultar el nuevo horario en Mis citas.",
-                isSuccess: true,
-            });
+            let secondsRemaining = 4;
+            successCountdown.textContent = String(secondsRemaining);
+            const countdownInterval = window.setInterval(() => {
+                secondsRemaining -= 1;
+                successCountdown.textContent = String(secondsRemaining);
+                if (secondsRemaining <= 0) {
+                    window.clearInterval(countdownInterval);
+                    window.location.assign("/patient/appointments");
+                }
+            }, 1000);
         } catch (error) {
             submitButton.disabled = false;
             submitButton.textContent = "Confirmar reprogramación";
-            confirmDialog.close();
             setCurrentStep(3);
             showFeedback({
                 title: "No se pudo reprogramar la cita",
                 message: error.message || "Ocurrió un error al reprogramar la cita.",
                 isSuccess: false,
             });
-        } finally {
-            confirmAction.disabled = false;
         }
     }
 
     form.addEventListener("submit", (event) => {
         event.preventDefault();
-        if (!selectedDate || !selectedTime) return;
-
-        confirmDoctor.textContent = selectedRow.dataset.doctorName;
-        confirmCurrentDateTime.textContent = formatDateTime(new Date(selectedRow.dataset.startAt));
-        confirmNewDateTime.textContent = formatDateTime(dateAtTime(selectedDate, selectedTime));
-        confirmDialog.showModal();
-    });
-
-    document.querySelector("[data-cancel-reschedule]").addEventListener("click", () => {
-        confirmDialog.close();
-    });
-    confirmAction.addEventListener("click", () => {
-        // Advance to confirmation only after the patient accepts the confirmation dialog.
-        setCurrentStep(3);
+        if (!selectedRow || !selectedDate || !selectedTime) return;
         saveRescheduledAppointment();
     });
+
     feedbackClose.addEventListener("click", () => {
-        if (feedbackDialog.classList.contains("is-error")) {
-            highestStepReached = 3;
-            setCurrentStep(3);
-        }
+        highestStepReached = 3;
+        setCurrentStep(3);
         feedbackDialog.close();
     });
 
-    [confirmDialog, feedbackDialog].forEach((dialog) =>
-        dialog.addEventListener("click", (event) => {
-            if (event.target === dialog) dialog.close();
-        }),
-    );
+    feedbackDialog.addEventListener("click", (event) => {
+        if (event.target === feedbackDialog) feedbackDialog.close();
+    });
 
     renderCalendar();
-    if (selectedRow) {
-        const initialDate = new Date(selectedRow.dataset.startAt);
-        monthCursor = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
-        renderCalendar();
-        loadTimes(dateKey(initialDate));
-    } else {
-        setMessage("Selecciona una cita para consultar horarios.");
-        setCurrentStep(1);
-    }
+    setMessage("Selecciona una cita para consultar horarios.");
+    setCurrentStep(currentStep);
     updateSummary();
 })();
