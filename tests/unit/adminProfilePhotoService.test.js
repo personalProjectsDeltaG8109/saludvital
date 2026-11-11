@@ -14,17 +14,17 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Rol: {},
     User: { findByPk: jest.fn() },
 }));
-jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
-    decodeDoctorPhoto: jest.fn(),
-    removeDoctorPhoto: jest.fn(),
-    storeDoctorPhoto: jest.fn(),
+jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.js", () => ({
+    decodeProfilePhoto: jest.fn(),
+    removeStoredProfilePhoto: jest.fn(),
+    storeDecodedProfilePhoto: jest.fn(),
 }));
 
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
 const { User } = await import("../../src/models/associations.js");
-const { decodeDoctorPhoto, removeDoctorPhoto, storeDoctorPhoto } =
-    await import("../../src/modules/admin/services/doctorPhotoService.js");
+const { decodeProfilePhoto, removeStoredProfilePhoto, storeDecodedProfilePhoto } =
+    await import("../../src/shared/services/profilePhotoStorageService.js");
 const { removeAdminProfilePhoto, updateAdminProfilePhoto } =
     await import("../../src/modules/admin/services/adminProfilePhotoService.js");
 
@@ -45,9 +45,9 @@ describe("administrator profile photo service", () => {
         jest.clearAllMocks();
         User.findByPk.mockResolvedValue(createAdministrator());
         AuditLog.create.mockResolvedValue({ id: 4 });
-        decodeDoctorPhoto.mockReturnValue({ bytes: Buffer.from("image"), extension: "png" });
-        storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/new.png");
-        removeDoctorPhoto.mockResolvedValue(undefined);
+        decodeProfilePhoto.mockReturnValue({ bytes: Buffer.from("image"), extension: "png" });
+        storeDecodedProfilePhoto.mockResolvedValue("/uploads/profile-photos/new.png");
+        removeStoredProfilePhoto.mockResolvedValue(undefined);
         database.transaction.mockImplementation(async (callback) => callback(transaction));
     });
 
@@ -58,7 +58,7 @@ describe("administrator profile photo service", () => {
             profilePhotoUrl: "/uploads/profile-photos/new.png",
             message: "Tu foto de perfil se actualizó correctamente.",
         });
-        expect(decodeDoctorPhoto).toHaveBeenCalledWith("data:image/png;base64,aW1hZ2U=");
+        expect(decodeProfilePhoto).toHaveBeenCalledWith("data:image/png;base64,aW1hZ2U=");
         expect(User.findByPk).toHaveBeenCalledWith(
             12,
             expect.objectContaining({
@@ -67,7 +67,10 @@ describe("administrator profile photo service", () => {
                 lock: transaction.LOCK.UPDATE,
             }),
         );
-        expect(storeDoctorPhoto).toHaveBeenCalledWith("data:image/png;base64,aW1hZ2U=");
+        expect(storeDecodedProfilePhoto).toHaveBeenCalledWith({
+            bytes: Buffer.from("image"),
+            extension: "png",
+        });
         expect(AuditLog.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 actor_user_id: 12,
@@ -80,11 +83,11 @@ describe("administrator profile photo service", () => {
             { transaction },
         );
         expect(JSON.stringify(AuditLog.create.mock.calls)).not.toContain("aW1hZ2U=");
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
     });
 
     test("rejects invalid image data before loading the administrator", async () => {
-        decodeDoctorPhoto.mockImplementation(() => {
+        decodeProfilePhoto.mockImplementation(() => {
             throw Object.assign(new Error("La foto no es válida."), { statusCode: 400 });
         });
 
@@ -93,7 +96,7 @@ describe("administrator profile photo service", () => {
         });
 
         expect(User.findByPk).not.toHaveBeenCalled();
-        expect(storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(storeDecodedProfilePhoto).not.toHaveBeenCalled();
     });
 
     test("rejects accounts that are not active administrators", async () => {
@@ -110,7 +113,7 @@ describe("administrator profile photo service", () => {
             statusCode: 404,
         });
 
-        expect(storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(storeDecodedProfilePhoto).not.toHaveBeenCalled();
     });
 
     test("keeps the old photo when persistence fails and removes the new file", async () => {
@@ -122,8 +125,10 @@ describe("administrator profile photo service", () => {
             "Database unavailable",
         );
 
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
-        expect(removeDoctorPhoto).not.toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
+        expect(removeStoredProfilePhoto).not.toHaveBeenCalledWith(
+            "/uploads/profile-photos/old.png",
+        );
     });
 
     test("does not remove the old photo if audit persistence fails", async () => {
@@ -133,8 +138,10 @@ describe("administrator profile photo service", () => {
             "Audit unavailable",
         );
 
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
-        expect(removeDoctorPhoto).not.toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
+        expect(removeStoredProfilePhoto).not.toHaveBeenCalledWith(
+            "/uploads/profile-photos/old.png",
+        );
     });
 
     test("removes the database reference and stored photo after confirming the account", async () => {
@@ -149,7 +156,7 @@ describe("administrator profile photo service", () => {
         expect(user.update).toHaveBeenCalledWith({ profile_photo_url: null }, { transaction });
         expect(AuditLog.create).toHaveBeenCalledTimes(1);
         expect(AuditLog.create.mock.calls[0][0].action).toBe("AdminUserProfilePhotoRemoved");
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
     });
 
     test("does not audit or remove a file when no photo exists", async () => {
@@ -161,6 +168,6 @@ describe("administrator profile photo service", () => {
         });
 
         expect(AuditLog.create).not.toHaveBeenCalled();
-        expect(removeDoctorPhoto).not.toHaveBeenCalled();
+        expect(removeStoredProfilePhoto).not.toHaveBeenCalled();
     });
 });

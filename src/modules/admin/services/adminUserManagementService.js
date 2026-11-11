@@ -8,7 +8,10 @@ import {
     getMunicipalities,
     resolveLocation,
 } from "../../auth/services/locationService.js";
-import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
+import {
+    removeStoredProfilePhoto,
+    storeProfilePhoto,
+} from "../../../shared/services/profilePhotoStorageService.js";
 import {
     normalizeProfileEmail,
     normalizeProfilePhone,
@@ -693,7 +696,7 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 if (!specialty) throw serviceError("La especialidad seleccionada no existe.", 400);
                 previousPhotoUrl = doctor.profile_photo_url || null;
                 if (normalizedDoctor.photo) {
-                    storedPhotoUrl = await storeDoctorPhoto(normalizedDoctor.photo);
+                    storedPhotoUrl = await storeProfilePhoto(normalizedDoctor.photo);
                     normalizedDoctor.profile_photo_url = storedPhotoUrl;
                 }
                 delete normalizedDoctor.photo;
@@ -751,12 +754,12 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 previousPhotoUrl !== updatedPhotoUrl &&
                 previousPhotoUrl.startsWith("/uploads/profile-photos/")
             ) {
-                await removeDoctorPhoto(previousPhotoUrl).catch(() => {});
+                await removeStoredProfilePhoto(previousPhotoUrl).catch(() => {});
             }
             return result;
         })
         .catch(async (error) => {
-            if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl).catch(() => {});
+            if (storedPhotoUrl) await removeStoredProfilePhoto(storedPhotoUrl).catch(() => {});
             if (isEmailUniqueConstraintError(error)) {
                 throw serviceError("Ese correo electrónico ya está registrado.", 409);
             }

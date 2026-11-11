@@ -27,9 +27,9 @@ jest.unstable_mockModule(
         enqueueAppointmentNotifications: jest.fn(),
     }),
 );
-jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
-    removeDoctorPhoto: jest.fn(),
-    storeDoctorPhoto: jest.fn(),
+jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.js", () => ({
+    removeStoredProfilePhoto: jest.fn(),
+    storeProfilePhoto: jest.fn(),
 }));
 
 const { Op } = await import("sequelize");

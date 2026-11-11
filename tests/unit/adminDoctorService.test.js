@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("bcrypt", () => ({ default: { hash: jest.fn() } }));
 jest.unstable_mockModule("sequelize", () => ({
@@ -33,9 +33,9 @@ jest.unstable_mockModule(
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));
-jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
-    storeDoctorPhoto: jest.fn(),
-    removeDoctorPhoto: jest.fn(),
+jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.js", () => ({
+    storeProfilePhoto: jest.fn(),
+    removeStoredProfilePhoto: jest.fn(),
 }));
 
 const bcrypt = (await import("bcrypt")).default;
@@ -43,7 +43,8 @@ const database = (await import("../../config/database.js")).default;
 const { Doctor, DoctorAvailability, EmailOutbox, Rol, Specialities, User } =
     await import("../../src/models/associations.js");
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const doctorPhotoService = await import("../../src/modules/admin/services/doctorPhotoService.js");
+const profilePhotoStorageService =
+    await import("../../src/shared/services/profilePhotoStorageService.js");
 const { createAdminDoctor, getAdminDoctorDetails, getAdminDoctors } =
     await import("../../src/modules/admin/services/adminDoctorService.js");
 
@@ -206,7 +207,9 @@ describe("Admin doctor management service", () => {
         User.findByPk.mockResolvedValue({ id: 1, email: "admin@example.com" });
         EmailOutbox.create.mockResolvedValue({});
         AuditLog.create.mockResolvedValue({});
-        doctorPhotoService.storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/doctor.png");
+        profilePhotoStorageService.storeProfilePhoto.mockResolvedValue(
+            "/uploads/profile-photos/doctor.png",
+        );
 
         await createAdminDoctor(1, {
             email: "doctor@example.com",
@@ -216,7 +219,7 @@ describe("Admin doctor management service", () => {
             photo: "data:image/png;base64,valid-photo-data",
         });
 
-        expect(doctorPhotoService.storeDoctorPhoto).toHaveBeenCalledWith(
+        expect(profilePhotoStorageService.storeProfilePhoto).toHaveBeenCalledWith(
             "data:image/png;base64,valid-photo-data",
         );
         expect(Doctor.create).toHaveBeenCalledWith(
@@ -233,7 +236,9 @@ describe("Admin doctor management service", () => {
         User.findByPk.mockResolvedValue({ id: 1, email: "admin@example.com" });
         bcrypt.hash.mockResolvedValue("secure-hash");
         User.create.mockResolvedValue({ id: 7 });
-        doctorPhotoService.storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/doctor.png");
+        profilePhotoStorageService.storeProfilePhoto.mockResolvedValue(
+            "/uploads/profile-photos/doctor.png",
+        );
         Doctor.create.mockRejectedValue(new Error("database failure"));
 
         await expect(
@@ -245,7 +250,7 @@ describe("Admin doctor management service", () => {
                 photo: "data:image/png;base64,valid-photo-data",
             }),
         ).rejects.toThrow("database failure");
-        expect(doctorPhotoService.removeDoctorPhoto).toHaveBeenCalledWith(
+        expect(profilePhotoStorageService.removeStoredProfilePhoto).toHaveBeenCalledWith(
             "/uploads/profile-photos/doctor.png",
         );
     });

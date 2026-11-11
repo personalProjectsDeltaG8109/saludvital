@@ -1,10 +1,10 @@
 import database from "../../../../config/database.js";
 import { Doctor } from "../../../models/associations.js";
 import {
-    decodeDoctorPhoto,
-    removeDoctorPhoto,
-    storeDoctorPhoto,
-} from "../../admin/services/doctorPhotoService.js";
+    decodeProfilePhoto,
+    removeStoredProfilePhoto,
+    storeDecodedProfilePhoto,
+} from "../../../shared/services/profilePhotoStorageService.js";
 
 function createPhotoError(message, statusCode) {
     const error = new Error(message);
@@ -27,7 +27,7 @@ function isStoredDoctorPhoto(photoUrl) {
 /** Save a photo only to the doctor profile linked to the authenticated user. */
 export async function updateDoctorProfilePhoto(rawUserId, dataUrl) {
     const userId = parseUserId(rawUserId);
-    decodeDoctorPhoto(dataUrl);
+    const decodedPhoto = decodeProfilePhoto(dataUrl);
 
     let newPhotoUrl = null;
     let previousPhotoUrl = null;
@@ -43,18 +43,18 @@ export async function updateDoctorProfilePhoto(rawUserId, dataUrl) {
             if (!doctor) throw createPhotoError("No se encontró el perfil médico.", 404);
 
             previousPhotoUrl = doctor.profile_photo_url;
-            const photoUrl = await storeDoctorPhoto(dataUrl);
+            const photoUrl = await storeDecodedProfilePhoto(decodedPhoto);
             newPhotoUrl = photoUrl;
             await doctor.update({ profile_photo_url: photoUrl }, { transaction });
             return photoUrl;
         });
     } catch (error) {
-        if (newPhotoUrl) await removeDoctorPhoto(newPhotoUrl).catch(() => {});
+        if (newPhotoUrl) await removeStoredProfilePhoto(newPhotoUrl).catch(() => {});
         throw error;
     }
 
     if (isStoredDoctorPhoto(previousPhotoUrl) && previousPhotoUrl !== newPhotoUrl) {
-        await removeDoctorPhoto(previousPhotoUrl).catch(() => {});
+        await removeStoredProfilePhoto(previousPhotoUrl).catch(() => {});
     }
 
     return {

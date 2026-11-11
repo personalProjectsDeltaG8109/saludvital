@@ -8,16 +8,16 @@ jest.unstable_mockModule("../../config/database.js", () => ({
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { findOne: jest.fn() },
 }));
-jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
-    decodeDoctorPhoto: jest.fn(),
-    removeDoctorPhoto: jest.fn(),
-    storeDoctorPhoto: jest.fn(),
+jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.js", () => ({
+    decodeProfilePhoto: jest.fn(),
+    removeStoredProfilePhoto: jest.fn(),
+    storeDecodedProfilePhoto: jest.fn(),
 }));
 
 const database = (await import("../../config/database.js")).default;
 const { Doctor } = await import("../../src/models/associations.js");
-const { decodeDoctorPhoto, removeDoctorPhoto, storeDoctorPhoto } =
-    await import("../../src/modules/admin/services/doctorPhotoService.js");
+const { decodeProfilePhoto, removeStoredProfilePhoto, storeDecodedProfilePhoto } =
+    await import("../../src/shared/services/profilePhotoStorageService.js");
 const { updateDoctorProfilePhoto } =
     await import("../../src/modules/doctor/services/doctorProfilePhotoService.js");
 
@@ -35,9 +35,9 @@ describe("doctor profile photo service", () => {
         jest.clearAllMocks();
         database.transaction.mockImplementation(async (callback) => callback(transaction));
         Doctor.findOne.mockResolvedValue(createDoctor());
-        decodeDoctorPhoto.mockReturnValue({ bytes: Buffer.from("valid image"), extension: "png" });
-        storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/new.png");
-        removeDoctorPhoto.mockResolvedValue(undefined);
+        decodeProfilePhoto.mockReturnValue({ bytes: Buffer.from("valid image"), extension: "png" });
+        storeDecodedProfilePhoto.mockResolvedValue("/uploads/profile-photos/new.png");
+        removeStoredProfilePhoto.mockResolvedValue(undefined);
     });
 
     test("saves the photo only to the authenticated doctor's profile", async () => {
@@ -49,16 +49,20 @@ describe("doctor profile photo service", () => {
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
-        expect(storeDoctorPhoto).toHaveBeenCalledWith("data:image/png;base64,aW1hZ2U=");
+        expect(decodeProfilePhoto).toHaveBeenCalledWith("data:image/png;base64,aW1hZ2U=");
+        expect(storeDecodedProfilePhoto).toHaveBeenCalledWith({
+            bytes: Buffer.from("valid image"),
+            extension: "png",
+        });
         expect(result).toEqual({
             profilePhotoUrl: "/uploads/profile-photos/new.png",
             message: "Tu foto de perfil se actualizó correctamente.",
         });
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/old.png");
     });
 
     test("rejects invalid images before finding or changing a doctor", async () => {
-        decodeDoctorPhoto.mockImplementation(() => {
+        decodeProfilePhoto.mockImplementation(() => {
             throw Object.assign(new Error("La foto debe ser JPG, PNG o WebP y no superar 2 MB."), {
                 statusCode: 400,
             });
@@ -69,7 +73,7 @@ describe("doctor profile photo service", () => {
         ).rejects.toMatchObject({ statusCode: 400 });
 
         expect(Doctor.findOne).not.toHaveBeenCalled();
-        expect(storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(storeDecodedProfilePhoto).not.toHaveBeenCalled();
     });
 
     test("does not upload if the authenticated user has no doctor profile", async () => {
@@ -79,7 +83,7 @@ describe("doctor profile photo service", () => {
             updateDoctorProfilePhoto(42, "data:image/png;base64,aW1hZ2U="),
         ).rejects.toMatchObject({ statusCode: 404 });
 
-        expect(storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(storeDecodedProfilePhoto).not.toHaveBeenCalled();
     });
 
     test("preserves the current image when database persistence fails", async () => {
@@ -91,8 +95,10 @@ describe("doctor profile photo service", () => {
             updateDoctorProfilePhoto(42, "data:image/png;base64,aW1hZ2U="),
         ).rejects.toThrow("Database unavailable");
 
-        expect(removeDoctorPhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
-        expect(removeDoctorPhoto).not.toHaveBeenCalledWith("/uploads/profile-photos/old.png");
+        expect(removeStoredProfilePhoto).toHaveBeenCalledWith("/uploads/profile-photos/new.png");
+        expect(removeStoredProfilePhoto).not.toHaveBeenCalledWith(
+            "/uploads/profile-photos/old.png",
+        );
     });
 
     test("rejects invalid authenticated user identifiers", async () => {

@@ -1,7 +1,11 @@
 import database from "../../../../config/database.js";
 import AuditLog from "../../../models/AuditLog.js";
 import { Rol, User } from "../../../models/associations.js";
-import { decodeDoctorPhoto, removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
+import {
+    decodeProfilePhoto,
+    removeStoredProfilePhoto,
+    storeDecodedProfilePhoto,
+} from "../../../shared/services/profilePhotoStorageService.js";
 
 function serviceError(message, statusCode = 400) {
     const error = new Error(message);
@@ -57,7 +61,7 @@ function isStoredProfilePhoto(photoUrl) {
 /** Save a new photo for the authenticated administrator without losing the current image on failure. */
 export async function updateAdminProfilePhoto(rawUserId, dataUrl) {
     const userId = parseUserId(rawUserId);
-    decodeDoctorPhoto(dataUrl);
+    const decodedPhoto = decodeProfilePhoto(dataUrl);
     let newPhotoUrl = null;
     let previousPhotoUrl = null;
 
@@ -66,19 +70,19 @@ export async function updateAdminProfilePhoto(rawUserId, dataUrl) {
             const user = await findAdministrator(userId, transaction);
             previousPhotoUrl = user.profile_photo_url;
 
-            const photoUrl = await storeDoctorPhoto(dataUrl);
+            const photoUrl = await storeDecodedProfilePhoto(decodedPhoto);
             newPhotoUrl = photoUrl;
             await user.update({ profile_photo_url: photoUrl }, { transaction });
             await createPhotoAuditRecord(user, "AdminUserProfilePhotoUpdated", transaction);
             return photoUrl;
         });
     } catch (error) {
-        if (newPhotoUrl) await removeDoctorPhoto(newPhotoUrl).catch(() => {});
+        if (newPhotoUrl) await removeStoredProfilePhoto(newPhotoUrl).catch(() => {});
         throw error;
     }
 
     if (isStoredProfilePhoto(previousPhotoUrl) && previousPhotoUrl !== newPhotoUrl) {
-        await removeDoctorPhoto(previousPhotoUrl).catch(() => {});
+        await removeStoredProfilePhoto(previousPhotoUrl).catch(() => {});
     }
 
     return {
@@ -101,7 +105,7 @@ export async function removeAdminProfilePhoto(rawUserId) {
     });
 
     if (isStoredProfilePhoto(result.previousPhotoUrl)) {
-        await removeDoctorPhoto(result.previousPhotoUrl).catch(() => {});
+        await removeStoredProfilePhoto(result.previousPhotoUrl).catch(() => {});
     }
 
     return {

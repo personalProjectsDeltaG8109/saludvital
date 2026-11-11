@@ -18,7 +18,10 @@ import {
     enqueueAppointmentNotifications,
 } from "../../patient/services/notificationAutomationService.js";
 import { isValidPassword } from "../../auth/services/passwordPolicy.js";
-import { removeDoctorPhoto, storeDoctorPhoto } from "./doctorPhotoService.js";
+import {
+    removeStoredProfilePhoto,
+    storeProfilePhoto,
+} from "../../../shared/services/profilePhotoStorageService.js";
 import {
     isEmailUnavailable,
     isEmailUniqueConstraintError,
@@ -467,7 +470,7 @@ export async function createAdminDoctor(actorId, payload) {
                 { transaction },
             );
 
-            if (values.photo) storedPhotoUrl = await storeDoctorPhoto(values.photo);
+            if (values.photo) storedPhotoUrl = await storeProfilePhoto(values.photo);
 
             const doctor = await Doctor.create(
                 {
@@ -514,7 +517,7 @@ export async function createAdminDoctor(actorId, payload) {
             };
         });
     } catch (error) {
-        if (storedPhotoUrl) await removeDoctorPhoto(storedPhotoUrl);
+        if (storedPhotoUrl) await removeStoredProfilePhoto(storedPhotoUrl);
         if (
             isEmailUniqueConstraintError(error) ||
             error.name === "SequelizeUniqueConstraintError"
