@@ -269,7 +269,14 @@ describe("Email outbox worker", () => {
     });
 
     // Reject invalid reset URL configuration before touching reset tokens.
-    test("does not create or invalidate reset tokens when the base URL is invalid", async () => {
+    test.each([
+        ["", "test"],
+        ["invalid-url", "test"],
+        ["http://user:pass@example.com", "test"],
+        ["https://example.com/?source=email", "test"],
+        ["https://example.com/#section", "test"],
+        ["http://example.com", "production"],
+    ])("does not change reset tokens for invalid public URL %s", async (baseUrl, nodeEnv) => {
         const job = {
             id: 8,
             user_id: 42,
@@ -280,7 +287,8 @@ describe("Email outbox worker", () => {
 
         EmailOutbox.findOne.mockResolvedValue(job);
         EmailOutbox.findByPk.mockResolvedValue(job);
-        process.env.APP_BASE_URL = "invalid-url";
+        process.env.APP_BASE_URL = baseUrl;
+        process.env.NODE_ENV = nodeEnv;
 
         // Capture the expected error log without polluting test output.
         const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
