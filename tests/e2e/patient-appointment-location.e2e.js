@@ -81,13 +81,55 @@ async function loadPage(page, html) {
 }
 
 async function verifyResponsiveWidths(page, pageName) {
-    for (const width of [375, 760, 768, 1024, 1440]) {
+    for (const width of [320, 375, 760, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });
-        const hasHorizontalOverflow = await page.evaluate(
-            () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        const overflow = await page.evaluate(() => {
+            const viewportWidth = document.documentElement.clientWidth;
+            const elements = [...document.querySelectorAll("body *")]
+                .map((element) => ({
+                    className: typeof element.className === "string" ? element.className : "",
+                    right: Math.ceil(element.getBoundingClientRect().right),
+                    tagName: element.tagName.toLowerCase(),
+                }))
+                .filter((element) => element.right > viewportWidth + 1)
+                .slice(0, 5);
+
+            return {
+                hasHorizontalOverflow: document.documentElement.scrollWidth > viewportWidth,
+                elements,
+            };
+        });
+        if (overflow.hasHorizontalOverflow) {
+            throw new Error(
+                `${pageName} has horizontal overflow at ${width}px: ${JSON.stringify(overflow.elements)}.`,
+            );
+        }
+    }
+}
+
+async function verifyRescheduleStepper(page) {
+    for (const width of [320, 360, 390, 540, 760, 1024, 1440]) {
+        await page.setViewportSize({ width, height: 900 });
+        const invalidStep = await page.locator(".reschedule-stepper li").evaluateAll(
+            (steps) =>
+                steps.find((step) => {
+                    const number = step.querySelector(".reschedule-step-button > span").getBoundingClientRect();
+                    const label = step.querySelector(".reschedule-step-button > strong").getBoundingClientRect();
+                    const stepBounds = step.getBoundingClientRect();
+                    const connector = getComputedStyle(step, "::after").content;
+
+                    return (
+                        label.left < number.right ||
+                        label.right > stepBounds.right ||
+                        (connector !== "none" && connector !== "normal")
+                    );
+                })?.dataset.rescheduleStep,
         );
-        if (hasHorizontalOverflow) {
-            throw new Error(`${pageName} has horizontal overflow at ${width}px.`);
+
+        if (invalidStep) {
+            throw new Error(
+                `Reschedule step ${invalidStep} overlaps its number or connector at ${width}px.`,
+            );
         }
     }
 }
@@ -157,6 +199,7 @@ try {
         throw new Error("The rescheduling list and summary must not show a clinic location.");
     }
     await verifyResponsiveWidths(page, "Reprogramar cita");
+    await verifyRescheduleStepper(page);
 
     const accessibility = await new AxeBuilder({ page }).analyze();
     if (accessibility.violations.length) {
