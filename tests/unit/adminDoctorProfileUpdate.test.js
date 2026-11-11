@@ -20,7 +20,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Specialities: { findOne: jest.fn() },
     User: { findByPk: jest.fn(), findOne: jest.fn() },
 }));
-jest.unstable_mockModule("../../src/modules/auth/services/locationService.js", () => ({
+jest.unstable_mockModule("../../src/shared/services/colombiaLocationService.js", () => ({
     getDepartments: jest.fn(),
     getMunicipalities: jest.fn(),
     resolveLocation: jest.fn(),

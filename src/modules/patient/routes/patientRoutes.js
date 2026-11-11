@@ -51,7 +51,10 @@ import {
 } from "../services/clinicalHistoryService.js";
 import { AppointmentError } from "../errors/appointmentError.js";
 import { getPatientAppointmentList } from "../services/patientAppointmentListService.js";
-import { getDepartments, getMunicipalities } from "../../auth/services/locationService.js";
+import {
+    getDepartments,
+    getMunicipalities,
+} from "../../../shared/services/colombiaLocationService.js";
 
 // Define the routes available to patients.
 const patientRoutes = Router();

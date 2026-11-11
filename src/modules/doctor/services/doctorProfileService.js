@@ -3,12 +3,12 @@ import { Doctor, Specialities, User } from "../../../models/associations.js";
 import {
     normalizeProfilePhone,
     normalizeProfileText,
-} from "../../admin/services/adminProfileFieldValidation.js";
+} from "../../../shared/services/profileFieldValidationService.js";
 import {
     getDepartments,
     getMunicipalities,
     resolveLocation,
-} from "../../auth/services/locationService.js";
+} from "../../../shared/services/colombiaLocationService.js";
 
 const PROFILE_UNAVAILABLE = "No registrado";
 const BOGOTA_TIME_ZONE = "America/Bogota";
