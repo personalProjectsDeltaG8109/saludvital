@@ -1,7 +1,7 @@
 .doctor-patients-page {
     --patient-navy: #0d3673;
-    --patient-blue: #087cf0;
-    --patient-muted: #617590;
+    --patient-blue: #006bc6;
+    --patient-muted: #52657d;
     --patient-border: #e1ebf5;
     padding-top: 18px;
 }
@@ -252,7 +252,7 @@
     place-items: center;
     overflow: hidden;
     border-radius: 50%;
-    color: #0877d8;
+    color: #075a9b;
     background: #e5f3ff;
     font-size: 13px;
     font-weight: 750;
@@ -316,6 +316,15 @@
 
 .doctor-patient-detail { min-height: 420px; }
 
+.doctor-patient-detail-loading {
+    display: grid;
+    min-height: 260px;
+    place-items: center;
+    padding: 24px;
+    color: var(--patient-muted);
+    text-align: center;
+}
+
 .doctor-patient-detail-header {
     display: flex;
     align-items: center;
@@ -355,6 +364,8 @@
     border-bottom-color: var(--patient-blue);
     color: var(--patient-blue);
 }
+
+.doctor-patients-page .status-attended { color: #075a9b; }
 
 .doctor-patient-tab-panel { max-height: 580px; overflow: auto; padding: 16px 20px 20px; }
 .doctor-patient-tab-panel[hidden] { display: none; }

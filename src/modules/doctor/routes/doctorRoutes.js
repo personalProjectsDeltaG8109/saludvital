@@ -391,7 +391,9 @@ doctorRoutes.get("/api/doctor/patients", ...requireDoctor, async (req, res, next
 
 doctorRoutes.get("/api/doctor/patients/:patientId", ...requireDoctor, async (req, res, next) => {
     try {
-        return res.json(await getDoctorPatientDetails(req.auth.userId, req.params.patientId));
+        return res.json(
+            await getDoctorPatientDetails(req.auth.userId, req.params.patientId, req.query),
+        );
     } catch (error) {
         if (error.statusCode) return res.status(error.statusCode).json({ message: error.message });
         return next(error);

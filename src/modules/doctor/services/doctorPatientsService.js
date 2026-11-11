@@ -221,8 +221,8 @@ export async function getDoctorPatients(userId, query = {}) {
     };
 }
 
-/** Return a patient's appointments and completed consultations only when assigned to this doctor. */
-export async function getDoctorPatientDetails(userId, rawPatientId) {
+/** Return bounded appointment and clinical-history pages for an authorized patient. */
+export async function getDoctorPatientDetails(userId, rawPatientId, query = {}) {
     const patientId = Number(rawPatientId);
     if (!Number.isSafeInteger(patientId) || patientId < 1) {
         throw createServiceError("El identificador del paciente no es válido.", 400);
@@ -247,17 +247,25 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
     });
     if (!patient) throw createServiceError("No encontramos este paciente en tus citas.", 404);
 
-    const appointments = await Appointment.findAll({
+    const pageSize = parsePositiveInteger(query.limit, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+    const appointmentPage = parsePositiveInteger(query.appointmentsPage, 1);
+    const historyPage = parsePositiveInteger(query.historyPage, 1);
+
+    const appointmentQuery = {
         where: { doctor_id: doctor.id, patient_id: patient.id },
         attributes: ["id", "start_at", "end_at", "reason"],
         include: [
             { model: AppointmentStatus, as: "status", attributes: ["name"], required: true },
             { model: Specialities, as: "specialty", attributes: ["name"], required: true },
         ],
-        order: [["start_at", "DESC"]],
-    });
-
-    const consultations = await Consultation.findAll({
+        order: [
+            ["start_at", "DESC"],
+            ["id", "DESC"],
+        ],
+        limit: pageSize,
+        offset: (appointmentPage - 1) * pageSize,
+    };
+    const historyQuery = {
         where: { status: "Completed", doctor_id: doctor.id },
         attributes: [
             "id",
@@ -277,7 +285,7 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
                 as: "appointment",
                 required: true,
                 where: { doctor_id: doctor.id, patient_id: patient.id },
-                attributes: ["id", "start_at", "reason"],
+                attributes: ["id", "start_at", "reason", "specialty_id"],
                 include: [{ model: Specialities, as: "specialty", attributes: ["name"] }],
             },
             { model: Diagnosis, as: "diagnoses", attributes: ["id", "diagnosis", "notes"] },
@@ -301,8 +309,35 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
                 ],
             },
         ],
-        order: [["started_at", "DESC"]],
-    });
+        distinct: true,
+        col: "id",
+        order: [
+            ["started_at", "DESC"],
+            ["id", "DESC"],
+        ],
+        limit: pageSize,
+        offset: (historyPage - 1) * pageSize,
+    };
+    const [appointmentResult, historyResult] = await Promise.all([
+        Appointment.findAndCountAll(appointmentQuery),
+        Consultation.findAndCountAll(historyQuery),
+    ]);
+    const appointmentTotalPages = Math.max(1, Math.ceil(appointmentResult.count / pageSize));
+    const historyTotalPages = Math.max(1, Math.ceil(historyResult.count / pageSize));
+    const appointmentRows =
+        appointmentPage <= appointmentTotalPages
+            ? appointmentResult.rows
+            : await Appointment.findAll({
+                  ...appointmentQuery,
+                  offset: (appointmentTotalPages - 1) * pageSize,
+              });
+    const historyRows =
+        historyPage <= historyTotalPages
+            ? historyResult.rows
+            : await Consultation.findAll({
+                  ...historyQuery,
+                  offset: (historyTotalPages - 1) * pageSize,
+              });
 
     return {
         patient: {
@@ -314,7 +349,7 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
             documentNumber: patient.document_number,
             profilePhotoUrl: normalizeProfilePhotoUrl(patient.profile_photo_url),
         },
-        appointments: appointments.map((appointment) => {
+        appointments: appointmentRows.map((appointment) => {
             const record = appointment.get({ plain: true });
             return {
                 id: record.id,
@@ -334,7 +369,7 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
                 specialty: record.specialty?.name || "Consulta médica",
             };
         }),
-        clinicalHistory: consultations.map((consultation) => {
+        clinicalHistory: historyRows.map((consultation) => {
             const record = consultation.get({ plain: true });
             const appointment = record.appointment;
             return {
@@ -362,19 +397,28 @@ export async function getDoctorPatientDetails(userId, rawPatientId) {
                 prescriptions: record.prescriptions || [],
             };
         }),
+        pagination: {
+            pageSize,
+            appointments: {
+                page: Math.min(appointmentPage, appointmentTotalPages),
+                totalItems: appointmentResult.count,
+                totalPages: appointmentTotalPages,
+            },
+            clinicalHistory: {
+                page: Math.min(historyPage, historyTotalPages),
+                totalItems: historyResult.count,
+                totalPages: historyTotalPages,
+            },
+        },
     };
 }
 
-/** Load initial server-rendered list and an authorized patient detail, when one exists. */
+/** Load the patient directory without joining or loading any clinical records. */
 export async function getDoctorPatientsPage(userId, query = {}) {
     const result = await getDoctorPatients(userId, query);
     const requestedPatientId = query.patientId;
     const selectedPatient =
         result.patients.find((patient) => String(patient.id) === String(requestedPatientId)) ||
-        result.patients[0] ||
         null;
-    const details = selectedPatient
-        ? await getDoctorPatientDetails(userId, selectedPatient.id)
-        : null;
-    return { ...result, selectedPatientId: selectedPatient?.id || null, details };
+    return { ...result, selectedPatientId: selectedPatient?.id || null, details: null };
 }

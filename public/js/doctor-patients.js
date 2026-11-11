@@ -125,7 +125,34 @@
         container.append(item);
     }
 
-    function renderHistory(history) {
+    function appendDetailPagination(panel, kind, pagination) {
+        panel.dataset.detailCurrentPage = String(pagination.page);
+        if (pagination.totalPages <= 1) return;
+        const navigation = makeElement("nav", "doctor-patient-pagination-controls");
+        navigation.setAttribute(
+            "aria-label",
+            kind === "history" ? "Paginación del historial clínico" : "Paginación de citas",
+        );
+        const previous = makeElement("button", "", "Anterior");
+        previous.type = "button";
+        previous.dataset.detailPage = kind;
+        previous.dataset.page = String(pagination.page - 1);
+        previous.disabled = pagination.page <= 1;
+        const current = makeElement(
+            "span",
+            "",
+            `Página ${pagination.page} de ${pagination.totalPages}`,
+        );
+        const next = makeElement("button", "", "Siguiente");
+        next.type = "button";
+        next.dataset.detailPage = kind;
+        next.dataset.page = String(pagination.page + 1);
+        next.disabled = pagination.page >= pagination.totalPages;
+        navigation.append(previous, current, next);
+        panel.append(navigation);
+    }
+
+    function renderHistory(history, pagination) {
         const panel = makeElement("section", "doctor-patient-tab-panel");
         panel.id = "doctor-patient-history-panel";
         panel.setAttribute("role", "tabpanel");
@@ -137,6 +164,7 @@
                 makeElement("span", "", "Las consultas finalizadas contigo aparecerán aquí."),
             );
             panel.append(empty);
+            appendDetailPagination(panel, "history", pagination);
             return panel;
         }
 
@@ -232,6 +260,7 @@
             }
             panel.append(card);
         });
+        appendDetailPagination(panel, "history", pagination);
         return panel;
     }
 
@@ -247,7 +276,7 @@
         );
     }
 
-    function renderAppointments(appointments) {
+    function renderAppointments(appointments, pagination) {
         const panel = makeElement("section", "doctor-patient-tab-panel");
         panel.id = "doctor-patient-appointments-panel";
         panel.setAttribute("role", "tabpanel");
@@ -259,6 +288,7 @@
                 makeElement("span", "", "Las citas asignadas a tu perfil aparecerán aquí."),
             );
             panel.append(empty);
+            appendDetailPagination(panel, "appointments", pagination);
             return panel;
         }
 
@@ -283,6 +313,7 @@
             listElement.append(item);
         });
         panel.append(listElement);
+        appendDetailPagination(panel, "appointments", pagination);
         return panel;
     }
 
@@ -324,10 +355,9 @@
         detail.append(
             header,
             tabs,
-            renderHistory(data.clinicalHistory),
-            renderAppointments(data.appointments),
+            renderHistory(data.clinicalHistory, data.pagination.clinicalHistory),
+            renderAppointments(data.appointments, data.pagination.appointments),
         );
-        historyTab.focus({ preventScroll: true });
         setActiveTab("history");
     }
 
@@ -347,8 +377,10 @@
         if (appointmentsPanel) appointmentsPanel.hidden = name !== "appointments";
     }
 
-    async function loadPatientDetail(patientId) {
+    async function loadPatientDetail(patientId, pages = {}) {
         const requestId = ++detailRequestId;
+        const activeTab = detail.querySelector('[data-patient-tab][aria-selected="true"]')?.dataset
+            .patientTab;
         selectedPatientId = String(patientId);
         page.dataset.selectedPatientId = selectedPatientId;
         list.querySelectorAll("[data-patient-row]").forEach((row) => {
@@ -356,9 +388,17 @@
         });
         setFeedback("Cargando la información del paciente...");
         try {
-            const data = await getJson(`${detailEndpoint}/${encodeURIComponent(patientId)}`);
+            renderLoadingDetail();
+            const params = new URLSearchParams({ limit: String(pageSize) });
+            params.set("appointmentsPage", String(pages.appointments || 1));
+            params.set("historyPage", String(pages.history || 1));
+            const data = await getJson(
+                `${detailEndpoint}/${encodeURIComponent(patientId)}?${params.toString()}`,
+            );
             if (requestId !== detailRequestId) return;
+            detail.removeAttribute("aria-busy");
             renderDetail(data);
+            if (activeTab) setActiveTab(activeTab);
             if (window.matchMedia("(max-width: 820px)").matches) {
                 detail.scrollIntoView({ behavior: "smooth", block: "start" });
             }
@@ -366,6 +406,8 @@
             updateUrl();
         } catch (error) {
             if (requestId !== detailRequestId) return;
+            detail.removeAttribute("aria-busy");
+            renderEmptyDetail();
             setFeedback(error.message, true);
         }
     }
@@ -398,8 +440,7 @@
             const keepSelected = result.patients.find(
                 (patient) => String(patient.id) === String(selectedPatientId),
             );
-            const selected = keepSelected || result.patients[0];
-            if (selected) await loadPatientDetail(selected.id);
+            if (keepSelected) await loadPatientDetail(keepSelected.id);
             else {
                 selectedPatientId = "";
                 page.dataset.selectedPatientId = "";
@@ -428,9 +469,40 @@
         detail.append(empty);
     }
 
+    function renderLoadingDetail() {
+        detail.replaceChildren();
+        const loading = makeElement(
+            "p",
+            "doctor-patient-detail-loading",
+            "Cargando los datos autorizados del paciente...",
+        );
+        loading.setAttribute("role", "status");
+        detail.setAttribute("aria-busy", "true");
+        detail.append(loading);
+    }
+
     detail.addEventListener("click", (event) => {
         const tab = event.target.closest("[data-patient-tab]");
         if (tab) setActiveTab(tab.dataset.patientTab);
+        const pageButton = event.target.closest("[data-detail-page]");
+        if (pageButton && selectedPatientId) {
+            const kind = pageButton.dataset.detailPage;
+            const requestedPage = Number(pageButton.dataset.page);
+            const currentAppointmentPage =
+                Number(
+                    detail.querySelector("#doctor-patient-appointments-panel")?.dataset
+                        .detailCurrentPage,
+                ) || 1;
+            const currentHistoryPage =
+                Number(
+                    detail.querySelector("#doctor-patient-history-panel")?.dataset
+                        .detailCurrentPage,
+                ) || 1;
+            loadPatientDetail(selectedPatientId, {
+                appointments: kind === "appointments" ? requestedPage : currentAppointmentPage,
+                history: kind === "history" ? requestedPage : currentHistoryPage,
+            });
+        }
     });
     detail.addEventListener("keydown", (event) => {
         const currentTab = event.target.closest("[data-patient-tab]");
@@ -468,5 +540,7 @@
         loadPatients(currentPage + 1);
     });
 
+    if (selectedPatientId) loadPatientDetail(selectedPatientId);
+    else renderEmptyDetail();
     updateUrl();
 })();
