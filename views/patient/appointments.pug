@@ -1,4 +1,4 @@
-﻿doctype html
+doctype html
 html(lang="es")
     head
         meta(charset="UTF-8")
@@ -26,46 +26,110 @@ html(lang="es")
                         p.appointments-preview-note Vista previa: estas citas son ficticias y solo se muestran para revisar el diseño.
                     section.appointment-stats(aria-label="Resumen de citas")
                         each stat in appointmentStats
-                            - const count = stat.status ? appointments.filter((a) => (a.status && a.status.name) === stat.status).length : appointments.length;
                             article.appointment-stat(class="stat-" + stat.key)
                                 span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" || stat.key === "attended" ? "✓" : "×"
                                 span.stat-copy
-                                    strong= count
+                                    strong= stat.count
                                     small= stat.label
                     section.appointment-list-panel(aria-label="Listado de citas")
-                        .appointment-tabs(role="group", aria-label="Filtrar citas")
-                            button.is-active(type="button", data-filter="all", aria-pressed="true") Todas
-                            button(type="button", data-filter="upcoming", aria-pressed="false") Próximas
-                            button(type="button", data-filter="attended", aria-pressed="false") Asistidas
-                            button(type="button", data-filter="cancelled", aria-pressed="false") Canceladas
-                            button(type="button", data-filter="no-show", aria-pressed="false") No asistió
-                        .appointment-tools
-                            label.appointment-search
-                                span(aria-hidden="true") ⌕
-                                input(
-                                    type="search",
-                                    placeholder="Buscar por especialidad, médico…",
-                                    aria-label="Buscar citas",
-                                    data-search
-                                )
-                            label.appointment-select
-                                span.sr-only Filtrar por especialidad
-                                span.appointment-filter-icon(aria-hidden="true")
-                                    svg(viewBox="0 0 24 24")
-                                        path(d="M4 5h16l-6.5 7.5v5l-3 1.5v-6.5L4 5Z")
-                                select(data-specialty, aria-label="Filtrar por especialidad")
-                                    option(value="") Todas las especialidades
-                                    each name in specialties
-                                        option(value=name)= name
-                            label.appointment-select.desktop-filter
-                                span.sr-only Estado
-                                span.appointment-filter-icon(aria-hidden="true") ◷
-                                select(data-status)
-                                    option(value="") Todos los estados
-                                    option(value="Confirmed") Confirmadas
-                                    option(value="Attended") Atendidas
-                                    option(value="Cancelled") Canceladas
-                                    option(value="No Show") No asistió
+                        form#appointment-filters(method="get", action="/patient/appointments")
+                            input(
+                                type="hidden",
+                                name="filter",
+                                value=filters.filter,
+                                data-active-filter
+                            )
+                            .appointment-tabs(role="group", aria-label="Filtrar citas")
+                                button(
+                                    type="button",
+                                    class=filters.filter === "all" ? "is-active" : "",
+                                    data-filter="all",
+                                    aria-pressed=String(filters.filter === "all")
+                                ) Todas
+                                button(
+                                    type="button",
+                                    class=filters.filter === "upcoming" ? "is-active" : "",
+                                    data-filter="upcoming",
+                                    aria-pressed=String(filters.filter === "upcoming")
+                                ) Próximas
+                                button(
+                                    type="button",
+                                    class=filters.filter === "attended" ? "is-active" : "",
+                                    data-filter="attended",
+                                    aria-pressed=String(filters.filter === "attended")
+                                ) Asistidas
+                                button(
+                                    type="button",
+                                    class=filters.filter === "cancelled" ? "is-active" : "",
+                                    data-filter="cancelled",
+                                    aria-pressed=String(filters.filter === "cancelled")
+                                ) Canceladas
+                                button(
+                                    type="button",
+                                    class=filters.filter === "no-show" ? "is-active" : "",
+                                    data-filter="no-show",
+                                    aria-pressed=String(filters.filter === "no-show")
+                                ) No asistió
+                            .appointment-tools
+                                label.appointment-search
+                                    span(aria-hidden="true") ⌕
+                                    input(
+                                        type="search",
+                                        placeholder="Buscar por especialidad, médico…",
+                                        aria-label="Buscar citas",
+                                        name="search",
+                                        value=filters.search,
+                                        data-search
+                                    )
+                                label.appointment-select
+                                    span.sr-only Filtrar por especialidad
+                                    span.appointment-filter-icon(aria-hidden="true")
+                                        svg(viewBox="0 0 24 24")
+                                            path(d="M4 5h16l-6.5 7.5v5l-3 1.5v-6.5L4 5Z")
+                                    select(
+                                        name="specialty",
+                                        data-specialty,
+                                        aria-label="Filtrar por especialidad"
+                                    )
+                                        option(value="") Todas las especialidades
+                                        each name in specialties
+                                            option(value=name, selected=filters.specialty === name)= name
+                                label.appointment-select.desktop-filter
+                                    span.sr-only Estado
+                                    span.appointment-filter-icon(aria-hidden="true") ◷
+                                    select(
+                                        name="status",
+                                        data-status,
+                                        aria-label="Filtrar por estado"
+                                    )
+                                        option(value="") Todos los estados
+                                        option(
+                                            value="Confirmed",
+                                            selected=filters.status === "Confirmed"
+                                        ) Confirmadas
+                                        option(
+                                            value="Attended",
+                                            selected=filters.status === "Attended"
+                                        ) Atendidas
+                                        option(
+                                            value="Cancelled",
+                                            selected=filters.status === "Cancelled"
+                                        ) Canceladas
+                                        option(
+                                            value="No Show",
+                                            selected=filters.status === "No Show"
+                                        ) No asistió
+                                label.appointment-select.appointment-page-size
+                                    span.sr-only Citas por página
+                                    select(
+                                        name="pageSize",
+                                        aria-label="Citas por página",
+                                        data-page-size
+                                    )
+                                        option(value="10", selected=pagination.pageSize === 10) 10 por página
+                                        option(value="20", selected=pagination.pageSize === 20) 20 por página
+                                        option(value="50", selected=pagination.pageSize === 50) 50 por página
+                                button.appointment-filter-submit(type="submit") Aplicar filtros
                         if appointments.length
                             .appointment-table-wrap
                                 table.appointment-table
@@ -287,12 +351,30 @@ html(lang="es")
                                 aria-live="polite"
                             ) No encontramos citas con ese criterio.
                             .appointment-summary
-                                span(data-summary, aria-live="polite")= `Mostrando ${appointments.length} de ${appointments.length} citas`
+                                span(aria-live="polite")= `Mostrando ${pagination.firstResult}–${pagination.lastResult} de ${pagination.total} citas`
+                                nav.appointment-pagination(aria-label="Paginación de citas")
+                                    if pagination.page > 1
+                                        a(
+                                            href=pagination.previousUrl,
+                                            aria-label="Página anterior"
+                                        ) Anterior
+                                    else
+                                        span(aria-disabled="true") Anterior
+                                    span= `Página ${pagination.page} de ${Math.max(pagination.totalPages, 1)}`
+                                    if pagination.page < pagination.totalPages
+                                        a(href=pagination.nextUrl, aria-label="Página siguiente") Siguiente
+                                    else
+                                        span(aria-disabled="true") Siguiente
                         else
                             .appointment-no-results
-                                strong Aún no tienes citas
-                                p Aquí aparecerá el historial de tus citas médicas.
-                                if previewAvailable
+                                if appointmentStats[0].count > 0
+                                    strong No hay citas con estos filtros
+                                    p Prueba cambiar la búsqueda o los filtros seleccionados.
+                                    a(href="/patient/appointments") Limpiar filtros
+                                else
+                                    strong Aún no tienes citas
+                                    p Aquí aparecerá el historial de tus citas médicas.
+                                if previewAvailable && appointmentStats[0].count === 0
                                     a(href="/patient/appointments?preview=1") Ver ejemplo con citas ficticias
                     dialog#appointment-feedback.appointment-details-dialog.appointment-feedback-dialog(
                         aria-labelledby="appointment-feedback-title",

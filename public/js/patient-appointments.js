@@ -1,5 +1,4 @@
 ﻿(() => {
-    const rows = [...document.querySelectorAll("[data-appointment]")];
     const doctorPhotoDialog = document.querySelector("[data-doctor-photo-viewer]");
     const doctorPhotoImage = doctorPhotoDialog?.querySelector("[data-doctor-photo-viewer-image]");
 
@@ -134,11 +133,7 @@
                 if (confirmation instanceof HTMLDialogElement) confirmation.close();
                 if (feedbackTitle) feedbackTitle.textContent = "Cita cancelada";
                 if (feedbackMessage) feedbackMessage.textContent = result.message;
-                if (rows.length) update();
-                if (
-                    feedback instanceof HTMLDialogElement &&
-                    feedback.dataset.dashboardFeedback !== undefined
-                ) {
+                if (feedback instanceof HTMLDialogElement) {
                     feedback.dataset.reloadOnClose = "true";
                 }
             } catch (error) {
@@ -151,64 +146,24 @@
         });
     });
 
-    if (!rows.length) return;
+    const filterForm = document.getElementById("appointment-filters");
+    if (!(filterForm instanceof HTMLFormElement)) return;
+
     const tabs = [...document.querySelectorAll("[data-filter]")];
     const search = document.querySelector("[data-search]");
-    const specialty = document.querySelector("[data-specialty]");
-    const status = document.querySelector("[data-status]");
-    const empty = document.querySelector("[data-empty]");
-    const summary = document.querySelector("[data-summary]");
-    let filter = "all";
-    const bogotaDate = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Bogota",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-    });
-    const today = bogotaDate.format(new Date());
-
-    function update() {
-        let visible = 0;
-        rows.forEach((row) => {
-            const rowStatus = row.dataset.status;
-            const future =
-                bogotaDate.format(new Date(row.dataset.date)) >= today &&
-                !["Cancelled", "Attended"].includes(rowStatus);
-            const tabMatches =
-                filter === "all" ||
-                (filter === "upcoming" && future) ||
-                (filter === "attended" && rowStatus === "Attended") ||
-                (filter === "cancelled" && rowStatus === "Cancelled") ||
-                (filter === "no-show" && rowStatus === "No Show");
-            const statusMatches = !status?.value || status.value === rowStatus;
-            const specialtyMatches = !specialty?.value || specialty.value === row.dataset.specialty;
-            const queryMatches =
-                !search?.value ||
-                row.dataset.searchText
-                    .toLocaleLowerCase()
-                    .includes(search.value.trim().toLocaleLowerCase());
-            const show = tabMatches && statusMatches && specialtyMatches && queryMatches;
-            row.hidden = !show;
-            if (show) visible += 1;
-        });
-        if (empty) empty.hidden = visible !== 0;
-        if (summary) summary.textContent = `Mostrando ${visible} de ${rows.length} citas`;
-    }
     tabs.forEach((tab) =>
         tab.addEventListener("click", () => {
-            filter = tab.dataset.filter;
-            tabs.forEach((item) => {
-                const active = item === tab;
-                item.classList.toggle("is-active", active);
-                item.setAttribute("aria-pressed", String(active));
-            });
-            update();
+            filterForm.querySelector("[data-active-filter]").value = tab.dataset.filter;
+            filterForm.requestSubmit();
         }),
     );
-    [search, specialty, status]
-        .filter(Boolean)
-        .forEach((control) => control.addEventListener("input", update));
-    [specialty, status]
-        .filter(Boolean)
-        .forEach((control) => control.addEventListener("change", update));
+    filterForm
+        .querySelectorAll("select")
+        .forEach((control) => control.addEventListener("change", () => filterForm.requestSubmit()));
+
+    let searchTimeout;
+    search?.addEventListener("input", () => {
+        window.clearTimeout(searchTimeout);
+        searchTimeout = window.setTimeout(() => filterForm.requestSubmit(), 300);
+    });
 })();

@@ -45,13 +45,24 @@ const appointmentsHtml = pug.renderFile("views/patient/appointments.pug", {
     ...commonLocals,
     appointments: [appointment, missedAppointment],
     appointmentStats: [
-        { key: "all", label: "Total de citas", status: null },
-        { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
-        { key: "attended", label: "Atendidas", status: "Attended" },
-        { key: "cancelled", label: "Canceladas", status: "Cancelled" },
-        { key: "no-show", label: "No asistió", status: "No Show" },
+        { key: "all", label: "Total de citas", status: null, count: 2 },
+        { key: "confirmed", label: "Confirmadas", status: "Confirmed", count: 1 },
+        { key: "attended", label: "Atendidas", status: "Attended", count: 0 },
+        { key: "cancelled", label: "Canceladas", status: "Cancelled", count: 0 },
+        { key: "no-show", label: "No asistió", status: "No Show", count: 1 },
     ],
     specialties: ["Medicina General"],
+    filters: { filter: "all", status: "", search: "", specialty: "" },
+    pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 2,
+        totalPages: 1,
+        firstResult: 1,
+        lastResult: 2,
+        previousUrl: null,
+        nextUrl: null,
+    },
     previewMode: false,
     previewAvailable: false,
 });
@@ -99,19 +110,23 @@ try {
         .waitFor();
     await page.getByRole("button", { name: "Ver detalles" }).first().waitFor();
     await page.locator("#appointment-85 .appointment-status").first().waitFor();
+    await page.evaluate(() => {
+        document.querySelector("#appointment-filters").addEventListener("submit", (event) => {
+            event.preventDefault();
+            window.submittedFilters = new URLSearchParams(
+                new FormData(event.currentTarget),
+            ).toString();
+        });
+    });
     await page.getByRole("button", { name: "No asistió", exact: true }).click();
-    if (!(await page.locator("#appointment-85").isVisible())) {
-        throw new Error("The No Show quick filter must show missed appointments.");
+    if (
+        !(await page.locator("#appointment-85").isVisible()) ||
+        !(await page.locator("#appointment-84").isVisible())
+    ) {
+        throw new Error("Server-side filters should preserve the rendered page until navigation.");
     }
-    if (await page.locator("#appointment-84").isVisible()) {
-        const filterState = await page
-            .locator("[data-appointment]")
-            .evaluateAll((rows) =>
-                rows.map((row) => ({ status: row.dataset.status, hidden: row.hidden })),
-            );
-        throw new Error(
-            `The No Show quick filter must hide other statuses: ${JSON.stringify(filterState)}`,
-        );
+    if (!(await page.evaluate(() => window.submittedFilters.includes("filter=no-show")))) {
+        throw new Error("Selecting a quick filter must submit the selected filter to the server.");
     }
     await page.locator(".appointment-tools select[data-status]").selectOption("No Show");
     await page.locator(".appointment-tools select[data-status]").selectOption("");
