@@ -25,16 +25,16 @@ jest.unstable_mockModule("../../src/modules/auth/services/locationService.js", (
     getMunicipalities: jest.fn(),
     resolveLocation: jest.fn(),
 }));
-jest.unstable_mockModule("../../src/modules/admin/services/doctorPhotoService.js", () => ({
-    storeDoctorPhoto: jest.fn(),
-    removeDoctorPhoto: jest.fn(),
+jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.js", () => ({
+    storeProfilePhoto: jest.fn(),
+    removeStoredProfilePhoto: jest.fn(),
 }));
 
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
 const { Doctor, EmailOutbox, Rol, Specialities, User } =
     await import("../../src/models/associations.js");
-const photoService = await import("../../src/modules/admin/services/doctorPhotoService.js");
+const photoService = await import("../../src/shared/services/profilePhotoStorageService.js");
 const { updateAdminUser, updateAdminUserProfile } =
     await import("../../src/modules/admin/services/adminUserManagementService.js");
 
@@ -59,8 +59,8 @@ function prepareDoctorUpdate() {
     Doctor.findOne.mockResolvedValue(doctor);
     Specialities.findOne.mockResolvedValue({ id: 5 });
     AuditLog.create.mockResolvedValue({});
-    photoService.storeDoctorPhoto.mockResolvedValue("/uploads/profile-photos/new.webp");
-    photoService.removeDoctorPhoto.mockResolvedValue(undefined);
+    photoService.storeProfilePhoto.mockResolvedValue("/uploads/profile-photos/new.webp");
+    photoService.removeStoredProfilePhoto.mockResolvedValue(undefined);
     return { doctor, transaction };
 }
 
@@ -118,7 +118,7 @@ describe("Admin doctor profile updates", () => {
             }),
         ).resolves.toMatchObject({ message: expect.any(String) });
 
-        expect(photoService.storeDoctorPhoto).toHaveBeenCalledWith(
+        expect(photoService.storeProfilePhoto).toHaveBeenCalledWith(
             "data:image/webp;base64,new-photo",
         );
         expect(doctor.update).toHaveBeenCalledWith(
@@ -141,7 +141,7 @@ describe("Admin doctor profile updates", () => {
             }),
             { transaction },
         );
-        expect(photoService.removeDoctorPhoto).toHaveBeenCalledWith(
+        expect(photoService.removeStoredProfilePhoto).toHaveBeenCalledWith(
             "/uploads/profile-photos/old.jpg",
         );
     });
@@ -163,10 +163,10 @@ describe("Admin doctor profile updates", () => {
             }),
         ).rejects.toThrow("database failure");
 
-        expect(photoService.removeDoctorPhoto).toHaveBeenCalledWith(
+        expect(photoService.removeStoredProfilePhoto).toHaveBeenCalledWith(
             "/uploads/profile-photos/new.webp",
         );
-        expect(photoService.removeDoctorPhoto).not.toHaveBeenCalledWith(
+        expect(photoService.removeStoredProfilePhoto).not.toHaveBeenCalledWith(
             "/uploads/profile-photos/old.jpg",
         );
     });
@@ -188,10 +188,10 @@ describe("Admin doctor profile updates", () => {
             expect.objectContaining({ profile_photo_url: null }),
             expect.any(Object),
         );
-        expect(photoService.removeDoctorPhoto).toHaveBeenCalledWith(
+        expect(photoService.removeStoredProfilePhoto).toHaveBeenCalledWith(
             "/uploads/profile-photos/old.jpg",
         );
-        expect(photoService.storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(photoService.storeProfilePhoto).not.toHaveBeenCalled();
         expect(AuditLog.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 changes: expect.not.objectContaining({ specialty: expect.anything() }),
@@ -217,7 +217,7 @@ describe("Admin doctor profile updates", () => {
         ).rejects.toMatchObject({ statusCode: 400 });
 
         expect(doctor.update).not.toHaveBeenCalled();
-        expect(photoService.storeDoctorPhoto).not.toHaveBeenCalled();
+        expect(photoService.storeProfilePhoto).not.toHaveBeenCalled();
     });
 
     test("rejects an email already used by another account", async () => {
