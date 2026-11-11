@@ -35,12 +35,23 @@ function renderAppointmentsPage(
         notificationLabel: "Notificaciones",
         appointments: [appointmentRecord],
         appointmentStats: [
-            { key: "all", label: "Total de citas", status: null },
-            { key: "confirmed", label: "Confirmadas", status: "Confirmed" },
-            { key: "attended", label: "Atendidas", status: "Attended" },
-            { key: "cancelled", label: "Canceladas", status: "Cancelled" },
+            { key: "all", label: "Total de citas", status: null, count: 1 },
+            { key: "confirmed", label: "Confirmadas", status: "Confirmed", count: 0 },
+            { key: "attended", label: "Atendidas", status: "Attended", count: 0 },
+            { key: "cancelled", label: "Canceladas", status: "Cancelled", count: 0 },
         ],
         specialties: ["Medicina General"],
+        filters: { filter: "all", status: "", search: "", specialty: "" },
+        pagination: {
+            page: 1,
+            pageSize: 10,
+            total: 1,
+            totalPages: 1,
+            firstResult: 1,
+            lastResult: 1,
+            previousUrl: null,
+            nextUrl: null,
+        },
         previewMode: false,
         previewAvailable: false,
     });
@@ -62,6 +73,15 @@ describe("patient appointments view", () => {
         expect(html).toContain('class="appointment-status status-in-progress">En curso</span>');
         expect(html).not.toMatch(/<option[^>]*value="In Progress"/);
         expect(html.match(/class="appointment-stat stat-/g)).toHaveLength(4);
+    });
+
+    test("renders server-side filters and bounded pagination controls", () => {
+        const html = renderAppointmentsPage();
+
+        expect(html).toContain('method="get" action="/patient/appointments"');
+        expect(html).toContain('name="pageSize"');
+        expect(html).toContain('aria-label="Paginación de citas"');
+        expect(html).toContain("Mostrando 1–1 de 1 citas");
     });
 
     test("does not show an unsupported clinic location in the list or appointment details", () => {
