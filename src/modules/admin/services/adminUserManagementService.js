@@ -7,16 +7,16 @@ import {
     getDepartments,
     getMunicipalities,
     resolveLocation,
-} from "../../auth/services/locationService.js";
+} from "../../../shared/services/colombiaLocationService.js";
 import {
     removeStoredProfilePhoto,
     storeProfilePhoto,
 } from "../../../shared/services/profilePhotoStorageService.js";
+import { normalizeProfileEmail } from "./adminProfileFieldValidation.js";
 import {
-    normalizeProfileEmail,
     normalizeProfilePhone,
     normalizeProfileText,
-} from "./adminProfileFieldValidation.js";
+} from "../../../shared/services/profileFieldValidationService.js";
 import {
     isEmailUnavailable,
     isEmailUniqueConstraintError,

@@ -1,4 +1,7 @@
-import { getDepartments, getMunicipalities } from "../services/locationService.js";
+import {
+    getDepartments,
+    getMunicipalities,
+} from "../../../shared/services/colombiaLocationService.js";
 
 // Return the department catalog as JSON for the registration form.
 export function listDepartments(req, res) {

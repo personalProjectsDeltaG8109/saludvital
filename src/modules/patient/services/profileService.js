@@ -2,7 +2,7 @@ import database from "../../../../config/database.js";
 import EmergencyContact from "../../../models/EmergencyContact.js";
 import { Appointment, Patient, User } from "../../../models/associations.js";
 import { isEmailUnavailable, requestEmailChange } from "../../auth/services/emailChangeService.js";
-import { resolveLocation } from "../../auth/services/locationService.js";
+import { resolveLocation } from "../../../shared/services/colombiaLocationService.js";
 
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 

@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
-import { resolveLocation } from "./locationService.js";
+import { resolveLocation } from "../../../shared/services/colombiaLocationService.js";
 import { isEmailUnavailable, isEmailUniqueConstraintError } from "./emailChangeService.js";
 import { isValidPassword } from "./passwordPolicy.js";
 

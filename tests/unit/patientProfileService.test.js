@@ -19,7 +19,7 @@ jest.unstable_mockModule("../../src/modules/auth/services/emailChangeService.js"
     isEmailUnavailable: jest.fn(),
     requestEmailChange: jest.fn(),
 }));
-jest.unstable_mockModule("../../src/modules/auth/services/locationService.js", () => ({
+jest.unstable_mockModule("../../src/shared/services/colombiaLocationService.js", () => ({
     resolveLocation: jest.fn(() => ({ department: "Risaralda", municipality: "Pereira" })),
 }));
 

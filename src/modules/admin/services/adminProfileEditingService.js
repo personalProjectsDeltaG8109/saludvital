@@ -1,11 +1,11 @@
 import database from "../../../../config/database.js";
 import AuditLog from "../../../models/AuditLog.js";
 import { Doctor, Patient, Rol, User } from "../../../models/associations.js";
+import { normalizeProfileEmail } from "./adminProfileFieldValidation.js";
 import {
-    normalizeProfileEmail,
     normalizeProfilePhone,
     normalizeProfileText,
-} from "./adminProfileFieldValidation.js";
+} from "../../../shared/services/profileFieldValidationService.js";
 import { toAdminProfile } from "./adminProfileService.js";
 import {
     isEmailUnavailable,
