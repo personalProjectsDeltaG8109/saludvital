@@ -78,7 +78,7 @@ function getBogotaStartOfToday(date) {
     return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), 5));
 }
 
-function getAppointmentListOrder(now) {
+function getAppointmentListOrder(now, confirmedStatusId) {
     const localTimeParts = new Intl.DateTimeFormat("en-CA", {
         timeZone: "America/Bogota",
         year: "numeric",
@@ -91,7 +91,9 @@ function getAppointmentListOrder(now) {
     }).formatToParts(now);
     const localValues = Object.fromEntries(localTimeParts.map(({ type, value }) => [type, value]));
     const localNow = `${localValues.year}-${localValues.month}-${localValues.day} ${localValues.hour}:${localValues.minute}:${localValues.second}`;
-    const isUpcomingConfirmed = `\`status\`.\`name\` = 'Confirmed' AND \`Appointment\`.\`start_at\` >= '${localNow}'`;
+    // Use the appointment's foreign key because joined status aliases are unavailable in the paginated subquery.
+    const safeConfirmedStatusId = Number.isSafeInteger(confirmedStatusId) ? confirmedStatusId : -1;
+    const isUpcomingConfirmed = `\`Appointment\`.\`status_id\` = ${safeConfirmedStatusId} AND \`Appointment\`.\`start_at\` >= '${localNow}'`;
 
     // Preserve upcoming confirmed appointments first, then show history newest first.
     return [
@@ -199,14 +201,20 @@ async function getPatientStatusCounts(patientId) {
         if (Object.hasOwn(counts, statusName)) counts[statusName] = Number(record.count);
     }
 
-    return STATUS_SUMMARY.map(({ key, label, status }) => ({
-        key,
-        label,
-        status,
-        count: status
-            ? counts[status]
-            : Object.values(counts).reduce((sum, count) => sum + count, 0),
-    }));
+    return {
+        confirmedStatusId:
+            Number(
+                groupedStatuses.find((record) => record["status.name"] === "Confirmed")?.status_id,
+            ) || null,
+        stats: STATUS_SUMMARY.map(({ key, label, status }) => ({
+            key,
+            label,
+            status,
+            count: status
+                ? counts[status]
+                : Object.values(counts).reduce((sum, count) => sum + count, 0),
+        })),
+    };
 }
 
 async function getPatientSpecialties(patientId) {
@@ -265,7 +273,7 @@ export async function getPatientAppointmentList(userId, query = {}, now = new Da
 
     const todayStart = getBogotaStartOfToday(now);
     const appointmentQuery = buildAppointmentWhere(patient.id, filters, todayStart);
-    const [total, stats, specialties] = await Promise.all([
+    const [total, statusSummary, specialties] = await Promise.all([
         Appointment.count({ ...appointmentQuery, distinct: true }),
         getPatientStatusCounts(patient.id),
         getPatientSpecialties(patient.id),
@@ -291,7 +299,7 @@ export async function getPatientAppointmentList(userId, query = {}, now = new Da
                 attributes: ["event_type", "previous_values", "new_values", "occurred_at"],
             },
         ],
-        order: getAppointmentListOrder(now),
+        order: getAppointmentListOrder(now, statusSummary.confirmedStatusId),
         limit: pageSize,
         offset: (currentPage - 1) * pageSize,
     });
@@ -312,7 +320,7 @@ export async function getPatientAppointmentList(userId, query = {}, now = new Da
             return record;
         }),
         specialties,
-        stats,
+        stats: statusSummary.stats,
         filters,
         pagination: {
             page: currentPage,

@@ -77,7 +77,8 @@ describe("patient appointment list service", () => {
         );
         const pageQuery = models.Appointment.findAll.mock.calls.at(-1)[0];
         expect(pageQuery.order).toHaveLength(4);
-        expect(pageQuery.order[0][0].val).toContain("Confirmed");
+        expect(pageQuery.order[0][0].val).toContain("`Appointment`.`status_id` = 1");
+        expect(pageQuery.order[0][0].val).not.toContain("status`.`name");
         expect(pageQuery.order[0][0].val).toContain("2026-11-10 10:00:00");
         expect(result.pagination).toMatchObject({ page: 2, total: 21, totalPages: 3 });
         expect(result.pagination.previousUrl).toContain("search=Laura");
