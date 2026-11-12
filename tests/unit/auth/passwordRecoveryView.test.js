@@ -56,7 +56,7 @@ describe("password recovery views", () => {
 
         expect(html).toContain('data-image-slot="forgot-password"');
         expect(html).toContain("recovery-art-slot-lock");
-        expect(html).toContain("/brand/login/password-security.png");
+        expect(html).toContain("/brand/login/password-security.webp");
         expect(html).toContain(
             "Restablece tu contraseña y continúa gestionando tus citas médicas de forma segura y confiable.",
         );
@@ -64,7 +64,7 @@ describe("password recovery views", () => {
         expect(html).toContain('name="email"');
         expect(html).toContain("login-benefit-icon");
         expect(html).toContain("/brand/calendar-svgrepo-com.svg");
-        expect(html).toContain("girl.png");
+        expect(html).toContain("girl.webp");
     });
 
     test("renders a generic sent-link state with the supplied confirmation illustration", () => {
@@ -76,7 +76,7 @@ describe("password recovery views", () => {
         });
 
         expect(html).toContain('data-image-slot="recovery-link-sent"');
-        expect(html).toContain("/brand/login/recovery-link-sent.png");
+        expect(html).toContain("/brand/login/recovery-link-sent.webp");
         expect(html).toContain("recovery-art-slot-plain");
         expect(html).toContain("Hemos enviado el enlace");
         expect(html).toContain("Si el correo electrónico está asociado a una cuenta");
@@ -98,7 +98,7 @@ describe("password recovery views", () => {
         expect(html).toContain('maxlength="50"');
         expect(html).toContain("al menos tres minúsculas");
         expect(html).toContain('data-image-slot="reset-password"');
-        expect(html).toContain("/brand/login/password-security.png");
+        expect(html).toContain("/brand/login/password-security.webp");
         expect(html).toContain("recovery-art-slot-plain");
     });
 });

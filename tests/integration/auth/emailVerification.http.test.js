@@ -37,7 +37,7 @@ describe("Email verification HTTP endpoint", () => {
         );
         expect(response.text).toContain("de forma rápida y sencilla.");
         expect(response.text).toContain('data-image-slot="account-confirmed"');
-        expect(response.text).toContain("/brand/login/recovery-link-sent.png");
+        expect(response.text).toContain("/brand/login/recovery-link-sent.webp");
         expect(response.text).toContain('href="/login"');
         expect(response.text).toContain("Tu salud,");
         expect(response.text).toContain("Tu salud siempre");
@@ -62,7 +62,7 @@ describe("Email verification HTTP endpoint", () => {
         expect(response.text).toContain("Tu salud siempre");
         expect(response.text).not.toContain("Verificación pendiente");
         expect(response.text).not.toContain("¡Tu cuenta ha sido confirmada con éxito!");
-        expect(response.text).not.toContain("/brand/login/recovery-link-sent.png");
+        expect(response.text).not.toContain("/brand/login/recovery-link-sent.webp");
         expect(verifyEmail).toHaveBeenCalledWith("b".repeat(64));
     });
 
