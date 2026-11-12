@@ -5,7 +5,7 @@
     min-height: 100svh;
     margin: 0;
     color: #123b73;
-    background: #edf7ff url("/brand/login/background-login.png") center / cover no-repeat;
+    background: #edf7ff url("/brand/login/background-login.webp") center / cover no-repeat;
     background-attachment: fixed;
     font-family: Arial, Helvetica, sans-serif;
 }

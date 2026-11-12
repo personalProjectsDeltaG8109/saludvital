@@ -39,7 +39,7 @@
     padding: 0 16px 24px;
     background:
         linear-gradient(rgb(255 255 255 / 84%), rgb(235 247 255 / 88%)),
-        url("/brand/login/background-login.png") center / cover no-repeat;
+        url("/brand/login/background-login.webp") center / cover no-repeat;
 }
 
 .login-form-wrap {
@@ -411,7 +411,7 @@
             rgb(255 255 255 / 88%) 48%,
             rgb(220 249 246 / 82%)
         ),
-        url("/brand/login/background-login.png") center / cover fixed no-repeat;
+        url("/brand/login/background-login.webp") center / cover fixed no-repeat;
     color: var(--color-primary);
 }
 
@@ -851,7 +851,7 @@
 @media (min-width: 1200px) {
     .recovery-layout {
         grid-template-columns: minmax(0, 1fr) minmax(500px, 0.78fr);
-        background: url("/brand/login/background-login.png") center / cover no-repeat;
+        background: url("/brand/login/background-login.webp") center / cover no-repeat;
     }
 
     .recovery-visual {
@@ -1101,7 +1101,7 @@
 @media (min-width: 1200px) {
     .login-layout {
         grid-template-columns: minmax(0, 1.55fr) minmax(410px, 0.95fr);
-        background: url("/brand/login/background-login.png") center / cover no-repeat;
+        background: url("/brand/login/background-login.webp") center / cover no-repeat;
     }
 
     .login-visual {
@@ -2207,7 +2207,7 @@
 
 /* Keep the long registration form on the login background without moving its desktop branding. */
 .registration-page {
-    background: url("/brand/login/background-login.png") center top / cover no-repeat;
+    background: url("/brand/login/background-login.webp") center top / cover no-repeat;
     background-attachment: fixed;
 }
 
@@ -2280,7 +2280,7 @@
     min-height: 100vh;
     min-height: 100svh;
     overflow-x: hidden;
-    background: url("/brand/login/background-login.png") center / cover fixed no-repeat;
+    background: url("/brand/login/background-login.webp") center / cover fixed no-repeat;
     color: var(--color-primary);
 }
 

@@ -54,6 +54,36 @@ try {
         throw new Error(`The SaludVital server did not become ready. Last error: ${lastError}`);
     }
 
+    const optimizedAuthAssets = [
+        "/brand/login/background-login.webp",
+        "/brand/login/girl.webp",
+        "/brand/login/logo-login.png",
+        "/brand/login/password-security.webp",
+        "/brand/login/recovery-link-sent.webp",
+    ];
+    const authAssetResponses = await Promise.all(
+        optimizedAuthAssets.map(async (assetPath) => {
+            const response = await fetch(`${baseUrl}${assetPath}`);
+            const expectedType = assetPath.endsWith(".webp") ? "image/webp" : "image/png";
+
+            if (!response.ok || !response.headers.get("content-type")?.includes(expectedType)) {
+                throw new Error(
+                    `Authentication asset is unavailable or has an unexpected type: ${assetPath}`,
+                );
+            }
+
+            return response.arrayBuffer();
+        }),
+    );
+    const transferredAssetBytes = authAssetResponses.reduce(
+        (totalBytes, asset) => totalBytes + asset.byteLength,
+        0,
+    );
+
+    console.log(
+        `PASS: all five optimized authentication images are served (${transferredAssetBytes} bytes).`,
+    );
+
     browser = await chromium.launch({ headless: true });
 
     // Create an explicit browser context for isolated test execution.
@@ -308,7 +338,7 @@ try {
     const blockedImageRequest = new Promise((resolve) => {
         releaseBlockedImage = resolve;
     });
-    await blockedResourcePage.route("**/brand/login/girl.png", async (route) => {
+    await blockedResourcePage.route("**/brand/login/girl.webp", async (route) => {
         await blockedImageRequest;
         await route.abort();
     });
@@ -335,7 +365,7 @@ try {
     console.log("PASS: CSS fallback reveals a usable login when splash JavaScript fails.");
 
     const failedDecorationPage = await context.newPage();
-    await failedDecorationPage.route("**/brand/login/girl.png", (route) => route.abort());
+    await failedDecorationPage.route("**/brand/login/girl.webp", (route) => route.abort());
     await failedDecorationPage.goto(`${baseUrl}/login`);
     await failedDecorationPage.locator("[data-login-splash]").waitFor({
         state: "detached",
