@@ -5,16 +5,39 @@ import AxeBuilder from "@axe-core/playwright";
 
 const baseUrl = "http://127.0.0.1:3100";
 
-// Start the application on an isolated port for end-to-end testing.
+// Keep the child environment small and prevent .env from restoring provider credentials.
+const serverEnvironment = {
+    PATH: process.env.PATH,
+    SystemRoot: process.env.SystemRoot,
+    WINDIR: process.env.WINDIR,
+    TEMP: process.env.TEMP,
+    TMP: process.env.TMP,
+    NODE_ENV: "test",
+    DB_HOST: process.env.DB_HOST,
+    DB_PORT: process.env.DB_PORT,
+    DB_NAME: "saludvital_test",
+    DB_USER: process.env.DB_USER,
+    DB_PASSWORD: process.env.DB_PASSWORD,
+    JWT_SECRET: "local-test-secret-not-for-production",
+    PORT: "3100",
+    APP_BASE_URL: baseUrl,
+    LOGIN_WHATSAPP_CONTACT_NUMBER: "573000000000",
+    NOTIFICATION_DELIVERY_ENABLED: "false",
+    WHATSAPP_CHATBOT_ENABLED: "false",
+    META_WHATSAPP_ACCESS_TOKEN: "",
+    META_WHATSAPP_APP_SECRET: "",
+    META_WHATSAPP_WEBHOOK_VERIFY_TOKEN: "",
+    META_WHATSAPP_PHONE_NUMBER_ID: "",
+    META_WHATSAPP_BUSINESS_ACCOUNT_ID: "",
+    RESEND_API_KEY: "",
+    RESEND_FROM_EMAIL: "",
+    INALAMBRIA_API_KEY: "",
+    WHATSAPP_VERIFICATION_SECRET: "",
+};
+
+// Start the application on an isolated port without inheriting local provider credentials.
 const server = spawn(process.execPath, ["server.js"], {
-    env: {
-        ...process.env,
-        NODE_ENV: "test",
-        DB_NAME: "saludvital_test",
-        JWT_SECRET: "local-test-secret-not-for-production",
-        LOGIN_WHATSAPP_CONTACT_NUMBER: "573000000000",
-        PORT: "3100",
-    },
+    env: serverEnvironment,
     stdio: "inherit",
 });
 
