@@ -1,5 +1,7 @@
 # US-DOC-15 — View Doctor Appointment Notifications
 
+**User story in plain language:** As a doctor, I want to know when one of my appointments is booked, changed, or cancelled, and see which notices I have already read.
+
 ## User Story
 
 As an authenticated doctor, I want to see appointment changes relevant to my assigned appointments and track which updates I have read so that I can keep my schedule current.
