@@ -139,6 +139,8 @@ try {
 
         if ([320, 375, 760, 1440].includes(viewport.width)) {
             const splash = loginPage.locator("[data-login-splash]");
+            await splash.waitFor({ state: "visible" });
+            const splashBecameVisibleAt = Date.now();
             const splashWidth = await loginPage.evaluate(() => {
                 const splash = document.querySelector("[data-login-splash]");
                 return splash ? document.documentElement.scrollWidth : window.innerWidth;
@@ -147,6 +149,9 @@ try {
                 throw new Error(`Splash screen overflows at ${viewport.width}px.`);
             }
             await splash.waitFor({ state: "detached", timeout: 17000 });
+            if (viewport.width === 1440 && Date.now() - splashBecameVisibleAt < 5000) {
+                throw new Error("The login splash must remain visible for at least five seconds.");
+            }
         }
 
         // Verify that the login form and its main controls are available.
@@ -317,7 +322,9 @@ try {
     });
     await blockedResourcePage.locator('input[name="email"]').waitFor({ state: "visible" });
     await blockedResourcePage.close();
-    console.log("PASS: splash waits for login resources and dismisses after page load.");
+    console.log(
+        "PASS: splash waits for login resources and stays visible for at least five seconds.",
+    );
 
     const noScriptPage = await context.newPage();
     await noScriptPage.route("**/js/login-splash.js", (route) => route.abort());
