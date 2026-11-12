@@ -10,6 +10,8 @@
         return;
     }
 
+    const splashStartedAt = performance.now();
+    const minimumSplashDurationMs = 5000;
     const loadWaitTimeoutMs = 15000;
     const exitAnimationDurationMs = 360;
     splash.dataset.managed = "true";
@@ -50,6 +52,8 @@
     const dismissSplash = async () => {
         await waitForPageLoad();
         await waitForVisibleImages();
+        const elapsedSplashTime = performance.now() - splashStartedAt;
+        await wait(Math.max(0, minimumSplashDurationMs - elapsedSplashTime));
         splash.classList.add("is-ready", "is-dismissing");
         await Promise.race([
             new Promise((resolve) => {
