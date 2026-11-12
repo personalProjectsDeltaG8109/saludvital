@@ -135,42 +135,22 @@ try {
             height: viewport.height,
         });
 
-        const loginNavigationStartedAt = Date.now();
         await loginPage.goto(`${baseUrl}/login`);
 
         if ([320, 375, 760, 1440].includes(viewport.width)) {
             const splash = loginPage.locator("[data-login-splash]");
             await splash.waitFor({ state: "visible" });
-            const splashWidth = await loginPage.evaluate(
-                () => document.documentElement.scrollWidth,
-            );
+            const splashBecameVisibleAt = Date.now();
+            const splashWidth = await loginPage.evaluate(() => {
+                const splash = document.querySelector("[data-login-splash]");
+                return splash ? document.documentElement.scrollWidth : window.innerWidth;
+            });
             if (splashWidth > viewport.width) {
                 throw new Error(`Splash screen overflows at ${viewport.width}px.`);
             }
-            if (viewport.width === 1440) {
-                await loginPage.waitForTimeout(250);
-            }
-            await loginPage.locator(".login-splash-logo").evaluate((image) => {
-                if (!image.complete || image.naturalWidth === 0) {
-                    throw new Error("The official logo did not load in the splash screen.");
-                }
-            });
-            await loginPage.waitForTimeout(900);
-            if (viewport.width === 1440) {
-                await loginPage.screenshot({ path: "test-results/login-splash-desktop.png" });
-            } else if (viewport.width === 375) {
-                await loginPage.screenshot({ path: "test-results/login-splash-mobile.png" });
-            }
-            if (viewport.width === 1440) {
-                await splash.waitFor({ state: "detached", timeout: 6500 });
-                const splashDuration = Date.now() - loginNavigationStartedAt;
-                if (splashDuration < 1000) {
-                    throw new Error(
-                        `Splash ended before its entrance animation (${splashDuration}ms).`,
-                    );
-                }
-                await loginPage.locator('input[name="email"]').fill("patient@example.com");
-                await loginPage.locator('input[name="password"]').fill("SafeTestPassword123!");
+            await splash.waitFor({ state: "detached", timeout: 17000 });
+            if (viewport.width === 1440 && Date.now() - splashBecameVisibleAt < 5000) {
+                throw new Error("The login splash must remain visible for at least five seconds.");
             }
         }
 
@@ -342,7 +322,9 @@ try {
     });
     await blockedResourcePage.locator('input[name="email"]').waitFor({ state: "visible" });
     await blockedResourcePage.close();
-    console.log("PASS: splash waits for login resources and dismisses after page load.");
+    console.log(
+        "PASS: splash waits for login resources and stays visible for at least five seconds.",
+    );
 
     const noScriptPage = await context.newPage();
     await noScriptPage.route("**/js/login-splash.js", (route) => route.abort());

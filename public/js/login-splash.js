@@ -11,9 +11,8 @@
     }
 
     const splashStartedAt = performance.now();
-    const minimumSplashDurationMs = 1100;
+    const minimumSplashDurationMs = 5000;
     const loadWaitTimeoutMs = 15000;
-    const completionMessageDurationMs = 180;
     const exitAnimationDurationMs = 360;
     splash.dataset.managed = "true";
 
@@ -21,34 +20,43 @@
     const waitForPageLoad = async () => {
         if (document.readyState === "complete") return;
 
-        await Promise.race([
-            new Promise((resolve) => {
-                window.addEventListener("load", resolve, { once: true });
-            }),
-            wait(loadWaitTimeoutMs),
-        ]);
+        await new Promise((resolve) => {
+            window.addEventListener("load", resolve, { once: true });
+        });
+    };
+    const waitForImage = async (image) => {
+        if (!image.complete) {
+            await new Promise((resolve) => {
+                image.addEventListener("load", resolve, { once: true });
+                image.addEventListener("error", resolve, { once: true });
+                if (image.complete) resolve();
+            });
+        }
+
+        if (image.naturalWidth > 0) {
+            await image.decode().catch(() => undefined);
+        }
     };
     const waitForVisibleImages = async () => {
         const visibleImages = [...document.images].filter(
-            (image) => image.getClientRects().length > 0 && image.complete,
+            (image) => image.getClientRects().length > 0,
         );
 
-        await Promise.race([
-            Promise.all(visibleImages.map((image) => image.decode().catch(() => undefined))),
-            wait(1500),
-        ]);
+        await Promise.all(visibleImages.map(waitForImage));
     };
 
     const dismissSplash = async () => {
-        await waitForPageLoad();
-        await waitForVisibleImages();
-        const elapsedTime = performance.now() - splashStartedAt;
-        await wait(Math.max(0, minimumSplashDurationMs - elapsedTime));
-        const message = splash.querySelector("[data-splash-message]");
-        if (message) message.textContent = "¡Todo listo!";
-        splash.classList.add("is-ready");
-        await wait(completionMessageDurationMs);
-        splash.classList.add("is-dismissing");
+        // A failed or stalled decorative resource must never trap the user on the splash.
+        await Promise.race([
+            (async () => {
+                await waitForPageLoad();
+                await waitForVisibleImages();
+            })(),
+            wait(loadWaitTimeoutMs),
+        ]);
+        const elapsedSplashTime = performance.now() - splashStartedAt;
+        await wait(Math.max(0, minimumSplashDurationMs - elapsedSplashTime));
+        splash.classList.add("is-ready", "is-dismissing");
         await Promise.race([
             new Promise((resolve) => {
                 splash.addEventListener(
