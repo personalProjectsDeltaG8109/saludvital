@@ -10,10 +10,7 @@
         return;
     }
 
-    const splashStartedAt = performance.now();
-    const minimumSplashDurationMs = 1100;
     const loadWaitTimeoutMs = 15000;
-    const completionMessageDurationMs = 180;
     const exitAnimationDurationMs = 360;
     splash.dataset.managed = "true";
 
@@ -28,27 +25,32 @@
             wait(loadWaitTimeoutMs),
         ]);
     };
+    const waitForImage = async (image) => {
+        if (!image.complete) {
+            await new Promise((resolve) => {
+                image.addEventListener("load", resolve, { once: true });
+                image.addEventListener("error", resolve, { once: true });
+                if (image.complete) resolve();
+            });
+        }
+
+        if (image.naturalWidth > 0) {
+            await image.decode().catch(() => undefined);
+        }
+    };
     const waitForVisibleImages = async () => {
         const visibleImages = [...document.images].filter(
-            (image) => image.getClientRects().length > 0 && image.complete,
+            (image) => image.getClientRects().length > 0,
         );
 
-        await Promise.race([
-            Promise.all(visibleImages.map((image) => image.decode().catch(() => undefined))),
-            wait(1500),
-        ]);
+        // A failed or stalled decorative image must never trap the user on the splash.
+        await Promise.race([Promise.all(visibleImages.map(waitForImage)), wait(loadWaitTimeoutMs)]);
     };
 
     const dismissSplash = async () => {
         await waitForPageLoad();
         await waitForVisibleImages();
-        const elapsedTime = performance.now() - splashStartedAt;
-        await wait(Math.max(0, minimumSplashDurationMs - elapsedTime));
-        const message = splash.querySelector("[data-splash-message]");
-        if (message) message.textContent = "¡Todo listo!";
-        splash.classList.add("is-ready");
-        await wait(completionMessageDurationMs);
-        splash.classList.add("is-dismissing");
+        splash.classList.add("is-ready", "is-dismissing");
         await Promise.race([
             new Promise((resolve) => {
                 splash.addEventListener(
