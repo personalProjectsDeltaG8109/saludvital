@@ -305,7 +305,7 @@ saludvital/
 ## Current Limitations
 
 - **Public demo:** hosting and a demonstration URL are pending.
-- **Sessions:** activity records are process-local and disappear on restart. Multi-instance deployment needs shared session state. The logout route currently clears the cookie without first resolving `req.auth`, so immediate server-side revocation needs completion.
+- **Sessions:** authenticated sessions are recorded in the MySQL `auth_sessions` table. The database stores a SHA-256 hash of the session identifier, not the identifier itself. Sessions expire after 180 seconds without recorded user activity; polling and other read-only requests check validity without extending that period. Explicit activity refreshes an active session, logout removes the current session record, and password reset removes all sessions for that account. This supports revocation across application instances that share the same database.
 - **Uploads:** profile photos use the local filesystem; deployment needs a persistence strategy.
 - **Messaging:** credentials, sender setup, templates, recipient permissions, and delivery checks are environment-dependent. No live provider availability is asserted here.
 - **Chatbot administration:** draft editing and runtime execution have different lifecycle requirements; production chatbot execution is currently disabled.
