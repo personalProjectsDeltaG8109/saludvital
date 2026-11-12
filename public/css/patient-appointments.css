@@ -1,9 +1,9 @@
 .appointments-page {
-    --appointments-primary: #123B73;
-    --appointments-secondary: #168DE2;
-    --appointments-teal: #13B8B0;
-    --appointments-wellness: #36A96B;
-    --appointments-background: #FFFFFF;
+    --appointments-primary: #123b73;
+    --appointments-secondary: #168de2;
+    --appointments-teal: #13b8b0;
+    --appointments-wellness: #36a96b;
+    --appointments-background: #ffffff;
     background: var(--appointments-background);
     height: 100dvh;
     overflow: hidden;
@@ -26,7 +26,7 @@
     display: flex;
     align-items: center;
     border-radius: 16px;
-    background: #e5f4ff url("/brand/patient/banner-appoinments.png") center 42%/cover no-repeat;
+    background: #e5f4ff url("/brand/patient/banner-appoinments.png") center 42% / cover no-repeat;
 }
 
 .appointments-hero-copy {
@@ -38,7 +38,7 @@
     color: var(--appointments-primary);
     font-size: clamp(28px, 3vw, 38px);
     font-weight: 800;
-    letter-spacing: -.8px;
+    letter-spacing: -0.8px;
 }
 
 .appointments-hero p {
@@ -165,7 +165,7 @@
 .appointment-tools {
     padding: 11px 13px;
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(125px, .8fr));
+    grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(125px, 0.8fr));
     gap: 9px;
 }
 
@@ -347,9 +347,12 @@
     place-items: center;
     border: 1px solid #cfe5f7;
     border-radius: 50%;
-    color: var(--appointments-secondary, #168DE2);
+    color: var(--appointments-secondary, #168de2);
     background: #f3faff;
-    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+    transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        border-color 160ms ease;
 }
 
 /* Match the rescheduling shortcut while using a distinct warning color for cancellation. */
@@ -365,10 +368,20 @@
     cursor: pointer;
 }
 
-.appointment-cancel-button svg { width: 18px; height: 18px; }
-.appointment-cancel-button:hover { color: #fff; background: #b83245; border-color: #b83245; }
+.appointment-cancel-button svg {
+    width: 18px;
+    height: 18px;
+}
+.appointment-cancel-button:hover {
+    color: #fff;
+    background: #b83245;
+    border-color: #b83245;
+}
 .appointment-cancel-button:focus-visible,
-.appointment-cancel-confirm:focus-visible { outline: 3px solid var(--appointments-teal); outline-offset: 3px; }
+.appointment-cancel-confirm:focus-visible {
+    outline: 3px solid var(--appointments-teal);
+    outline-offset: 3px;
+}
 .appointment-cancel-confirm {
     min-height: 42px;
     padding: 0 18px;
@@ -380,9 +393,17 @@
     font-weight: 700;
     cursor: pointer;
 }
-.appointment-cancel-confirm:disabled { opacity: .65; cursor: wait; }
-.appointment-cancel-actions { justify-content: flex-end; gap: 10px; }
-.appointment-feedback-dialog .appointment-dialog-header { min-height: 125px; }
+.appointment-cancel-confirm:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+.appointment-cancel-actions {
+    justify-content: flex-end;
+    gap: 10px;
+}
+.appointment-feedback-dialog .appointment-dialog-header {
+    min-height: 125px;
+}
 
 .appointment-reschedule-link svg {
     width: 19px;
@@ -390,9 +411,9 @@
 }
 
 .appointment-reschedule-link:hover {
-    border-color: var(--appointments-secondary, #168DE2);
+    border-color: var(--appointments-secondary, #168de2);
     color: #fff;
-    background: var(--appointments-secondary, #168DE2);
+    background: var(--appointments-secondary, #168de2);
 }
 
 .appointment-detail-toggle:hover {
@@ -409,9 +430,9 @@
 }
 
 .appointment-details-dialog {
-    --appointments-primary: #123B73;
-    --appointments-secondary: #168DE2;
-    --appointments-teal: #13B8B0;
+    --appointments-primary: #123b73;
+    --appointments-secondary: #168de2;
+    --appointments-teal: #13b8b0;
     position: fixed;
     inset: 50% auto auto 50%;
     width: min(540px, calc(100vw - 32px));
@@ -449,7 +470,7 @@
     color: #d9f5ff;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: .08em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
@@ -981,7 +1002,6 @@
     .appointment-dialog-footer {
         padding: 12px 16px 18px;
     }
-
 }
 
 @media (max-width: 360px) {

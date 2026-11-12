@@ -15,7 +15,6 @@
 
 /* Let long patient pages use document scrolling in short or zoomed desktop viewports. */
 @media (min-width: 761px) and (max-height: 880px) {
-
     .sv-dashboard.appointments-page,
     .sv-dashboard.reschedule-page,
     .sv-dashboard.notifications-page,
@@ -83,7 +82,9 @@
     background-repeat: no-repeat;
     background-size: cover;
     box-shadow: 0px 0px 15px #000000;
-    transition: transform .36s cubic-bezier(.22, .75, .25, 1), visibility .36s ease;
+    transition:
+        transform 0.36s cubic-bezier(0.22, 0.75, 0.25, 1),
+        visibility 0.36s ease;
 }
 
 .sv-sidebar:after {
@@ -130,7 +131,7 @@
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
-    transition: background .18s ease;
+    transition: background 0.18s ease;
 }
 
 .sv-nav-link:hover {
@@ -220,7 +221,7 @@
 .sv-topbar-copy h1 {
     margin: 0 0 4px;
     font-size: clamp(23px, 2vw, 30px);
-    letter-spacing: -.7px;
+    letter-spacing: -0.7px;
 }
 
 .sv-topbar-copy p {
@@ -392,7 +393,7 @@
     font-size: clamp(27px, 3vw, 36px);
     font-weight: 850;
     line-height: 1.08;
-    letter-spacing: -.9px;
+    letter-spacing: -0.9px;
     color: #073b78;
     text-shadow: 0 1px 1px #ffffffa8;
 }
@@ -433,7 +434,9 @@
     background: #fff;
     box-shadow: 0 4px 14px #00000012;
     text-decoration: none;
-    transition: transform .18s, box-shadow .18s;
+    transition:
+        transform 0.18s,
+        box-shadow 0.18s;
 }
 
 .sv-action-card:hover {
@@ -489,17 +492,17 @@
     font-size: 23px;
 }
 
-.action-green~.sv-action-arrow {
+.action-green ~ .sv-action-arrow {
     color: #00a875;
     background: #e5fbf2;
 }
 
-.action-purple~.sv-action-arrow {
+.action-purple ~ .sv-action-arrow {
     color: #7c4df1;
     background: #f2edff;
 }
 
-.action-teal~.sv-action-arrow {
+.action-teal ~ .sv-action-arrow {
     color: #00a5ad;
     background: #e5fafb;
 }
@@ -524,7 +527,7 @@
 .sv-panels {
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
     gap: 16px;
     align-items: stretch;
 }
@@ -563,10 +566,10 @@
 .sv-panel-heading h2 {
     margin: 0;
     font-size: 17px;
-    letter-spacing: -.2px;
+    letter-spacing: -0.2px;
 }
 
-.sv-panel-heading>a {
+.sv-panel-heading > a {
     color: var(--sv-blue);
     font-size: 13px;
     font-weight: 600;
@@ -655,12 +658,12 @@
     background: #ffe5e8;
 }
 
-.sv-appointment-content>.sv-status {
+.sv-appointment-content > .sv-status {
     margin-top: 12px;
 }
 
 .sv-status.status-in-progress {
-    color: #123B73;
+    color: #123b73;
     background: #e5faf8;
 }
 
@@ -924,13 +927,13 @@
     opacity: 0;
 }
 
-.sv-switch-control input:focus-visible+.sv-toggle {
+.sv-switch-control input:focus-visible + .sv-toggle {
     outline: 3px solid #1578e8;
     outline-offset: 3px;
 }
 
-.sv-switch-control input:disabled+.sv-toggle {
-    opacity: .6;
+.sv-switch-control input:disabled + .sv-toggle {
+    opacity: 0.6;
 }
 
 .sv-notification-feedback {
@@ -989,14 +992,13 @@
         grid-template-columns: 88px minmax(0, 1fr);
     }
 
-    .sv-appointment-content>.sv-status {
+    .sv-appointment-content > .sv-status {
         grid-column: 2;
     }
 
     .sv-appointment-info p {
         font-size: 12px;
     }
-
 }
 
 @media (max-height: 760px) and (min-width: 761px) {
@@ -1057,7 +1059,6 @@
 }
 
 @media (max-width: 760px) {
-
     .sv-dashboard .sv-hero,
     .sv-dashboard .appointments-hero,
     .sv-dashboard .reschedule-hero,
@@ -1104,7 +1105,9 @@
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transition: opacity .36s ease, visibility .36s ease;
+        transition:
+            opacity 0.36s ease,
+            visibility 0.36s ease;
     }
 
     .sv-sidebar-backdrop.is-visible,
@@ -1130,11 +1133,13 @@
         background: #f9fcff;
         box-shadow: 0 3px 10px #123b730d;
         cursor: pointer;
-        transition: background .2s ease, transform .2s ease;
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
     }
 
     .sv-mobile-menu-toggle:active {
-        transform: scale(.95);
+        transform: scale(0.95);
     }
 
     .sv-mobile-menu-toggle span {
@@ -1182,7 +1187,7 @@
     .sv-topbar-copy h1 {
         margin: 0 0 3px;
         font-size: 19px;
-        letter-spacing: -.3px;
+        letter-spacing: -0.3px;
     }
 
     .sv-topbar-copy p {
@@ -1233,7 +1238,7 @@
         height: 100%;
         padding: 10px 14px 9px;
         flex: initial;
-        grid-template-rows: minmax(70px, .75fr) minmax(142px, 1.65fr) minmax(0, 2fr);
+        grid-template-rows: minmax(70px, 0.75fr) minmax(142px, 1.65fr) minmax(0, 2fr);
     }
 
     .sv-hero {
@@ -1323,7 +1328,7 @@
         font-size: 15px;
     }
 
-    .sv-panel-heading>a {
+    .sv-panel-heading > a {
         font-size: 11px;
     }
 
@@ -1362,7 +1367,7 @@
         flex-basis: 14px;
     }
 
-    .sv-appointment-content>.sv-status {
+    .sv-appointment-content > .sv-status {
         grid-column: 2;
         width: max-content;
         margin: 0;
@@ -1446,12 +1451,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
     .sv-sidebar,
     .sv-sidebar-backdrop,
     .booking-sidebar-backdrop,
     .sv-mobile-menu-toggle {
-        transition-duration: .01ms;
+        transition-duration: 0.01ms;
     }
 }
 
@@ -1615,14 +1619,14 @@
     }
 
     .sv-panel-column:first-child {
-        grid-template-rows: minmax(0, 1.04fr) minmax(0, .96fr);
+        grid-template-rows: minmax(0, 1.04fr) minmax(0, 0.96fr);
     }
 
     .sv-appointment-content {
         min-height: 0;
     }
 
-    .sv-appointment-content>.sv-status {
+    .sv-appointment-content > .sv-status {
         margin-top: 7px;
     }
 
@@ -1639,14 +1643,13 @@
     .sv-appointment-buttons button {
         min-height: 38px;
     }
-
 }
 
 @media (max-width: 760px) and (max-height: 740px) {
     .sv-content {
         padding-top: 7px;
         padding-bottom: 6px;
-        grid-template-rows: minmax(58px, .65fr) minmax(118px, 1.5fr) minmax(0, 2fr);
+        grid-template-rows: minmax(58px, 0.65fr) minmax(118px, 1.5fr) minmax(0, 2fr);
     }
 
     .sv-hero {
@@ -1779,7 +1782,7 @@
     font-size: var(--sv-text-lg);
 }
 
-.sv-panel-heading>a {
+.sv-panel-heading > a {
     font-size: var(--sv-text-sm);
 }
 
@@ -1851,7 +1854,7 @@
         font-size: var(--sv-text-lg);
     }
 
-    .sv-panel-heading>a {
+    .sv-panel-heading > a {
         font-size: var(--sv-text-xs);
     }
 

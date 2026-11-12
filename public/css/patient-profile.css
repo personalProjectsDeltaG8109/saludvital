@@ -68,7 +68,7 @@
     border-radius: 13px;
     color: var(--profile-ink);
     background: #ffffffdf;
-    font-size: .875rem;
+    font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.35;
 }
@@ -89,7 +89,7 @@
 .profile-layout {
     margin-bottom: 12px;
     display: grid;
-    grid-template-columns: minmax(250px, .8fr) minmax(0, 2fr);
+    grid-template-columns: minmax(250px, 0.8fr) minmax(0, 2fr);
     align-items: start;
     gap: 12px 14px;
 }
@@ -224,7 +224,7 @@
     background: transparent;
     text-align: left;
     font: inherit;
-    font-size: .8rem;
+    font-size: 0.8rem;
     cursor: pointer;
 }
 
@@ -263,7 +263,7 @@
     border-radius: 20px;
     color: #078bed;
     background: #e5f5ff;
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 700;
 }
 
@@ -280,7 +280,7 @@
     grid-template-columns: 18px minmax(0, 1fr);
     gap: 8px;
     color: #45628b;
-    font-size: .86rem;
+    font-size: 0.86rem;
     overflow-wrap: anywhere;
 }
 
@@ -318,13 +318,13 @@
 }
 
 .profile-account-status strong {
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 .profile-account-status small {
     margin-top: 3px;
     color: #4c6a88;
-    font-size: .72rem;
+    font-size: 0.72rem;
     line-height: 1.35;
 }
 
@@ -357,7 +357,7 @@
 
 .profile-stat small {
     color: #5b7191;
-    font-size: .68rem;
+    font-size: 0.68rem;
 }
 
 .profile-details {
@@ -402,7 +402,7 @@
 .profile-section-heading p {
     margin: 0;
     color: #607695;
-    font-size: .75rem;
+    font-size: 0.75rem;
 }
 
 .profile-edit-button {
@@ -411,7 +411,7 @@
     color: var(--profile-blue);
     background: transparent;
     font: inherit;
-    font-size: .78rem;
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -424,10 +424,10 @@
     min-width: 0;
     padding: 8px 2px;
     display: grid;
-    grid-template-columns: minmax(120px, .8fr) minmax(0, 1fr);
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr);
     gap: 12px;
     border-bottom: 1px solid #e9f1f8;
-    font-size: .79rem;
+    font-size: 0.79rem;
     line-height: 1.35;
 }
 
@@ -445,7 +445,7 @@
 .profile-no-emergency {
     margin: 14px 0;
     color: #607695;
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 .profile-edit-form[hidden],
@@ -464,21 +464,21 @@
     display: grid;
     gap: 5px;
     color: #365b89;
-    font-size: .76rem;
+    font-size: 0.76rem;
     font-weight: 700;
 }
 
 .profile-required-legend {
     margin: 0 0 9px;
     color: #607695;
-    font-size: .72rem;
+    font-size: 0.72rem;
 }
 
 .profile-email-pending {
     display: block;
     margin-top: 5px;
     color: #8a5a00;
-    font-size: .72rem;
+    font-size: 0.72rem;
     line-height: 1.45;
 }
 
@@ -507,7 +507,7 @@
     border: 1px solid #d9e8f5;
     border-radius: 8px;
     background: #f5faff;
-    font-size: .74rem;
+    font-size: 0.74rem;
 }
 
 .profile-locked-field span {
@@ -523,7 +523,7 @@
     grid-column: 1 / -1;
     margin: 0;
     color: #607695;
-    font-size: .72rem;
+    font-size: 0.72rem;
 }
 
 .profile-form-grid input,
@@ -568,7 +568,7 @@
     color: var(--profile-blue);
     background: #fff;
     font: inherit;
-    font-size: .8rem;
+    font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
 }
@@ -579,7 +579,7 @@
 }
 
 .profile-save:disabled {
-    opacity: .65;
+    opacity: 0.65;
     cursor: wait;
 }
 
@@ -750,7 +750,7 @@
 .profile-delete-form p {
     margin: 0;
     color: #5a718e;
-    font-size: .87rem;
+    font-size: 0.87rem;
     line-height: 1.5;
 }
 
@@ -758,7 +758,7 @@
     display: grid;
     gap: 5px;
     color: #365b89;
-    font-size: .78rem;
+    font-size: 0.78rem;
     font-weight: 700;
 }
 
@@ -782,13 +782,13 @@
     color: #fff;
     background: #e23853;
     font: inherit;
-    font-size: .8rem;
+    font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
 }
 
 .profile-delete-confirm:disabled {
-    opacity: .48;
+    opacity: 0.48;
     cursor: not-allowed;
 }
 
@@ -798,20 +798,20 @@
 }
 
 .profile-quick-card strong {
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 .profile-quick-card small {
     margin-top: 3px;
     color: #607695;
-    font-size: .71rem;
+    font-size: 0.71rem;
     line-height: 1.35;
 }
 
 .profile-quick-action {
     grid-column: 2;
     color: var(--profile-blue);
-    font-size: .77rem;
+    font-size: 0.77rem;
     font-weight: 700;
 }
 
@@ -820,7 +820,7 @@
     min-height: 1.2em;
     margin: 10px 2px 0;
     color: #087e5a;
-    font-size: .85rem;
+    font-size: 0.85rem;
 }
 
 @media (max-width: 1000px) and (min-width: 761px) {
@@ -830,7 +830,7 @@
     }
 
     .profile-layout {
-        grid-template-columns: minmax(215px, .75fr) minmax(0, 1.5fr);
+        grid-template-columns: minmax(215px, 0.75fr) minmax(0, 1.5fr);
     }
 
     .profile-details {
@@ -885,12 +885,12 @@
     .profile-hero-copy h2 {
         margin-bottom: 3px;
         font-size: 1.42rem;
-        letter-spacing: -.5px;
+        letter-spacing: -0.5px;
     }
 
     .profile-hero-copy p {
         max-width: 320px;
-        font-size: .85rem;
+        font-size: 0.85rem;
         line-height: 1.35;
     }
 
@@ -936,7 +936,7 @@
 
     .profile-identity-copy h2 {
         max-width: 190px;
-        font-size: .95rem;
+        font-size: 0.95rem;
         line-height: 1.2;
     }
 
@@ -948,11 +948,11 @@
         min-height: 31px;
         align-items: center;
         border-top: 1px solid #edf3f8;
-        font-size: .76rem;
+        font-size: 0.76rem;
     }
 
     .profile-contact-list p span:first-child {
-        font-size: .9rem;
+        font-size: 0.9rem;
     }
 
     .profile-account-status {
@@ -968,11 +968,11 @@
     }
 
     .profile-account-status strong {
-        font-size: .78rem;
+        font-size: 0.78rem;
     }
 
     .profile-account-status small {
-        font-size: .67rem;
+        font-size: 0.67rem;
     }
 
     .profile-stats {
@@ -987,11 +987,11 @@
     }
 
     .profile-stat strong {
-        font-size: .94rem;
+        font-size: 0.94rem;
     }
 
     .profile-stat small {
-        font-size: .62rem;
+        font-size: 0.62rem;
     }
 
     .profile-details {
@@ -1013,7 +1013,7 @@
         align-items: center;
         gap: 10px;
         color: var(--profile-ink);
-        font-size: .83rem;
+        font-size: 0.83rem;
         font-weight: 700;
         list-style: none;
         cursor: pointer;
@@ -1049,7 +1049,7 @@
         margin-left: auto;
         color: #164d8a;
         font-size: 1.3rem;
-        transition: transform .2s ease;
+        transition: transform 0.2s ease;
     }
 
     .profile-section[open] .profile-section-chevron {
@@ -1072,14 +1072,14 @@
     .profile-edit-button {
         margin-left: auto;
         padding: 3px 0 7px;
-        font-size: .74rem;
+        font-size: 0.74rem;
     }
 
     .profile-data-list > div {
-        grid-template-columns: minmax(100px, .75fr) minmax(0, 1fr);
+        grid-template-columns: minmax(100px, 0.75fr) minmax(0, 1fr);
         gap: 8px;
         padding: 7px 1px;
-        font-size: .73rem;
+        font-size: 0.73rem;
     }
 
     .profile-form-grid {
@@ -1096,7 +1096,7 @@
     }
 
     .profile-form-grid label {
-        font-size: .74rem;
+        font-size: 0.74rem;
     }
 
     .profile-form-grid input,
@@ -1126,7 +1126,6 @@
         padding: 7px 10px;
         grid-template-columns: 32px minmax(0, 1fr) auto;
         gap: 7px;
-
     }
 
     .profile-quick-card {
@@ -1146,7 +1145,7 @@
         width: 31px;
         height: 31px;
         grid-row: auto;
-        font-size: .95rem;
+        font-size: 0.95rem;
     }
 
     .profile-overview .profile-quick-icon {
@@ -1155,7 +1154,7 @@
     }
 
     .profile-quick-card strong {
-        font-size: .76rem;
+        font-size: 0.76rem;
     }
 
     .profile-quick-card small {
@@ -1173,7 +1172,7 @@
     }
 
     .profile-feedback {
-        font-size: .75rem;
+        font-size: 0.75rem;
     }
 }
 
@@ -1208,12 +1207,12 @@ body.sv-dashboard.profile-page .profile-hero {
 .profile-page .profile-hero-copy h2 {
     margin-bottom: 4px;
     font-size: clamp(1.45rem, 2vw, 1.85rem);
-    letter-spacing: -.4px;
+    letter-spacing: -0.4px;
 }
 
 .profile-page .profile-hero-copy p {
-    font-size: .86rem;
-    opacity: .9;
+    font-size: 0.86rem;
+    opacity: 0.9;
 }
 
 .profile-page .profile-hero-badge {
@@ -1222,7 +1221,7 @@ body.sv-dashboard.profile-page .profile-hero {
 
 .profile-page .profile-layout {
     display: grid;
-    grid-template-columns: minmax(250px, 1.08fr) minmax(255px, 1fr) minmax(220px, .8fr);
+    grid-template-columns: minmax(250px, 1.08fr) minmax(255px, 1fr) minmax(220px, 0.8fr);
     align-items: start;
     gap: 12px;
 }
@@ -1256,11 +1255,11 @@ body.sv-dashboard.profile-page .profile-hero {
 }
 
 .profile-page .profile-stat strong {
-    font-size: .96rem;
+    font-size: 0.96rem;
 }
 
 .profile-page .profile-stat small {
-    font-size: .7rem;
+    font-size: 0.7rem;
 }
 
 .profile-page .profile-identity {
@@ -1282,7 +1281,7 @@ body.sv-dashboard.profile-page .profile-hero {
 }
 
 .profile-page .profile-contact-list p {
-    font-size: .8rem;
+    font-size: 0.8rem;
 }
 
 .profile-page .profile-section[data-section="personal"] {
@@ -1317,19 +1316,19 @@ body.sv-dashboard.profile-page .profile-hero {
 }
 
 .profile-page .profile-section-heading h2 {
-    font-size: .94rem;
+    font-size: 0.94rem;
 }
 
 .profile-page .profile-section-heading p {
-    font-size: .7rem;
+    font-size: 0.7rem;
     line-height: 1.4;
 }
 
 .profile-page .profile-data-list > div {
-    grid-template-columns: minmax(105px, .8fr) minmax(0, 1fr);
+    grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1fr);
     gap: 8px;
     padding: 7px 1px;
-    font-size: .74rem;
+    font-size: 0.74rem;
 }
 
 .profile-page .profile-data-list dd {
@@ -1354,7 +1353,7 @@ body.sv-dashboard.profile-page .profile-hero {
     content: "Cuenta";
     padding: 2px 3px 7px;
     color: var(--profile-ink);
-    font-size: .95rem;
+    font-size: 0.95rem;
     font-weight: 750;
 }
 
@@ -1378,11 +1377,11 @@ body.sv-dashboard.profile-page .profile-hero {
     width: 32px;
     height: 32px;
     grid-row: auto;
-    font-size: .95rem;
+    font-size: 0.95rem;
 }
 
 .profile-page .profile-quick-card strong {
-    font-size: .78rem;
+    font-size: 0.78rem;
     line-height: 1.3;
 }
 
@@ -1462,7 +1461,7 @@ body.sv-dashboard.profile-page .profile-hero {
     }
 
     .profile-page .profile-hero-copy p {
-        font-size: .76rem;
+        font-size: 0.76rem;
     }
 
     .profile-page .profile-layout {
@@ -1491,12 +1490,12 @@ body.sv-dashboard.profile-page .profile-hero {
     }
 
     .profile-page .profile-stat strong {
-        font-size: .84rem;
+        font-size: 0.84rem;
         line-height: 1.2;
     }
 
     .profile-page .profile-stat small {
-        font-size: .59rem;
+        font-size: 0.59rem;
         line-height: 1.2;
     }
 
@@ -1520,7 +1519,7 @@ body.sv-dashboard.profile-page .profile-hero {
         align-items: center;
         gap: 9px;
         color: var(--profile-ink);
-        font-size: .82rem;
+        font-size: 0.82rem;
         font-weight: 700;
         list-style: none;
         cursor: pointer;
@@ -1540,10 +1539,10 @@ body.sv-dashboard.profile-page .profile-hero {
     }
 
     .profile-page .profile-data-list > div {
-        grid-template-columns: minmax(100px, .75fr) minmax(0, 1fr);
+        grid-template-columns: minmax(100px, 0.75fr) minmax(0, 1fr);
         gap: 8px;
         padding: 7px 1px;
-        font-size: .72rem;
+        font-size: 0.72rem;
     }
 
     .profile-page .profile-quick-actions {
@@ -1570,8 +1569,8 @@ body.sv-dashboard.profile-page .profile-hero {
     }
 
     .profile-page .profile-data-list > div {
-        grid-template-columns: minmax(88px, .7fr) minmax(0, 1fr);
+        grid-template-columns: minmax(88px, 0.7fr) minmax(0, 1fr);
         gap: 6px;
-        font-size: .68rem;
+        font-size: 0.68rem;
     }
 }

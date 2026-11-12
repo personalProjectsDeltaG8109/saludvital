@@ -27,7 +27,7 @@
     color: #087b9b;
     font-size: 11px;
     font-weight: 800;
-    letter-spacing: .12em;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
 }
 
@@ -35,7 +35,7 @@
     margin: 0;
     color: var(--patient-navy);
     font-size: clamp(28px, 3vw, 36px);
-    letter-spacing: -.035em;
+    letter-spacing: -0.035em;
 }
 
 .doctor-patients-heading > div > p:last-child {
@@ -106,7 +106,9 @@
     cursor: pointer;
 }
 
-.doctor-patients-search-control button:hover { background: #0669ce; }
+.doctor-patients-search-control button:hover {
+    background: #0669ce;
+}
 
 .doctor-patients-feedback {
     min-height: 18px;
@@ -117,14 +119,18 @@
     font-size: 12px;
 }
 
-.doctor-patients-feedback.is-error { color: #b42318; }
-.doctor-patients-feedback.is-success { color: #087a55; }
+.doctor-patients-feedback.is-error {
+    color: #b42318;
+}
+.doctor-patients-feedback.is-success {
+    color: #087a55;
+}
 
 .doctor-patients-layout {
     display: grid;
     max-width: 1500px;
     min-height: min(680px, calc(100vh - 245px));
-    grid-template-columns: minmax(280px, .82fr) minmax(0, 1.35fr);
+    grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.35fr);
     gap: 14px;
     margin: 0 auto;
     padding: 0 clamp(18px, 3vw, 42px) 28px;
@@ -181,7 +187,9 @@
     list-style: none;
 }
 
-.doctor-patient-list > li { margin: 0; }
+.doctor-patient-list > li {
+    margin: 0;
+}
 
 .doctor-patient-row {
     display: flex;
@@ -199,7 +207,9 @@
     cursor: pointer;
 }
 
-.doctor-patient-row:hover { background: #f5faff; }
+.doctor-patient-row:hover {
+    background: #f5faff;
+}
 
 .doctor-patient-row[aria-pressed="true"] {
     border-color: #a8d2ff;
@@ -277,8 +287,13 @@
     text-align: center;
 }
 
-.doctor-patient-list-empty strong { color: var(--patient-navy); font-size: 14px; }
-.doctor-patient-list-empty[hidden] { display: none; }
+.doctor-patient-list-empty strong {
+    color: var(--patient-navy);
+    font-size: 14px;
+}
+.doctor-patient-list-empty[hidden] {
+    display: none;
+}
 
 .doctor-patient-pagination {
     display: flex;
@@ -292,7 +307,9 @@
     font-size: 10px;
 }
 
-.doctor-patient-pagination p { margin: 0; }
+.doctor-patient-pagination p {
+    margin: 0;
+}
 
 .doctor-patient-pagination-controls {
     display: flex;
@@ -312,9 +329,14 @@
     cursor: pointer;
 }
 
-.doctor-patient-pagination-controls button:disabled { opacity: .48; cursor: not-allowed; }
+.doctor-patient-pagination-controls button:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+}
 
-.doctor-patient-detail { min-height: 420px; }
+.doctor-patient-detail {
+    min-height: 420px;
+}
 
 .doctor-patient-detail-loading {
     display: grid;
@@ -332,7 +354,11 @@
     padding: 19px 22px;
 }
 
-.doctor-patient-detail-avatar { width: 70px; height: 70px; font-size: 19px; }
+.doctor-patient-detail-avatar {
+    width: 70px;
+    height: 70px;
+    font-size: 19px;
+}
 
 .doctor-patient-detail-header h2 {
     margin: 0;
@@ -340,7 +366,11 @@
     font-size: 19px;
 }
 
-.doctor-patient-detail-header p { margin: 5px 0 0; color: var(--patient-muted); font-size: 12px; }
+.doctor-patient-detail-header p {
+    margin: 5px 0 0;
+    color: var(--patient-muted);
+    font-size: 12px;
+}
 
 .doctor-patient-tabs {
     display: grid;
@@ -365,10 +395,18 @@
     color: var(--patient-blue);
 }
 
-.doctor-patients-page .status-attended { color: #075a9b; }
+.doctor-patients-page .status-attended {
+    color: #075a9b;
+}
 
-.doctor-patient-tab-panel { max-height: 580px; overflow: auto; padding: 16px 20px 20px; }
-.doctor-patient-tab-panel[hidden] { display: none; }
+.doctor-patient-tab-panel {
+    max-height: 580px;
+    overflow: auto;
+    padding: 16px 20px 20px;
+}
+.doctor-patient-tab-panel[hidden] {
+    display: none;
+}
 
 .doctor-patient-history-card,
 .doctor-patient-appointments > li {
@@ -417,7 +455,9 @@
     white-space: pre-wrap;
 }
 
-.doctor-patient-clinical-field strong { color: #183967; }
+.doctor-patient-clinical-field strong {
+    color: #183967;
+}
 
 .doctor-patient-history-section {
     margin-top: 13px;
@@ -425,15 +465,45 @@
     border-top: 1px solid #eaf0f7;
 }
 
-.doctor-patient-history-section h4 { margin: 0 0 6px; color: #183967; font-size: 12px; }
-.doctor-patient-history-section p { margin: 0; color: #496487; font-size: 11px; line-height: 1.5; }
-.doctor-patient-history-section ul { margin: 0; padding-left: 18px; color: #496487; font-size: 11px; line-height: 1.7; }
-.doctor-patient-history-section li strong { color: #183967; }
+.doctor-patient-history-section h4 {
+    margin: 0 0 6px;
+    color: #183967;
+    font-size: 12px;
+}
+.doctor-patient-history-section p {
+    margin: 0;
+    color: #496487;
+    font-size: 11px;
+    line-height: 1.5;
+}
+.doctor-patient-history-section ul {
+    margin: 0;
+    padding-left: 18px;
+    color: #496487;
+    font-size: 11px;
+    line-height: 1.7;
+}
+.doctor-patient-history-section li strong {
+    color: #183967;
+}
 
-.doctor-patient-appointments { margin: 0; padding: 0; list-style: none; }
-.doctor-patient-appointments > li { align-items: center; }
-.doctor-patient-appointments > li > div:first-child { display: grid; gap: 4px; }
-.doctor-patient-appointment-meta { display: grid; justify-items: end; gap: 7px; }
+.doctor-patient-appointments {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.doctor-patient-appointments > li {
+    align-items: center;
+}
+.doctor-patient-appointments > li > div:first-child {
+    display: grid;
+    gap: 4px;
+}
+.doctor-patient-appointment-meta {
+    display: grid;
+    justify-items: end;
+    gap: 7px;
+}
 
 .doctor-patient-empty-state,
 .doctor-patient-detail-empty {
@@ -449,35 +519,85 @@
 }
 
 .doctor-patient-empty-state strong,
-.doctor-patient-detail-empty strong { color: var(--patient-navy); font-size: 14px; }
-.doctor-patient-detail-empty > span { color: #75afe7; font-size: 32px; }
-.doctor-patient-detail-empty p { max-width: 290px; margin: 0; line-height: 1.5; }
+.doctor-patient-detail-empty strong {
+    color: var(--patient-navy);
+    font-size: 14px;
+}
+.doctor-patient-detail-empty > span {
+    color: #75afe7;
+    font-size: 32px;
+}
+.doctor-patient-detail-empty p {
+    max-width: 290px;
+    margin: 0;
+    line-height: 1.5;
+}
 
 @media (max-width: 1050px) {
-    .doctor-patients-layout { grid-template-columns: minmax(250px, .85fr) minmax(0, 1.15fr); }
-    .doctor-patient-last-visit { display: none; }
+    .doctor-patients-layout {
+        grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.15fr);
+    }
+    .doctor-patient-last-visit {
+        display: none;
+    }
 }
 
 @media (max-width: 820px) {
-    .doctor-patients-heading { align-items: stretch; flex-direction: column; }
-    .doctor-patients-search { width: 100%; }
-    .doctor-patients-layout { grid-template-columns: minmax(0, 1fr); }
-    .doctor-patient-directory { min-height: 350px; }
-    .doctor-patient-detail { min-height: 360px; }
-    .doctor-patient-tab-panel { max-height: none; }
+    .doctor-patients-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .doctor-patients-search {
+        width: 100%;
+    }
+    .doctor-patients-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .doctor-patient-directory {
+        min-height: 350px;
+    }
+    .doctor-patient-detail {
+        min-height: 360px;
+    }
+    .doctor-patient-tab-panel {
+        max-height: none;
+    }
 }
 
 @media (max-width: 480px) {
-    .doctor-patients-heading { gap: 14px; }
-    .doctor-patients-search-control { gap: 6px; }
-    .doctor-patients-search-control button { padding: 0 9px; }
-    .doctor-patient-detail-header { padding: 15px; }
-    .doctor-patient-detail-avatar { width: 58px; height: 58px; }
-    .doctor-patient-tab-panel { padding: 12px; }
+    .doctor-patients-heading {
+        gap: 14px;
+    }
+    .doctor-patients-search-control {
+        gap: 6px;
+    }
+    .doctor-patients-search-control button {
+        padding: 0 9px;
+    }
+    .doctor-patient-detail-header {
+        padding: 15px;
+    }
+    .doctor-patient-detail-avatar {
+        width: 58px;
+        height: 58px;
+    }
+    .doctor-patient-tab-panel {
+        padding: 12px;
+    }
     .doctor-patient-history-card,
-    .doctor-patient-appointments > li { flex-direction: column; align-items: stretch; }
+    .doctor-patient-appointments > li {
+        flex-direction: column;
+        align-items: stretch;
+    }
     .doctor-patient-history-card time,
-    .doctor-patient-appointments time { text-align: left; }
-    .doctor-patient-appointment-meta { justify-items: start; }
-    .doctor-patient-pagination { align-items: flex-start; flex-direction: column; }
+    .doctor-patient-appointments time {
+        text-align: left;
+    }
+    .doctor-patient-appointment-meta {
+        justify-items: start;
+    }
+    .doctor-patient-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+    }
 }
