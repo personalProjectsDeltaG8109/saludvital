@@ -20,12 +20,9 @@
     const waitForPageLoad = async () => {
         if (document.readyState === "complete") return;
 
-        await Promise.race([
-            new Promise((resolve) => {
-                window.addEventListener("load", resolve, { once: true });
-            }),
-            wait(loadWaitTimeoutMs),
-        ]);
+        await new Promise((resolve) => {
+            window.addEventListener("load", resolve, { once: true });
+        });
     };
     const waitForImage = async (image) => {
         if (!image.complete) {
@@ -45,13 +42,18 @@
             (image) => image.getClientRects().length > 0,
         );
 
-        // A failed or stalled decorative image must never trap the user on the splash.
-        await Promise.race([Promise.all(visibleImages.map(waitForImage)), wait(loadWaitTimeoutMs)]);
+        await Promise.all(visibleImages.map(waitForImage));
     };
 
     const dismissSplash = async () => {
-        await waitForPageLoad();
-        await waitForVisibleImages();
+        // A failed or stalled decorative resource must never trap the user on the splash.
+        await Promise.race([
+            (async () => {
+                await waitForPageLoad();
+                await waitForVisibleImages();
+            })(),
+            wait(loadWaitTimeoutMs),
+        ]);
         const elapsedSplashTime = performance.now() - splashStartedAt;
         await wait(Math.max(0, minimumSplashDurationMs - elapsedSplashTime));
         splash.classList.add("is-ready", "is-dismissing");
