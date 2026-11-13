@@ -14,7 +14,7 @@ const patientStyles = await readFile(path.resolve("public/css/patient-dashboard.
 const doctorStyles = await readFile(path.resolve("public/css/doctor-dashboard.css"), "utf8");
 const appStyles = await readFile(path.resolve("public/css/app.css"), "utf8");
 const html = `
-<body class="sv-dashboard doctor-home-page patient-home-page"><div class="sv-layout"><div class="sv-main"><main class="doctor-content doctor-agenda-page" data-doctor-agenda data-agenda-api-url="/api/doctor/agenda" data-start-consultation-url="/api/doctor/appointments" data-active-consultation-url="/api/doctor/consultations/active" data-today-date="2026-10-29" data-initial-view="day">
+<body class="sv-dashboard doctor-home-page patient-home-page"><div class="sv-layout"><div class="sv-main"><main class="doctor-content doctor-agenda-page" data-doctor-agenda data-agenda-api-url="/api/doctor/agenda" data-appointment-detail-api-url="/api/doctor/appointments" data-start-consultation-url="/api/doctor/appointments" data-active-consultation-url="/api/doctor/consultations/active" data-today-date="2026-10-29" data-initial-view="day">
   <header class="doctor-page-heading doctor-agenda-heading"><div><p class="doctor-eyebrow">Agenda medica</p><h1>Mi agenda</h1></div></header>
   <section class="doctor-agenda-toolbar" aria-label="Navegacion de fecha">
     <button class="doctor-agenda-nav-button" aria-label="Anterior" data-agenda-previous><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><label class="doctor-agenda-date-label"><input type="date" value="2026-10-29" data-agenda-date></label><button class="doctor-agenda-today" data-agenda-today>Hoy</button><button class="doctor-agenda-nav-button" aria-label="Siguiente" data-agenda-next><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
@@ -26,7 +26,7 @@ const html = `
       <div class="doctor-agenda-period-view doctor-agenda-week-view" data-agenda-week-view hidden><h3 data-agenda-week-title></h3><div class="doctor-agenda-week-grid" data-agenda-week-grid></div></div>
       <div class="doctor-agenda-period-view doctor-agenda-month-view" data-agenda-month-view hidden><h3 data-agenda-month-title></h3><div class="doctor-agenda-month-grid" data-agenda-month-grid></div><p data-agenda-month-empty hidden>No hay citas confirmadas para este mes.</p></div>
     </section><aside class="doctor-agenda-aside" data-agenda-aside><section class="doctor-panel doctor-agenda-next-card"><header class="doctor-panel-heading"><h2>Próxima cita</h2><a class="doctor-agenda-view-all" href="/doctor/appointments">Ver todas</a></header><div data-agenda-next-appointment></div></section><div class="doctor-agenda-availability-cards" data-agenda-availability-cards><section class="doctor-panel"><div data-agenda-availability="today"></div></section><section class="doctor-panel"><div data-agenda-availability="week"></div></section><section class="doctor-panel"><div data-agenda-availability="month"></div></section></div></aside>
-  </div><dialog data-start-consultation-dialog><span data-start-consultation-patient></span><span data-start-consultation-time></span><span data-start-consultation-reason></span><p data-start-consultation-feedback></p><button type="button" data-close-start-consultation>Volver</button><button type="button" data-confirm-start-consultation>Iniciar consulta</button></dialog><dialog aria-labelledby="active-consultation-title" data-active-consultation-dialog><h2 id="active-consultation-title">Consulta en curso detectada</h2><p data-active-consultation-feedback role="status"></p><button type="button" data-stay-in-agenda>Permanecer en la agenda</button><a data-open-active-consultation-link>Ir a la consulta abierta</a></dialog>
+  </div><dialog data-start-consultation-dialog><span data-start-consultation-patient></span><span data-start-consultation-time></span><span data-start-consultation-reason></span><p data-start-consultation-feedback></p><button type="button" data-close-start-consultation>Volver</button><button type="button" data-confirm-start-consultation>Iniciar consulta</button></dialog><dialog aria-labelledby="active-consultation-title" data-active-consultation-dialog><h2 id="active-consultation-title">Consulta en curso detectada</h2><p data-active-consultation-feedback role="status"></p><button type="button" data-stay-in-agenda>Permanecer en la agenda</button><a data-open-active-consultation-link>Ir a la consulta abierta</a></dialog><dialog aria-labelledby="doctor-agenda-detail-title" data-appointment-detail-dialog><header class="doctor-agenda-detail-heading"><div><p class="doctor-eyebrow">Detalle de cita</p><h2 id="doctor-agenda-detail-title">Información de la cita</h2></div><button type="button" data-close-appointment-detail>Cerrar</button></header><p data-appointment-detail-feedback role="status" aria-live="polite"></p><div data-appointment-detail-content hidden><img data-appointment-detail-photo alt="" hidden><dl><div><dt>Paciente</dt><dd data-appointment-detail-patient></dd></div><div><dt>Especialidad</dt><dd data-appointment-detail-specialty></dd></div><div><dt>Fecha</dt><dd data-appointment-detail-date></dd></div><div><dt>Horario</dt><dd data-appointment-detail-time></dd></div><div><dt>Estado</dt><dd data-appointment-detail-status></dd></div></dl></div></dialog>
 </main></div></div></body>`;
 
 const browser = await chromium.launch({ headless: true });
@@ -48,6 +48,7 @@ try {
         window.agendaRequests = [];
         window.agendaMode = "success";
         window.activeConsultationId = null;
+        window.appointmentDetailMode = "success";
         const createAvailability = (hasSchedule = true, selectedDate = "2026-10-29") => {
             const selected = new Date(`${selectedDate}T00:00:00.000Z`);
             const weekStart = new Date(selected);
@@ -117,6 +118,27 @@ try {
             };
         };
         window.fetch = async (url) => {
+            if (String(url).includes("/api/doctor/appointments/")) {
+                if (window.appointmentDetailMode === "error") {
+                    return {
+                        ok: false,
+                        json: async () => ({ message: "No pudimos cargar la cita." }),
+                    };
+                }
+                return {
+                    ok: true,
+                    json: async () => ({
+                        id: 1,
+                        patientName: "Ana <img src=x onerror=alert(1)>",
+                        patientPhotoUrl: null,
+                        specialty: "Medicina General",
+                        date: "jueves, 29 de octubre de 2026",
+                        startTime: "8:00 a. m.",
+                        endTime: "8:30 a. m.",
+                        statusLabel: "Confirmada",
+                    }),
+                };
+            }
             if (String(url).includes("/api/doctor/consultations/active")) {
                 return {
                     ok: true,
@@ -314,11 +336,32 @@ try {
     await page.screenshot({ path: "test-results/doctor-agenda-availability-mobile.png" });
     assert.equal(await page.locator("[data-agenda-view]").count(), 3);
     assert.equal(await page.locator(".doctor-agenda-appointment").count(), 1);
+    await page.locator(".doctor-agenda-appointment").click();
+    await page.locator("[data-appointment-detail-dialog]").waitFor({ state: "visible" });
     assert.equal(
-        await page.locator(".doctor-agenda-appointment").getAttribute("href"),
-        "/doctor/appointments?startDate=2026-10-29&endDate=2026-10-29",
+        await page.locator("[data-appointment-detail-patient]").textContent(),
+        "Ana <img src=x onerror=alert(1)>",
     );
+    assert.equal(await page.locator("[data-appointment-detail-content] img").isVisible(), false);
+    const detailAccessibility = await new AxeBuilder({ page })
+        .include("[data-appointment-detail-dialog]")
+        .analyze();
+    assert.deepEqual(detailAccessibility.violations, []);
+    await page.keyboard.press("Escape");
+    await page.locator("[data-appointment-detail-dialog]").waitFor({ state: "hidden" });
+    await page.locator(".doctor-agenda-appointment").click();
+    await page.locator("[data-appointment-detail-content]").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Cerrar" }).click();
     await page.locator('[data-agenda-view="week"]').click();
+    await page.locator(".doctor-agenda-week-appointment").first().click();
+    await page.locator("[data-appointment-detail-content]").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Cerrar" }).click();
+    await page.evaluate(() => {
+        window.appointmentDetailMode = "error";
+    });
+    await page.locator(".doctor-agenda-week-appointment").first().click();
+    await page.getByText("No pudimos cargar la cita.").waitFor();
+    await page.getByRole("button", { name: "Cerrar" }).click();
     await page.getByText("Sin citas confirmadas").first().waitFor();
     assert.equal(await page.locator("[data-agenda-title]").textContent(), "Agenda semanal");
     assert.equal(await page.locator("[data-agenda-week-title]").count(), 1);

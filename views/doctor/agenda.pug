@@ -18,6 +18,7 @@ html(lang="es")
                 main.doctor-content.doctor-agenda-page(
                     data-doctor-agenda,
                     data-agenda-api-url="/api/doctor/agenda",
+                    data-appointment-detail-api-url="/api/doctor/appointments",
                     data-start-consultation-url="/api/doctor/appointments",
                     data-active-consultation-url="/api/doctor/consultations/active",
                     data-today-date=todayDate,
@@ -172,6 +173,46 @@ html(lang="es")
                                         p.doctor-agenda-aside-loading Cargando disponibilidad…
                 include ./partials/start-consultation-dialog.pug
                 include ./partials/active-consultation-dialog.pug
+                dialog.doctor-agenda-detail-dialog(
+                    aria-labelledby="doctor-agenda-detail-title",
+                    data-appointment-detail-dialog
+                )
+                    header.doctor-agenda-detail-heading
+                        div
+                            p.doctor-eyebrow Detalle de cita
+                            h2#doctor-agenda-detail-title Información de la cita
+                        button.doctor-agenda-detail-close(
+                            type="button",
+                            aria-label="Cerrar detalle de cita",
+                            data-close-appointment-detail
+                        ) ×
+                    p.doctor-agenda-detail-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-appointment-detail-feedback
+                    )
+                    .doctor-agenda-detail-content(data-appointment-detail-content, hidden)
+                        img.doctor-agenda-detail-photo(
+                            alt="",
+                            data-appointment-detail-photo,
+                            hidden
+                        )
+                        dl.doctor-agenda-detail-fields
+                            div
+                                dt Paciente
+                                dd(data-appointment-detail-patient)
+                            div
+                                dt Especialidad
+                                dd(data-appointment-detail-specialty)
+                            div
+                                dt Fecha
+                                dd(data-appointment-detail-date)
+                            div
+                                dt Horario
+                                dd(data-appointment-detail-time)
+                            div
+                                dt Estado
+                                dd(data-appointment-detail-status)
                 include ./partials/bottom-nav.pug
         script(src="/js/session-timeout.js", defer)
         script(src="/js/patient-sidebar.js", defer)

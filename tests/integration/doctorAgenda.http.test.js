@@ -6,6 +6,7 @@ describe("Doctor agenda routes", () => {
         "/doctor/agenda",
         "/doctor/notifications",
         "/api/doctor/agenda",
+        "/api/doctor/appointments/24",
         "/api/doctor/notifications",
         "/api/doctor/notifications/unread-count",
         "/api/doctor/consultations/active",

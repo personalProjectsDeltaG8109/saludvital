@@ -25,6 +25,7 @@ import {
 } from "../services/doctorAgendaService.js";
 import { getDoctorProfile, updateDoctorProfile } from "../services/doctorProfileService.js";
 import { updateDoctorProfilePhoto } from "../services/doctorProfilePhotoService.js";
+import { getDoctorAppointmentDetails } from "../services/doctorAppointmentDetailsService.js";
 import {
     getDoctorNotifications,
     getDoctorUnreadNotificationCount,
@@ -263,6 +264,22 @@ doctorRoutes.get("/api/doctor/appointments", ...requireDoctor, async (req, res, 
         return next(error);
     }
 });
+
+doctorRoutes.get(
+    "/api/doctor/appointments/:appointmentId",
+    ...requireDoctor,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await getDoctorAppointmentDetails(req.auth.userId, req.params.appointmentId),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 doctorRoutes.get("/api/doctor/agenda", ...requireDoctor, async (req, res, next) => {
     try {
