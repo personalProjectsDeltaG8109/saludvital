@@ -1,9 +1,13 @@
 import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
-import { EmailOutbox, Patient, Rol, User } from "../../../models/associations.js";
+import { EmailOutbox, Patient, PatientConsent, Rol, User } from "../../../models/associations.js";
 import { resolveLocation } from "../../../shared/services/colombiaLocationService.js";
 import { isEmailUnavailable, isEmailUniqueConstraintError } from "./emailChangeService.js";
 import { isValidPassword } from "./passwordPolicy.js";
+import {
+    hasPatientRegistrationConsent,
+    PATIENT_REGISTRATION_CONSENT,
+} from "./patientRegistrationConsent.js";
 
 // Represent expected registration failures with safe, user-facing messages.
 export class RegistrationError extends Error {
@@ -204,6 +208,12 @@ export async function registerPatient(data) {
     }
 
     // Validate all registration fields and resolve the official location names.
+    if (!hasPatientRegistrationConsent(data.health_data_consent)) {
+        throw new RegistrationError(
+            "Debes autorizar el tratamiento de datos personales y de salud para registrarte.",
+        );
+    }
+
     const { location, firstName, lastName } = validateRegistration(data);
     const email = data.email.trim().toLowerCase();
     const documentType = data.document_type;
@@ -256,6 +266,17 @@ export async function registerPatient(data) {
                     email,
                     password_hash: passwordHash,
                     is_active: true,
+                },
+                { transaction },
+            );
+
+            // Store only the consent scope, notice version, and server acceptance time.
+            await PatientConsent.create(
+                {
+                    user_id: user.id,
+                    consent_scope: PATIENT_REGISTRATION_CONSENT.scope,
+                    notice_version: PATIENT_REGISTRATION_CONSENT.noticeVersion,
+                    accepted_at: new Date(),
                 },
                 { transaction },
             );
