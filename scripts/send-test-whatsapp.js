@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { sendWhatsApp } from "../src/modules/patient/services/whatsappService.js";
+import { isTestRecipientAllowed } from "../src/modules/patient/services/notificationTestRecipientPolicy.js";
 
 const recipient = process.argv[2];
 
@@ -8,6 +9,11 @@ if (process.env.NODE_ENV === "production") {
     process.exitCode = 1;
 } else if (!recipient) {
     console.error("Usage: node scripts/send-test-whatsapp.js +573001234567");
+    process.exitCode = 1;
+} else if (!isTestRecipientAllowed(recipient)) {
+    console.error(
+        "El destinatario no está autorizado. Agrégalo a NOTIFICATION_TEST_RECIPIENTS para hacer pruebas.",
+    );
     process.exitCode = 1;
 } else {
     try {
