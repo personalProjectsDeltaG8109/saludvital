@@ -2,7 +2,7 @@
 
 ## Scope
 
-Reconcile the public privacy notice and terms with behavior verified in the application. This work changes public wording only; it does not change data collection, deletion, provider delivery, or database behavior. The draft must be reviewed by the project owner before it is merged or published. It is not legal advice or a compliance certification.
+Reconcile the public privacy notice and terms with behavior verified in the application. This work changes public wording only; it does not change data collection, deletion, provider delivery, or database behavior. The project owner approved the wording on 2026-11-13. It is not legal advice or a compliance certification.
 
 ## Verified application behavior
 
@@ -43,7 +43,7 @@ Seeded examples are synthetic. The project owner confirmed that authorized teste
 
 ## Review limitation
 
-The wording is a factual project draft based on code and owner-confirmed testing guidance. The project owner must approve it before merge. Obtain qualified legal review before describing it as legally sufficient or using SaludVital as a real healthcare service.
+The wording is a factual project draft based on code and owner-confirmed testing guidance. The project owner reviewed and approved the draft on 2026-11-13 before publication. Obtain qualified legal review before describing it as legally sufficient or using SaludVital as a real healthcare service.
 
 ## Legal reference checked
 
