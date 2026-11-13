@@ -1,0 +1,40 @@
+.appointment-stat-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 12px;
+    color: #0664d9;
+    background: #e6f2ff;
+}
+
+.appointment-stat-icon svg {
+    width: 27px;
+    height: 27px;
+}
+
+.appointment-stat.is-confirmed .appointment-stat-icon {
+    color: #08a86a;
+    background: #e0f8ef;
+}
+
+.appointment-stat.is-progress .appointment-stat-icon {
+    color: #ed8a18;
+    background: #fff2de;
+}
+
+.appointment-stat.is-attended .appointment-stat-icon {
+    color: #0875db;
+    background: #e5f2ff;
+}
+
+.appointment-stat.is-cancelled .appointment-stat-icon {
+    color: #ed343d;
+    background: #ffebeb;
+}
+
+.appointment-stat.is-no-show .appointment-stat-icon {
+    color: #7b4bc4;
+    background: #f1eaff;
+}

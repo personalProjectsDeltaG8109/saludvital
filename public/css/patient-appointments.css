@@ -86,25 +86,18 @@
     background: linear-gradient(130deg, #fff0f1, #fff);
 }
 
-.stat-icon {
+.appointment-stat.stat-attended {
+    background: linear-gradient(130deg, #e5f2ff, #fff);
+}
+
+.appointment-stat.stat-no-show {
+    background: linear-gradient(130deg, #f1eaff, #fff);
+}
+
+.appointment-stat-icon {
     width: 46px;
     height: 46px;
-    flex: 0 0 46px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    color: white;
-    background: var(--appointments-secondary);
-    font-size: 25px;
-    font-weight: 700;
-}
-
-.stat-confirmed .stat-icon {
-    background: var(--appointments-wellness);
-}
-
-.stat-cancelled .stat-icon {
-    background: var(--appointments-primary);
+    flex-basis: 46px;
 }
 
 .stat-copy {
@@ -156,6 +149,33 @@
     border-color: var(--appointments-secondary);
     color: var(--appointments-secondary);
     font-weight: 700;
+}
+
+.appointment-tabs button[data-filter="attended"] {
+    color: #0875db;
+}
+
+.appointment-tabs button[data-filter="cancelled"] {
+    color: #ed343d;
+}
+
+.appointment-tabs button[data-filter="no-show"] {
+    color: #7b4bc4;
+}
+
+.appointment-tabs button.is-active[data-filter="attended"] {
+    border-color: #0875db;
+    background: #e5f2ff;
+}
+
+.appointment-tabs button.is-active[data-filter="cancelled"] {
+    border-color: #ed343d;
+    background: #ffebeb;
+}
+
+.appointment-tabs button.is-active[data-filter="no-show"] {
+    border-color: #7b4bc4;
+    background: #f1eaff;
 }
 
 .desktop-filter .appointment-filter-icon {
@@ -300,25 +320,35 @@
     padding: 5px 9px;
     display: inline-block;
     border-radius: 7px;
-    color: var(--appointments-wellness);
-    background: #dcf8eb;
+    color: #08a86a;
+    background: #e0f8ef;
     font-size: 11px;
     white-space: nowrap;
 }
 
+.status-confirmed {
+    color: #08a86a;
+    background: #e0f8ef;
+}
+
 .status-in-progress {
-    color: var(--appointments-primary);
-    background: #e5faf8;
+    color: #ed8a18;
+    background: #fff2de;
 }
 
 .status-attended {
-    color: var(--appointments-secondary);
-    background: #e0f3ff;
+    color: #0875db;
+    background: #e5f2ff;
 }
 
 .status-cancelled {
-    color: var(--appointments-primary);
-    background: #eef3f8;
+    color: #ed343d;
+    background: #ffebeb;
+}
+
+.status-no-show {
+    color: #7b4bc4;
+    background: #f1eaff;
 }
 
 .appointment-detail-toggle {
@@ -752,12 +782,16 @@
         border-radius: 12px;
     }
 
-    .stat-icon {
+    .appointment-stat-icon {
         width: 27px;
         height: 27px;
         flex-basis: 27px;
         border-radius: 8px;
-        font-size: 17px;
+    }
+
+    .appointment-stat-icon svg {
+        width: 18px;
+        height: 18px;
     }
 
     .stat-copy {
