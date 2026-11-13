@@ -2,7 +2,13 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "@jest/globals";
 import request from "supertest";
 import database from "../../../config/database.js";
-import { EmailOutbox, Patient, Rol, User } from "../../../src/models/associations.js";
+import {
+    EmailOutbox,
+    Patient,
+    PatientConsent,
+    Rol,
+    User,
+} from "../../../src/models/associations.js";
 import app from "../../../app.js";
 
 // Prevent this integration test from running against a non-test database.
@@ -51,6 +57,7 @@ async function cleanRegistrationData(data) {
     });
 
     if (user) {
+        await PatientConsent.destroy({ where: { user_id: user.id } });
         await EmailOutbox.destroy({
             where: { user_id: user.id },
         });

@@ -14,6 +14,7 @@ const modelNames = [
     "NotificationPreference",
     "PasswordResetToken",
     "Patient",
+    "PatientConsent",
     "Rol",
     "User",
     "WhatsAppAppointmentRequest",
@@ -82,6 +83,10 @@ describe("Unverified registration cleanup service", () => {
             where: { user_id: user.id, event_type: "email_verification" },
             transaction,
         });
+        expect(models.PatientConsent.destroy).toHaveBeenCalledWith({
+            where: { user_id: user.id },
+            transaction,
+        });
         expect(patient.destroy).toHaveBeenCalledWith({ transaction });
         expect(user.destroy).toHaveBeenCalledWith({ transaction });
     });
@@ -95,6 +100,7 @@ describe("Unverified registration cleanup service", () => {
 
         expect(patient.destroy).not.toHaveBeenCalled();
         expect(user.destroy).not.toHaveBeenCalled();
+        expect(models.PatientConsent.destroy).not.toHaveBeenCalled();
     });
 
     test("preserves a verified account even when it appears in the stale candidate set", async () => {

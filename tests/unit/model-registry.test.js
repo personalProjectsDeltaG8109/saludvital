@@ -9,6 +9,7 @@ describe("Sequelize model registry", () => {
         expect(database.models.Rol).toBeDefined();
         expect(database.models.User).toBeDefined();
         expect(database.models.Patient).toBeDefined();
+        expect(database.models.PatientConsent).toBeDefined();
         expect(database.models.Doctor).toBeDefined();
         expect(database.models.Specialities).toBeDefined();
         expect(database.models.AppointmentStatus).toBeDefined();
@@ -38,6 +39,7 @@ describe("Sequelize model registry", () => {
         expect(database.models.Rol.tableName).toBe("roles");
         expect(database.models.User.tableName).toBe("users");
         expect(database.models.Patient.tableName).toBe("patients");
+        expect(database.models.PatientConsent.tableName).toBe("patient_consents");
         expect(database.models.Doctor.tableName).toBe("doctors");
         expect(database.models.Specialities.tableName).toBe("specialties");
         expect(database.models.AppointmentStatus.tableName).toBe("appointment_statuses");
@@ -81,6 +83,16 @@ describe("Sequelize model registry", () => {
 
         expect(User.associations.patient.target).toBe(Patient);
         expect(Patient.associations.user.target).toBe(User);
+    });
+
+    test("consent evidence is linked to its account and protected from implicit deletion", () => {
+        const { PatientConsent, User } = database.models;
+
+        expect(User.associations.patientConsents.target).toBe(PatientConsent);
+        expect(PatientConsent.associations.user.target).toBe(User);
+        expect(User.associations.patientConsents.options.onDelete).toBe("RESTRICT");
+        expect(PatientConsent.associations.user.options.onDelete).toBe("RESTRICT");
+        expect(PatientConsent.options.timestamps).toBe(false);
     });
 
     test("doctor and user associations reference the correct models", () => {

@@ -112,6 +112,7 @@ describe("Patient registration controller", () => {
             expect.objectContaining({
                 whatsappContactUrl:
                     "https://wa.me/573001234567?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                privacyNoticeVersion: "1.1",
             }),
         );
     });
