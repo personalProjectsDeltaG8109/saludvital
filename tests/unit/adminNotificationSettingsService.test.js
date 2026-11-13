@@ -20,7 +20,8 @@ const environmentKeys = [
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
     "RESEND_FROM_NAME",
-    "INALAMBRIA_API_KEY",
+    "INALAMBRIA_REST_USERNAME",
+    "INALAMBRIA_REST_PASSWORD",
     "WHATSAPP_VERIFICATION_SECRET",
     "WHATSAPP_CHATBOT_ENABLED",
     "NODE_ENV",
@@ -63,7 +64,8 @@ describe("administrator notification settings", () => {
         process.env.META_WHATSAPP_TEMPLATE_LANGUAGE = "es_CO";
         process.env.RESEND_API_KEY = "resend-private-key";
         process.env.RESEND_FROM_EMAIL = "notifications@saludvital.test";
-        process.env.INALAMBRIA_API_KEY = "sms-private-key";
+        process.env.INALAMBRIA_REST_USERNAME = "sms-private-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "sms-private-password";
 
         const settings = getAdminNotificationSettings();
         const serializedSettings = JSON.stringify(settings);
@@ -81,7 +83,8 @@ describe("administrator notification settings", () => {
         expect(serializedSettings).not.toContain("private-app-secret");
         expect(serializedSettings).not.toContain("private-webhook-token");
         expect(serializedSettings).not.toContain("resend-private-key");
-        expect(serializedSettings).not.toContain("sms-private-key");
+        expect(serializedSettings).not.toContain("sms-private-user");
+        expect(serializedSettings).not.toContain("sms-private-password");
         expect(serializedSettings).not.toContain("META_WHATSAPP_ACCESS_TOKEN");
     });
 

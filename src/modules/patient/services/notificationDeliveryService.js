@@ -40,7 +40,11 @@ export async function deliverNotification(notification) {
     const message = messageFor(notification);
 
     if (notification.channel === "SMS") {
-        return sendSms({ to: notification.recipient_address, body: message });
+        return sendSms({
+            to: notification.recipient_address,
+            body: message,
+            notificationId: notification.id,
+        });
     }
     if (notification.channel === "WhatsApp") {
         return sendWhatsApp({

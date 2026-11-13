@@ -1218,7 +1218,7 @@ if (whatsappPage) {
                 key: "sms",
                 accent: "is-purple",
                 icon: "\u25a4",
-                title: providers.sms?.name || "Inalambria Express",
+                title: providers.sms?.name || "Inalambria REST API",
                 configured: Boolean(providers.sms?.credentialsConfigured),
                 description: "Entrega de notificaciones por SMS.",
             },
@@ -1398,7 +1398,7 @@ if (whatsappPage) {
                 ["Conexi\u00f3n con Resend", null],
             ];
         } else if (channel === "sms") {
-            title = "SMS (Inalambria Express)";
+            title = "SMS (Inalambria REST API)";
             description = "Canal de mensajes de texto.";
             icon = "\u25a4";
             accent = "is-purple";
