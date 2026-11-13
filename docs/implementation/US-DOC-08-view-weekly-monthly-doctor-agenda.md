@@ -9,7 +9,8 @@
 - Previous and next navigation preserves the selected view; the selected view and date are also reflected in the URL and restored by browser history navigation.
 - Backend queries derive the doctor from the authenticated account and use bounded date ranges in `America/Bogota`. The monthly view returns daily counts only; weekly and daily views show the appointment fields already used by the doctor agenda.
 - Cancelled, attended, and in-progress appointments remain excluded in accordance with the approved agenda behavior. Schedule configuration remains administrator-managed.
-- The application has no individual read-only appointment detail route. Selecting an appointment opens the existing protected appointment list filtered to that appointment's day; a dedicated detail destination remains a limitation of the existing application.
+- Added a protected, read-only appointment detail endpoint used by selectable appointments in the day and week views. The endpoint validates the identifier and scopes its database query to the doctor linked to the authenticated user; missing and unassigned appointments return the same not-found response.
+- The detail dialog shows the patient's name and available profile photo, specialty, local date and time, and persisted status. It omits contact identifiers and clinical notes, renders returned strings as text, and supports keyboard dismissal, loading, and error feedback on small and large screens.
 - No schema or dependency changes were required.
 
 ## Verification
@@ -19,3 +20,6 @@
 - Doctor agenda browser flow: passed for day, week, month selection, period navigation, date selection, empty/error states, keyboard focus, and mobile/tablet/desktop layouts with no horizontal overflow.
 - Full Playwright E2E suite: passed.
 - ESLint, Prettier check, and `git diff --check`: passed.
+- Appointment detail service and HTTP authorization coverage: included in the full Jest run; 141 suites and 1105 tests passed.
+- Appointment detail browser, keyboard dismissal, safe text rendering, responsive layout, and axe-core checks: passed in the full Playwright run.
+- ESLint, Prettier, Tailwind CSS compilation to a temporary output file, and `git diff --check`: passed for this follow-up.

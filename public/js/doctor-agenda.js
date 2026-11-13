@@ -2,6 +2,12 @@ const agendaRoot = document.querySelector("[data-doctor-agenda]");
 
 if (agendaRoot) {
     const apiUrl = agendaRoot.dataset.agendaApiUrl;
+    const appointmentDetailsApiUrl = agendaRoot.dataset.appointmentDetailApiUrl;
+    const appointmentDetailDialog = agendaRoot.querySelector("[data-appointment-detail-dialog]");
+    const appointmentDetailFeedback = agendaRoot.querySelector(
+        "[data-appointment-detail-feedback]",
+    );
+    const appointmentDetailContent = agendaRoot.querySelector("[data-appointment-detail-content]");
     const dateInput = agendaRoot.querySelector("[data-agenda-date]");
     const calendar = agendaRoot.querySelector("[data-agenda-calendar]");
     const calendarLayout = agendaRoot.querySelector(".doctor-agenda-layout");
@@ -39,11 +45,6 @@ if (agendaRoot) {
             .map((part) => part[0])
             .join("")
             .toUpperCase();
-    }
-
-    function getAppointmentLink(date) {
-        const query = new URLSearchParams({ startDate: date, endDate: date });
-        return `/doctor/appointments?${query.toString()}`;
     }
 
     function renderAvatar(appointment) {
@@ -100,9 +101,10 @@ if (agendaRoot) {
 
         data.appointments.forEach((appointment) => {
             const duration = Math.max(0, appointment.endMinute - appointment.startMinute);
-            const card = document.createElement("a");
+            const card = document.createElement("button");
+            card.type = "button";
             card.className = "doctor-agenda-appointment doctor-agenda-status-confirmed";
-            card.href = getAppointmentLink(data.selectedDate);
+            card.dataset.appointmentDetails = String(appointment.id);
             card.style.top = `${((appointment.startMinute - startHour * 60) / totalMinutes) * 100}%`;
             const hourHeight = Number.parseFloat(
                 getComputedStyle(dailyTimeline).getPropertyValue("--agenda-hour-height"),
@@ -139,19 +141,20 @@ if (agendaRoot) {
                 const appointmentList = createElement("ul", "doctor-agenda-week-appointments");
                 day.appointments.forEach((appointment) => {
                     const item = createElement("li", "");
-                    const link = document.createElement("a");
-                    link.className = "doctor-agenda-week-appointment";
-                    link.href = getAppointmentLink(day.date);
-                    link.setAttribute(
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "doctor-agenda-week-appointment";
+                    button.dataset.appointmentDetails = String(appointment.id);
+                    button.setAttribute(
                         "aria-label",
                         `${appointment.startTime}, ${appointment.patientName}, ${appointment.reason}, ${appointment.statusLabel}`,
                     );
-                    link.append(createElement("time", "", appointment.startTime));
+                    button.append(createElement("time", "", appointment.startTime));
                     const details = createElement("span", "doctor-agenda-week-appointment-copy");
                     details.append(createElement("b", "", appointment.patientName));
                     details.append(createElement("span", "", appointment.reason));
-                    link.append(details);
-                    item.append(link);
+                    button.append(details);
+                    item.append(button);
                     appointmentList.append(item);
                 });
                 dayCard.append(appointmentList);
@@ -491,6 +494,50 @@ if (agendaRoot) {
         }
     }
 
+    async function openAppointmentDetails(appointmentId, trigger) {
+        appointmentDetailDialog.returnValue = "";
+        appointmentDetailContent.hidden = true;
+        appointmentDetailFeedback.textContent = "Cargando el detalle de la cita…";
+        appointmentDetailFeedback.hidden = false;
+        appointmentDetailDialog.showModal();
+
+        try {
+            const response = await fetch(
+                `${appointmentDetailsApiUrl}/${encodeURIComponent(appointmentId)}`,
+                { headers: { Accept: "application/json" } },
+            );
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || "No pudimos cargar la cita.");
+
+            agendaRoot.querySelector("[data-appointment-detail-patient]").textContent =
+                result.patientName;
+            agendaRoot.querySelector("[data-appointment-detail-specialty]").textContent =
+                result.specialty;
+            agendaRoot.querySelector("[data-appointment-detail-date]").textContent = result.date;
+            agendaRoot.querySelector("[data-appointment-detail-time]").textContent =
+                `${result.startTime} – ${result.endTime}`;
+            agendaRoot.querySelector("[data-appointment-detail-status]").textContent =
+                result.statusLabel;
+
+            const photo = agendaRoot.querySelector("[data-appointment-detail-photo]");
+            if (result.patientPhotoUrl) {
+                photo.src = result.patientPhotoUrl;
+                photo.hidden = false;
+            } else {
+                photo.removeAttribute("src");
+                photo.hidden = true;
+            }
+            appointmentDetailFeedback.hidden = true;
+            appointmentDetailContent.hidden = false;
+            agendaRoot.querySelector("[data-close-appointment-detail]").focus();
+        } catch (error) {
+            appointmentDetailFeedback.textContent =
+                error.message || "No pudimos cargar el detalle de la cita.";
+            appointmentDetailContent.hidden = true;
+            trigger.focus();
+        }
+    }
+
     function selectAgenda(date, view, updateHistory = true) {
         dateInput.value = date;
         selectedView = view;
@@ -526,6 +573,14 @@ if (agendaRoot) {
     agendaRoot.querySelector("[data-agenda-today]").addEventListener("click", () => {
         selectAgenda(agendaRoot.dataset.todayDate, selectedView);
     });
+    agendaRoot.addEventListener("click", (event) => {
+        const appointmentButton = event.target.closest("[data-appointment-details]");
+        if (!appointmentButton) return;
+        openAppointmentDetails(appointmentButton.dataset.appointmentDetails, appointmentButton);
+    });
+    agendaRoot
+        .querySelector("[data-close-appointment-detail]")
+        .addEventListener("click", () => appointmentDetailDialog.close());
     agendaRoot.querySelectorAll("[data-agenda-view]").forEach((button) => {
         button.addEventListener("click", () =>
             selectAgenda(dateInput.value, button.dataset.agendaView),
