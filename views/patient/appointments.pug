@@ -1,3 +1,5 @@
+include ../partials/appointment-stat-icon.pug
+
 doctype html
 html(lang="es")
     head
@@ -8,6 +10,7 @@ html(lang="es")
         link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
         link(rel="stylesheet", href="/css/app.css")
         link(rel="stylesheet", href="/css/patient-dashboard.css")
+        link(rel="stylesheet", href="/css/appointment-stat-icons.css")
         link(rel="stylesheet", href="/css/patient-appointments.css")
         script(src="/js/patient-sidebar.js", defer)
         script(src="/js/patient-appointments.js", defer)
@@ -26,8 +29,11 @@ html(lang="es")
                         p.appointments-preview-note Vista previa: estas citas son ficticias y solo se muestran para revisar el diseño.
                     section.appointment-stats(aria-label="Resumen de citas")
                         each stat in appointmentStats
-                            article.appointment-stat(class="stat-" + stat.key)
-                                span.stat-icon(aria-hidden="true")= stat.key === "all" ? "▦" : stat.key === "confirmed" || stat.key === "attended" ? "✓" : "×"
+                            - const statusClass = { confirmed: "is-confirmed", attended: "is-attended", cancelled: "is-cancelled", "no-show": "is-no-show" }[stat.key] || "";
+                            article.appointment-stat(
+                                class="stat-" + stat.key + (statusClass ? " " + statusClass : "")
+                            )
+                                +appointmentStatIcon(stat.key === "all" ? "total" : stat.key)
                                 span.stat-copy
                                     strong= stat.count
                                     small= stat.label

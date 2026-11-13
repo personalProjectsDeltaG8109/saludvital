@@ -13,8 +13,7 @@
     margin-bottom: 20px;
 }
 
-.appointments-heading-icon,
-.appointment-stat-icon {
+.appointments-heading-icon {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
@@ -64,15 +63,6 @@
     box-shadow: 0 5px 18px rgb(25 76 130 / 5%);
 }
 
-.appointment-stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-}
-.appointment-stat-icon svg {
-    width: 27px;
-    height: 27px;
-}
 .appointment-stat > div {
     display: grid;
     gap: 3px;
@@ -88,27 +78,6 @@
     font-size: 24px;
     line-height: 1;
 }
-.appointment-stat.is-confirmed .appointment-stat-icon {
-    color: #08a86a;
-    background: #e0f8ef;
-}
-.appointment-stat.is-progress .appointment-stat-icon {
-    color: #ed8a18;
-    background: #fff2de;
-}
-.appointment-stat.is-attended .appointment-stat-icon {
-    color: #0875db;
-    background: #e5f2ff;
-}
-.appointment-stat.is-cancelled .appointment-stat-icon {
-    color: #ed343d;
-    background: #ffebeb;
-}
-.appointment-stat.is-no-show .appointment-stat-icon {
-    color: #7b4bc4;
-    background: #f1eaff;
-}
-
 .appointments-panel {
     padding: 15px 14px 10px;
     border: 1px solid #e8eff7;
