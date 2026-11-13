@@ -405,8 +405,11 @@ function getSafeIntegrationConfiguration() {
                 senderNameConfigured: Boolean(process.env.RESEND_FROM_NAME?.trim()),
             },
             sms: {
-                name: "Inalambria Express",
-                credentialsConfigured: Boolean(process.env.INALAMBRIA_API_KEY?.trim()),
+                name: "Inalambria REST API",
+                credentialsConfigured: Boolean(
+                    process.env.INALAMBRIA_REST_USERNAME?.trim() &&
+                    process.env.INALAMBRIA_REST_PASSWORD?.trim(),
+                ),
             },
         },
         notificationDeliveryEnabled: process.env.NOTIFICATION_DELIVERY_ENABLED === "true",

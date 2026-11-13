@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === "production") {
             body: "SaludVital: este es un mensaje de prueba.",
         });
 
-        console.log(`Inalambria accepted the SMS. Job ID: ${result.id || "unavailable"}`);
+        console.log(`Inalambria accepted the SMS. Transaction: ${result.id || "unavailable"}`);
         console.log(`Provider response: ${result.status}`);
     } catch (error) {
         // Show the error without printing credentials or configuration values.

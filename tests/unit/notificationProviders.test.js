@@ -6,7 +6,8 @@ import {
 } from "../../src/modules/patient/services/resendEmailService.js";
 
 const environmentKeys = [
-    "INALAMBRIA_API_KEY",
+    "INALAMBRIA_REST_USERNAME",
+    "INALAMBRIA_REST_PASSWORD",
     "RESEND_API_KEY",
     "RESEND_FROM_EMAIL",
     "RESEND_FROM_NAME",
@@ -27,38 +28,48 @@ afterEach(() => {
 });
 
 describe("independent notification providers", () => {
-    test("sends Colombian SMS through Inalambria Express", async () => {
-        process.env.INALAMBRIA_API_KEY = "test-sms-key";
-        global.fetch = jest
-            .fn()
-            .mockResolvedValue({ ok: true, json: async () => ({ jobId: "job-1" }) });
+    test("sends Colombian SMS through Inalambria REST", async () => {
+        process.env.INALAMBRIA_REST_USERNAME = "test-sms-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "test-sms-password";
+        global.fetch = jest.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                TransactionNumber: "1234567890123456789012345678",
+                Status: 0,
+            }),
+        });
         await expect(sendSms({ to: "+573137498332", body: "Hola" })).resolves.toMatchObject({
-            id: "job-1",
+            id: "1234567890123456789012345678",
             status: "accepted",
         });
-        expect(global.fetch.mock.calls[0][0]).toContain("inalambria.express");
-        expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer test-sms-key");
+        expect(global.fetch.mock.calls[0][0]).toBe("https://rest.inalambria.com/mtmessage");
+        expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe(
+            `Basic ${Buffer.from("test-sms-user:test-sms-password").toString("base64")}`,
+        );
     });
 
-    test("uses Inalambria error categories to avoid retrying permanent configuration failures", async () => {
-        process.env.INALAMBRIA_API_KEY = "test-sms-key";
+    test("does not retry permanent Inalambria REST authorization failures", async () => {
+        process.env.INALAMBRIA_REST_USERNAME = "test-sms-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "test-sms-password";
         global.fetch = jest.fn().mockResolvedValue({
             ok: false,
-            status: 500,
-            json: async () => ({ data: { errorCode: "CONFIGURATION_ERROR" } }),
+            status: 403,
+            json: async () => ({ MessageText: "private provider error" }),
         });
 
         await expect(sendSms({ to: "+573137498332", body: "Hola" })).rejects.toMatchObject({
             retryable: false,
+            deliveryOutcome: "rejected",
         });
     });
 
-    test("retries Inalambria errors documented as transient", async () => {
-        process.env.INALAMBRIA_API_KEY = "test-sms-key";
+    test("retries temporary Inalambria REST rate limits", async () => {
+        process.env.INALAMBRIA_REST_USERNAME = "test-sms-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "test-sms-password";
         global.fetch = jest.fn().mockResolvedValue({
             ok: false,
-            status: 400,
-            json: async () => ({ data: { errorCode: "FRAUD_VALIDATION_ERROR" } }),
+            status: 429,
+            json: async () => ({}),
         });
 
         await expect(sendSms({ to: "+573137498332", body: "Hola" })).rejects.toMatchObject({
@@ -68,7 +79,8 @@ describe("independent notification providers", () => {
     });
 
     test("classifies an Inalambria transport timeout as an uncertain SMS outcome", async () => {
-        process.env.INALAMBRIA_API_KEY = "test-sms-key";
+        process.env.INALAMBRIA_REST_USERNAME = "test-sms-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "test-sms-password";
         global.fetch = jest.fn().mockRejectedValue(new Error("socket closed"));
 
         await expect(sendSms({ to: "+573137498332", body: "Hola" })).rejects.toMatchObject({

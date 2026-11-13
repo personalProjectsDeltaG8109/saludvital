@@ -83,22 +83,22 @@ Implementation: [appointmentService.js](src/modules/patient/services/appointment
 
 ## Technology Stack
 
-| Layer                     | Technology                                          | How it is used                                                                         |
-| ------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Language                  | JavaScript, ES modules                              | Application logic on the server and in the browser.                                    |
-| Runtime and HTTP          | Node.js, Express 5                                  | Server startup, request processing, routing, middleware, and error handling.           |
-| Templates                 | Pug                                                 | Server-rendered HTML pages and shared interface partials.                              |
-| Styling                   | Tailwind CSS 4, custom CSS                          | Responsive layouts, application colors, and interface components.                      |
-| Persistence               | MySQL, mysql2                                       | Relational storage and the database driver used by Sequelize.                          |
-| Data access               | Sequelize 6, Sequelize CLI                          | Models, associations, transactions, migrations, and seeders.                           |
-| Authentication            | bcrypt, jsonwebtoken, cookie-parser                 | Password hashing and verification, signed JWT cookies, and cookie parsing.             |
-| Request protection        | Helmet, express-rate-limit                          | Security headers and request throttling.                                               |
-| Account email             | Resend API                                          | Asynchronous email verification and password recovery through an outbox.               |
-| Messaging                 | Meta WhatsApp Cloud API, Resend, Inalambria Express | Provider adapters for WhatsApp, notification email, identity codes, and Colombian SMS. |
-| Automated tests           | Jest, Supertest                                     | Unit tests, HTTP integration tests, and database integration tests.                    |
-| Browser and accessibility | Playwright, @axe-core/playwright                    | Browser workflows, viewport checks, and automated accessibility checks.                |
-| Code quality              | ESLint, Prettier                                    | JavaScript checks and consistent formatting.                                           |
-| Delivery workflow         | Git, GitHub, GitHub Actions                         | Branches, issues, pull requests, and continuous integration.                           |
+| Layer                     | Technology                                           | How it is used                                                                         |
+| ------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Language                  | JavaScript, ES modules                               | Application logic on the server and in the browser.                                    |
+| Runtime and HTTP          | Node.js, Express 5                                   | Server startup, request processing, routing, middleware, and error handling.           |
+| Templates                 | Pug                                                  | Server-rendered HTML pages and shared interface partials.                              |
+| Styling                   | Tailwind CSS 4, custom CSS                           | Responsive layouts, application colors, and interface components.                      |
+| Persistence               | MySQL, mysql2                                        | Relational storage and the database driver used by Sequelize.                          |
+| Data access               | Sequelize 6, Sequelize CLI                           | Models, associations, transactions, migrations, and seeders.                           |
+| Authentication            | bcrypt, jsonwebtoken, cookie-parser                  | Password hashing and verification, signed JWT cookies, and cookie parsing.             |
+| Request protection        | Helmet, express-rate-limit                           | Security headers and request throttling.                                               |
+| Account email             | Resend API                                           | Asynchronous email verification and password recovery through an outbox.               |
+| Messaging                 | Meta WhatsApp Cloud API, Resend, Inalambria REST API | Provider adapters for WhatsApp, notification email, identity codes, and Colombian SMS. |
+| Automated tests           | Jest, Supertest                                      | Unit tests, HTTP integration tests, and database integration tests.                    |
+| Browser and accessibility | Playwright, @axe-core/playwright                     | Browser workflows, viewport checks, and automated accessibility checks.                |
+| Code quality              | ESLint, Prettier                                     | JavaScript checks and consistent formatting.                                           |
+| Delivery workflow         | Git, GitHub, GitHub Actions                          | Branches, issues, pull requests, and continuous integration.                           |
 
 Dependency ranges and commands are defined in [package.json](package.json); resolved dependencies are recorded in [package-lock.json](package-lock.json).
 
@@ -165,7 +165,7 @@ These are implemented controls, not a security certification. Deployment-related
 | **Account email**             | `EmailOutbox` jobs are processed through the Resend API for verification and recovery. Requires a verified sender and a correct `APP_BASE_URL`.                                                                                                               |
 | **Appointment notifications** | Workers process reminders, rescheduling, and cancellation events using patient channel preferences. Delivery remains disabled unless `NOTIFICATION_DELIVERY_ENABLED=true`.                                                                                    |
 | **Email notifications**       | Resend adapter with configurable sender and message content.                                                                                                                                                                                                  |
-| **SMS**                       | Inalambria Express adapter for Colombian mobile numbers, with error classification for retry decisions.                                                                                                                                                       |
+| **SMS**                       | Inalambria REST adapter for Colombian mobile numbers. Final delivery status is recorded only when the account webhook reports it.                                                                                                                             |
 | **WhatsApp**                  | Meta message adapters, signed webhook validation, conversation/message persistence, and provider delivery-status updates. Requires Meta credentials, webhook setup, and approved notification templates.                                                      |
 | **Chatbot**                   | Code supports patient identity verification and appointment operations. Execution requires a published active flow and is explicitly disabled when `NODE_ENV=production`. The administrative editor saves draft versions; saving a draft does not publish it. |
 

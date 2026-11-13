@@ -25,6 +25,10 @@ The WABA ID is optional metadata for this implementation and is not required to 
 - Configure a non-placeholder `WHATSAPP_VERIFICATION_SECRET` before testing chatbot identity-gated booking, viewing, rescheduling, or cancellation.
 - Enable automated delivery only in a controlled development environment after configuration and explicit test validation. Production activation remains a separate rollout decision.
 
+## Inalambria REST update from Issue #460
+
+The SMS adapter now uses the Inalambria REST credentials `INALAMBRIA_REST_USERNAME` and `INALAMBRIA_REST_PASSWORD`. The earlier Express API key is not used by this path. Ask Inalambria to enable the account status webhook at the deployed `/api/inalambria/sms/status` HTTPS endpoint. Until that external activation and a controlled callback test are complete, an accepted SMS has no confirmed final delivery state in SaludVital.
+
 ## Verification
 
 Run the focused provider settings unit test, provider preflight command, notification settings browser/accessibility check, project lint/format/test commands, and CSS build. Record the actual outcomes with the PR.

@@ -3,6 +3,39 @@ import { createHmac } from "node:crypto";
 import app from "../../app.js";
 
 describe("SaludVital application", () => {
+    test("Inalambria SMS callback requires the configured provider credentials", async () => {
+        const previousUsername = process.env.INALAMBRIA_REST_USERNAME;
+        const previousPassword = process.env.INALAMBRIA_REST_PASSWORD;
+        process.env.INALAMBRIA_REST_USERNAME = "callback-user";
+        process.env.INALAMBRIA_REST_PASSWORD = "callback-password";
+
+        try {
+            const missingAuthorization = await request(app)
+                .post("/api/inalambria/sms/status")
+                .send({ results: [] });
+            const invalidAuthorization = await request(app)
+                .post("/api/inalambria/sms/status")
+                .set("Authorization", "Basic invalid")
+                .send({ results: [] });
+            const authorizedInvalidPayload = await request(app)
+                .post("/api/inalambria/sms/status")
+                .set(
+                    "Authorization",
+                    `Basic ${Buffer.from("callback-user:callback-password").toString("base64")}`,
+                )
+                .send({ results: [] });
+
+            expect(missingAuthorization.status).toBe(401);
+            expect(invalidAuthorization.status).toBe(401);
+            expect(authorizedInvalidPayload.status).toBe(400);
+        } finally {
+            if (previousUsername === undefined) delete process.env.INALAMBRIA_REST_USERNAME;
+            else process.env.INALAMBRIA_REST_USERNAME = previousUsername;
+            if (previousPassword === undefined) delete process.env.INALAMBRIA_REST_PASSWORD;
+            else process.env.INALAMBRIA_REST_PASSWORD = previousPassword;
+        }
+    });
+
     test("Meta webhook verification requires the configured challenge token", async () => {
         const previousToken = process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN;
         process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN = "webhook-test-token";

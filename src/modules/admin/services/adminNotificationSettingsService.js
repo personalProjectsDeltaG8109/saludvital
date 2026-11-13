@@ -45,9 +45,12 @@ const CHANNEL_CONFIGURATION = [
     },
     {
         key: "sms",
-        provider: "Inalambria Express",
-        requiredEnvironmentVariables: ["INALAMBRIA_API_KEY"],
-        configuredDetails: [["INALAMBRIA_API_KEY", "Credenciales de acceso"]],
+        provider: "Inalambria REST API",
+        requiredEnvironmentVariables: ["INALAMBRIA_REST_USERNAME", "INALAMBRIA_REST_PASSWORD"],
+        configuredDetails: [
+            ["INALAMBRIA_REST_USERNAME", "Usuario configurado"],
+            ["INALAMBRIA_REST_PASSWORD", "Contraseña configurada"],
+        ],
     },
 ];
 
@@ -154,7 +157,7 @@ export function getNotificationProviderPreflight() {
             "Meta: confirmar aprobación de las cuatro plantillas y sus variables e idioma.",
             "Meta: publicar el webhook HTTPS, suscribirse a messages y validar callbacks reales.",
             "Resend: verificar el dominio del remitente en la cuenta del proveedor.",
-            "Inalambria: confirmar saldo, permisos y habilitación de SMS para Colombia.",
+            "Inalambria: confirmar credenciales REST, saldo y ruta SMS de Colombia; solicitar que habiliten el webhook de estados para la URL pública.",
             "Enviar pruebas controladas a destinatarios autorizados antes de habilitar producción.",
             "Chatbot: se mantiene deshabilitado en producción hasta una decisión de despliegue y validación.",
         ],

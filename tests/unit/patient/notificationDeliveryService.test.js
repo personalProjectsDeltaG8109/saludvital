@@ -34,6 +34,7 @@ describe("appointment confirmation delivery", () => {
 
     test("sends a Spanish SMS with appointment details and no clinical reason", async () => {
         await deliverNotification({
+            id: 418,
             channel: "SMS",
             recipient_address: "+573001234567",
             event_type: "appointment_confirmation",
@@ -42,6 +43,7 @@ describe("appointment confirmation delivery", () => {
 
         expect(sendSms).toHaveBeenCalledWith({
             to: "+573001234567",
+            notificationId: 418,
             body: expect.stringContaining("Tu cita quedó confirmada"),
         });
         const message = sendSms.mock.calls[0][0].body;
