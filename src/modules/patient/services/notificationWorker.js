@@ -1,6 +1,10 @@
-import { Op } from "sequelize";
+import { Op, col, fn, where } from "sequelize";
 import database from "../../../../config/database.js";
 import { Appointment, AppointmentStatus, Notification } from "../../../models/associations.js";
+import {
+    getTestRecipientAllowlist,
+    isTestRecipientAllowed,
+} from "./notificationTestRecipientPolicy.js";
 import { deliverNotification } from "./notificationDeliveryService.js";
 
 const MAX_ATTEMPTS = 5;
@@ -25,7 +29,22 @@ function isRetryable(error) {
 }
 
 function deliveryEnabled() {
-    return process.env.NOTIFICATION_DELIVERY_ENABLED === "true";
+    if (process.env.NOTIFICATION_DELIVERY_ENABLED !== "true") return false;
+    return process.env.NODE_ENV === "production" || getTestRecipientAllowlist().size > 0;
+}
+
+function pendingNotificationCriteria() {
+    const criteria = { status: "Pending", scheduled_at: { [Op.lte]: new Date() } };
+
+    if (process.env.NODE_ENV !== "production") {
+        // Keep local workers from claiming jobs for destinations outside the test allowlist.
+        const allowedRecipients = [...getTestRecipientAllowlist()];
+        criteria[Op.and] = where(fn("LOWER", fn("TRIM", col("recipient_address"))), {
+            [Op.in]: allowedRecipients,
+        });
+    }
+
+    return criteria;
 }
 
 async function recordRetryableFailure(notification, error) {
@@ -59,7 +78,7 @@ async function claimBatch(batchSize) {
         );
 
         const notifications = await Notification.findAll({
-            where: { status: "Pending", scheduled_at: { [Op.lte]: new Date() } },
+            where: pendingNotificationCriteria(),
             order: [
                 ["scheduled_at", "ASC"],
                 ["id", "ASC"],
@@ -69,13 +88,20 @@ async function claimBatch(batchSize) {
             lock: transaction.LOCK.UPDATE,
             skipLocked: true,
         });
-        for (const notification of notifications) {
+        const approvedNotifications =
+            process.env.NODE_ENV === "production"
+                ? notifications
+                : notifications.filter((notification) =>
+                      isTestRecipientAllowed(notification.recipient_address),
+                  );
+
+        for (const notification of approvedNotifications) {
             await notification.update(
                 { status: "Processing", attempt_count: notification.attempt_count + 1 },
                 { transaction },
             );
         }
-        return notifications;
+        return approvedNotifications;
     });
 }
 

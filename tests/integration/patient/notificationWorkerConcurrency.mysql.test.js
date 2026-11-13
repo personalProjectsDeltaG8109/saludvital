@@ -27,6 +27,7 @@ describe("notification worker MySQL concurrency", () => {
     let patient;
     let notification;
     let previousDeliverySetting;
+    let previousTestRecipients;
 
     beforeAll(async () => {
         if (process.env.NODE_ENV !== "test" || process.env.DB_NAME !== "saludvital_test") {
@@ -38,7 +39,9 @@ describe("notification worker MySQL concurrency", () => {
 
     beforeEach(async () => {
         previousDeliverySetting = process.env.NOTIFICATION_DELIVERY_ENABLED;
+        previousTestRecipients = process.env.NOTIFICATION_TEST_RECIPIENTS;
         process.env.NOTIFICATION_DELIVERY_ENABLED = "true";
+        process.env.NOTIFICATION_TEST_RECIPIENTS = "notification-worker-test@example.invalid";
         jest.clearAllMocks();
 
         const uniqueDocumentNumber = `${Date.now()}${Math.floor(Math.random() * 1000)}`.slice(-15);
@@ -71,6 +74,11 @@ describe("notification worker MySQL concurrency", () => {
             delete process.env.NOTIFICATION_DELIVERY_ENABLED;
         } else {
             process.env.NOTIFICATION_DELIVERY_ENABLED = previousDeliverySetting;
+        }
+        if (previousTestRecipients === undefined) {
+            delete process.env.NOTIFICATION_TEST_RECIPIENTS;
+        } else {
+            process.env.NOTIFICATION_TEST_RECIPIENTS = previousTestRecipients;
         }
     });
 
@@ -107,5 +115,17 @@ describe("notification worker MySQL concurrency", () => {
         expect(deliverNotification).toHaveBeenCalledTimes(1);
         expect(notification.status).toBe("Sent");
         expect(notification.attempt_count).toBe(1);
+    });
+
+    test("keeps a notification for an unapproved recipient pending without an attempt", async () => {
+        notification.recipient_address = "unapproved-worker-test@example.invalid";
+        await notification.save();
+
+        await expect(processNotificationBatch(1)).resolves.toBe(0);
+
+        await notification.reload();
+        expect(notification.status).toBe("Pending");
+        expect(notification.attempt_count).toBe(0);
+        expect(deliverNotification).not.toHaveBeenCalled();
     });
 });

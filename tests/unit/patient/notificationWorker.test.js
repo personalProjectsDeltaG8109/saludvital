@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { Op } from "sequelize";
+import { Op, col, fn, where } from "sequelize";
 
 jest.unstable_mockModule("../../../config/database.js", () => ({
     default: {
@@ -31,15 +31,20 @@ const { processNotificationBatch } =
 describe("appointment notification worker", () => {
     const transaction = { LOCK: { UPDATE: "UPDATE" } };
     let notification;
+    let previousNodeEnv;
 
     beforeEach(() => {
         jest.useFakeTimers();
         jest.setSystemTime(new Date("2026-11-01T15:00:00.000Z"));
         jest.clearAllMocks();
+        previousNodeEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = "test";
         process.env.NOTIFICATION_DELIVERY_ENABLED = "true";
+        process.env.NOTIFICATION_TEST_RECIPIENTS = "notification-test@example.test";
 
         notification = {
             id: 8,
+            recipient_address: "notification-test@example.test",
             event_type: "appointment_cancellation",
             appointment_id: 99,
             attempt_count: 1,
@@ -58,7 +63,10 @@ describe("appointment notification worker", () => {
 
     afterEach(() => {
         jest.useRealTimers();
+        if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+        else process.env.NODE_ENV = previousNodeEnv;
         delete process.env.NOTIFICATION_DELIVERY_ENABLED;
+        delete process.env.NOTIFICATION_TEST_RECIPIENTS;
     });
 
     // Respect the global delivery switch before claiming or sending any jobs.
@@ -69,6 +77,34 @@ describe("appointment notification worker", () => {
 
         expect(Notification.findAll).not.toHaveBeenCalled();
         expect(deliverNotification).not.toHaveBeenCalled();
+    });
+
+    test("does not query or send non-production jobs without an approved test recipient", async () => {
+        delete process.env.NOTIFICATION_TEST_RECIPIENTS;
+
+        await expect(processNotificationBatch()).resolves.toBe(0);
+
+        expect(Notification.findAll).not.toHaveBeenCalled();
+        expect(deliverNotification).not.toHaveBeenCalled();
+    });
+
+    test("leaves an unapproved destination pending without consuming an attempt", async () => {
+        notification.recipient_address = "unapproved@example.test";
+
+        await expect(processNotificationBatch()).resolves.toBe(0);
+
+        expect(notification.update).not.toHaveBeenCalled();
+        expect(deliverNotification).not.toHaveBeenCalled();
+    });
+
+    test("keeps production delivery behind its existing switch without a test allowlist", async () => {
+        process.env.NODE_ENV = "production";
+        delete process.env.NOTIFICATION_TEST_RECIPIENTS;
+
+        await expect(processNotificationBatch()).resolves.toBe(1);
+
+        expect(deliverNotification).toHaveBeenCalledTimes(1);
+        expect(Notification.findAll.mock.calls[0][0].where[Op.and]).toBeUndefined();
     });
 
     // Cancel stale reminders when their appointment time or status has changed.
@@ -165,7 +201,13 @@ describe("appointment notification worker", () => {
         );
         expect(Notification.findAll).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: { status: "Pending", scheduled_at: expect.any(Object) },
+                where: {
+                    status: "Pending",
+                    scheduled_at: expect.any(Object),
+                    [Op.and]: where(fn("LOWER", fn("TRIM", col("recipient_address"))), {
+                        [Op.in]: ["notification-test@example.test"],
+                    }),
+                },
                 transaction,
                 lock: transaction.LOCK.UPDATE,
                 skipLocked: true,

@@ -21,6 +21,7 @@ const serverEnvironment = {
     JWT_SECRET: "local-test-secret-not-for-production",
     PORT: "3100",
     APP_BASE_URL: baseUrl,
+    NOTIFICATION_TEST_RECIPIENTS: "",
     LOGIN_WHATSAPP_CONTACT_NUMBER: "573000000000",
     NOTIFICATION_DELIVERY_ENABLED: "false",
     WHATSAPP_CHATBOT_ENABLED: "false",

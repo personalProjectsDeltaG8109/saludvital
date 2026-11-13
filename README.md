@@ -214,8 +214,11 @@ Set these values for your local environment:
 | `APP_BASE_URL`                                            | Public or local base address used in account email links.                   |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME` | Resend settings for account email and email notifications.                  |
 | `NOTIFICATION_DELIVERY_ENABLED`                           | Leave `false` until messaging providers and test recipients are configured. |
+| `NOTIFICATION_TEST_RECIPIENTS`                            | Comma-separated exact destinations allowed for non-production sends.        |
 
 Additional provider variables are documented in `.env.example`. Replace example values locally; do not commit the resulting file.
+
+For local provider checks, add only your own approved email address or phone number to `NOTIFICATION_TEST_RECIPIENTS`. Automated delivery in development is limited to those destinations, and the manual test scripts reject any destination outside the list. Production delivery continues to use the separate `NOTIFICATION_DELIVERY_ENABLED` switch.
 
 ### 3. Prepare a Local Development Database
 
