@@ -20,7 +20,7 @@ const html = `
     <button class="doctor-agenda-nav-button" aria-label="Anterior" data-agenda-previous><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><label class="doctor-agenda-date-label"><input type="date" value="2026-10-29" data-agenda-date></label><button class="doctor-agenda-today" data-agenda-today>Hoy</button><button class="doctor-agenda-nav-button" aria-label="Siguiente" data-agenda-next><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button>
     <div class="doctor-agenda-view-switcher" role="group" aria-label="Vista de agenda"><button class="doctor-agenda-view-button" data-agenda-view="day">Dia</button><button class="doctor-agenda-view-button" data-agenda-view="week">Semana</button><button class="doctor-agenda-view-button" data-agenda-view="month">Mes</button></div>
   </section>
-  <p data-agenda-feedback hidden></p><div class="doctor-agenda-layout">
+  <div data-agenda-feedback hidden><span data-agenda-feedback-message></span><button type="button" data-agenda-retry hidden>Reintentar</button></div><div class="doctor-agenda-layout">
     <section class="doctor-panel doctor-agenda-calendar" data-agenda-calendar><header class="doctor-panel-heading"><div><p class="doctor-eyebrow" data-agenda-eyebrow></p><h2 data-agenda-title></h2></div></header><div data-agenda-loading>Cargando</div><div class="doctor-agenda-timeline" data-agenda-timeline hidden></div>
       <div class="doctor-agenda-empty" data-agenda-empty hidden><h3 data-agenda-empty-title></h3><p data-agenda-empty-message></p></div>
       <div class="doctor-agenda-period-view doctor-agenda-week-view" data-agenda-week-view hidden><h3 data-agenda-week-title></h3><div class="doctor-agenda-week-grid" data-agenda-week-grid></div></div>
@@ -36,6 +36,9 @@ try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await page.setContent(html);
+    await page.evaluate(() => {
+        document.querySelector("[data-doctor-agenda]").dataset.agendaRequestTimeoutMs = "100";
+    });
     await page.addStyleTag({ content: appStyles });
     await page.addStyleTag({ content: patientStyles });
     await page.addStyleTag({ content: doctorStyles });
@@ -117,7 +120,7 @@ try {
                 },
             };
         };
-        window.fetch = async (url) => {
+        window.fetch = async (url, options = {}) => {
             if (String(url).includes("/api/doctor/appointments/")) {
                 if (window.appointmentDetailMode === "error") {
                     return {
@@ -149,6 +152,15 @@ try {
             const date = query.get("date");
             const view = query.get("view");
             window.agendaRequests.push({ date, view });
+            if (window.agendaMode === "pending") {
+                return new Promise((resolve, reject) => {
+                    options.signal.addEventListener(
+                        "abort",
+                        () => reject(new DOMException("Request timed out", "AbortError")),
+                        { once: true },
+                    );
+                });
+            }
             if (window.agendaMode === "error") {
                 return {
                     ok: false,
@@ -563,6 +575,52 @@ try {
     });
     await page.locator("[data-agenda-next]").click();
     await page.getByText("No pudimos cargar la agenda.").waitFor();
+    await page.evaluate(() => {
+        window.agendaMode = "pending";
+    });
+    await page.locator("[data-agenda-next]").click();
+    await page
+        .getByText(
+            "La agenda está tardando más de lo esperado. Comprueba tu conexión y vuelve a intentarlo.",
+        )
+        .waitFor();
+    await page.getByRole("button", { name: "Reintentar" }).waitFor({ state: "visible" });
+    await page.evaluate(() => {
+        window.agendaMode = "success";
+    });
+    await page.getByRole("button", { name: "Reintentar" }).click();
+    await page.locator(".doctor-agenda-appointment").waitFor({ state: "visible" });
+
+    const compatibilityPage = await context.newPage();
+    const compatibilityPageErrors = [];
+    compatibilityPage.on("pageerror", (error) => compatibilityPageErrors.push(error.message));
+    await compatibilityPage.setContent(html);
+    await compatibilityPage.evaluate(() => {
+        const agenda = document.querySelector("[data-doctor-agenda]");
+        agenda.dataset.agendaRequestTimeoutMs = "100";
+        agenda.querySelector("[data-close-appointment-detail]").remove();
+        agenda.querySelector("[data-agenda-retry]").remove();
+        agenda.querySelector("[data-agenda-feedback-message]").remove();
+        window.agendaFetchCount = 0;
+        window.fetch = async () => {
+            window.agendaFetchCount += 1;
+            return {
+                ok: false,
+                json: async () => ({ message: "No pudimos cargar la agenda." }),
+            };
+        };
+    });
+    await compatibilityPage.addScriptTag({ content: script });
+    await compatibilityPage.waitForFunction(() => window.agendaFetchCount === 1);
+    await compatibilityPage.locator('[data-agenda-view="week"]').click();
+    await compatibilityPage.waitForFunction(() => window.agendaFetchCount === 2);
+    await compatibilityPage.locator('[data-agenda-view="month"]').click();
+    await compatibilityPage.waitForFunction(() => window.agendaFetchCount === 3);
+    assert.equal(compatibilityPageErrors.length, 0, compatibilityPageErrors.join("\n"));
+    assert.equal(
+        await compatibilityPage.locator('[data-agenda-view="month"]').getAttribute("aria-pressed"),
+        "true",
+    );
 
     console.log(
         "Doctor agenda day, week, and month browser flows passed at mobile, tablet, and desktop viewports.",

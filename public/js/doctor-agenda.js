@@ -16,6 +16,8 @@ if (agendaRoot) {
     const availabilityCards = agendaRoot.querySelectorAll("[data-agenda-availability]");
     const loadingState = agendaRoot.querySelector("[data-agenda-loading]");
     const feedback = agendaRoot.querySelector("[data-agenda-feedback]");
+    const feedbackMessage = agendaRoot.querySelector("[data-agenda-feedback-message]");
+    const retryButton = agendaRoot.querySelector("[data-agenda-retry]");
     const headingEyebrow = agendaRoot.querySelector("[data-agenda-eyebrow]");
     const title = agendaRoot.querySelector("[data-agenda-title]");
     const dailyTimeline = agendaRoot.querySelector("[data-agenda-timeline]");
@@ -29,6 +31,7 @@ if (agendaRoot) {
     const monthlyEmpty = agendaRoot.querySelector("[data-agenda-month-empty]");
     let selectedView = agendaRoot.dataset.initialView || "day";
     let activeRequest = 0;
+    const requestTimeoutMs = Number(agendaRoot.dataset.agendaRequestTimeoutMs) || 15000;
 
     function createElement(tagName, className, text) {
         const element = document.createElement(tagName);
@@ -457,11 +460,15 @@ if (agendaRoot) {
         weeklyView.hidden = true;
         monthlyView.hidden = true;
         feedback.hidden = true;
+        if (retryButton) retryButton.hidden = true;
         calendar.setAttribute("aria-busy", "true");
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), requestTimeoutMs);
         try {
             const query = new URLSearchParams({ view: selectedView, date: dateInput.value });
             const response = await fetch(`${apiUrl}?${query.toString()}`, {
                 headers: { Accept: "application/json" },
+                signal: controller.signal,
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.message || "No fue posible cargar la agenda.");
@@ -469,8 +476,17 @@ if (agendaRoot) {
             renderAgenda(result);
         } catch (error) {
             if (requestId !== activeRequest) return;
-            feedback.textContent = error.message || "Ocurrió un error al cargar la agenda.";
+            const message =
+                error.name === "AbortError"
+                    ? "La agenda está tardando más de lo esperado. Comprueba tu conexión y vuelve a intentarlo."
+                    : error.message || "Ocurrió un error al cargar la agenda.";
+            if (feedbackMessage) {
+                feedbackMessage.textContent = message;
+            } else {
+                feedback.textContent = message;
+            }
             feedback.hidden = false;
+            if (retryButton) retryButton.hidden = false;
             title.textContent = "No se pudo cargar la agenda";
             calendarAside.hidden = false;
             availabilityCards.forEach((card) => {
@@ -490,11 +506,16 @@ if (agendaRoot) {
                 ),
             );
         } finally {
+            window.clearTimeout(timeoutId);
             if (requestId === activeRequest) loadingState.hidden = true;
         }
     }
 
     async function openAppointmentDetails(appointmentId, trigger) {
+        if (!appointmentDetailDialog || !appointmentDetailContent || !appointmentDetailFeedback) {
+            return;
+        }
+
         appointmentDetailDialog.returnValue = "";
         appointmentDetailContent.hidden = true;
         appointmentDetailFeedback.textContent = "Cargando el detalle de la cita…";
@@ -529,7 +550,7 @@ if (agendaRoot) {
             }
             appointmentDetailFeedback.hidden = true;
             appointmentDetailContent.hidden = false;
-            agendaRoot.querySelector("[data-close-appointment-detail]").focus();
+            agendaRoot.querySelector("[data-close-appointment-detail]")?.focus();
         } catch (error) {
             appointmentDetailFeedback.textContent =
                 error.message || "No pudimos cargar el detalle de la cita.";
@@ -573,14 +594,15 @@ if (agendaRoot) {
     agendaRoot.querySelector("[data-agenda-today]").addEventListener("click", () => {
         selectAgenda(agendaRoot.dataset.todayDate, selectedView);
     });
+    retryButton?.addEventListener("click", loadAgenda);
     agendaRoot.addEventListener("click", (event) => {
         const appointmentButton = event.target.closest("[data-appointment-details]");
-        if (!appointmentButton) return;
+        if (!appointmentButton || !appointmentDetailDialog) return;
         openAppointmentDetails(appointmentButton.dataset.appointmentDetails, appointmentButton);
     });
     agendaRoot
         .querySelector("[data-close-appointment-detail]")
-        .addEventListener("click", () => appointmentDetailDialog.close());
+        ?.addEventListener("click", () => appointmentDetailDialog.close());
     agendaRoot.querySelectorAll("[data-agenda-view]").forEach((button) => {
         button.addEventListener("click", () =>
             selectAgenda(dateInput.value, button.dataset.agendaView),
