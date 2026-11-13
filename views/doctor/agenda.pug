@@ -72,12 +72,14 @@ html(lang="es")
                                 data-agenda-view="month",
                                 aria-pressed=String(initialView === "month")
                             ) Mes
-                    p.doctor-agenda-feedback(
-                        role="status",
-                        aria-live="polite",
+                    .doctor-agenda-feedback(
+                        role="alert",
+                        aria-live="assertive",
                         data-agenda-feedback,
                         hidden
                     )
+                        span(data-agenda-feedback-message)
+                        button.doctor-agenda-retry(type="button", data-agenda-retry, hidden) Reintentar
                     .doctor-agenda-layout
                         section.doctor-panel.doctor-agenda-calendar(
                             aria-labelledby="doctor-agenda-day-title",
