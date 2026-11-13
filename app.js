@@ -11,6 +11,7 @@ import { errorHandler } from "./src/middleware/errorHandler.js";
 import { authenticateTokenOptional } from "./src/middleware/authenticateToken.js";
 import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
 import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookRoutes.js";
+import inalambriaSmsWebhookRoutes from "./src/modules/patient/routes/inalambriaSmsWebhookRoutes.js";
 import legalRoutes from "./src/modules/legal/routes/legalRoutes.js";
 
 const currentFile = fileURLToPath(import.meta.url);
@@ -34,6 +35,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.static(path.join(currentDirectory, "public")));
 app.use(whatsappWebhookRoutes);
+app.use(inalambriaSmsWebhookRoutes);
 // Register location lookup endpoints and application routes.
 app.use(locationRoutes);
 // Register authentication and role-specific routes.
