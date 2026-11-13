@@ -61,13 +61,31 @@ const root = process.cwd();
             );
             await p.locator(".sv-appointment-doctor-photo-trigger").first().waitFor();
             await p.addScriptTag({ path: root + "/public/js/patient-appointments.js" });
-            for (const width of [1440, 768, 390, 320]) {
-                await p.setViewportSize({ width, height: 900 });
+            for (const { width, height } of [
+                { width: 1440, height: 900 },
+                { width: 768, height: 900 },
+                { width: 390, height: 900 },
+                { width: 375, height: 667 },
+                { width: 320, height: 640 },
+            ]) {
+                await p.setViewportSize({ width, height });
                 await p.waitForTimeout(100);
                 assert.equal(
                     await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
                     false,
                 );
+                const hero = await p.locator(".sv-hero").boundingBox();
+                for (const selector of [".sv-hero-copy h2", ".sv-hero-copy p"]) {
+                    const textBounds = await p.locator(selector).boundingBox();
+                    assert.ok(
+                        textBounds.y >= hero.y,
+                        `${selector} starts above the welcome banner`,
+                    );
+                    assert.ok(
+                        textBounds.y + textBounds.height <= hero.y + hero.height,
+                        `${selector} is clipped by the welcome banner at ${width}x${height}`,
+                    );
+                }
                 const card = p.locator(".sv-appointment");
                 assert.equal(
                     await card.locator(".sv-appointment-buttons a").count(),
