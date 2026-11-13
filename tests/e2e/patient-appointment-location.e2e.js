@@ -7,6 +7,7 @@ import pug from "pug";
 const cssFiles = [
     "public/css/app.css",
     "public/css/patient-dashboard.css",
+    "public/css/appointment-stat-icons.css",
     "public/css/patient-appointments.css",
     "public/css/patient-reschedule.css",
 ];
@@ -33,6 +34,14 @@ const missedAppointment = {
     end_at: "2026-10-20T15:30:00.000Z",
     status: { name: "No Show" },
 };
+const cancelledAppointment = {
+    ...appointment,
+    id: 86,
+    start_at: "2026-10-10T15:00:00.000Z",
+    end_at: "2026-10-10T15:30:00.000Z",
+    status: { name: "Cancelled" },
+    can_reschedule: false,
+};
 const commonLocals = {
     pageTitle: "Mis citas | SaludVital",
     activeNav: "appointments",
@@ -43,12 +52,12 @@ const commonLocals = {
 };
 const appointmentsHtml = pug.renderFile("views/patient/appointments.pug", {
     ...commonLocals,
-    appointments: [appointment, missedAppointment],
+    appointments: [appointment, missedAppointment, cancelledAppointment],
     appointmentStats: [
-        { key: "all", label: "Total de citas", status: null, count: 2 },
+        { key: "all", label: "Total de citas", status: null, count: 3 },
         { key: "confirmed", label: "Confirmadas", status: "Confirmed", count: 1 },
         { key: "attended", label: "Atendidas", status: "Attended", count: 0 },
-        { key: "cancelled", label: "Canceladas", status: "Cancelled", count: 0 },
+        { key: "cancelled", label: "Canceladas", status: "Cancelled", count: 1 },
         { key: "no-show", label: "No asistió", status: "No Show", count: 1 },
     ],
     specialties: ["Medicina General"],
@@ -56,10 +65,10 @@ const appointmentsHtml = pug.renderFile("views/patient/appointments.pug", {
     pagination: {
         page: 1,
         pageSize: 10,
-        total: 2,
+        total: 3,
         totalPages: 1,
         firstResult: 1,
-        lastResult: 2,
+        lastResult: 3,
         previousUrl: null,
         nextUrl: null,
     },
@@ -73,7 +82,10 @@ const rescheduleHtml = pug.renderFile("views/patient/reschedule-appointment.pug"
     selectedAppointmentId: appointment.id,
 });
 const rescheduleScript = await readFile(path.resolve("public/js/patient-reschedule.js"), "utf8");
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+    channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
+    headless: true,
+});
 
 async function loadPage(page, html) {
     await page.setContent(html);
@@ -138,6 +150,73 @@ try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await loadPage(page, appointmentsHtml);
+    const expectedStats = [
+        ["all", "rgb(6, 100, 217)", "rgb(230, 242, 255)"],
+        ["confirmed", "rgb(8, 168, 106)", "rgb(224, 248, 239)"],
+        ["attended", "rgb(8, 117, 219)", "rgb(229, 242, 255)"],
+        ["cancelled", "rgb(237, 52, 61)", "rgb(255, 235, 235)"],
+        ["no-show", "rgb(123, 75, 196)", "rgb(241, 234, 255)"],
+    ];
+    for (const [key, color, backgroundColor] of expectedStats) {
+        const card = page.locator(`.appointment-stat.stat-${key}`);
+        const icon = card.locator(".appointment-stat-icon");
+        if ((await card.count()) !== 1 || (await icon.locator("svg").count()) !== 1) {
+            throw new Error(`The ${key} appointment stat must render its shared SVG icon.`);
+        }
+        const iconStyle = await icon.evaluate((element) => ({
+            color: getComputedStyle(element).color,
+            backgroundColor: getComputedStyle(element).backgroundColor,
+        }));
+        if (iconStyle.color !== color || iconStyle.backgroundColor !== backgroundColor) {
+            throw new Error(`The ${key} appointment stat must use the administrator icon colors.`);
+        }
+    }
+    const expectedStatusColors = [
+        [
+            "#appointment-84 td[data-label='Estado'] .status-confirmed",
+            "rgb(8, 168, 106)",
+            "rgb(224, 248, 239)",
+        ],
+        [
+            "#appointment-85 td[data-label='Estado'] .status-no-show",
+            "rgb(123, 75, 196)",
+            "rgb(241, 234, 255)",
+        ],
+        [
+            "#appointment-86 td[data-label='Estado'] .status-cancelled",
+            "rgb(237, 52, 61)",
+            "rgb(255, 235, 235)",
+        ],
+    ];
+    for (const [selector, color, backgroundColor] of expectedStatusColors) {
+        const statusStyle = await page.locator(selector).evaluate((element) => ({
+            color: getComputedStyle(element).color,
+            backgroundColor: getComputedStyle(element).backgroundColor,
+        }));
+        if (statusStyle.color !== color || statusStyle.backgroundColor !== backgroundColor) {
+            throw new Error(`${selector} must use its matching status colors.`);
+        }
+    }
+    const expectedFilterColors = [
+        ["attended", "rgb(8, 117, 219)"],
+        ["cancelled", "rgb(237, 52, 61)"],
+        ["no-show", "rgb(123, 75, 196)"],
+    ];
+    for (const [key, color] of expectedFilterColors) {
+        const filterColor = await page
+            .locator(`.appointment-tabs [data-filter='${key}']`)
+            .evaluate((element) => getComputedStyle(element).color);
+        if (filterColor !== color) {
+            throw new Error(`The ${key} appointment filter must use its matching state color.`);
+        }
+    }
+    const mobileIconWidth = await page
+        .locator(".appointment-stat-icon")
+        .first()
+        .evaluate((element) => getComputedStyle(element).width);
+    if (mobileIconWidth !== "27px") {
+        throw new Error("Appointment stat icons must remain compact on mobile.");
+    }
     await page.addScriptTag({ content: appointmentsScript });
     if (await page.getByText("Sede", { exact: true }).count()) {
         throw new Error("Mis citas must not show an unsupported clinic location.");
@@ -161,6 +240,21 @@ try {
         });
     });
     await page.getByRole("button", { name: "No asistió", exact: true }).click();
+    await page
+        .locator(".appointment-tabs [data-filter='no-show']")
+        .evaluate((element) => element.classList.add("is-active"));
+    const activeNoShowFilter = await page
+        .locator(".appointment-tabs [data-filter='no-show']")
+        .evaluate((element) => ({
+            backgroundColor: getComputedStyle(element).backgroundColor,
+            borderColor: getComputedStyle(element).borderBottomColor,
+        }));
+    if (
+        activeNoShowFilter.backgroundColor !== "rgb(241, 234, 255)" ||
+        activeNoShowFilter.borderColor !== "rgb(123, 75, 196)"
+    ) {
+        throw new Error("The active no-show filter must use its matching color.");
+    }
     if (
         !(await page.locator("#appointment-85").isVisible()) ||
         !(await page.locator("#appointment-84").isVisible())
