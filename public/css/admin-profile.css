@@ -270,7 +270,10 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+    transition:
+        color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease;
 }
 
 .admin-profile-tab:hover {

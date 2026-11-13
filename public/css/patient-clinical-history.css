@@ -36,7 +36,7 @@
     color: #073b78;
     font-size: clamp(30px, 3vw, 39px);
     font-weight: 800;
-    letter-spacing: -.9px;
+    letter-spacing: -0.9px;
 }
 
 .clinical-history-hero p {
@@ -134,7 +134,7 @@
     min-height: 420px;
     flex: 1 1 auto;
     display: grid;
-    grid-template-columns: minmax(310px, .92fr) minmax(0, 1fr);
+    grid-template-columns: minmax(310px, 0.92fr) minmax(0, 1fr);
     gap: 12px;
 }
 
@@ -220,7 +220,7 @@
 .clinical-list-tools {
     margin: 8px 0 10px;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(120px, .55fr);
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 0.55fr);
     gap: 7px;
 }
 
@@ -715,7 +715,7 @@
     }
 
     .clinical-history-layout {
-        grid-template-columns: minmax(265px, .9fr) minmax(0, 1fr);
+        grid-template-columns: minmax(265px, 0.9fr) minmax(0, 1fr);
         gap: 9px;
     }
 
@@ -798,7 +798,7 @@
     .clinical-history-hero h2 {
         margin-bottom: 3px;
         font-size: 22px;
-        letter-spacing: -.5px;
+        letter-spacing: -0.5px;
         line-height: 1.15;
     }
 
@@ -887,7 +887,8 @@
         height: 32px;
         padding: 0;
         color: transparent;
-        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23073d72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16l-6.5 7.5v5l-3 1.5v-6.5L4 5Z'/%3E%3C/svg%3E") center / 18px no-repeat;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23073d72' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 5h16l-6.5 7.5v5l-3 1.5v-6.5L4 5Z'/%3E%3C/svg%3E")
+            center / 18px no-repeat;
         appearance: none;
     }
 

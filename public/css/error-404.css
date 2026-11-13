@@ -5,9 +5,16 @@
     --error-green: #36a96b;
 }
 
-* { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
-html, body { min-width: 320px; min-height: 100%; margin: 0; }
+html,
+body {
+    min-width: 320px;
+    min-height: 100%;
+    margin: 0;
+}
 
 .error-404-page {
     position: relative;
@@ -19,8 +26,7 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     color: var(--error-primary);
     background:
         radial-gradient(ellipse at 0 0, rgb(205 234 255 / 72%), transparent 31rem),
-        radial-gradient(ellipse at 100% 100%, rgb(207 247 236 / 70%), transparent 29rem),
-        #fff;
+        radial-gradient(ellipse at 100% 100%, rgb(207 247 236 / 70%), transparent 29rem), #fff;
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -32,7 +38,7 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     height: 115px;
     pointer-events: none;
     content: "";
-    opacity: .75;
+    opacity: 0.75;
 }
 
 .error-404-page:before {
@@ -67,11 +73,15 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     margin: 0 auto 20px;
 }
 
-.error-404-brand img { display: block; width: 100%; height: auto; }
+.error-404-brand img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
 
 .error-404-content {
     display: grid;
-    grid-template-columns: minmax(0, 1.12fr) minmax(400px, .88fr);
+    grid-template-columns: minmax(0, 1.12fr) minmax(400px, 0.88fr);
     align-items: center;
     gap: clamp(26px, 5vw, 76px);
 }
@@ -94,7 +104,10 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     filter: drop-shadow(0 16px 20px rgb(18 59 115 / 9%));
 }
 
-.error-404-copy { max-width: 540px; padding: 12px 0; }
+.error-404-copy {
+    max-width: 540px;
+    padding: 12px 0;
+}
 
 .error-404-eyebrow {
     display: inline-flex;
@@ -104,7 +117,7 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     color: #0878ba;
     font-size: 13px;
     font-weight: 800;
-    letter-spacing: .16em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
 }
 
@@ -122,7 +135,7 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     color: #104c91;
     font-size: clamp(37px, 4.4vw, 61px);
     font-weight: 800;
-    letter-spacing: -.045em;
+    letter-spacing: -0.045em;
     line-height: 1.04;
 }
 
@@ -134,7 +147,11 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     line-height: 1.58;
 }
 
-.error-404-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.error-404-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
 
 .error-404-button {
     display: inline-flex;
@@ -148,10 +165,15 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     font-size: 15px;
     font-weight: 750;
     text-decoration: none;
-    transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+    transition:
+        transform 140ms ease,
+        box-shadow 140ms ease,
+        background-color 140ms ease;
 }
 
-.error-404-button:hover { transform: translateY(-2px); }
+.error-404-button:hover {
+    transform: translateY(-2px);
+}
 
 .error-404-button svg,
 .error-404-support svg {
@@ -171,7 +193,10 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     box-shadow: 0 9px 19px rgb(18 84 143 / 20%);
 }
 
-.error-404-button-primary:hover { background: #064779; box-shadow: 0 12px 22px rgb(18 84 143 / 27%); }
+.error-404-button-primary:hover {
+    background: #064779;
+    box-shadow: 0 12px 22px rgb(18 84 143 / 27%);
+}
 
 .error-404-button-secondary {
     border-color: #80bfff;
@@ -179,7 +204,9 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     background: rgb(255 255 255 / 78%);
 }
 
-.error-404-button-secondary:hover { background: #eff8ff; }
+.error-404-button-secondary:hover {
+    background: #eff8ff;
+}
 
 .error-404-support {
     display: inline-flex;
@@ -193,7 +220,9 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     text-underline-offset: 4px;
 }
 
-.error-404-support:hover { color: #075395; }
+.error-404-support:hover {
+    color: #075395;
+}
 
 .error-404-footer {
     position: relative;
@@ -203,8 +232,14 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
     text-align: center;
 }
 
-.error-404-footer p { margin: 0; padding: 18px 12px; font-size: 13px; }
-.error-404-footer strong { color: var(--error-primary); }
+.error-404-footer p {
+    margin: 0;
+    padding: 18px 12px;
+    font-size: 13px;
+}
+.error-404-footer strong {
+    color: var(--error-primary);
+}
 
 .error-404-button:focus-visible,
 .error-404-support:focus-visible,
@@ -214,32 +249,102 @@ html, body { min-width: 320px; min-height: 100%; margin: 0; }
 }
 
 @media (max-width: 900px) {
-    .error-404-shell { width: min(100% - 36px, 720px); padding: 24px 0 30px; }
-    .error-404-brand { width: min(280px, 68vw); margin-bottom: 4px; }
-    .error-404-content { grid-template-columns: minmax(0, 1fr) minmax(310px, .9fr); gap: 18px; }
-    .error-404-art { min-height: 310px; }
-    .error-404-copy h1 { font-size: clamp(34px, 5vw, 48px); }
-    .error-404-description { margin: 14px 0 20px; font-size: 16px; }
-    .error-404-actions { gap: 9px; }
-    .error-404-button { min-height: 49px; padding: 0 13px; font-size: 13px; }
+    .error-404-shell {
+        width: min(100% - 36px, 720px);
+        padding: 24px 0 30px;
+    }
+    .error-404-brand {
+        width: min(280px, 68vw);
+        margin-bottom: 4px;
+    }
+    .error-404-content {
+        grid-template-columns: minmax(0, 1fr) minmax(310px, 0.9fr);
+        gap: 18px;
+    }
+    .error-404-art {
+        min-height: 310px;
+    }
+    .error-404-copy h1 {
+        font-size: clamp(34px, 5vw, 48px);
+    }
+    .error-404-description {
+        margin: 14px 0 20px;
+        font-size: 16px;
+    }
+    .error-404-actions {
+        gap: 9px;
+    }
+    .error-404-button {
+        min-height: 49px;
+        padding: 0 13px;
+        font-size: 13px;
+    }
 }
 
 @media (max-width: 650px) {
-    .error-404-shell { width: min(100% - 32px, 460px); justify-content: flex-start; padding: 22px 0 26px; }
-    .error-404-brand { width: min(225px, 64vw); margin-bottom: 8px; }
-    .error-404-content { grid-template-columns: 1fr; gap: 0; }
-    .error-404-art { width: 100%; min-height: 0; max-height: 305px; margin: -4px auto 0; }
-    .error-404-art img { width: min(100%, 420px); max-height: 295px; margin: 0 auto; }
-    .error-404-copy { padding: 4px 2px 10px; text-align: center; }
-    .error-404-eyebrow { margin-bottom: 9px; font-size: 11px; }
-    .error-404-copy h1 { font-size: clamp(34px, 9vw, 44px); }
-    .error-404-description { margin: 12px auto 19px; font-size: 15px; line-height: 1.5; }
-    .error-404-actions { display: grid; grid-template-columns: 1fr; gap: 9px; }
-    .error-404-button { width: 100%; min-height: 50px; font-size: 14px; }
-    .error-404-support { justify-content: center; margin-top: 19px; font-size: 12px; }
-    .error-404-footer p { padding: 14px 8px; font-size: 11px; }
+    .error-404-shell {
+        width: min(100% - 32px, 460px);
+        justify-content: flex-start;
+        padding: 22px 0 26px;
+    }
+    .error-404-brand {
+        width: min(225px, 64vw);
+        margin-bottom: 8px;
+    }
+    .error-404-content {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .error-404-art {
+        width: 100%;
+        min-height: 0;
+        max-height: 305px;
+        margin: -4px auto 0;
+    }
+    .error-404-art img {
+        width: min(100%, 420px);
+        max-height: 295px;
+        margin: 0 auto;
+    }
+    .error-404-copy {
+        padding: 4px 2px 10px;
+        text-align: center;
+    }
+    .error-404-eyebrow {
+        margin-bottom: 9px;
+        font-size: 11px;
+    }
+    .error-404-copy h1 {
+        font-size: clamp(34px, 9vw, 44px);
+    }
+    .error-404-description {
+        margin: 12px auto 19px;
+        font-size: 15px;
+        line-height: 1.5;
+    }
+    .error-404-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 9px;
+    }
+    .error-404-button {
+        width: 100%;
+        min-height: 50px;
+        font-size: 14px;
+    }
+    .error-404-support {
+        justify-content: center;
+        margin-top: 19px;
+        font-size: 12px;
+    }
+    .error-404-footer p {
+        padding: 14px 8px;
+        font-size: 11px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .error-404-button { transition-duration: .01ms; }
+    .error-404-button {
+        transition-duration: 0.01ms;
+    }
 }

@@ -2,7 +2,7 @@
 # Exclude installed dependencies and generated files.
 node_modules/
 coverage/
-public/css/
+public/css/app.css
 dist/
 
 # Exclude generated test reports.

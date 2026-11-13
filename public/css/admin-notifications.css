@@ -302,7 +302,10 @@
     background: linear-gradient(180deg, #fff, #f4f9ff);
     font-weight: 650;
     text-decoration: none;
-    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    transition:
+        background-color 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
 }
 
 .admin-notifications-settings:hover,
@@ -947,7 +950,9 @@
 }
 
 @keyframes admin-notifications-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 1100px) {

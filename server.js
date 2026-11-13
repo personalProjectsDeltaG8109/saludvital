@@ -1,6 +1,7 @@
 import app from "./app.js";
 import database from "./config/database.js";
 import environment from "./config/environment.js";
+import { startApplicationSchedulers } from "./src/shared/services/schedulerStartup.js";
 import {
     startNoShowAppointmentScheduler,
     stopNoShowAppointmentScheduler,
@@ -33,17 +34,17 @@ async function startServer() {
     const server = app.listen(environment.port, () => {
         console.log(`SaludVital server running at http://localhost:${environment.port}`);
 
-        // Start processing email jobs after the server starts.
-        startEmailOutboxScheduler();
-        // Remove expired unverified registrations while preserving linked records.
-        startUnverifiedRegistrationCleanupScheduler();
-        // Keep expired session rows bounded without running cleanup in test servers.
-        if (environment.nodeEnv !== "test") startSessionCleanupScheduler();
-        // Process appointment notifications only when explicitly enabled in the environment.
-        startNotificationScheduler();
-        startWhatsAppRetentionScheduler();
-        // Recover missed appointments at startup and continue on a bounded interval.
-        startNoShowAppointmentScheduler();
+        startApplicationSchedulers({
+            nodeEnv: environment.nodeEnv,
+            schedulers: [
+                startEmailOutboxScheduler,
+                startUnverifiedRegistrationCleanupScheduler,
+                startSessionCleanupScheduler,
+                startNotificationScheduler,
+                startWhatsAppRetentionScheduler,
+                startNoShowAppointmentScheduler,
+            ],
+        });
     });
 
     // Handle graceful shutdown requests from the operating system.

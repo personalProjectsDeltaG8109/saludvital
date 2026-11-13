@@ -39,7 +39,7 @@
 }
 
 .sv-public-footer__copyright strong {
-    color: #123B73;
+    color: #123b73;
     font-weight: 700;
 }
 
@@ -54,7 +54,7 @@
 .sv-public-footer__link {
     position: relative;
     padding: 0 28px;
-    color: #123B73;
+    color: #123b73;
     font-size: 14px;
     font-weight: 500;
     text-decoration: none;
@@ -64,7 +64,7 @@
 
 .sv-public-footer__link:hover,
 .sv-public-footer__link:focus-visible {
-    color: #168DE2;
+    color: #168de2;
 }
 
 .sv-public-footer__link + .sv-public-footer__link::before {
@@ -80,7 +80,7 @@
 
 .sv-public-footer__tagline {
     justify-self: end;
-    color: #123B73;
+    color: #123b73;
     font-size: 14px;
     white-space: nowrap;
 }
@@ -89,14 +89,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #13B8B0;
+    color: #13b8b0;
     font-size: 22px;
     line-height: 1;
 }
 
 .sv-public-footer__tagline strong {
     font-weight: 700;
-    color: #123B73;
+    color: #123b73;
 }
 
 /* Tablet */
