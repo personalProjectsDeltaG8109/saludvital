@@ -41,7 +41,7 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
             class="text-[#123B73]"
         )
             span.h-2.w-2.rounded-full(class="bg-[#13B8B0]")
-            | Versión 1.0 · 11 de noviembre de 2026
+            | Versión 1.1 · 13 de noviembre de 2026
 
         //- Section 1
         section#about.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
@@ -72,7 +72,7 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
             p.mb-6.leading-7.text-slate-600 Dependiendo de las funcionalidades utilizadas, el aplicativo puede tratar las siguientes categorías de información:
 
             .grid.gap-4(class="sm:grid-cols-2 xl:grid-cols-4")
-                - const dataCards = [{icon:"👤",title:"Datos personales",description:"Nombre, documento, fecha de nacimiento y ubicación."},{icon:"✉",title:"Datos de contacto",description:"Correo electrónico y número de celular."},{icon:"📅",title:"Datos de citas",description:"Especialidad, médico, horarios y estados."},{icon:"✚",title:"Información clínica",description:"Consultas, diagnósticos y registros ficticios."}]
+                - const dataCards = [{icon:"👤",title:"Datos de cuenta y contacto",description:"Nombre, documento, fecha de nacimiento, correo, teléfono, ubicación y datos de acceso."},{icon:"📷",title:"Perfil y contactos",description:"Foto de perfil y, si se registra, nombre y teléfono de un contacto de emergencia."},{icon:"📅",title:"Citas y avisos",description:"Médico, especialidad, horario, estado, preferencias de aviso y datos necesarios para entregar notificaciones."},{icon:"✚",title:"Información de salud",description:"Datos opcionales del perfil y de las consultas, como alergias, síntomas, signos vitales, diagnósticos, notas y órdenes."}]
 
                 each card in dataCards
                     .rounded-xl.border.border-slate-200.p-4(class="bg-[#F7FBFD]")
@@ -112,10 +112,10 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
                 ) 04
                 h2.text-2xl.font-extrabold(class="text-[#123B73]") Información sensible
 
-            p.leading-7.text-slate-600 Los datos relacionados con la salud son considerados información sensible conforme a la legislación colombiana. SaludVital está diseñado para demostraciones académicas con datos ficticios.
+            p.leading-7.text-slate-600 La plataforma permite registrar datos opcionales relacionados con la salud y notas de consulta. Para las pruebas académicas, usa información clínica ficticia: no ingreses diagnósticos, historias clínicas ni otros datos médicos reales.
 
             .mt-5.rounded-xl.border.border-amber-200.bg-amber-50.p-4
-                p.text-sm.font-medium.leading-6.text-amber-900 No ingreses historias clínicas reales, diagnósticos personales ni información médica sensible en el entorno de demostración.
+                p.text-sm.font-medium.leading-6.text-amber-900 Puedes usar tus propios datos de identificación y contacto en pruebas autorizadas. No ingreses datos personales de terceros ni información médica real.
 
         //- Section 5
         section#security.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
@@ -147,15 +147,15 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
                 ) 06
                 h2.text-2xl.font-extrabold(class="text-[#123B73]") Servicios externos
 
-            p.leading-7.text-slate-600 SaludVital utiliza MySQL para gestionar su información y puede emplear servicios tecnológicos externos según la configuración del entorno.
+            p.leading-7.text-slate-600 MySQL almacena la información de la aplicación. Cuando el entorno y el envío de notificaciones están habilitados, los datos necesarios para entregar un mensaje se envían al proveedor del canal seleccionado. Que exista una integración en el código no significa que esté conectada o activa.
 
             ul.mt-5.grid.gap-3(class="sm:grid-cols-2")
-                each provider in ["Railway: alojamiento y base de datos.", "Resend: correos electrónicos.", "Inalámbria Express: mensajes SMS.", "Meta WhatsApp: comunicaciones por WhatsApp."]
+                each provider in ["Railway: alojamiento y base de datos, cuando se usa para desplegar el proyecto.", "Resend: verificación de cuenta, recuperación de acceso y notificaciones por correo, cuando está habilitado.", "Inalámbria Express: envío de SMS, cuando está habilitado.", "Meta WhatsApp Cloud API: mensajes de WhatsApp, cuando está habilitada."]
                     li.rounded-xl.border.border-slate-200.px-4.py-3.text-sm.text-slate-700(
                         class="bg-[#F7FBFD]"
                     )= provider
 
-            p.mt-4.text-sm.text-slate-500 La disponibilidad de cada integración depende de su configuración y habilitación.
+            p.mt-4.text-sm.text-slate-500 El proveedor seleccionado recibe el destino y el contenido necesarios para entregar el mensaje. La disponibilidad depende de la configuración del entorno; este sitio no confirma la conexión ni publica las políticas de conservación propias de cada proveedor.
 
         //- Section 7
         section#rights.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
@@ -167,7 +167,7 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
                 ) 07
                 h2.text-2xl.font-extrabold(class="text-[#123B73]") Derechos de los usuarios
 
-            p.mb-5.leading-7.text-slate-600 Los titulares de datos personales cuentan con derechos reconocidos por la legislación colombiana.
+            p.mb-5.leading-7.text-slate-600 Puedes consultar, actualizar o corregir tus datos, preguntar por su uso y presentar una solicitud de supresión cuando corresponda. Para hacerlo, escribe al correo de privacidad que aparece en la sección “Responsable y contacto”. No incluyas contraseñas ni información clínica en el mensaje.
 
             - const rights = ["Conocer sus datos personales.", "Solicitar la actualización de información.", "Solicitar la corrección de datos incorrectos.", "Consultar el uso de su información.", "Solicitar la supresión cuando proceda legalmente.", "Presentar consultas y reclamos sobre el tratamiento de datos."];
 
@@ -187,7 +187,11 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
                 ) 08
                 h2.text-2xl.font-extrabold(class="text-[#123B73]") Conservación de información
 
-            p.leading-7.text-slate-600 Los datos se conservarán durante el tiempo necesario para las finalidades autorizadas y las obligaciones legales aplicables. Los registros ficticios de demostración podrán eliminarse durante las pruebas y el mantenimiento del proyecto.
+            .space-y-4.text-sm.leading-7.text-slate-600
+                p Las cuentas de pacientes que sigan sin verificar pueden eliminarse después de 30 minutos si no tienen historial protegido asociado. Ese plazo es el valor predeterminado y puede aumentarse en la configuración del servidor. El proceso revisa los registros periódicamente; por eso la eliminación puede ocurrir en la siguiente revisión y no exactamente al cumplirse el minuto 30.
+                p El contenido de los mensajes de WhatsApp se elimina del registro cuando vence su plazo de conservación. Ese plazo se configura en el servidor, es de 30 días por defecto y no puede superar 30 días. La limpieza conserva el registro de la conversación y otros metadatos necesarios; no equivale a borrar todo el historial.
+                p Desactivar la cuenta de un paciente desde su perfil no elimina automáticamente sus citas, consultas, notificaciones ni registros relacionados. La aplicación no define un plazo automático general para borrar esos historiales ni procesa solicitudes de supresión desde la página. Para presentar una solicitud, escribe al correo de privacidad; no se ofrece un plazo de respuesta automática.
+                p Los proveedores externos pueden tener sus propios plazos de conservación; estos no se determinan desde el código de SaludVital y deben consultarse en las condiciones del proveedor correspondiente.
 
         //- Section 9
         section#academic.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
@@ -201,7 +205,7 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
 
             .rounded-xl.border.border-blue-100.bg-blue-50.p-5
                 h3.mb-2.text-lg.font-bold(class="text-[#123B73]") Proyecto educativo SENA
-                p.text-sm.leading-7.text-slate-700 SaludVital se desarrolla con fines de aprendizaje y demostración. Los pacientes, médicos, citas y registros clínicos utilizados en las presentaciones deben ser ficticios. La plataforma no presta servicios médicos reales ni está destinada a emergencias.
+                p.text-sm.leading-7.text-slate-700 SaludVital es un proyecto académico y de demostración, no una clínica ni un servicio de atención médica. Los ejemplos precargados son sintéticos. En pruebas autorizadas puedes usar tus propios datos de identificación y contacto; utiliza siempre datos clínicos ficticios y no registres información de otras personas. La plataforma no está destinada a emergencias.
 
         //- Section 10
         section#updates.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
