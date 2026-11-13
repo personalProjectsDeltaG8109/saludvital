@@ -59,6 +59,8 @@ const appointmentActivityLabels = {
     Cancelled: "Cita cancelada",
 };
 
+const reminderResultStatuses = ["Sent", "Failed", "OutcomeUnknown"];
+
 function validateNotificationContacts(contacts = {}) {
     const smsPhone =
         typeof contacts.smsPhone === "string"
@@ -114,14 +116,15 @@ function toHistoryItem(notification) {
         channel: channelLabels[notification.channel] || notification.channel,
         channelKey: notification.channel,
         status: notification.status,
-        statusLabel: getDeliveryStatusLabel(notification.status),
+        statusLabel: getDeliveryStatusLabel(notification.status, notification.attempt_count),
         date: notification.sent_at || notification.scheduled_at,
         readAt: notification.read_at,
         details: historyDetails[eventKey] || "Tienes una actualización de SaludVital.",
     };
 }
 
-function getDeliveryStatusLabel(status) {
+function getDeliveryStatusLabel(status, attemptCount = 0) {
+    if (status === "Pending" && attemptCount > 0) return "Pendiente de reintento";
     const labels = {
         Pending: "Pendiente",
         Processing: "En proceso",
@@ -243,9 +246,28 @@ async function countUnreadAppointmentActivity(patientId) {
     });
 }
 
+function getPatientVisibleNotificationWhere(patientId) {
+    // Queue-only reminders stay private until the worker records a processing attempt.
+    return {
+        patient_id: patientId,
+        [Op.or]: [
+            { event_type: { [Op.ne]: "appointment_reminder" } },
+            {
+                event_type: "appointment_reminder",
+                [Op.or]: [
+                    { status: { [Op.in]: reminderResultStatuses } },
+                    { status: "Pending", attempt_count: { [Op.gt]: 0 } },
+                ],
+            },
+        ],
+    };
+}
+
 async function getUnreadCountByPatientId(patientId) {
     const [deliveryCount, appointmentActivityCount] = await Promise.all([
-        Notification.count({ where: { patient_id: patientId, read_at: null } }),
+        Notification.count({
+            where: { ...getPatientVisibleNotificationWhere(patientId), read_at: null },
+        }),
         countUnreadAppointmentActivity(patientId),
     ]);
     return deliveryCount + appointmentActivityCount;
@@ -278,7 +300,7 @@ export async function getPatientNotificationSettings(userId) {
     const [storedPreferences, notifications, appointmentActivity] = await Promise.all([
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
         Notification.findAll({
-            where: { patient_id: patient.id },
+            where: getPatientVisibleNotificationWhere(patient.id),
             attributes: [
                 "id",
                 "event_type",
@@ -287,6 +309,7 @@ export async function getPatientNotificationSettings(userId) {
                 "scheduled_at",
                 "sent_at",
                 "read_at",
+                "attempt_count",
             ],
             order: [["scheduled_at", "DESC"]],
         }),
@@ -498,7 +521,7 @@ export async function markPatientNotificationEntriesAsRead(
             { read_at: new Date() },
             {
                 where: {
-                    patient_id: patient.id,
+                    ...getPatientVisibleNotificationWhere(patient.id),
                     id: { [Op.in]: notificationIds },
                     read_at: null,
                 },
@@ -548,7 +571,10 @@ export async function markAllPatientNotificationEntriesAsRead(userId) {
     await database.transaction(async (transaction) => {
         await Notification.update(
             { read_at: readAt },
-            { where: { patient_id: patient.id, read_at: null }, transaction },
+            {
+                where: { ...getPatientVisibleNotificationWhere(patient.id), read_at: null },
+                transaction,
+            },
         );
         await database.query(
             `INSERT IGNORE INTO patient_appointment_history_reads

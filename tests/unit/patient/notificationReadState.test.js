@@ -32,6 +32,19 @@ const {
     getPatientAppointmentActivityDetails,
 } = await import("../../../src/modules/patient/services/notificationService.js");
 
+function expectReminderVisibilityFilter(where) {
+    expect(where[Op.or]).toEqual([
+        { event_type: { [Op.ne]: "appointment_reminder" } },
+        {
+            event_type: "appointment_reminder",
+            [Op.or]: [
+                { status: { [Op.in]: ["Sent", "Failed", "OutcomeUnknown"] } },
+                { status: "Pending", attempt_count: { [Op.gt]: 0 } },
+            ],
+        },
+    ]);
+}
+
 describe("patient notification read state", () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -58,9 +71,9 @@ describe("patient notification read state", () => {
             where: { user_id: 91 },
             attributes: ["id"],
         });
-        expect(Notification.count).toHaveBeenCalledWith({
-            where: { patient_id: 17, read_at: null },
-        });
+        const unreadQuery = Notification.count.mock.calls[0][0];
+        expect(unreadQuery.where).toMatchObject({ patient_id: 17, read_at: null });
+        expectReminderVisibilityFilter(unreadQuery.where);
     });
 
     test("adds unread appointment events to the provider notification badge count", async () => {
@@ -157,8 +170,9 @@ describe("patient notification read state", () => {
             ]);
             expect(JSON.stringify(result.history)).not.toContain("private");
             expect(Notification.findAll).toHaveBeenCalledWith(
-                expect.objectContaining({ where: { patient_id: 17 } }),
+                expect.objectContaining({ where: expect.objectContaining({ patient_id: 17 }) }),
             );
+            expectReminderVisibilityFilter(Notification.findAll.mock.calls[0][0].where);
         },
     );
 
@@ -228,19 +242,9 @@ describe("patient notification read state", () => {
         );
     });
 
-    test("leaves notification and appointment activity unread until explicitly opened or marked", async () => {
+    test("keeps appointment activity unread without adding unprocessed reminder jobs", async () => {
         NotificationPreference.findAll.mockResolvedValue([]);
-        Notification.findAll.mockResolvedValue([
-            {
-                id: 71,
-                event_type: "appointment_reminder",
-                channel: "SMS",
-                status: "Pending",
-                scheduled_at: new Date("2026-11-02T15:00:00.000Z"),
-                sent_at: null,
-                read_at: null,
-            },
-        ]);
+        Notification.findAll.mockResolvedValue([]);
         AppointmentHistory.findAll.mockResolvedValue([
             {
                 id: 72,
@@ -253,9 +257,44 @@ describe("patient notification read state", () => {
 
         const result = await getPatientNotificationSettings(91);
 
-        expect(result.history.map((item) => item.id)).toEqual(["appointment-72", 71]);
+        expect(result.history.map((item) => item.id)).toEqual(["appointment-72"]);
         expect(result.history[0].readAt).toBeNull();
         expect(Notification.update).not.toHaveBeenCalled();
+    });
+
+    test("includes a reminder after a processing attempt and labels a queued retry accurately", async () => {
+        Notification.findAll.mockResolvedValue([
+            {
+                id: 73,
+                event_type: "appointment_reminder",
+                channel: "SMS",
+                status: "Pending",
+                attempt_count: 1,
+                scheduled_at: new Date("2026-11-02T15:00:00.000Z"),
+                sent_at: null,
+                read_at: null,
+            },
+        ]);
+
+        const result = await getPatientNotificationSettings(91);
+
+        expect(result.history).toEqual([
+            expect.objectContaining({ id: 73, statusLabel: "Pendiente de reintento" }),
+        ]);
+        expect(Notification.findAll.mock.calls[0][0].attributes).toContain("attempt_count");
+        expectReminderVisibilityFilter(Notification.findAll.mock.calls[0][0].where);
+    });
+
+    test("restricts individual read updates to patient-visible notification records", async () => {
+        await markPatientNotificationEntriesAsRead(91, [73], []);
+
+        const updateWhere = Notification.update.mock.calls[0][1].where;
+        expect(updateWhere).toMatchObject({
+            patient_id: 17,
+            id: { [Op.in]: [73] },
+            read_at: null,
+        });
+        expectReminderVisibilityFilter(updateWhere);
     });
 
     test("marks owned appointment activity as read and returns the combined unread count", async () => {
@@ -282,10 +321,11 @@ describe("patient notification read state", () => {
             expect.stringContaining("INSERT IGNORE INTO patient_appointment_history_reads"),
             expect.objectContaining({ replacements: expect.objectContaining({ patientId: 17 }) }),
         );
-        expect(Notification.update).toHaveBeenCalledWith(
-            { read_at: expect.any(Date) },
-            expect.objectContaining({ where: { patient_id: 17, read_at: null }, transaction: {} }),
-        );
+        const notificationUpdate = Notification.update.mock.calls[0];
+        expect(notificationUpdate[0]).toEqual({ read_at: expect.any(Date) });
+        expect(notificationUpdate[1].where).toMatchObject({ patient_id: 17, read_at: null });
+        expect(notificationUpdate[1].transaction).toEqual({});
+        expectReminderVisibilityFilter(notificationUpdate[1].where);
     });
 
     test("returns appointment details using the event's actual doctor and safe photo path", async () => {
