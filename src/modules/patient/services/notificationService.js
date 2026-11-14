@@ -31,12 +31,6 @@ export const notificationEvents = [
     },
 ];
 
-const channelLabels = {
-    WhatsApp: "WhatsApp",
-    SMS: "SMS",
-    Email: "Correo electrónico",
-};
-
 const historyDetails = {
     appointment_confirmation: "Tu cita fue confirmada.",
     appointment_reminder: "Recuerda tu próxima cita médica.",
@@ -113,27 +107,10 @@ function toHistoryItem(notification) {
         eventKey,
         eventLabel:
             historyEventLabels[eventKey] || String(notification.event_type).replaceAll("_", " "),
-        channel: channelLabels[notification.channel] || notification.channel,
-        channelKey: notification.channel,
-        status: notification.status,
-        statusLabel: getDeliveryStatusLabel(notification.status, notification.attempt_count),
         date: notification.sent_at || notification.scheduled_at,
         readAt: notification.read_at,
         details: historyDetails[eventKey] || "Tienes una actualización de SaludVital.",
     };
-}
-
-function getDeliveryStatusLabel(status, attemptCount = 0) {
-    if (status === "Pending" && attemptCount > 0) return "Pendiente de reintento";
-    const labels = {
-        Pending: "Pendiente",
-        Processing: "En proceso",
-        Sent: "Aceptado por el proveedor",
-        Failed: "Fallido",
-        Cancelled: "Cancelado",
-        OutcomeUnknown: "En verificación",
-    };
-    return labels[status] || "Estado no disponible";
 }
 
 function getAppointmentStartAt(historyRecord) {
@@ -185,9 +162,6 @@ function toAppointmentActivityItem(historyRecord) {
         appointmentHistoryId: historyRecord.id,
         isInAppActivity: true,
         eventLabel: appointmentActivityLabels[historyRecord.event_type],
-        channel: "En SaludVital",
-        channelKey: "System",
-        statusLabel: "Registrada",
         date: occurredAt,
         readAt: historyRecord.patientReadReceipts?.[0]?.read_at || null,
         details: details[historyRecord.event_type],

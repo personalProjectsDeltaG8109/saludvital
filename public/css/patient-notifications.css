@@ -571,9 +571,6 @@
 .notifications-history-table thead th:first-child {
     width: 118px;
 }
-.notifications-history-table thead th:nth-child(3) {
-    width: 150px;
-}
 .notifications-history-table thead th:last-child {
     width: 36px;
 }
@@ -673,64 +670,6 @@
 .notifications-history-table tbody tr.is-unread .notifications-history-time::before {
     border-color: #0aa56b;
     background: #e2f7ed;
-}
-.notifications-history-channel {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-}
-.notifications-history-channel img {
-    width: 16px;
-    height: 16px;
-}
-.notifications-history-channel.is-whatsapp {
-    color: #06a976;
-}
-.notifications-history-channel.is-sms {
-    color: #078bed;
-}
-.notifications-history-channel.is-email {
-    color: #794de0;
-}
-.notifications-history-channel.is-system {
-    color: #168de2;
-}
-.notifications-history-channel.is-system svg {
-    width: 16px;
-    height: 16px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-.notifications-delivery-status {
-    width: fit-content;
-    padding: 5px 9px;
-    display: block;
-    border-radius: 7px;
-    color: #078357;
-    background: #dcf8eb;
-    font-size: 9px;
-    white-space: nowrap;
-}
-.notifications-delivery-status.is-registered {
-    color: #075db8;
-    background: #e6f2ff;
-}
-.notifications-delivery-status.is-failed {
-    color: #bd3344;
-    background: #ffeaec;
-}
-.notifications-delivery-status.is-pending,
-.notifications-delivery-status.is-processing {
-    color: #8a6300;
-    background: #fff4d1;
-}
-.notifications-delivery-status.is-cancelled {
-    color: #64758b;
-    background: #edf1f5;
 }
 .notifications-history-empty {
     min-height: 150px;
@@ -878,6 +817,25 @@
     margin: 0;
     color: #536b8c;
     font-size: 13px;
+}
+.notifications-appointment-message {
+    margin: 2px 0 15px;
+    padding: 13px 14px;
+    border-left: 3px solid #08aa99;
+    border-radius: 8px;
+    background: #f0faf8;
+}
+.notifications-appointment-message span {
+    display: block;
+    margin-bottom: 3px;
+    color: #536b8c;
+    font-size: 11px;
+}
+.notifications-appointment-message p {
+    margin: 0;
+    color: #264c77;
+    font-size: 13px;
+    line-height: 1.5;
 }
 .notifications-appointment-facts {
     margin: 0;
@@ -1236,9 +1194,6 @@
         background: #e2f7ed;
     }
     .notifications-history-table tr[data-history-row] td:nth-child(3) {
-        display: none;
-    }
-    .notifications-history-table tr[data-history-row] td:nth-child(4) {
         grid-column: 3;
         grid-row: 1 / span 2;
         align-self: center;
