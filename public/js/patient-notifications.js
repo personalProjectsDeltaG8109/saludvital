@@ -272,9 +272,16 @@
             schedule: appointmentDetailsDialog.querySelector("[data-appointment-schedule]"),
             appointmentStatus: appointmentDetailsDialog.querySelector("[data-appointment-status]"),
             occurredAt: appointmentDetailsDialog.querySelector("[data-appointment-occurred-at]"),
-            channel: appointmentDetailsDialog.querySelector("[data-appointment-channel]"),
             message: appointmentDetailsDialog.querySelector("[data-appointment-message]"),
         };
+        const factRows = Object.fromEntries(
+            [...appointmentDetailsDialog.querySelectorAll("[data-appointment-fact]")].map(
+                (fact) => [fact.dataset.appointmentFact, fact],
+            ),
+        );
+        const occurredAtLabel = appointmentDetailsDialog.querySelector(
+            "[data-appointment-occurred-label]",
+        );
 
         status.textContent = "Cargando el detalle de la cita…";
         title.textContent =
@@ -285,15 +292,17 @@
         photo.removeAttribute("src");
         photoPlaceholder.hidden = false;
         Object.values(fields).forEach((field) => (field.textContent = "—"));
+        Object.values(factRows).forEach((fact) => (fact.hidden = false));
+        occurredAtLabel.textContent = "Fecha del aviso";
         appointmentDetailsDialog.showModal();
 
         if (row.dataset.inAppActivity !== "true") {
-            doctorName.textContent = "Notificación recibida";
-            fields.specialty.textContent = "—";
-            fields.schedule.textContent = "—";
-            fields.appointmentStatus.textContent = row.dataset.historyStatus || "—";
+            doctorName.textContent = "Actualización de SaludVital";
+            photoPlaceholder.hidden = true;
+            factRows.specialty.hidden = true;
+            factRows.schedule.hidden = true;
+            factRows.status.hidden = true;
             fields.occurredAt.textContent = formatDate(row.dataset.historyDate);
-            fields.channel.textContent = row.dataset.historyChannel || "—";
             fields.message.textContent = row.dataset.historyDetails || "—";
             status.textContent = "Detalle cargado.";
             if (row.classList.contains("is-unread")) await markRowsAsRead([row]);
@@ -302,7 +311,7 @@
 
         doctorName.textContent = "Cargando información del médico…";
         fields.message.textContent = row.dataset.historyDetails || "—";
-        fields.channel.textContent = row.dataset.historyChannel || "En SaludVital";
+        occurredAtLabel.textContent = "Actividad registrada";
         try {
             const response = await fetch(
                 `/api/patient/notifications/appointment-activity/${historyId}`,
@@ -385,7 +394,7 @@
                 heading.className = "notifications-history-day-heading";
                 heading.dataset.historyDayHeading = "true";
                 const label = document.createElement("th");
-                label.colSpan = 4;
+                label.colSpan = 3;
                 label.scope = "colgroup";
                 label.textContent = day;
                 heading.append(label);

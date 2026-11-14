@@ -193,7 +193,7 @@ html(lang="es")
                         .notifications-history-heading
                             .notifications-section-heading
                                 h2#history-heading Historial de notificaciones
-                                p Consulta los cambios de tus citas y los avisos recibidos, agrupados por fecha.
+                                p Consulta los cambios de tus citas y los avisos que has recibido.
                             span.notifications-history-count(data-history-count)
                             button.notifications-mark-all(type="button", data-mark-all-read) Marcar todas como leídas
                         if history.length
@@ -201,9 +201,8 @@ html(lang="es")
                                 table.notifications-history-table
                                     thead
                                         tr
-                                            th Hora
+                                            th Fecha y hora
                                             th Actividad
-                                            th Estado
                                             th(aria-label="Abrir detalle")
                                     tbody
                                         - let previousHistoryDay = null;
@@ -213,7 +212,7 @@ html(lang="es")
                                                 tr.notifications-history-day-heading(
                                                     data-history-day-heading
                                                 )
-                                                    th(colspan="4", scope="colgroup")= historyDay
+                                                    th(colspan="3", scope="colgroup")= historyDay
                                                 - previousHistoryDay = historyDay;
                                             tr(
                                                 class=notification.readAt ? "" : "is-unread",
@@ -224,8 +223,6 @@ html(lang="es")
                                                 data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
                                                 data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined,
                                                 data-history-details=notification.details,
-                                                data-history-channel=notification.channel,
-                                                data-history-status=notification.statusLabel,
                                                 data-history-date=notification.date.toISOString(),
                                                 data-history-day=historyDay
                                             )
@@ -239,14 +236,10 @@ html(lang="es")
                                                         if !notification.readAt
                                                             span.notifications-unread-label Nueva
                                                     span.notifications-history-summary= notification.details
-                                                td(data-label="Estado")
-                                                    span(
-                                                        class=`notifications-delivery-status is-${notification.status ? notification.status.toLowerCase() : "registered"}`
-                                                    )= notification.statusLabel
                                                 td.notifications-history-open(aria-hidden="true") ›
                                     tfoot
                                         tr
-                                            td(colspan="4")
+                                            td(colspan="3")
                                                 nav.notifications-history-pagination(
                                                     aria-label="Páginas del historial",
                                                     data-history-pagination,
@@ -273,7 +266,7 @@ html(lang="es")
                             .notifications-history-empty
                                 span.notifications-empty-icon(aria-hidden="true") ♧
                                 strong Aún no tienes notificaciones
-                                p Aquí aparecerán las citas creadas, reprogramadas o canceladas, junto con los avisos de tus canales.
+                                p Aquí aparecerán las citas creadas, reprogramadas o canceladas y sus avisos importantes.
                         p.notifications-read-status(
                             role="status",
                             aria-live="polite",
@@ -282,7 +275,7 @@ html(lang="es")
                     dialog.notifications-appointment-dialog(
                         data-appointment-details-dialog,
                         aria-labelledby="appointment-details-title",
-                        aria-describedby="appointment-details-status"
+                        aria-describedby="appointment-details-message appointment-details-status"
                     )
                         button.notifications-appointment-dialog-close(
                             type="button",
@@ -298,25 +291,22 @@ html(lang="es")
                             div
                                 h2#appointment-details-title(data-appointment-details-title) Detalle de la cita
                                 p(data-appointment-doctor-name) Cargando información…
+                        .notifications-appointment-message
+                            span Mensaje
+                            p#appointment-details-message(data-appointment-message) —
                         dl.notifications-appointment-facts
-                            div
+                            div(data-appointment-fact="specialty", hidden)
                                 dt Especialidad
                                 dd(data-appointment-specialty) —
-                            div
+                            div(data-appointment-fact="schedule", hidden)
                                 dt Fecha y hora de la cita
                                 dd(data-appointment-schedule) —
-                            div
-                                dt Estado
+                            div(data-appointment-fact="status", hidden)
+                                dt Estado de la cita
                                 dd(data-appointment-status) —
-                            div
-                                dt Actividad registrada
+                            div(data-appointment-fact="occurred-at")
+                                dt(data-appointment-occurred-label) Fecha del aviso
                                 dd(data-appointment-occurred-at) —
-                            div
-                                dt Canal
-                                dd(data-appointment-channel) —
-                            div
-                                dt Mensaje
-                                dd(data-appointment-message) —
                         p#appointment-details-status.notifications-appointment-detail-status(
                             role="status",
                             aria-live="polite",
