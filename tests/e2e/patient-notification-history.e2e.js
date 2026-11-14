@@ -16,6 +16,12 @@ try {
     const context = await browser.newContext({ viewport: { width: 1365, height: 900 } });
     const page = await context.newPage();
     page.on("pageerror", (error) => console.error(error));
+    const doctorPhoto = await readFile(
+        path.resolve("public/brand/patient/doctor-test-profile.png"),
+    );
+    await page.route("http://127.0.0.1:3000/uploads/doctor.png", (route) =>
+        route.fulfill({ status: 200, contentType: "image/png", body: doctorPhoto }),
+    );
     await page.setContent(`
         <!doctype html><html lang="es"><head><title>Historial de notificaciones</title></head>
         <body class="sv-dashboard notifications-page"><a class="sv-bell" href="#" aria-label="Notificaciones" data-notification-count-url="/api/patient/notifications/unread-count"><span class="sv-notification-count">24</span></a>
@@ -29,7 +35,7 @@ try {
         </section>
         <section class="notifications-card notifications-history" aria-labelledby="history-heading"><div class="notifications-history-heading"><div class="notifications-section-heading"><h2 id="history-heading">Historial de notificaciones</h2><p>Consulta los cambios de tus citas y los avisos recibidos, agrupados por fecha.</p></div>
             <span class="notifications-history-count" data-history-count></span><button class="notifications-mark-all" data-mark-all-read>Marcar todas como leídas</button></div>
-            <div class="notifications-history-table-wrap"><table class="notifications-history-table"><thead><tr><th>Hora</th><th>Actividad</th><th>Estado</th><th aria-label="Abrir detalle"></th></tr></thead><tbody>
+            <div class="notifications-history-table-wrap"><table class="notifications-history-table"><thead><tr><th>Fecha y hora</th><th>Actividad</th><th aria-label="Abrir detalle"></th></tr></thead><tbody>
             ${Array.from({ length: 24 }, (_, index) => {
                 const appointment = index === 0;
                 const date = new Date(Date.UTC(2026, 10, 9 - Math.floor(index / 3), 15));
@@ -46,14 +52,15 @@ try {
                     minute: "2-digit",
                     timeZone: "America/Bogota",
                 });
-                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}, ${day}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-channel="${appointment ? "En SaludVital" : "Correo electrónico"}" data-history-status="${appointment ? "Registrada" : "Enviado"}" data-history-date="${dateIso}" data-history-day="${day}"><td class="notifications-history-time"><time datetime="${dateIso}">${time}</time></td><td class="notifications-history-content"><span class="notifications-history-title"><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-unread-label">Nueva</span></span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td><span class="notifications-delivery-status">${appointment ? "Registrada" : "Enviado"}</span></td><td class="notifications-history-open" aria-hidden="true">›</td></tr>`;
+                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}, ${day}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-date="${dateIso}" data-history-day="${day}"><td class="notifications-history-time"><time datetime="${dateIso}">${time}</time></td><td class="notifications-history-content"><span class="notifications-history-title"><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-unread-label">Nueva</span></span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td class="notifications-history-open" aria-hidden="true">›</td></tr>`;
             }).join("")}
             </tbody><tfoot><tr><td colspan="4"><nav class="notifications-history-pagination" aria-label="Páginas del historial" data-history-pagination hidden><span role="status" aria-live="polite" data-history-page-summary></span><div class="notifications-history-page-controls"><button type="button" data-history-previous aria-label="Página anterior">‹</button><span data-history-page-number></span><button type="button" data-history-next aria-label="Página siguiente">›</button></div></nav></td></tr></tfoot></table></div>
             <p data-notification-read-status role="status" aria-live="polite"></p>
         </section></main>
-        <dialog class="notifications-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-status">
+        <dialog class="notifications-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-message appointment-details-status">
             <button class="notifications-appointment-dialog-close" data-close-appointment-details aria-label="Cerrar detalle">×</button><div class="notifications-appointment-doctor"><img data-appointment-doctor-photo alt="" hidden><span class="notifications-doctor-placeholder" data-appointment-doctor-placeholder>SV</span><div><h2 data-appointment-details-title></h2><p data-appointment-doctor-name></p></div></div>
-            <dl class="notifications-appointment-facts"><div><dt>Especialidad</dt><dd data-appointment-specialty></dd></div><div><dt>Fecha y hora de la cita</dt><dd data-appointment-schedule></dd></div><div><dt>Estado</dt><dd data-appointment-status></dd></div><div><dt>Actividad registrada</dt><dd data-appointment-occurred-at></dd></div><div><dt>Canal</dt><dd data-appointment-channel></dd></div><div><dt>Mensaje</dt><dd data-appointment-message></dd></div></dl>
+            <div class="notifications-appointment-message"><span>Mensaje</span><p id="appointment-details-message" data-appointment-message></p></div>
+            <dl class="notifications-appointment-facts"><div data-appointment-fact="specialty" hidden><dt>Especialidad</dt><dd data-appointment-specialty></dd></div><div data-appointment-fact="schedule" hidden><dt>Fecha y hora de la cita</dt><dd data-appointment-schedule></dd></div><div data-appointment-fact="status" hidden><dt>Estado de la cita</dt><dd data-appointment-status></dd></div><div data-appointment-fact="occurred-at"><dt data-appointment-occurred-label>Fecha del aviso</dt><dd data-appointment-occurred-at></dd></div></dl>
             <p class="notifications-appointment-detail-status" data-appointment-details-status role="status" aria-live="polite"></p>
         </dialog></main></body></html>`);
     await page.evaluate(() => {
@@ -64,7 +71,10 @@ try {
                         success: true,
                         data: {
                             eventLabel: "Cita creada y confirmada",
-                            doctor: { name: "Dra. Ejemplo", photoUrl: "/uploads/doctor.png" },
+                            doctor: {
+                                name: "Dra. Ejemplo",
+                                photoUrl: "http://127.0.0.1:3000/uploads/doctor.png",
+                            },
                             specialty: "Medicina general",
                             appointmentStartAt: "2026-11-12T15:00:00.000Z",
                             appointmentStatus: "Confirmada",
@@ -121,23 +131,38 @@ try {
         throw new Error("A separate detail button was still shown in the history list.");
     }
     await page.locator("[data-history-row]").nth(1).click();
-    await page.getByText("Notificación recibida").waitFor();
+    await page.getByText("Actualización de SaludVital").waitFor();
     await page.locator("[data-appointment-details-dialog]").screenshot({
         path: path.resolve("test-results", "patient-notification-detail-preview.png"),
     });
-    if ((await page.locator("[data-appointment-channel]").textContent()) !== "Correo electrónico") {
-        throw new Error("The notification channel was missing from its detail dialog.");
+    if (await page.locator("[data-appointment-channel]").count()) {
+        throw new Error("The notification channel should not be shown in the patient detail.");
+    }
+    if (
+        await page
+            .getByText(/Aceptado por el proveedor|Pendiente de reintento|En verificación/)
+            .count()
+    ) {
+        throw new Error("Internal delivery states should not be shown in the patient detail.");
     }
     await page.getByRole("button", { name: "Cerrar detalle" }).click();
 
     await page.locator("[data-history-row]").first().click();
     await page.getByText("Dra. Ejemplo").waitFor();
+    await page.getByText("Estado de la cita").waitFor();
+    if (await page.getByText("Canal", { exact: true }).count()) {
+        throw new Error("The appointment detail should not show the delivery channel.");
+    }
+    await page.locator("[data-appointment-details-dialog]").screenshot({
+        path: path.resolve("test-results", "patient-appointment-activity-detail-preview.png"),
+    });
     if (
         (await page.locator("[data-appointment-doctor-photo]").getAttribute("src")) !==
-        "/uploads/doctor.png"
+        "http://127.0.0.1:3000/uploads/doctor.png"
     ) {
         throw new Error("The persisted doctor photo was not displayed safely.");
     }
+    await page.locator("[data-appointment-doctor-photo]").evaluate((image) => image.decode());
     const detailReadRequest = await page.evaluate(() => window.detailReadRequest);
     if (
         detailReadRequest?.appointmentHistoryIds?.[0] !== 28 ||

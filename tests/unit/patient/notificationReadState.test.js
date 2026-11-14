@@ -163,11 +163,11 @@ describe("patient notification read state", () => {
                 expect.objectContaining({
                     id: "appointment-28",
                     isInAppActivity: true,
-                    channel: "En SaludVital",
-                    statusLabel: "Registrada",
                     readAt: null,
                 }),
             ]);
+            expect(result.history[0]).not.toHaveProperty("channel");
+            expect(result.history[0]).not.toHaveProperty("statusLabel");
             expect(JSON.stringify(result.history)).not.toContain("private");
             expect(Notification.findAll).toHaveBeenCalledWith(
                 expect.objectContaining({ where: expect.objectContaining({ patient_id: 17 }) }),
@@ -202,7 +202,8 @@ describe("patient notification read state", () => {
         const result = await getPatientNotificationSettings(91);
 
         expect(result.history.map((item) => item.id)).toEqual(["appointment-10", 9]);
-        expect(result.history[1].statusLabel).toBe("Aceptado por el proveedor");
+        expect(result.history[1]).not.toHaveProperty("channel");
+        expect(result.history[1]).not.toHaveProperty("statusLabel");
     });
 
     test("returns the full history when it contains more than twenty entries", async () => {
@@ -262,7 +263,7 @@ describe("patient notification read state", () => {
         expect(Notification.update).not.toHaveBeenCalled();
     });
 
-    test("includes a reminder after a processing attempt and labels a queued retry accurately", async () => {
+    test("includes a reminder after a processing attempt without exposing delivery metadata", async () => {
         Notification.findAll.mockResolvedValue([
             {
                 id: 73,
@@ -278,9 +279,9 @@ describe("patient notification read state", () => {
 
         const result = await getPatientNotificationSettings(91);
 
-        expect(result.history).toEqual([
-            expect.objectContaining({ id: 73, statusLabel: "Pendiente de reintento" }),
-        ]);
+        expect(result.history).toEqual([expect.objectContaining({ id: 73 })]);
+        expect(result.history[0]).not.toHaveProperty("channel");
+        expect(result.history[0]).not.toHaveProperty("statusLabel");
         expect(Notification.findAll.mock.calls[0][0].attributes).toContain("attempt_count");
         expectReminderVisibilityFilter(Notification.findAll.mock.calls[0][0].where);
     });
