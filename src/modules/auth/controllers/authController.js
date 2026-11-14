@@ -15,6 +15,10 @@ import { verifyEmail } from "../services/emailVerificationService.js";
 
 // Handle patient registration and its expected validation errors.
 import { registerPatient, RegistrationError } from "../services/registrationService.js";
+import {
+    hasPatientRegistrationConsent,
+    PATIENT_REGISTRATION_CONSENT,
+} from "../services/patientRegistrationConsent.js";
 
 import { requestPasswordReset, resetPassword } from "../services/passwordResetService.js";
 
@@ -148,6 +152,7 @@ export function showRegister(req, res) {
         pageTitle: "Registro de paciente | SaludVital",
         error,
         success: null,
+        privacyNoticeVersion: PATIENT_REGISTRATION_CONSENT.noticeVersion,
         whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
     });
 }
@@ -276,11 +281,12 @@ export async function resetPasswordController(req, res, next) {
 export async function register(req, res, next) {
     try {
         // Require explicit consent before processing health information.
-        if (req.body?.health_data_consent !== "accepted") {
+        if (!hasPatientRegistrationConsent(req.body?.health_data_consent)) {
             return res.status(400).render("auth/register", {
                 pageTitle: "Registro de paciente | SaludVital",
                 error: "Debes autorizar el tratamiento de datos personales y de salud para registrarte.",
                 success: null,
+                privacyNoticeVersion: PATIENT_REGISTRATION_CONSENT.noticeVersion,
                 whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
             });
         }
@@ -296,6 +302,7 @@ export async function register(req, res, next) {
 
         // Confirm registration without automatically signing the patient in.
         return res.status(201).render("auth/register", {
+            privacyNoticeVersion: PATIENT_REGISTRATION_CONSENT.noticeVersion,
             pageTitle: "Registro completado | SaludVital",
             error: null,
             success: `Tu cuenta fue creada. Revisa el correo ${patient.email} para verificar tu dirección antes de iniciar sesión.`,
@@ -305,6 +312,7 @@ export async function register(req, res, next) {
         // Show expected validation errors without exposing internal details.
         if (error instanceof RegistrationError) {
             return res.status(error.statusCode).render("auth/register", {
+                privacyNoticeVersion: PATIENT_REGISTRATION_CONSENT.noticeVersion,
                 pageTitle: "Registro de paciente | SaludVital",
                 error:
                     error.statusCode >= 500

@@ -27,6 +27,7 @@ import PasswordResetToken from "./PasswordResetToken.js";
 import EmailOutbox from "./EmailOutbox.js";
 import DoctorAppointmentNotificationRead from "./DoctorAppointmentNotificationRead.js";
 import PatientAppointmentHistoryRead from "./PatientAppointmentHistoryRead.js";
+import PatientConsent from "./PatientConsent.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(User, {
@@ -39,6 +40,21 @@ Rol.hasMany(User, {
 User.belongsTo(Rol, {
     foreignKey: "role_id",
     as: "rol",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+// Keep consent evidence linked to its account until an explicit retention action removes it.
+User.hasMany(PatientConsent, {
+    foreignKey: "user_id",
+    as: "patientConsents",
+    onUpdate: "CASCADE",
+    onDelete: "RESTRICT",
+});
+
+PatientConsent.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
 });
@@ -647,4 +663,5 @@ export {
     WhatsAppChatbotRuntimeSetting,
     ChatbotFlow,
     ChatbotFlowVersion,
+    PatientConsent,
 };

@@ -5,6 +5,7 @@ import {
     EmailOutbox,
     NotificationPreference,
     Patient,
+    PatientConsent,
     Rol,
     User,
 } from "../../../src/models/associations.js";
@@ -36,6 +37,7 @@ function createRegistrationData() {
         email: `cleanup-${uniqueId}@example.test`,
         password: "SecureTest123!",
         password_confirmation: "SecureTest123!",
+        health_data_consent: "accepted",
     };
 }
 
@@ -54,6 +56,7 @@ describe("Unverified registration cleanup with real MySQL", () => {
             if (!user) continue;
 
             const patient = await Patient.findOne({ where: { user_id: user.id } });
+            await PatientConsent.destroy({ where: { user_id: user.id } });
             if (patient) {
                 await NotificationPreference.destroy({ where: { patient_id: patient.id } });
                 await Patient.destroy({ where: { id: patient.id } });
@@ -85,6 +88,7 @@ describe("Unverified registration cleanup with real MySQL", () => {
         expect(cleanupResult.deletedCount).toBeGreaterThanOrEqual(1);
         expect(await User.findByPk(result.id)).toBeNull();
         expect(await Patient.findByPk(result.patientId)).toBeNull();
+        expect(await PatientConsent.count({ where: { user_id: result.id } })).toBe(0);
         expect(
             await EmailOutbox.count({
                 where: { user_id: result.id, event_type: "email_verification" },
@@ -117,5 +121,6 @@ describe("Unverified registration cleanup with real MySQL", () => {
         expect(cleanupResult.deletedCount).toBe(0);
         expect(await User.findByPk(result.id)).not.toBeNull();
         expect(await Patient.findByPk(result.patientId)).not.toBeNull();
+        expect(await PatientConsent.count({ where: { user_id: result.id } })).toBe(1);
     });
 });

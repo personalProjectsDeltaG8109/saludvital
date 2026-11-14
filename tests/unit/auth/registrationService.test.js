@@ -31,12 +31,16 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
     EmailOutbox: {
         create: jest.fn(),
     },
+    PatientConsent: {
+        create: jest.fn(),
+    },
 }));
 
 // Import mocked dependencies before importing the service under test.
 const bcrypt = (await import("bcrypt")).default;
 const { default: database } = await import("../../../config/database.js");
-const { User, Patient, Rol, EmailOutbox } = await import("../../../src/models/associations.js");
+const { User, Patient, PatientConsent, Rol, EmailOutbox } =
+    await import("../../../src/models/associations.js");
 
 const { registerPatient, RegistrationError } =
     await import("../../../src/modules/auth/services/registrationService.js");
@@ -44,6 +48,7 @@ const { registerPatient, RegistrationError } =
 // Define valid patient data that satisfies the current registration rules.
 describe("Patient registration service", () => {
     const validData = {
+        health_data_consent: "accepted",
         first_name: "Juan",
         last_name: "Montoya",
         phone: "3001234567",
@@ -85,6 +90,7 @@ describe("Patient registration service", () => {
         });
 
         EmailOutbox.create.mockResolvedValue({ id: 30 });
+        PatientConsent.create.mockResolvedValue({ id: 40 });
 
         bcrypt.hash.mockResolvedValue("$2b$12$mocked-password-hash");
     });
@@ -95,6 +101,23 @@ describe("Patient registration service", () => {
 
         expect(database.transaction).not.toHaveBeenCalled();
     });
+
+    test.each([undefined, "declined", ["accepted"]])(
+        "rejects missing or forged consent before opening a transaction: %s",
+        async (consent) => {
+            const data = { ...validData, health_data_consent: consent };
+            if (consent === undefined) delete data.health_data_consent;
+
+            await expect(registerPatient(data)).rejects.toMatchObject({
+                name: "RegistrationError",
+                statusCode: 400,
+            });
+
+            expect(database.transaction).not.toHaveBeenCalled();
+            expect(User.create).not.toHaveBeenCalled();
+            expect(PatientConsent.create).not.toHaveBeenCalled();
+        },
+    );
 
     // Reject a non-object payload before writing to the database.
     test.each([
@@ -214,6 +237,16 @@ describe("Patient registration service", () => {
                 first_name: "María José",
                 last_name: "O'Connor-Pérez",
             }),
+            { transaction },
+        );
+
+        expect(PatientConsent.create).toHaveBeenCalledWith(
+            {
+                user_id: 10,
+                consent_scope: "personal_and_sensitive_health_data",
+                notice_version: "1.1",
+                accepted_at: expect.any(Date),
+            },
             { transaction },
         );
     });
@@ -508,6 +541,7 @@ describe("Patient registration service", () => {
         });
 
         expect(result).not.toHaveProperty("password_hash");
+        expect(result).not.toHaveProperty("consent_scope");
     });
 
     // Never persist the original password in the user record.

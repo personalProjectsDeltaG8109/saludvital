@@ -2,7 +2,13 @@ import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from "@jest/globals";
 import bcrypt from "bcrypt";
 import database from "../../../config/database.js";
-import { EmailOutbox, Patient, Rol, User } from "../../../src/models/associations.js";
+import {
+    EmailOutbox,
+    Patient,
+    PatientConsent,
+    Rol,
+    User,
+} from "../../../src/models/associations.js";
 import { registerPatient } from "../../../src/modules/auth/services/registrationService.js";
 
 // Refuse to run destructive integration-test cleanup against any other database.
@@ -32,6 +38,7 @@ function createRegistrationData() {
         email: `registration-${uniqueId}@example.test`,
         password: "SecureTest123!",
         password_confirmation: "SecureTest123!",
+        health_data_consent: "accepted",
     };
 }
 
@@ -44,6 +51,7 @@ async function cleanRegistrationData(data) {
 
     if (user) {
         // Delete dependent rows before deleting their parent user.
+        await PatientConsent.destroy({ where: { user_id: user.id } });
         await EmailOutbox.destroy({
             where: { user_id: user.id },
         });
@@ -116,6 +124,7 @@ describe("Patient registration with real MySQL", () => {
 
         const user = await User.findByPk(result.id);
         const patient = await Patient.findByPk(result.patientId);
+        const consent = await PatientConsent.findOne({ where: { user_id: result.id } });
         const emailJob = await EmailOutbox.findOne({
             where: {
                 user_id: result.id,
@@ -132,6 +141,13 @@ describe("Patient registration with real MySQL", () => {
         expect(patient).not.toBeNull();
         expect(patient.user_id).toBe(user.id);
         expect(patient.document_number).toBe(data.document_number);
+        expect(consent).toMatchObject({
+            user_id: result.id,
+            consent_scope: "personal_and_sensitive_health_data",
+            notice_version: "1.1",
+        });
+        expect(consent.accepted_at).toBeInstanceOf(Date);
+        expect(consent.toJSON()).not.toHaveProperty("medical_conditions");
 
         expect(emailJob).not.toBeNull();
         expect(emailJob.status).toBe("pending");
@@ -191,6 +207,13 @@ describe("Patient registration with real MySQL", () => {
     test("rolls back user and patient records when email-job creation fails", async () => {
         const data = createRegistrationData();
         registrations.push(data);
+        let consentUserId;
+        const createConsent = PatientConsent.create.bind(PatientConsent);
+
+        jest.spyOn(PatientConsent, "create").mockImplementation((values, options) => {
+            consentUserId = values.user_id;
+            return createConsent(values, options);
+        });
 
         // Inject a controlled failure while all preceding database writes remain real.
         jest.spyOn(EmailOutbox, "create").mockRejectedValueOnce(
@@ -211,6 +234,7 @@ describe("Patient registration with real MySQL", () => {
                 document_number: data.document_number,
             },
         });
+        const consentCount = await PatientConsent.count({ where: { user_id: consentUserId } });
 
         const emailJobCount = await EmailOutbox.count({
             where: {
@@ -228,6 +252,7 @@ describe("Patient registration with real MySQL", () => {
 
         expect(userCount).toBe(0);
         expect(patientCount).toBe(0);
+        expect(consentCount).toBe(0);
         expect(emailJobCount).toBe(0);
     });
 

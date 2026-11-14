@@ -13,6 +13,7 @@ import {
     NotificationPreference,
     PasswordResetToken,
     Patient,
+    PatientConsent,
     Rol,
     User,
     WhatsAppAppointmentRequest,
@@ -145,6 +146,7 @@ async function deleteExpiredRegistration(userId, expiredBefore) {
             });
         }
 
+        await PatientConsent.destroy({ where: { user_id: user.id }, transaction });
         if (patient) await patient.destroy({ transaction });
         await user.destroy({ transaction });
 
