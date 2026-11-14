@@ -29,7 +29,7 @@ const Doctor = database.define(
             type: DataTypes.TEXT,
             allowNull: true,
         },
-        // Store an optional public path for the doctor's profile photo.
+        // Store an optional protected path for the doctor's profile photo.
         profile_photo_url: {
             type: DataTypes.STRING(255),
             allowNull: true,
