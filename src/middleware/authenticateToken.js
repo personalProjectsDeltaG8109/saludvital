@@ -101,6 +101,8 @@ async function authenticateRequest(req, res, next, { optional = false } = {}) {
 }
 
 export function authenticateToken(req, res, next) {
+    // Protected pages may contain personal or clinical information.
+    res.set("Cache-Control", "no-store");
     return authenticateRequest(req, res, next);
 }
 
