@@ -91,6 +91,12 @@ describe("Logout HTTP integration with persisted sessions", () => {
             const activeSession = await AuthSession.findOne({ where: { user_id: user.id } });
             expect(activeSession).not.toBeNull();
 
+            const protectedResponse = await request(app)
+                .post("/session/activity")
+                .set("Cookie", authenticationCookie);
+            expect(protectedResponse.status).toBe(204);
+            expect(protectedResponse.headers["cache-control"]).toContain("no-store");
+
             const logoutResponse = await request(app)
                 .post("/logout")
                 .set("Cookie", authenticationCookie);

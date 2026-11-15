@@ -83,6 +83,13 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
+    test("public stylesheets are not marked as private authenticated responses", async () => {
+        const response = await request(app).get("/css/app.css");
+
+        expect(response.status).toBe(200);
+        expect(response.headers["cache-control"]).not.toContain("no-store");
+    });
+
     test("GET /login renders the login page", async () => {
         const previousContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
         delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;

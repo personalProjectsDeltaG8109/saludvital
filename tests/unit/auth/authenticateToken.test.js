@@ -51,6 +51,7 @@ function createMocks(token = undefined) {
         status: jest.fn().mockReturnThis(),
         send: jest.fn().mockReturnThis(),
         redirect: jest.fn().mockReturnThis(),
+        set: jest.fn().mockReturnThis(),
         clearCookie: jest.fn().mockReturnThis(),
     };
 
@@ -107,6 +108,7 @@ describe("authenticateToken middleware", () => {
             role: "Patient",
             sessionId: "test-session",
         });
+        expect(res.set).toHaveBeenCalledWith("Cache-Control", "no-store");
         expect(next).toHaveBeenCalledTimes(1);
     });
 
