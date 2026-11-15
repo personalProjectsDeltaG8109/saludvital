@@ -2,7 +2,7 @@
 
 **Issue:** [#474](https://github.com/personalProjectsDeltaG8109/saludvital/issues/474)  
 **Branch:** `fix/474-private-response-cache`  
-**Status:** Implemented and verified; pull request pending.
+**Status:** Implemented and verified; [PR #475](https://github.com/personalProjectsDeltaG8109/saludvital/pull/475) is open for review.
 
 ## Problem
 
