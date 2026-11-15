@@ -380,13 +380,19 @@ if (page) {
                 maxLength: 50,
             }),
         ];
+        const emergencySection = formSection("Contacto de emergencia", emergencyFields);
+        const emergencyNote = document.createElement("p");
+        emergencyNote.className = "admin-user-form-hint";
+        emergencyNote.textContent =
+            "Dato opcional para demostraciones: usa información ficticia. SaludVital no contacta a esta persona ni le envía mensajes.";
+        emergencySection.insertBefore(emergencyNote, emergencySection.children[1]);
 
         editFields.replaceChildren(
             formSection("Cuenta", [email]),
             formSection("Datos personales", personalFields),
             formSection("Contactos de notificación", notificationFields),
             formSection("Información médica", medicalFields),
-            formSection("Contacto de emergencia", emergencyFields),
+            emergencySection,
         );
 
         const departmentSelect = editFields.querySelector('[name="departmentCode"]');
