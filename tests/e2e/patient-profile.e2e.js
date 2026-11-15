@@ -103,6 +103,18 @@ try {
     assert.equal(await page.getByRole("heading", { name: "Información médica" }).count(), 1);
     assert.equal(await page.getByRole("heading", { name: "Contacto de emergencia" }).count(), 1);
     assert.equal(
+        await page.locator('[data-section="emergency"] .profile-no-emergency').innerText(),
+        "Aún no has agregado un contacto de emergencia.",
+    );
+    assert.match(
+        await page.locator('[data-section="emergency"]').innerText(),
+        /Dato opcional para demostraciones\. Usa información ficticia; SaludVital no contacta a esta persona automáticamente\./,
+    );
+    assert.match(
+        await page.locator('[data-profile-form="emergency"]').innerText(),
+        /En demostraciones, usa datos ficticios; SaludVital no envía mensajes a este contacto\./,
+    );
+    assert.equal(
         (await page.locator(".profile-identity-copy h2").textContent()).trim(),
         "Paciente Ejemplo",
     );

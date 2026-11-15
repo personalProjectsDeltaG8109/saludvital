@@ -28,6 +28,29 @@ const userFixture = {
     ],
     pagination: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 },
 };
+const patientDetailsFixture = {
+    user: {
+        id: 7,
+        email: "laura.mendez@example.com",
+        profileType: "Patient",
+        profilePhotoUrl: null,
+        patient: {
+            first_name: "Laura",
+            last_name: "Méndez",
+            phone: "3001234567",
+            date_of_birth: "1990-01-01",
+            document_type: "CC",
+            document_number: "1234567890",
+            departmentCode: "66",
+            municipalityCode: "66001",
+            address: "",
+            profile_photo_url: null,
+        },
+        emergencyContact: null,
+    },
+    departments: [{ code: "66", name: "Risaralda" }],
+    municipalities: [{ code: "66001", name: "Pereira" }],
+};
 const html = pug.renderFile(path.resolve("views/admin/users.pug"), {
     pageTitle: "Usuarios y roles | SaludVital",
     adminName: "Administradora de prueba",
@@ -37,9 +60,16 @@ const browser = await chromium.launch({ headless: true });
 try {
     const page = await browser.newPage({ viewport: { width: 762, height: 900 } });
     await page.setContent(html);
-    await page.evaluate((fixture) => {
-        window.fetch = async () => ({ ok: true, json: async () => fixture });
-    }, userFixture);
+    await page.evaluate(
+        ({ listFixture, detailsFixture }) => {
+            window.fetch = async (requestUrl) => {
+                const pathname = String(requestUrl).split("?")[0];
+                const payload = pathname === "/api/admin/users/7" ? detailsFixture : listFixture;
+                return { ok: true, json: async () => payload };
+            };
+        },
+        { listFixture: userFixture, detailsFixture: patientDetailsFixture },
+    );
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: userStyles });
     await page.addScriptTag({ content: userScript });
@@ -93,6 +123,20 @@ try {
         }
         console.log(`PASS: administrator users layout fits at ${width}px.`);
     }
+
+    await page.locator('[data-user-edit-id="7"]').click();
+    const emergencySection = page
+        .locator(".admin-user-form-section")
+        .filter({ has: page.getByRole("heading", { name: "Contacto de emergencia" }) });
+    await emergencySection.waitFor();
+    const emergencyNote = await emergencySection.locator(".admin-user-form-hint").innerText();
+    if (
+        !emergencyNote.includes("usa información ficticia") ||
+        !emergencyNote.includes("envía mensajes")
+    ) {
+        throw new Error(`Emergency-contact guidance is missing or unclear: ${emergencyNote}`);
+    }
+    console.log("PASS: administrator edit dialog explains emergency-contact demo use.");
 } finally {
     await browser.close();
 }

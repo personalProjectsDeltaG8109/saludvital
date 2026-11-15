@@ -156,6 +156,7 @@ describe("SaludVital application", () => {
         ["POST", "/api/admin/doctors"],
         ["GET", "/admin/users"],
         ["GET", "/api/admin/users"],
+        ["GET", "/api/admin/users/7"],
         ["PATCH", "/api/admin/users/7"],
     ])("%s %s requires an authenticated administrator", async (method, url) => {
         const response = await request(app)
@@ -169,6 +170,13 @@ describe("SaludVital application", () => {
 
     test("doctor profile page requires an authenticated doctor", async () => {
         const response = await request(app).get("/doctor/profile").redirects(0);
+
+        expect(response.status).toBe(303);
+        expect(response.headers.location).toBe("/login");
+    });
+
+    test("patient profile page requires an authenticated patient", async () => {
+        const response = await request(app).get("/patient/profile").redirects(0);
 
         expect(response.status).toBe(303);
         expect(response.headers.location).toBe("/login");

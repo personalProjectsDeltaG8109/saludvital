@@ -53,6 +53,10 @@ describe("public legal pages", () => {
         expect(response.text).toContain("Inalámbria Express");
         expect(response.text).toContain("Meta WhatsApp Cloud API");
         expect(response.text).toContain("no significa que esté conectada o activa");
+        expect(response.text).toContain("datos del contacto de emergencia");
+        expect(response.text).toContain("En demostraciones deben ser ficticios");
+        expect(response.text).toContain("no se usan para enviar mensajes");
+        expect(response.text).toContain("el contacto de emergencia");
     });
 
     test("academic terms allow controlled use of personal contact data without real clinical data", async () => {

@@ -27,7 +27,7 @@ const EmergencyContact = (await import("../../src/models/EmergencyContact.js")).
 const { Appointment, Patient, User } = await import("../../src/models/associations.js");
 const { isEmailUnavailable, requestEmailChange } =
     await import("../../src/modules/auth/services/emailChangeService.js");
-const { updatePatientProfile } =
+const { getPatientProfile, updatePatientProfile } =
     await import("../../src/modules/patient/services/profileService.js");
 
 describe("patient profile email changes", () => {
@@ -88,5 +88,47 @@ describe("patient profile email changes", () => {
             email: "current@example.com",
             pendingEmail: "replacement@example.com",
         });
+    });
+});
+
+describe("patient profile emergency contact access", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        Appointment.count.mockResolvedValue(0);
+    });
+
+    test("loads the emergency contact only for the authenticated patient's profile", async () => {
+        const patient = {
+            id: 18,
+            user_id: 7,
+            created_at: new Date().toISOString(),
+            get: jest.fn(() => ({ id: 18, user_id: 7 })),
+        };
+        const emergencyContact = {
+            get: jest.fn(() => ({ first_name: "Contacto", phone: "3001234567" })),
+        };
+        Patient.findOne.mockResolvedValue(patient);
+        EmergencyContact.findOne.mockResolvedValue(emergencyContact);
+
+        const profile = await getPatientProfile(7);
+
+        expect(Patient.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { user_id: 7 } }),
+        );
+        expect(EmergencyContact.findOne).toHaveBeenCalledWith({
+            where: { patient_id: 18 },
+            order: [["id", "ASC"]],
+        });
+        expect(profile.emergencyContact).toEqual({
+            first_name: "Contacto",
+            phone: "3001234567",
+        });
+    });
+
+    test("does not look up an emergency contact when the patient profile is missing", async () => {
+        Patient.findOne.mockResolvedValue(null);
+
+        await expect(getPatientProfile(999)).rejects.toMatchObject({ status: 404 });
+        expect(EmergencyContact.findOne).not.toHaveBeenCalled();
     });
 });
