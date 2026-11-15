@@ -31,5 +31,8 @@ dist/
 # Keep uploaded patient profile photos out of version control.
 /public/uploads/profile-photos/
 
+# Keep private profile photo files out of version control.
+/private/profile-photos/
+
 /Microsoft
 checklist.md

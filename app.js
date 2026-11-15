@@ -13,6 +13,7 @@ import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
 import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookRoutes.js";
 import inalambriaSmsWebhookRoutes from "./src/modules/patient/routes/inalambriaSmsWebhookRoutes.js";
 import legalRoutes from "./src/modules/legal/routes/legalRoutes.js";
+import profilePhotoRoutes from "./src/shared/routes/profilePhotoRoutes.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFile);
@@ -33,6 +34,27 @@ app.use(
     }),
 );
 app.use(cookieParser());
+// Normalize encoded profile photo paths so alternate URLs cannot reach static serving.
+app.use((request, response, next) => {
+    let decodedPath;
+    try {
+        decodedPath = decodeURIComponent(request.path)
+            .replace(/\\/g, "/")
+            .replace(/^\/{2,}/, "/");
+    } catch {
+        return next();
+    }
+
+    if (/^\/uploads\/profile-photos(?:\/|$)/i.test(decodedPath)) {
+        const queryString = request.url.includes("?")
+            ? request.url.slice(request.url.indexOf("?"))
+            : "";
+        request.url = `${decodedPath.toLowerCase()}${queryString}`;
+    }
+    return next();
+});
+// Protect profile photos before the public static middleware can serve old files.
+app.use(profilePhotoRoutes);
 app.use(express.static(path.join(currentDirectory, "public")));
 app.use(whatsappWebhookRoutes);
 app.use(inalambriaSmsWebhookRoutes);

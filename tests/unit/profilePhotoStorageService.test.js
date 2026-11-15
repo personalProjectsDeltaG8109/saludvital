@@ -1,64 +1,92 @@
-import { access, readFile } from "node:fs/promises";
+import { access, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 import { describe, expect, test } from "@jest/globals";
 import {
+    PRIVATE_PROFILE_PHOTO_DIRECTORY,
+    LEGACY_PROFILE_PHOTO_DIRECTORY,
     decodeProfilePhoto,
+    readStoredProfilePhoto,
     removeStoredProfilePhoto,
+    sanitizeProfilePhoto,
     storeDecodedProfilePhoto,
 } from "../../src/shared/services/profilePhotoStorageService.js";
 
+async function createJpegWithMetadata() {
+    return sharp({
+        create: { width: 32, height: 24, channels: 3, background: "#336699" },
+    })
+        .jpeg()
+        .withMetadata({ exif: { IFD0: { Artist: "Private test metadata" } } })
+        .toBuffer();
+}
+
 describe("shared profile photo storage", () => {
-    test("accepts a PNG data URL and decodes its content", () => {
-        const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-        const photo = decodeProfilePhoto(`data:image/png;base64,${pngHeader.toString("base64")}`);
+    test("accepts supported image data URLs and rejects invalid input", async () => {
+        const jpeg = await createJpegWithMetadata();
+        const photo = decodeProfilePhoto(`data:image/jpeg;base64,${jpeg.toString("base64")}`);
 
-        expect(photo.extension).toBe("png");
-        expect(photo.bytes).toEqual(pngHeader);
-    });
-
-    test("accepts JPG and WEBP signatures", () => {
-        const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0x00]);
-        const webp = Buffer.from("RIFFxxxxWEBP");
-
-        expect(
-            decodeProfilePhoto(`data:image/jpeg;base64,${jpeg.toString("base64")}`).extension,
-        ).toBe("jpg");
-        expect(
-            decodeProfilePhoto(`data:image/webp;base64,${webp.toString("base64")}`).extension,
-        ).toBe("webp");
-    });
-
-    test("rejects unsupported formats, invalid content, and oversized files", () => {
+        expect(photo.extension).toBe("jpg");
+        expect(photo.bytes).toEqual(jpeg);
         expect(() => decodeProfilePhoto("data:image/svg+xml;base64,PHN2Zz4=")).toThrow(
             "La foto debe ser JPG, PNG o WebP y no superar 2 MB.",
         );
         expect(() => decodeProfilePhoto("data:image/png;base64,aGVsbG8=")).toThrow(
             "La foto debe ser JPG, PNG o WebP y no superar 2 MB.",
         );
-        const oversizedImage = Buffer.alloc(2 * 1024 * 1024 + 1, 0);
-        expect(() =>
-            decodeProfilePhoto(`data:image/png;base64,${oversizedImage.toString("base64")}`),
-        ).toThrow("La foto debe ser JPG, PNG o WebP y no superar 2 MB.");
     });
 
-    test("stores valid photos and removes only managed profile photo files", async () => {
-        const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-        const directory = fileURLToPath(
-            new URL("../../public/uploads/profile-photos/", import.meta.url),
-        );
-        const photoUrl = await storeDecodedProfilePhoto({ bytes: pngHeader, extension: "png" });
-        const photoPath = path.join(directory, path.basename(photoUrl));
+    test("re-encodes images without carrying embedded metadata", async () => {
+        const originalBytes = await createJpegWithMetadata();
+        const originalMetadata = await sharp(originalBytes).metadata();
+        const sanitizedBytes = await sanitizeProfilePhoto(originalBytes, "jpg");
+        const sanitizedMetadata = await sharp(sanitizedBytes).metadata();
+
+        expect(originalMetadata.exif).toBeDefined();
+        expect(sanitizedMetadata.format).toBe("webp");
+        expect(sanitizedMetadata.exif).toBeUndefined();
+        expect(sanitizedMetadata.iptc).toBeUndefined();
+        expect(sanitizedMetadata.xmp).toBeUndefined();
+        expect(sanitizedMetadata.icc).toBeUndefined();
+    });
+
+    test("stores photos outside public and can read and remove the protected file", async () => {
+        const jpeg = await createJpegWithMetadata();
+        const photoUrl = await storeDecodedProfilePhoto({ bytes: jpeg, extension: "jpg" });
+        const photoPath = path.join(PRIVATE_PROFILE_PHOTO_DIRECTORY, path.basename(photoUrl));
 
         try {
-            expect(photoUrl).toMatch(/^\/uploads\/profile-photos\/[\w-]+\.png$/);
-            expect(await readFile(photoPath)).toEqual(pngHeader);
-            await removeStoredProfilePhoto("/uploads/other/file.png");
-            await access(photoPath);
+            expect(photoUrl).toMatch(/^\/uploads\/profile-photos\/[\w-]+\.webp$/);
+            expect(await readFile(photoPath)).toEqual(await readStoredProfilePhoto(photoUrl));
+            expect(await sharp(await readFile(photoPath)).metadata()).toMatchObject({
+                format: "webp",
+            });
         } finally {
             await removeStoredProfilePhoto(photoUrl);
         }
 
         await expect(access(photoPath)).rejects.toMatchObject({ code: "ENOENT" });
+        expect(await readStoredProfilePhoto(photoUrl)).toBeNull();
+        await expect(
+            sanitizeProfilePhoto(Buffer.alloc(2 * 1024 * 1024 + 1), "png"),
+        ).rejects.toMatchObject({ code: "PROFILE_PHOTO_INVALID_INPUT" });
+    });
+
+    test("sanitizes legacy public files before returning their bytes", async () => {
+        const legacyFilename = "123e4567-e89b-42d3-a456-426614174000.jpg";
+        const legacyPhotoPath = path.join(LEGACY_PROFILE_PHOTO_DIRECTORY, legacyFilename);
+        const legacyPhotoUrl = `/uploads/profile-photos/${legacyFilename}`;
+        await mkdir(LEGACY_PROFILE_PHOTO_DIRECTORY, { recursive: true });
+        await writeFile(legacyPhotoPath, await createJpegWithMetadata());
+
+        try {
+            const servedMetadata = await sharp(
+                await readStoredProfilePhoto(legacyPhotoUrl),
+            ).metadata();
+            expect(servedMetadata.format).toBe("webp");
+            expect(servedMetadata.exif).toBeUndefined();
+        } finally {
+            await unlink(legacyPhotoPath);
+        }
     });
 });
