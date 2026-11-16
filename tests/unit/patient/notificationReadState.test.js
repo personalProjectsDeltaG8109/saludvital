@@ -496,4 +496,3 @@ describe("patient notification read state", () => {
         });
     });
 });
-

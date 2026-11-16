@@ -493,4 +493,3 @@
     render();
     renderHistoryPage();
 })();
-
