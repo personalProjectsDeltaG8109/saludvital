@@ -52,7 +52,7 @@ try {
                     minute: "2-digit",
                     timeZone: "America/Bogota",
                 });
-                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}, ${day}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-date="${dateIso}" data-history-day="${day}"><td class="notifications-history-time"><time datetime="${dateIso}">${time}</time></td><td class="notifications-history-content"><span class="notifications-history-title"><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-unread-label">Nueva</span></span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td class="notifications-history-open" aria-hidden="true">›</td></tr>`;
+                return `<tr tabindex="0" aria-label="Abrir notificación: ${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}, ${day}" data-history-row class="is-unread" ${appointment ? 'data-in-app-activity="true" data-appointment-history-id="28" data-notification-ids="[73]"' : `data-notification-id="${75 + index}"`} data-history-details="${appointment ? "Tu cita quedó confirmada." : `Tu cita ${index + 1} tiene una actualización.`}" data-history-date="${dateIso}" data-history-day="${day}"><td class="notifications-history-time"><time datetime="${dateIso}">${time}</time></td><td class="notifications-history-content"><span class="notifications-history-title"><span class="notifications-history-kind">${appointment ? "Cita creada y confirmada" : `Aviso de cita ${index + 1}`}</span><span class="notifications-unread-label">Nueva</span></span><span class="notifications-history-summary">Actualización de tu cita médica.</span></td><td class="notifications-history-open" aria-hidden="true">›</td></tr>`;
             }).join("")}
             </tbody><tfoot><tr><td colspan="4"><nav class="notifications-history-pagination" aria-label="Páginas del historial" data-history-pagination hidden><span role="status" aria-live="polite" data-history-page-summary></span><div class="notifications-history-page-controls"><button type="button" data-history-previous aria-label="Página anterior">‹</button><span data-history-page-number></span><button type="button" data-history-next aria-label="Página siguiente">›</button></div></nav></td></tr></tfoot></table></div>
             <p data-notification-read-status role="status" aria-live="polite"></p>
@@ -166,9 +166,10 @@ try {
     const detailReadRequest = await page.evaluate(() => window.detailReadRequest);
     if (
         detailReadRequest?.appointmentHistoryIds?.[0] !== 28 ||
-        detailReadRequest.notificationIds.length
+        detailReadRequest.notificationIds.length !== 1 ||
+        detailReadRequest.notificationIds[0] !== 73
     ) {
-        throw new Error("Opening appointment details did not mark only that event as read.");
+        throw new Error("Opening appointment details did not mark its grouped records as read.");
     }
     const detailsAxe = await new AxeBuilder({ page }).analyze();
     if (detailsAxe.violations.length) throw new Error(JSON.stringify(detailsAxe.violations));
@@ -202,3 +203,4 @@ try {
 } finally {
     await browser.close();
 }
+

@@ -53,7 +53,6 @@ describe("patient notification read state", () => {
             user: { email: "patient@example.com" },
             get: () => ({ id: 17 }),
         });
-        Notification.count.mockResolvedValue(3);
         Notification.findAll.mockResolvedValue([]);
         Notification.update.mockResolvedValue([2]);
         NotificationPreference.findAll.mockResolvedValue([]);
@@ -66,25 +65,53 @@ describe("patient notification read state", () => {
     });
 
     test("counts unread notifications only for the authenticated patient's profile", async () => {
+        Notification.findAll.mockResolvedValue(
+            Array.from({ length: 3 }, (_, index) => ({
+                id: index + 1,
+                event_type: "appointment_reminder",
+                appointment_id: null,
+                scheduled_at: new Date(`2026-11-0${index + 1}T15:00:00.000Z`),
+                sent_at: null,
+                read_at: null,
+            })),
+        );
         await expect(getPatientUnreadNotificationCount(91)).resolves.toBe(3);
         expect(Patient.findOne).toHaveBeenCalledWith({
             where: { user_id: 91 },
             attributes: ["id"],
         });
-        const unreadQuery = Notification.count.mock.calls[0][0];
-        expect(unreadQuery.where).toMatchObject({ patient_id: 17, read_at: null });
+        const unreadQuery = Notification.findAll.mock.calls[0][0];
+        expect(unreadQuery.where).toMatchObject({ patient_id: 17 });
         expectReminderVisibilityFilter(unreadQuery.where);
     });
 
     test("adds unread appointment events to the provider notification badge count", async () => {
-        AppointmentHistory.count.mockResolvedValue(4);
+        AppointmentHistory.findAll.mockResolvedValue(
+            Array.from({ length: 4 }, (_, index) => ({
+                id: index + 1,
+                event_type: "Created",
+                occurred_at: new Date(`2026-11-0${index + 1}T15:00:00.000Z`),
+                new_values: {},
+                patientReadReceipts: [],
+                appointment: { id: index + 1, start_at: new Date("2026-11-30T16:00:00.000Z") },
+            })),
+        );
+        Notification.findAll.mockResolvedValue(
+            Array.from({ length: 3 }, (_, index) => ({
+                id: index + 1,
+                event_type: "appointment_reminder",
+                appointment_id: null,
+                scheduled_at: new Date(`2026-11-0${index + 1}T15:00:00.000Z`),
+                sent_at: null,
+                read_at: null,
+            })),
+        );
         await expect(getPatientUnreadNotificationCount(91)).resolves.toBe(7);
-        expect(AppointmentHistory.count).toHaveBeenCalledWith(
+        expect(AppointmentHistory.findAll).toHaveBeenCalledWith(
             expect.objectContaining({
                 where: expect.objectContaining({
                     event_type: { [Op.in]: ["Created", "Rescheduled", "Cancelled"] },
                 }),
-                distinct: true,
             }),
         );
     });
@@ -206,6 +233,68 @@ describe("patient notification read state", () => {
         expect(result.history[1]).not.toHaveProperty("statusLabel");
     });
 
+    test("shows a confirmation notification only once beside its appointment activity", async () => {
+        const occurredAt = new Date("2026-11-14T16:53:00.000Z");
+        Notification.findAll.mockResolvedValue([
+            {
+                id: 9,
+                appointment_id: 54,
+                event_type: "appointment_confirmation",
+                scheduled_at: occurredAt,
+                sent_at: occurredAt,
+                read_at: null,
+            },
+        ]);
+        AppointmentHistory.findAll.mockResolvedValue([
+            {
+                id: 28,
+                event_type: "Created",
+                new_values: { start_at: "2026-11-25T14:00:00.000Z" },
+                occurred_at: occurredAt,
+                patientReadReceipts: [],
+                appointment: { id: 54, start_at: new Date("2026-11-25T14:00:00.000Z") },
+            },
+        ]);
+
+        const result = await getPatientNotificationSettings(91);
+
+        expect(result.history).toHaveLength(1);
+        expect(result.history[0]).toEqual(
+            expect.objectContaining({
+                id: "appointment-28",
+                eventLabel: "Cita creada y confirmada",
+                notificationIds: [9],
+                readAt: null,
+            }),
+        );
+    });
+
+    test("counts a matching unread delivery and appointment activity as one history item", async () => {
+        const occurredAt = new Date("2026-11-14T16:53:00.000Z");
+        Notification.findAll.mockResolvedValue([
+            {
+                id: 9,
+                appointment_id: 54,
+                event_type: "appointment_confirmation",
+                scheduled_at: occurredAt,
+                sent_at: occurredAt,
+                read_at: null,
+            },
+        ]);
+        AppointmentHistory.findAll.mockResolvedValue([
+            {
+                id: 28,
+                event_type: "Created",
+                new_values: { start_at: "2026-11-25T14:00:00.000Z" },
+                occurred_at: occurredAt,
+                patientReadReceipts: [],
+                appointment: { id: 54, start_at: new Date("2026-11-25T14:00:00.000Z") },
+            },
+        ]);
+
+        await expect(getPatientUnreadNotificationCount(91)).resolves.toBe(1);
+    });
+
     test("returns the full history when it contains more than twenty entries", async () => {
         Notification.findAll.mockResolvedValue(
             Array.from({ length: 12 }, (_, index) => ({
@@ -282,7 +371,7 @@ describe("patient notification read state", () => {
         expect(result.history).toEqual([expect.objectContaining({ id: 73 })]);
         expect(result.history[0]).not.toHaveProperty("channel");
         expect(result.history[0]).not.toHaveProperty("statusLabel");
-        expect(Notification.findAll.mock.calls[0][0].attributes).toContain("attempt_count");
+        expect(Notification.findAll.mock.calls[0][0].attributes).not.toContain("attempt_count");
         expectReminderVisibilityFilter(Notification.findAll.mock.calls[0][0].where);
     });
 
@@ -299,8 +388,32 @@ describe("patient notification read state", () => {
     });
 
     test("marks owned appointment activity as read and returns the combined unread count", async () => {
-        AppointmentHistory.findAll.mockResolvedValue([{ id: 33 }]);
-        AppointmentHistory.count.mockResolvedValue(2);
+        AppointmentHistory.findAll.mockResolvedValueOnce([{ id: 33 }]).mockResolvedValueOnce([
+            {
+                id: 34,
+                event_type: "Created",
+                occurred_at: new Date("2026-11-14T16:53:00.000Z"),
+                new_values: {},
+                patientReadReceipts: [],
+                appointment: { id: 55, start_at: new Date("2026-11-25T14:00:00.000Z") },
+            },
+            {
+                id: 35,
+                event_type: "Created",
+                occurred_at: new Date("2026-11-14T16:54:00.000Z"),
+                new_values: {},
+                patientReadReceipts: [],
+                appointment: { id: 56, start_at: new Date("2026-11-26T14:00:00.000Z") },
+            },
+        ]);
+        Notification.findAll.mockResolvedValue(
+            Array.from({ length: 3 }, (_, index) => ({
+                id: index + 73,
+                event_type: "appointment_reminder",
+                scheduled_at: new Date(`2026-11-0${index + 1}T15:00:00.000Z`),
+                read_at: null,
+            })),
+        );
         await expect(markPatientNotificationEntriesAsRead(91, [], [33])).resolves.toEqual({
             unreadCount: 5,
         });
@@ -314,9 +427,8 @@ describe("patient notification read state", () => {
     });
 
     test("marks all of the patient's notification sources as read in a transaction", async () => {
-        AppointmentHistory.count.mockResolvedValue(0);
         await expect(markAllPatientNotificationEntriesAsRead(91)).resolves.toEqual({
-            unreadCount: 3,
+            unreadCount: 0,
         });
         expect(database.query).toHaveBeenCalledWith(
             expect.stringContaining("INSERT IGNORE INTO patient_appointment_history_reads"),
@@ -384,3 +496,4 @@ describe("patient notification read state", () => {
         });
     });
 });
+

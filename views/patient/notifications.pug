@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 5826)
+Total output lines: 323
+
 doctype html
 html(lang="es")
     head
@@ -129,60 +132,7 @@ html(lang="es")
                                                     circle(cx="12", cy="12", r="9")
                                                     path(d="m9 9 6 6m0-6-6 6")
                                         .notifications-event-copy
-                                            strong= event.label
-                                            p= event.description
-                                        span.notifications-fixed-status Siempre activo
-                        p.notifications-save-status(
-                            role="status",
-                            aria-live="polite",
-                            data-notification-save-status
-                        )
-                        .notifications-form-actions
-                            button.notifications-save-button(
-                                type="button",
-                                data-notification-save,
-                                disabled
-                            ) Guardar cambios
-                            button.notifications-cancel-button(
-                                type="button",
-                                data-notification-cancel,
-                                disabled
-                            ) Cancelar
-                        //- Confirmation and result dialogs keep save feedback centered and accessible.
-                        dialog.notifications-dialog(
-                            data-notification-confirm-dialog,
-                            aria-labelledby="notification-confirm-title",
-                            aria-describedby="notification-confirm-summary"
-                        )
-                            .notifications-dialog-content
-                                span.notifications-dialog-icon(aria-hidden="true") ?
-                                h2#notification-confirm-title ¿Deseas guardar estos cambios?
-                                p Revisa los canales y destinos seleccionados antes de continuar.
-                                p#notification-confirm-summary.notifications-dialog-summary(
-                                    data-notification-confirm-summary
-                                )
-                                .notifications-dialog-actions
-                                    button.notifications-dialog-secondary(
-                                        type="button",
-                                        data-cancel-notification-save
-                                    ) Revisar cambios
-                                    button.notifications-dialog-primary(
-                                        type="button",
-                                        data-confirm-notification-save
-                                    ) Sí, guardar
-                        dialog.notifications-dialog(
-                            data-notification-result-dialog,
-                            aria-labelledby="notification-result-title",
-                            aria-describedby="notification-result-message"
-                        )
-                            .notifications-dialog-content
-                                span.notifications-dialog-icon(
-                                    data-notification-result-icon,
-                                    aria-hidden="true"
-                                ) ✓
-                                h2#notification-result-title(data-notification-result-title)
-                                p#notification-result-message(data-notification-result-message)
-                                .notifications-dialog-actions
+                …826 tokens truncated…                .notifications-dialog-actions
                                     button.notifications-dialog-primary(
                                         type="button",
                                         data-close-notification-result
@@ -220,6 +170,7 @@ html(lang="es")
                                                 aria-label=`Abrir notificación: ${notification.eventLabel}, ${historyDay}`,
                                                 data-history-row,
                                                 data-notification-id=notification.isInAppActivity ? undefined : notification.id,
+                                                data-notification-ids=notification.isInAppActivity && notification.notificationIds.length ? JSON.stringify(notification.notificationIds) : undefined,
                                                 data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
                                                 data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined,
                                                 data-history-details=notification.details,
@@ -319,3 +270,4 @@ html(lang="es")
                             ) Cerrar
                 include partials/bottom-nav
         script(src="/js/session-timeout.js", defer)
+
