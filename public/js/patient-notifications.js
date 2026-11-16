@@ -222,9 +222,18 @@
 
     async function markRowsAsRead(rows, appointmentHistoryIds = []) {
         const unreadRows = rows.filter((row) => row.classList.contains("is-unread"));
-        const ids = unreadRows
+        const singleIds = unreadRows
             .map((row) => Number(row.dataset.notificationId))
             .filter(Number.isSafeInteger);
+        const groupedIds = unreadRows.flatMap((row) => {
+            try {
+                const ids = JSON.parse(row.dataset.notificationIds || "[]");
+                return Array.isArray(ids) ? ids.map(Number).filter(Number.isSafeInteger) : [];
+            } catch {
+                return [];
+            }
+        });
+        const ids = [...new Set([...singleIds, ...groupedIds])];
         const unreadHistoryIds = unreadRows
             .map((row) => Number(row.dataset.appointmentHistoryId))
             .filter(Number.isSafeInteger);
