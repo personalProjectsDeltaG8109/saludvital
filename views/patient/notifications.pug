@@ -220,6 +220,7 @@ html(lang="es")
                                                 aria-label=`Abrir notificación: ${notification.eventLabel}, ${historyDay}`,
                                                 data-history-row,
                                                 data-notification-id=notification.isInAppActivity ? undefined : notification.id,
+                                                data-notification-ids=notification.notificationIds && notification.notificationIds.length ? JSON.stringify(notification.notificationIds) : undefined,
                                                 data-in-app-activity=notification.isInAppActivity ? "true" : undefined,
                                                 data-appointment-history-id=notification.isInAppActivity ? notification.appointmentHistoryId : undefined,
                                                 data-history-details=notification.details,

@@ -53,6 +53,12 @@ const appointmentActivityLabels = {
     Cancelled: "Cita cancelada",
 };
 
+const appointmentActivityEventKeys = {
+    Created: "appointment_confirmation",
+    Rescheduled: "appointment_reschedule",
+    Cancelled: "appointment_cancellation",
+};
+
 const reminderResultStatuses = ["Sent", "Failed", "OutcomeUnknown"];
 
 function validateNotificationContacts(contacts = {}) {
@@ -107,6 +113,7 @@ function toHistoryItem(notification) {
         eventKey,
         eventLabel:
             historyEventLabels[eventKey] || String(notification.event_type).replaceAll("_", " "),
+        appointmentId: notification.appointment_id,
         date: notification.sent_at || notification.scheduled_at,
         readAt: notification.read_at,
         details: historyDetails[eventKey] || "Tienes una actualización de SaludVital.",
@@ -160,9 +167,14 @@ function toAppointmentActivityItem(historyRecord) {
     return {
         id: `appointment-${historyRecord.id}`,
         appointmentHistoryId: historyRecord.id,
+        appointmentId: historyRecord.appointment?.id,
+        eventKey: appointmentActivityEventKeys[historyRecord.event_type],
         isInAppActivity: true,
         eventLabel: appointmentActivityLabels[historyRecord.event_type],
         date: occurredAt,
+        appointmentReadAt: historyRecord.patientReadReceipts?.[0]?.read_at || null,
+        notificationIds: [],
+        notificationReadAt: [],
         readAt: historyRecord.patientReadReceipts?.[0]?.read_at || null,
         details: details[historyRecord.event_type],
     };
@@ -192,32 +204,7 @@ async function getPatientAppointmentActivity(patientId) {
         ],
     });
 
-    return history.map(toAppointmentActivityItem);
-}
-
-async function countUnreadAppointmentActivity(patientId) {
-    return AppointmentHistory.count({
-        where: {
-            event_type: { [Op.in]: Object.keys(appointmentActivityLabels) },
-            "$patientReadReceipts.id$": null,
-        },
-        include: [
-            {
-                association: "appointment",
-                attributes: [],
-                where: { patient_id: patientId },
-                required: true,
-            },
-            {
-                association: "patientReadReceipts",
-                attributes: [],
-                where: { patient_id: patientId },
-                required: false,
-            },
-        ],
-        distinct: true,
-        col: "id",
-    });
+    return history;
 }
 
 function getPatientVisibleNotificationWhere(patientId) {
@@ -237,14 +224,81 @@ function getPatientVisibleNotificationWhere(patientId) {
     };
 }
 
-async function getUnreadCountByPatientId(patientId) {
-    const [deliveryCount, appointmentActivityCount] = await Promise.all([
-        Notification.count({
-            where: { ...getPatientVisibleNotificationWhere(patientId), read_at: null },
+function mergePatientNotificationHistory(notifications, appointmentActivity) {
+    const activityItems = appointmentActivity.map(toAppointmentActivityItem);
+    const activitiesByEvent = new Map();
+
+    activityItems.forEach((activity) => {
+        if (!activity.appointmentId || !activity.eventKey) return;
+        const key = `${activity.appointmentId}:${activity.eventKey}`;
+        const matches = activitiesByEvent.get(key) || [];
+        matches.push(activity);
+        activitiesByEvent.set(key, matches);
+    });
+
+    const standaloneNotifications = [];
+    notifications.map(toHistoryItem).forEach((notification) => {
+        const key = `${notification.appointmentId}:${notification.eventKey}`;
+        const matches = notification.appointmentId ? activitiesByEvent.get(key) : null;
+        if (!matches?.length) {
+            standaloneNotifications.push(notification);
+            return;
+        }
+
+        const activity = matches.reduce((closest, candidate) => {
+            const candidateDistance = Math.abs(+candidate.date - +notification.date);
+            const closestDistance = Math.abs(+closest.date - +notification.date);
+            return candidateDistance < closestDistance ? candidate : closest;
+        });
+        activity.notificationIds.push(notification.id);
+        activity.notificationReadAt.push(notification.readAt);
+    });
+
+    activityItems.forEach((activity) => {
+        if (activity.notificationIds.length) {
+            const allSourcesRead =
+                activity.appointmentReadAt && activity.notificationReadAt.every(Boolean);
+            activity.readAt = allSourcesRead
+                ? new Date(
+                      Math.max(
+                          +new Date(activity.appointmentReadAt),
+                          ...activity.notificationReadAt.map((date) => +new Date(date)),
+                      ),
+                  )
+                : null;
+        }
+        delete activity.appointmentReadAt;
+        delete activity.notificationReadAt;
+    });
+
+    return [...standaloneNotifications, ...activityItems].sort(
+        (first, second) => new Date(second.date) - new Date(first.date),
+    );
+}
+
+async function getPatientNotificationHistory(patientId) {
+    const [notifications, appointmentActivity] = await Promise.all([
+        Notification.findAll({
+            where: getPatientVisibleNotificationWhere(patientId),
+            attributes: [
+                "id",
+                "appointment_id",
+                "event_type",
+                "scheduled_at",
+                "sent_at",
+                "read_at",
+            ],
+            order: [["scheduled_at", "DESC"]],
         }),
-        countUnreadAppointmentActivity(patientId),
+        getPatientAppointmentActivity(patientId),
     ]);
-    return deliveryCount + appointmentActivityCount;
+
+    return mergePatientNotificationHistory(notifications, appointmentActivity);
+}
+
+async function getUnreadCountByPatientId(patientId) {
+    const history = await getPatientNotificationHistory(patientId);
+    return history.filter((item) => !item.readAt).length;
 }
 
 export async function getPatientNotificationSettings(userId) {
@@ -271,28 +325,10 @@ export async function getPatientNotificationSettings(userId) {
         };
     }
 
-    const [storedPreferences, notifications, appointmentActivity] = await Promise.all([
+    const [storedPreferences, history] = await Promise.all([
         NotificationPreference.findAll({ where: { patient_id: patient.id } }),
-        Notification.findAll({
-            where: getPatientVisibleNotificationWhere(patient.id),
-            attributes: [
-                "id",
-                "event_type",
-                "channel",
-                "status",
-                "scheduled_at",
-                "sent_at",
-                "read_at",
-                "attempt_count",
-            ],
-            order: [["scheduled_at", "DESC"]],
-        }),
-        getPatientAppointmentActivity(patient.id),
+        getPatientNotificationHistory(patient.id),
     ]);
-
-    const history = [...notifications.map(toHistoryItem), ...appointmentActivity].sort(
-        (first, second) => new Date(second.date) - new Date(first.date),
-    );
 
     const channelStates = getEnabledChannelStates(storedPreferences);
     const preferences = notificationChannels.flatMap((channel) => {
