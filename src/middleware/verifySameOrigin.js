@@ -66,4 +66,3 @@ export function verifySameOrigin(request, response, next) {
 
     return response.status(403).send("Solicitud no autorizada.");
 }
-
