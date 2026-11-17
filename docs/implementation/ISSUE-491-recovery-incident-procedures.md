@@ -63,11 +63,11 @@ These tests check application cleanup logic. They do not prove that Railway back
 
 ## Remaining work and owner decisions
 
-- Inspect the Backups tab for both MySQL services and record whether backup/PITR is actually enabled.
-- Decide whether to configure PITR, starting with development. This needs explicit approval because MySQL configuration must change, a redeploy is required, and storage/egress charges may apply. Production setup needs its own downtime and rollback plan.
+- The owner confirms there is no real or important data to protect yet. Backup/PITR setup and a restore rehearsal are deferred until before such data is introduced. At that point, inspect the Backups tab for both MySQL services, confirm retention and the latest restorable time, and decide whether PITR is needed.
+- If PITR is chosen later, review the custom MySQL start command first. A redeploy, downtime, and storage/egress charges may apply; production needs its own rollback plan.
 - Identify where production SaludVital is hosted and whether its database and profile-photo files are covered by backups.
 - Assign the incident and privacy contacts.
 - Approve retention periods for long-lived records before making public retention promises.
-- After backup coverage is confirmed and a safe, synthetic or sanitized drill source exists, perform and record a restore rehearsal in a disposable environment.
+- Before real or important data is introduced, confirm a safe restore path and perform a rehearsal only in a disposable environment if the owner approves it.
 
-No application code, database schema, Railway configuration, backup, or restore was changed by this review. Issue #491 remains open until the operational items above are verified.
+No application code, database schema, Railway configuration, backup, or restore was changed by this review. Issue #491 remains open; backup work is intentionally deferred until before real or important data is introduced.
