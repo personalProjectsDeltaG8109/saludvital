@@ -41,7 +41,7 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
             class="text-[#123B73]"
         )
             span.h-2.w-2.rounded-full(class="bg-[#13B8B0]")
-            | Versión 1.1 · 13 de noviembre de 2026
+            | Versión 1.2 · 17 de noviembre de 2026
 
         //- Section 1
         section#about.scroll-mt-28.rounded-2xl.border.border-slate-200.bg-white.p-6.shadow-sm(
@@ -128,6 +128,8 @@ main.mx-auto.grid.max-w-7xl.items-start.gap-8.px-5.py-10(
                 h2.text-2xl.font-extrabold(class="text-[#123B73]") Seguridad y acceso
 
             p.leading-7.text-slate-600 SaludVital contempla autenticación de usuarios, protección de contraseñas y controles de acceso basados en roles. Cada usuario debe acceder únicamente a la información autorizada para sus funciones.
+
+            p.mt-5.text-sm.leading-6.text-slate-600 Para mantener la sesión iniciada, SaludVital usa una cookie técnica de autenticación. Los scripts de la página no pueden leer su valor, vence según el tiempo de sesión configurado y se elimina al cerrar sesión. En las pantallas revisadas no se encontraron cookies de publicidad o analítica, almacenamiento local del navegador ni contenido de terceros cargado automáticamente.
 
             .mt-5.grid.gap-3(class="sm:grid-cols-3")
                 each feature in ["Autenticación", "Control por roles", "Protección de cuentas"]
