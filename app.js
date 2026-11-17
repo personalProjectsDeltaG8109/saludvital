@@ -9,6 +9,7 @@ import doctorRoutes from "./src/modules/doctor/routes/doctorRoutes.js";
 import patientRoutes from "./src/modules/patient/routes/patientRoutes.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
 import { authenticateTokenOptional } from "./src/middleware/authenticateToken.js";
+import { verifySameOrigin } from "./src/middleware/verifySameOrigin.js";
 import locationRoutes from "./src/modules/auth/routes/locationRoutes.js";
 import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookRoutes.js";
 import inalambriaSmsWebhookRoutes from "./src/modules/patient/routes/inalambriaSmsWebhookRoutes.js";
@@ -34,6 +35,7 @@ app.use(
     }),
 );
 app.use(cookieParser());
+app.use(verifySameOrigin);
 // Normalize encoded profile photo paths so alternate URLs cannot reach static serving.
 app.use((request, response, next) => {
     let decodedPath;
