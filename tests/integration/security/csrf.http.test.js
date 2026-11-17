@@ -48,4 +48,3 @@ describe("authenticated state-changing request origin checks", () => {
         expect(response.status).not.toBe(403);
     });
 });
-
