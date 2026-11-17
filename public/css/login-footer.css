@@ -86,12 +86,11 @@
 }
 
 .sv-public-footer__tagline-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #13b8b0;
-    font-size: 22px;
-    line-height: 1;
+    display: block;
+    width: 24px;
+    height: 21px;
+    flex-shrink: 0;
+    object-fit: contain;
 }
 
 .sv-public-footer__tagline strong {
