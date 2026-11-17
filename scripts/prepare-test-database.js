@@ -39,4 +39,3 @@ runDatabaseCommand(["db:seed", "--seed", "20261014230143-initial-roles.js"]);
 
 // Add the shared appointment catalog before parallel integration tests start.
 runDatabaseCommand(["db:seed", "--seed", "20261015022211-initial-appointment-statuses.js"]);
-
