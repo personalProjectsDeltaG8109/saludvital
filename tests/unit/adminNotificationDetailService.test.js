@@ -140,6 +140,24 @@ describe("administrator notification detail service", () => {
         expect(JSON.stringify(detail)).not.toContain("Bearer");
     });
 
+    test("shows a stored safe diagnostic without exposing provider error text", async () => {
+        Notification.findByPk.mockResolvedValue(
+            notificationRecord({
+                status: "Failed",
+                provider_delivery_status: null,
+                last_error: "provider_temporary_failure:http_503",
+            }),
+        );
+
+        const detail = await getAdminNotificationDetails("52");
+
+        expect(detail.failure).toEqual({
+            description: "El proveedor no está disponible temporalmente.",
+            providerCode: null,
+        });
+        expect(JSON.stringify(detail)).not.toContain("http_503");
+    });
+
     test("shows uncertain outcome explicitly without inventing delivery or failure", async () => {
         Notification.findByPk.mockResolvedValue(
             notificationRecord({

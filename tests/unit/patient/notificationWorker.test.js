@@ -226,8 +226,24 @@ describe("appointment notification worker", () => {
         expect(notification.update).toHaveBeenLastCalledWith({
             status: "Pending",
             scheduled_at: new Date("2026-11-01T15:01:00.000Z"),
-            last_error: "Temporary outage",
+            last_error: "provider_temporary_failure:http_503",
         });
+    });
+
+    test("stores only safe diagnostics when a provider error contains private markers", async () => {
+        const sensitiveError = Object.assign(
+            new Error("Bearer fake-token patient@example.test clinical-marker"),
+            { statusCode: 503 },
+        );
+        deliverNotification.mockRejectedValue(sensitiveError);
+
+        await processNotificationBatch();
+
+        const failureUpdate = notification.update.mock.calls.at(-1)[0];
+        expect(failureUpdate.last_error).toBe("provider_temporary_failure:http_503");
+        expect(JSON.stringify(failureUpdate)).not.toMatch(
+            /fake-token|patient@example\.test|clinical-marker/,
+        );
     });
 
     // Do not retry permanent provider configuration or template failures.
@@ -241,7 +257,7 @@ describe("appointment notification worker", () => {
         expect(notification.update).toHaveBeenLastCalledWith({
             status: "Failed",
             scheduled_at: notification.scheduled_at,
-            last_error: "The Meta WhatsApp sender is not configured.",
+            last_error: "unexpected_error",
         });
     });
 
@@ -257,7 +273,7 @@ describe("appointment notification worker", () => {
         expect(notification.update).toHaveBeenLastCalledWith({
             status: "Failed",
             scheduled_at: notification.scheduled_at,
-            last_error: "Temporary outage",
+            last_error: "provider_temporary_failure:http_503",
         });
     });
 });
