@@ -1,10 +1,12 @@
 import { createHmac } from "node:crypto";
 import { afterEach, describe, expect, test } from "@jest/globals";
 import {
+    getSafeAppointmentErrorMessage,
     messageExpiryDate,
     verifyMetaWebhookChallenge,
     verifyMetaWebhookSignature,
 } from "../../src/modules/patient/services/whatsappWebhookService.js";
+import { AppointmentError } from "../../src/modules/patient/errors/appointmentError.js";
 
 const environmentKeys = [
     "META_WHATSAPP_WEBHOOK_VERIFY_TOKEN",
@@ -23,6 +25,19 @@ afterEach(() => {
 });
 
 describe("Meta WhatsApp webhook security and retention", () => {
+    test("shows expected appointment rules but hides unexpected error details from patients", () => {
+        const fallbackMessage = "No pudimos reservar la cita.";
+        const appointmentError = new AppointmentError("Ese horario ya fue reservado.", 409);
+        const unexpectedError = new Error("Bearer fake-token patient@example.test");
+
+        expect(getSafeAppointmentErrorMessage(appointmentError, fallbackMessage)).toBe(
+            "Ese horario ya fue reservado.",
+        );
+        expect(getSafeAppointmentErrorMessage(unexpectedError, fallbackMessage)).toBe(
+            fallbackMessage,
+        );
+    });
+
     test("accepts only the configured webhook verification token", () => {
         process.env.META_WHATSAPP_WEBHOOK_VERIFY_TOKEN = "local-token";
         expect(

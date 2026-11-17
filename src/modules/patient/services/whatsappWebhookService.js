@@ -23,6 +23,7 @@ import {
 import { sendWhatsAppIdentityCode } from "./resendEmailService.js";
 import { sendWhatsAppReply } from "./whatsappService.js";
 import { processMetaDeliveryStatus } from "./whatsappDeliveryStatusService.js";
+import { AppointmentError } from "../errors/appointmentError.js";
 
 const META_PROVIDER = "Meta WhatsApp Cloud API";
 const DEFAULT_RETENTION_DAYS = 30;
@@ -37,6 +38,14 @@ const INTENT_BY_FLOW_STEP = {
     reschedule: "reschedule",
     cancel: "cancel",
 };
+
+export function getSafeAppointmentErrorMessage(error, fallbackMessage) {
+    if (error instanceof AppointmentError && error.statusCode >= 400 && error.statusCode < 500) {
+        return error.message;
+    }
+
+    return fallbackMessage;
+}
 
 function getPhoneNumberId() {
     return process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim() || "";
@@ -666,7 +675,7 @@ async function handleSelection(conversation, contactId, text, userId, state) {
             await showMainMenu(
                 conversation,
                 contactId,
-                error.message || "No pudimos reservar la cita.",
+                getSafeAppointmentErrorMessage(error, "No pudimos reservar la cita."),
             );
         }
         return;
@@ -732,7 +741,7 @@ async function handleSelection(conversation, contactId, text, userId, state) {
             await showMainMenu(
                 conversation,
                 contactId,
-                error.message || "No pudimos reprogramar la cita.",
+                getSafeAppointmentErrorMessage(error, "No pudimos reprogramar la cita."),
             );
         }
         return;
@@ -771,7 +780,7 @@ async function handleSelection(conversation, contactId, text, userId, state) {
             await showMainMenu(
                 conversation,
                 contactId,
-                error.message || "No pudimos cancelar la cita.",
+                getSafeAppointmentErrorMessage(error, "No pudimos cancelar la cita."),
             );
         }
         return;
