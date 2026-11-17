@@ -132,6 +132,9 @@ try {
     }
     await page.locator("[data-history-row]").nth(1).click();
     await page.getByText("Actualización de SaludVital").waitFor();
+    if ((await page.locator("[data-appointment-details-status]").textContent()).trim()) {
+        throw new Error("The notification detail should not show a technical success message.");
+    }
     await page.locator("[data-appointment-details-dialog]").screenshot({
         path: path.resolve("test-results", "patient-notification-detail-preview.png"),
     });
@@ -150,6 +153,9 @@ try {
     await page.locator("[data-history-row]").first().click();
     await page.getByText("Dra. Ejemplo").waitFor();
     await page.getByText("Estado de la cita").waitFor();
+    if ((await page.locator("[data-appointment-details-status]").textContent()).trim()) {
+        throw new Error("The appointment detail should not show a technical success message.");
+    }
     if (await page.getByText("Canal", { exact: true }).count()) {
         throw new Error("The appointment detail should not show the delivery channel.");
     }
