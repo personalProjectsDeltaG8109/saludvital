@@ -1,4 +1,5 @@
 import { processEmailOutboxBatch } from "./emailOutboxWorker.js";
+import { getSafeErrorDiagnostics } from "../../../shared/services/safeErrorDiagnostics.js";
 
 // Configure the polling interval and the maximum jobs per batch.
 const DEFAULT_INTERVAL_MS = 5000;
@@ -37,7 +38,7 @@ export function startEmailOutboxScheduler({
             .catch((error) => {
                 // Keep the scheduler alive if a processing batch fails.
                 console.error("Email outbox scheduler iteration failed.", {
-                    error: error instanceof Error ? error.message : "Unknown error",
+                    ...getSafeErrorDiagnostics(error),
                 });
             })
             .finally(() => {

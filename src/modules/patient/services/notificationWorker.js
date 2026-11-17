@@ -6,6 +6,7 @@ import {
     isTestRecipientAllowed,
 } from "./notificationTestRecipientPolicy.js";
 import { deliverNotification } from "./notificationDeliveryService.js";
+import { serializeSafeErrorDiagnostic } from "../../../shared/services/safeErrorDiagnostics.js";
 
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 15 * 60_000, 60 * 60_000];
@@ -51,12 +52,10 @@ async function recordRetryableFailure(notification, error) {
     const attempts = Number(notification.attempt_count);
     const retryDelay = RETRY_DELAYS_MS[attempts - 1];
     const retry = isRetryable(error) && attempts < MAX_ATTEMPTS && retryDelay !== undefined;
-    const errorMessage = error instanceof Error ? error.message : "Unknown delivery error.";
-
     await notification.update({
         status: retry ? "Pending" : "Failed",
         scheduled_at: retry ? new Date(Date.now() + retryDelay) : notification.scheduled_at,
-        last_error: errorMessage.slice(0, 2000),
+        last_error: serializeSafeErrorDiagnostic(error),
     });
 }
 

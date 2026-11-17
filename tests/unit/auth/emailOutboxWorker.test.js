@@ -268,6 +268,56 @@ describe("Email outbox worker", () => {
         }
     });
 
+    test("does not log sensitive details from an email provider error", async () => {
+        const job = {
+            id: 18,
+            user_id: 52,
+            event_type: "email_verification",
+            attempts: 0,
+            status: "pending",
+            update: jest.fn(async (values) => Object.assign(job, values)),
+        };
+        const user = {
+            id: 52,
+            email: "patient@example.test",
+            pending_email: null,
+            is_active: true,
+            email_verified_at: null,
+            email_verification_requested_at: null,
+            created_at: new Date(),
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const sensitiveError = new Error("Bearer fake-token patient@example.test clinical-marker");
+        const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+        User.findByPk.mockResolvedValue(user);
+        sendVerificationEmail.mockRejectedValue(sensitiveError);
+
+        try {
+            await expect(processNextEmailOutboxJob()).resolves.toEqual({
+                processed: true,
+                status: "retry_scheduled",
+            });
+
+            const serializedLogs = JSON.stringify(consoleErrorSpy.mock.calls);
+            expect(serializedLogs).not.toMatch(/fake-token|patient@example\.test|clinical-marker/);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Email outbox delivery failed.",
+                expect.objectContaining({
+                    jobId: 18,
+                    eventType: "email_verification",
+                    attempt: 1,
+                    category: "unexpected_error",
+                    httpStatus: null,
+                }),
+            );
+        } finally {
+            consoleErrorSpy.mockRestore();
+        }
+    });
+
     // Reject invalid reset URL configuration before touching reset tokens.
     test.each([
         ["", "test"],
@@ -306,7 +356,8 @@ describe("Email outbox worker", () => {
                     jobId: 8,
                     eventType: "password_reset",
                     attempt: 1,
-                    error: expect.any(String),
+                    category: "unexpected_error",
+                    httpStatus: null,
                 }),
             );
 
