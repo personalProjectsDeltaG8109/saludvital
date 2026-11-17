@@ -129,6 +129,25 @@ try {
     console.log("Page title:", await desktop.title());
     console.log("Visible headings:", await desktop.getByRole("heading").allTextContents());
 
+    const footerHeart = desktop.locator(".sv-public-footer__tagline-icon");
+    await footerHeart.evaluate((image) => image.decode());
+    const footerHeartImage = await footerHeart.evaluate((image) => ({
+        tagName: image.tagName,
+        src: image.getAttribute("src"),
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+    }));
+    if (
+        footerHeartImage.tagName !== "IMG" ||
+        footerHeartImage.src !== "/brand/heart.webp" ||
+        footerHeartImage.width !== 96 ||
+        footerHeartImage.height !== 82
+    ) {
+        throw new Error(
+            `The optimized footer heart is not rendered: ${JSON.stringify(footerHeartImage)}`,
+        );
+    }
+
     const desktopColors = await desktop.evaluate(() => ({
         background: getComputedStyle(document.body).backgroundColor,
         primary: getComputedStyle(document.body).color,
@@ -724,3 +743,4 @@ try {
 
     server.kill();
 }
+
