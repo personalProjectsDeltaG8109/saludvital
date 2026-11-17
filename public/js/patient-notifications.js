@@ -292,7 +292,7 @@
             "[data-appointment-occurred-label]",
         );
 
-        status.textContent = "Cargando el detalle de la cita…";
+        status.textContent = "";
         title.textContent =
             row.querySelector(".notifications-history-kind")?.textContent.trim() ||
             "Detalle de la cita";
@@ -313,7 +313,6 @@
             factRows.status.hidden = true;
             fields.occurredAt.textContent = formatDate(row.dataset.historyDate);
             fields.message.textContent = row.dataset.historyDetails || "—";
-            status.textContent = "Detalle cargado.";
             if (row.classList.contains("is-unread")) await markRowsAsRead([row]);
             return;
         }
@@ -348,7 +347,6 @@
                 photo.hidden = false;
                 photoPlaceholder.hidden = true;
             }
-            status.textContent = "Detalle cargado.";
             if (row.classList.contains("is-unread")) await markRowsAsRead([row], [historyId]);
         } catch (error) {
             status.textContent = error.message || "No se pudo cargar el detalle de la cita.";
