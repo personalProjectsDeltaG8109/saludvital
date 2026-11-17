@@ -82,4 +82,3 @@ describe("verifySameOrigin", () => {
         expect(response.status).not.toHaveBeenCalled();
     });
 });
-
