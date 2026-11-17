@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-17
 
-**Status:** Repository and hosting review completed; backup verification and restore rehearsal remain open.
+**Status:** Repository and hosting review documented; backup verification and restore rehearsal deferred until before real or important data is introduced.
 
 ## What the application currently retains
 
@@ -70,4 +70,4 @@ These tests check application cleanup logic. They do not prove that Railway back
 - Approve retention periods for long-lived records before making public retention promises.
 - Before real or important data is introduced, confirm a safe restore path and perform a rehearsal only in a disposable environment if the owner approves it.
 
-No application code, database schema, Railway configuration, backup, or restore was changed by this review. Issue #491 remains open; backup work is intentionally deferred until before real or important data is introduced.
+No application code, database schema, Railway configuration, backup, or restore was changed by this review. Issue #491 was closed as not planned for now at the owner's request. This does not mean backup coverage or restoration was completed; revisit them before real or important data is introduced.
