@@ -35,4 +35,3 @@ The new denial message is a fixed Spanish string. No request headers, cookies, s
 ## Limitations
 
 This is an origin-boundary check, not a synchronizer-token implementation. Requests from non-browser clients that omit both `Origin` and `Referer` remain compatible by design. If the deployment later accepts browser mutations from multiple approved origins, those origins must be explicitly modeled instead of weakening the host comparison.
-
