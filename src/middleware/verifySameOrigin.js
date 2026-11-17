@@ -41,7 +41,10 @@ function hasAuthenticationCookie(request) {
 }
 
 function isJsonRequest(request) {
-    return request.path.startsWith("/api/") || request.accepts?.(["json", "html"]) === "json";
+    if (request.path.startsWith("/api/")) return true;
+
+    const accept = request.get("accept")?.toLowerCase() || "";
+    return accept.includes("application/json") && !accept.includes("text/html");
 }
 
 /**
