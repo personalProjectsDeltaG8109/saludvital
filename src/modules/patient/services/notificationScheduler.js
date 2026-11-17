@@ -1,5 +1,6 @@
 import { processNotificationBatch } from "./notificationWorker.js";
 import { backfillUpcomingAppointmentReminders } from "./notificationAutomationService.js";
+import { getSafeErrorDiagnostics } from "../../../shared/services/safeErrorDiagnostics.js";
 
 const DEFAULT_INTERVAL_MS = 5000;
 const DEFAULT_BATCH_SIZE = 10;
@@ -25,7 +26,7 @@ export function startNotificationScheduler({
         activeRun = processNotificationBatch(batchSize)
             .catch((error) => {
                 console.error("Notification scheduler iteration failed.", {
-                    error: error instanceof Error ? error.message : "Unknown error",
+                    ...getSafeErrorDiagnostics(error),
                 });
             })
             .finally(() => {
@@ -41,7 +42,7 @@ export function startNotificationScheduler({
         })
         .catch((error) => {
             console.error("Upcoming appointment reminder backfill failed.", {
-                error: error instanceof Error ? error.message : "Unknown error",
+                ...getSafeErrorDiagnostics(error),
             });
         })
         .finally(() => {

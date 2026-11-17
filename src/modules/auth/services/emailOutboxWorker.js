@@ -3,6 +3,7 @@ import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import environment from "../../../../config/environment.js";
 import { EmailOutbox, PasswordResetToken, User } from "../../../models/associations.js";
+import { getSafeErrorDiagnostics } from "../../../shared/services/safeErrorDiagnostics.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService.js";
 
 // Configure retry delays and recovery limits.
@@ -307,12 +308,12 @@ export async function processNextEmailOutboxJob() {
 
         return { processed: true, status: "sent" };
     } catch (error) {
-        // Do not log verification tokens, URLs, passwords, or email contents.
+        // Provider messages can contain account data, so log only fixed diagnostics.
         console.error("Email outbox delivery failed.", {
             jobId: job.id,
             eventType: job.eventType,
             attempt: job.attempts,
-            error: error.message,
+            ...getSafeErrorDiagnostics(error),
         });
 
         await recordEmailFailure(job);
