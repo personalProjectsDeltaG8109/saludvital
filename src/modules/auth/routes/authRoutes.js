@@ -1,5 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
+import { getAuthRateLimitKey } from "../services/authRateLimitKey.js";
 
 import {
     login,
@@ -25,6 +26,7 @@ import {
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 5,
+    keyGenerator: getAuthRateLimitKey,
     skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
@@ -40,6 +42,7 @@ const loginLimiter = rateLimit({
 const registerLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 5,
+    keyGenerator: getAuthRateLimitKey,
     standardHeaders: true,
     legacyHeaders: false,
 
@@ -58,6 +61,7 @@ const registerLimiter = rateLimit({
 const passwordRecoveryLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 5,
+    keyGenerator: getAuthRateLimitKey,
     standardHeaders: true,
     legacyHeaders: false,
     handler: (req, res) => {
