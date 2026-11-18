@@ -84,13 +84,17 @@
                     )
                         path(d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z")
                         circle(cx="12", cy="12", r="3")
+                        path.login-password-toggle__slash(
+                            d="M3 3 21 21",
+                            data-password-toggle-slash,
+                            hidden
+                        )
                     span.sr-only(data-password-toggle-label) Mostrar contraseña
             .login-forgot-link
                 a(href="/forgot-password") ¿Olvidaste tu contraseña?
 
         button.login-submit(type="submit", disabled=Boolean(loginLockedUntil))
             | Iniciar sesión
-            span(aria-hidden="true") →
 
     .login-register
         span o
@@ -98,5 +102,15 @@
         a(href="/register") Crear una cuenta
 
     p.login-security-note
-        span(aria-hidden="true") ◈
+        span.login-security-icon-wrap(aria-hidden="true")
+            svg.login-security-icon(
+                viewBox="0 0 24 24",
+                fill="none",
+                stroke="currentColor",
+                stroke-width="1.8",
+                stroke-linecap="round",
+                stroke-linejoin="round"
+            )
+                path(d="M12 3 20 6v5c0 4.8-3.2 8.1-8 10-4.8-1.9-8-5.2-8-10V6l8-3Z")
+                path(d="m8.5 12 2.3 2.3 4.8-4.8")
         | Tu información de salud está protegida.
