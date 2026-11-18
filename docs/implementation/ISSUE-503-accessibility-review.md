@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-18  
 **Branch:** `docs/503-accessibility-review`  
-**Status:** Automated and browser review recorded. The contrast finding was fixed in PR #509 and Issue #504 is closed. The project owner confirmed that Windows Narrator reads the terms paragraphs in reading mode. Issue #503 remains open for screen-reader checks on representative authenticated pages and a full manual keyboard review; this review does not claim WCAG conformance.
+**Status:** Automated, browser, and representative manual reviews are recorded. The contrast finding was fixed in PR #509 and Issue #504 is closed. The project owner confirmed screen-reader and keyboard checks on public Terms, Patient Notifications, Doctor Notifications, and Administrator Notifications pages. This review does not claim full WCAG conformance.
 
 ## Pages and states reviewed
 
@@ -34,4 +34,11 @@ The initial e2e run, before rebuilding CSS, failed because the tracked `public/c
 
 ## Remaining review
 
-The project owner confirmed that Windows Narrator reads paragraphs on the terms page when using reading mode; Tab alone moves between interactive controls and does not read each paragraph. This is a spot check of one public page, not a review of all page types. The automated checks and browser keyboard probes are evidence for the states above, not proof of WCAG 2.2 AA compliance. Screen-reader checks on representative Patient, Doctor, and Administrator pages and a complete manual keyboard path review remain before Issue #503 can be closed. Issue #504 has been fixed and closed; the duplicate main landmarks remain tracked separately in Issue #505.
+The project owner confirmed these representative manual checks:
+
+- Public Terms: Windows Narrator reads the paragraphs in reading mode.
+- Patient Notifications: Narrator reads the content and keyboard focus follows a clear order.
+- Doctor Notifications: Narrator reads the content; the detail opens with Enter, closes with Escape, and returns focus to its trigger.
+- Administrator Notifications: Narrator reads the content and the keyboard controls are clear.
+
+The sample review is complete for these pages and states. It is not proof of full WCAG 2.2 AA compliance. Issue #504 has been fixed and closed; the duplicate main landmarks remain tracked separately in Issue #505.
