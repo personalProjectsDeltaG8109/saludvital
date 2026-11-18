@@ -2678,6 +2678,10 @@
     height: 17px;
 }
 
+.legal-section-number {
+    color: #06737c;
+}
+
 .legal-section > p {
     margin: 0;
     color: #546b82;
