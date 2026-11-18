@@ -233,11 +233,36 @@ try {
         await loginPage.locator('input[name="password"]').waitFor();
 
         const passwordToggle = loginPage.getByRole("button", { name: "Mostrar contraseña" });
+        const passwordSlash = loginPage.locator("[data-password-toggle-slash]");
+        if (await passwordSlash.isVisible()) {
+            throw new Error("The hidden password must use the eye icon without a slash.");
+        }
+
         await passwordToggle.click();
         if ((await loginPage.locator('input[name="password"]').getAttribute("type")) !== "text") {
             throw new Error("The login password visibility control did not reveal the password.");
         }
+        if (!(await passwordSlash.isVisible())) {
+            const iconState = await passwordSlash.evaluate((slash) => ({
+                hidden: slash.hidden,
+                display: getComputedStyle(slash).display,
+                markup: slash.outerHTML,
+                passwordType: document.querySelector('input[name="password"]').type,
+            }));
+            throw new Error(
+                `The visible password must use the eye icon with a slash: ${JSON.stringify(iconState)}`,
+            );
+        }
+
         await loginPage.getByRole("button", { name: "Ocultar contraseña" }).click();
+        if (await passwordSlash.isVisible()) {
+            throw new Error("The hidden password must return to the eye icon without a slash.");
+        }
+
+        if (await loginPage.locator(".login-submit > span[aria-hidden='true']").count()) {
+            throw new Error("The login submit button must not show the decorative arrow.");
+        }
+        await loginPage.locator(".login-security-icon").waitFor({ state: "visible" });
 
         if (await loginPage.getByLabel("Recordarme").count()) {
             throw new Error("The login page must not offer a persistent-session option.");
