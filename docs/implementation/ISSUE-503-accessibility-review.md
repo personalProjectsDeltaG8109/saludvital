@@ -1,0 +1,37 @@
+# Issue #503 — Accessibility review notes
+
+**Review date:** 2026-11-18  
+**Branch:** `docs/503-accessibility-review`  
+**Status:** Automated and browser review recorded. Issue #503 remains open for a manual screen-reader spot check; this review does not claim WCAG conformance.
+
+## Pages and states reviewed
+
+The project Playwright suite was run after rebuilding the generated CSS bundle. It covered the public home and authentication flows, including login, password recovery, password reset, registration, password visibility, lockout, reduced motion, and splash fallback. It also covered representative Patient, Doctor, and Administrator pages. Existing browser checks exercise keyboard controls and dialogs, form labels and errors, responsive reflow, image rendering, loading/error states, and axe-core rules. Relevant files include `tests/e2e/app.e2e.js`, `tests/e2e/logout-confirmation.e2e.js`, `tests/e2e/patient-notification-history.e2e.js`, `tests/e2e/doctor-notifications.e2e.js`, and `tests/e2e/admin-notifications.e2e.js`.
+
+The public legal pages were opened individually at 390×844, 768×1024, and 1280×900. They were also checked at a 640×400 viewport, which approximates a 1280×800 desktop viewport at 200% browser zoom. No horizontal overflow appeared at those sizes. Pressing Tab first focused the SaludVital sign-in link, with the browser's visible 1px focus outline.
+
+## Confirmed findings
+
+1. **More than one main landmark:** the shared wrapper in `views/legal/layout.pug:14` is a `<main>`, while the terms and help content also use `<main>` in `views/legal/terms-and-conditions.pug:4` and `views/legal/help.pug:4`. The privacy page has another main landmark in `views/legal/partials/privacy-policy-content.pug:1`. axe-core reports `landmark-main-is-top-level` and `landmark-no-duplicate-main` on all three pages. Follow-up: [Issue #505](https://github.com/personalProjectsDeltaG8109/saludvital/issues/505).
+
+2. **Low contrast in terms section numbers:** `src/styles/input.css:2662-2676` uses foreground `#087e89` on background `#e5f7f4` for `.legal-section-number`. axe-core measured 4.34:1; the small bold text needs 4.5:1. The finding affects all eight numbered sections. Follow-up: [Issue #504](https://github.com/personalProjectsDeltaG8109/saludvital/issues/504).
+
+No source fix for either finding is included here; each has its own issue so its correction can be reviewed separately.
+
+## Build artifact
+
+The initial e2e run, before rebuilding CSS, failed because the tracked `public/css/app.css` did not contain the `.login-security-icon` rules already present in `src/styles/input.css`. Rebuilding CSS restored those generated rules, and the full e2e suite then passed. The generated bundle is included so the tracked output matches the source.
+
+## Verification results
+
+- `npm run format` — passed; no formatting changes were needed.
+- The repository's explicit Prettier write command — passed; files were unchanged.
+- `npm test` — passed: 154 suites and 1,187 tests.
+- `npm run lint` — passed.
+- `npm run css:build` — passed.
+- `npm run test:e2e` — passed after the CSS build, including login and role-based browser flows, axe-core checks, keyboard dialogs, and responsive tests.
+- `git diff --check` — passed.
+
+## Remaining review
+
+The automated checks and browser keyboard probes are evidence for the states above, not proof of WCAG 2.2 AA compliance. A screen-reader spot check and a complete manual keyboard path review remain before Issue #503 can be closed. The follow-up issues #504 and #505 need their own implementation branches and reviews.
