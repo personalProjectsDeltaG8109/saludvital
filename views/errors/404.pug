@@ -37,16 +37,17 @@ html(lang="es")
                                         d="M8 3v4m8-4v4M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 8h2m3 0h2m-7 4h2m3 0h2"
                                     )
                                 span Ir a mis citas
-                    a.error-404-support(
-                        href=supportHref,
-                        target="_blank",
-                        rel="noopener noreferrer"
-                    )
-                        svg(viewBox="0 0 24 24", aria-hidden="true")
-                            path(
-                                d="M4 14v-3a8 8 0 0 1 16 0v3m-16-1H3a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v-7Zm16 0h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v-7ZM12 21h3"
-                            )
-                        span ¿Necesitas ayuda? Contacta a soporte.
+                    if supportHref
+                        a.error-404-support(
+                            href=supportHref,
+                            target="_blank",
+                            rel="noopener noreferrer"
+                        )
+                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                path(
+                                    d="M4 14v-3a8 8 0 0 1 16 0v3m-16-1H3a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v-7Zm16 0h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v-7ZM12 21h3"
+                                )
+                            span ¿Necesitas ayuda? Contacta a soporte por WhatsApp.
 
         footer.error-404-footer
             p

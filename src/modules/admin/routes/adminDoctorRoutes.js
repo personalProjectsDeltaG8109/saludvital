@@ -7,6 +7,7 @@ import {
     getAdminDoctorStatusImpact,
     updateAdminDoctorStatus,
 } from "../services/adminDoctorService.js";
+import { getConfiguredWhatsAppContactUrl } from "../../../shared/utils/publicWhatsAppContact.js";
 
 // Receive the shared middleware so doctor routes keep the same access checks.
 export default function createAdminDoctorRoutes(requireAdministrator) {
@@ -118,8 +119,7 @@ export default function createAdminDoctorRoutes(requireAdministrator) {
                         pageTitle: "Médico no encontrado | SaludVital",
                         homeHref: "/admin/doctors",
                         appointmentsHref: null,
-                        supportHref:
-                            "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                        supportHref: getConfiguredWhatsAppContactUrl(),
                     });
                 }
                 return next(error);

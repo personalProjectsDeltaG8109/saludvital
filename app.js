@@ -15,6 +15,7 @@ import whatsappWebhookRoutes from "./src/modules/patient/routes/whatsappWebhookR
 import inalambriaSmsWebhookRoutes from "./src/modules/patient/routes/inalambriaSmsWebhookRoutes.js";
 import legalRoutes from "./src/modules/legal/routes/legalRoutes.js";
 import profilePhotoRoutes from "./src/shared/routes/profilePhotoRoutes.js";
+import { getConfiguredWhatsAppContactUrl } from "./src/shared/utils/publicWhatsAppContact.js";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFile);
@@ -93,13 +94,12 @@ app.use((req, res) => {
         Doctor: "/doctor/appointments",
     };
     const role = req.auth?.role;
-    const supportHref =
-        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.";
+    const supportHref = getConfiguredWhatsAppContactUrl();
 
     return res.status(404).render("errors/404", {
         pageTitle: "Página no encontrada | SaludVital",
         homeHref: homeByRole[role] || "/login",
-        appointmentsHref: role ? appointmentsByRole[role] || null : "/patient/appointments",
+        appointmentsHref: role ? appointmentsByRole[role] || null : null,
         supportHref,
     });
 });

@@ -63,6 +63,7 @@ import {
     removeAdminProfilePhoto,
     updateAdminProfilePhoto,
 } from "../services/adminProfilePhotoService.js";
+import { getConfiguredWhatsAppContactUrl } from "../../../shared/utils/publicWhatsAppContact.js";
 import {
     createAdminSpecialty,
     getAdminSpecialties,
@@ -610,8 +611,7 @@ adminRoutes.get(
                     pageTitle: "Cita no encontrada | SaludVital",
                     homeHref: "/admin/dashboard",
                     appointmentsHref: "/admin/appointments",
-                    supportHref:
-                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                    supportHref: getConfiguredWhatsAppContactUrl(),
                 });
             }
             return next(error);
@@ -635,8 +635,7 @@ adminRoutes.get(
                     pageTitle: "Cita no encontrada | SaludVital",
                     homeHref: "/admin/dashboard",
                     appointmentsHref: "/admin/appointments",
-                    supportHref:
-                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                    supportHref: getConfiguredWhatsAppContactUrl(),
                 });
             }
             return next(error);
@@ -672,8 +671,7 @@ adminRoutes.get(
                     pageTitle: "Especialidad no encontrada | SaludVital",
                     homeHref: "/admin/specialties",
                     appointmentsHref: null,
-                    supportHref:
-                        "https://wa.me/573137498332?text=Hola%2C%20quisiera%20recibir%20informaci%C3%B3n%20sobre%20SaludVital.",
+                    supportHref: getConfiguredWhatsAppContactUrl(),
                 });
             }
             return next(error);
