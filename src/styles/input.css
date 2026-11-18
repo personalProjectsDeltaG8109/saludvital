@@ -315,7 +315,6 @@
     min-height: 52px;
     align-items: center;
     justify-content: center;
-    gap: 12px;
     margin: 2px auto 0;
     width: min(100%, 280px);
     border: 0;
@@ -395,9 +394,26 @@
     text-align: center;
 }
 
-.login-security-note span {
-    color: #168de2;
-    font-size: 1.1rem;
+.login-security-icon-wrap {
+    display: grid;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    place-items: center;
+    border: 1px solid #d5efec;
+    border-radius: 50%;
+    background: #eaf8f6;
+    color: #078b7b;
+}
+
+.login-security-icon {
+    display: block;
+    width: 15px;
+    height: 15px;
+}
+
+.login-password-toggle__slash {
+    stroke-width: 2.2;
 }
 
 .recovery-page {
