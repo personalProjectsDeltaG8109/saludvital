@@ -748,6 +748,39 @@ try {
 
     await registerPage.close();
 
+    // Keep the legal section numbers above WCAG's normal-text contrast minimum.
+    const termsPage = await context.newPage();
+    for (const viewport of [
+        { name: "mobile", width: 375, height: 812 },
+        { name: "desktop", width: 1440, height: 900 },
+    ]) {
+        await termsPage.setViewportSize(viewport);
+        await termsPage.goto(`${baseUrl}/terms`);
+
+        const sectionNumberCount = await termsPage.locator(".legal-section-number").count();
+        if (sectionNumberCount !== 8) {
+            throw new Error(`Expected 8 terms section numbers, but found ${sectionNumberCount}.`);
+        }
+
+        const termsAccessibility = await new AxeBuilder({ page: termsPage })
+            .withRules(["color-contrast"])
+            .include(".legal-section-number")
+            .analyze();
+
+        if (termsAccessibility.violations.length > 0) {
+            console.error(JSON.stringify(termsAccessibility.violations, null, 2));
+            throw new Error(
+                `Terms section numbers failed the color contrast check on ${viewport.name}.`,
+            );
+        }
+
+        console.log(
+            `PASS: terms section numbers pass axe-core contrast checks on ${viewport.name}.`,
+        );
+    }
+
+    await termsPage.close();
+
     // Run automated accessibility checks with axe-core.
     const accessibility = await new AxeBuilder({ page: desktop }).analyze();
 
