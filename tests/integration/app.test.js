@@ -142,9 +142,42 @@ describe("SaludVital application", () => {
     });
 
     test("unknown routes return 404", async () => {
-        const response = await request(app).get("/route-that-does-not-exist");
+        const previousContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+        delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
 
-        expect(response.status).toBe(404);
+        try {
+            const response = await request(app).get("/route-that-does-not-exist");
+
+            expect(response.status).toBe(404);
+            expect(response.text).not.toContain("error-404-support");
+            expect(response.text).not.toContain("/patient/appointments");
+        } finally {
+            if (previousContactNumber === undefined) {
+                delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+            } else {
+                process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = previousContactNumber;
+            }
+        }
+    });
+
+    test("unknown routes show the configured public WhatsApp contact", async () => {
+        const previousContactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+        process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = "+57 (300) 123-4567";
+
+        try {
+            const response = await request(app).get("/route-that-does-not-exist");
+
+            expect(response.status).toBe(404);
+            expect(response.text).toContain("https://wa.me/573001234567");
+            expect(response.text).toContain("Contacta a soporte por WhatsApp");
+            expect(response.text).not.toContain("/patient/appointments");
+        } finally {
+            if (previousContactNumber === undefined) {
+                delete process.env.LOGIN_WHATSAPP_CONTACT_NUMBER;
+            } else {
+                process.env.LOGIN_WHATSAPP_CONTACT_NUMBER = previousContactNumber;
+            }
+        }
     });
 
     test("doctor detail pages require an authenticated administrator", async () => {

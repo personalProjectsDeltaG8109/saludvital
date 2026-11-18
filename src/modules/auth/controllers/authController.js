@@ -21,6 +21,7 @@ import {
 } from "../services/patientRegistrationConsent.js";
 
 import { requestPasswordReset, resetPassword } from "../services/passwordResetService.js";
+import { getConfiguredWhatsAppContactUrl } from "../../../shared/utils/publicWhatsAppContact.js";
 
 // Verify a patient's email address using the supplied token.
 export async function verifyEmailAddress(req, res, next) {
@@ -101,13 +102,6 @@ const dashboardRoutes = {
 /**
  * Render the login page with an optional error message.
  */
-function getConfiguredWhatsAppContactUrl() {
-    const contactNumber = process.env.LOGIN_WHATSAPP_CONTACT_NUMBER?.replace(/\D/g, "") || "";
-    return /^[1-9]\d{7,14}$/.test(contactNumber)
-        ? `https://wa.me/${contactNumber}?text=${encodeURIComponent("Hola, quisiera recibir información sobre SaludVital.")}`
-        : null;
-}
-
 function getLoginPageData(error, lockedUntil = null, showLoginSplash = false) {
     return {
         pageTitle: "Iniciar sesión | SaludVital",

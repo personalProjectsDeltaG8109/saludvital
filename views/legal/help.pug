@@ -2,46 +2,53 @@ extends ./layout
 
 block legalBody
     main.legal-article(aria-label="Ayuda de SaludVital")
-        p.legal-version Respuestas para tu cuenta de demostración
+        p.legal-version Guía para usar la demostración de SaludVital
 
-        section#sign-in.legal-section
+        section#account-help.legal-section
             .legal-section-heading
                 span.legal-section-icon
-                    span.legal-icon-symbol(aria-hidden="true") ↗
-                h3 ¿Cómo ingreso?
-            p Abre la página de inicio de sesión y utiliza una cuenta de prueba habilitada para el rol correspondiente.
+                    span.legal-icon-symbol(aria-hidden="true") 1
+                h3 ¿Cómo creo y verifico mi cuenta?
+            p Los pacientes pueden crear una cuenta desde la página de registro. Deben abrir el enlace enviado al correo antes de iniciar sesión. Si no llega, revisa la carpeta de correo no deseado. Los registros de pacientes que no se verifican pueden eliminarse después de 30 minutos si no tienen historial protegido. Médicos y administradores usan cuentas habilitadas para su rol.
+
+        section#password-help.legal-section
+            .legal-section-heading
+                span.legal-section-icon
+                    span.legal-icon-symbol(aria-hidden="true") 2
+                h3 ¿Cómo recupero mi contraseña?
+            p En el inicio de sesión, selecciona “¿Olvidaste tu contraseña?”, escribe el correo de tu cuenta y sigue el enlace que recibas. La respuesta confirma que se procesó la solicitud sin revelar si el correo está registrado.
 
         section#patient-help.legal-section
             .legal-section-heading
                 span.legal-section-icon
-                    span.legal-icon-symbol(aria-hidden="true") P
-                h3 ¿Qué puedo hacer como paciente?
-            p Puedes revisar tu panel, gestionar citas de demostración, consultar notificaciones y ver la información ficticia disponible para tu cuenta.
+                    span.legal-icon-symbol(aria-hidden="true") 3
+                h3 ¿Cómo gestiono mis citas de demostración?
+            p Desde “Pedir cita”, elige una especialidad, un médico, una fecha y un horario disponible, revisa el resumen y confirma. En “Mis citas” puedes consultar tus registros. Para cancelar una cita confirmada desde el portal del paciente, debes hacerlo con al menos 24 horas de anticipación. Para reprogramarla, solicita el cambio al menos 24 horas antes; el nuevo horario debe comenzar con al menos 5 horas de anticipación y cada cita admite hasta 3 reprogramaciones.
 
         section#doctor-help.legal-section
             .legal-section-heading
                 span.legal-section-icon
-                    span.legal-icon-symbol(aria-hidden="true") +
-                h3 ¿Qué puedo hacer como médico?
-            p Según los permisos de la cuenta de prueba, puedes revisar la agenda, consultar pacientes asignados y completar consultas simuladas.
+                    span.legal-icon-symbol(aria-hidden="true") 4
+                h3 ¿Qué puede hacer un médico?
+            p Según los permisos de su cuenta, puede revisar su agenda, consultar pacientes asignados y registrar la atención de consultas de demostración.
 
         section#admin-help.legal-section
             .legal-section-heading
                 span.legal-section-icon
-                    span.legal-icon-symbol(aria-hidden="true") ⚙
-                h3 ¿Qué puedo hacer como administrador?
-            p El panel administrativo permite revisar y gestionar la información ficticia de demostración según el acceso asignado.
+                    span.legal-icon-symbol(aria-hidden="true") 5
+                h3 ¿Qué puede hacer un administrador?
+            p El panel administrativo permite gestionar información y funciones de demostración según el rol y los permisos asignados.
 
         section#more-help.legal-section
             .legal-section-heading
                 span.legal-section-icon
-                    span.legal-icon-symbol(aria-hidden="true") ?
+                    span.legal-icon-symbol(aria-hidden="true") 6
                 h3 ¿Necesitas más ayuda?
-            p Comunícate con el equipo responsable de tu demostración o actividad académica para recibir ayuda con tu cuenta de prueba.
+            p Solicita orientación al responsable de tu entorno o actividad académica.
 
         .legal-callout.legal-callout-warning(role="note")
             span.legal-callout-symbol(aria-hidden="true") !
-            p SaludVital es un proyecto académico y no presta servicios médicos reales. No registres datos personales ni clínicos verdaderos y no utilices la plataforma para emergencias.
+            p SaludVital es un proyecto académico y no presta servicios médicos reales. Los ejemplos cargados son ficticios. En pruebas autorizadas puedes usar tus propios datos de identificación y contacto; usa información clínica ficticia y no registres datos de otras personas. No utilices la plataforma para emergencias.
 
         a.legal-primary-link(href="/login")
             | Ir al inicio de sesión
