@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-18  
 **Branch:** `docs/503-accessibility-review`  
-**Status:** Automated and browser review recorded. Issue #503 remains open for a manual screen-reader spot check; this review does not claim WCAG conformance.
+**Status:** Automated and browser review recorded. The contrast finding was fixed in PR #509 and Issue #504 is closed. The project owner confirmed that Windows Narrator reads the terms paragraphs in reading mode. Issue #503 remains open for screen-reader checks on representative authenticated pages and a full manual keyboard review; this review does not claim WCAG conformance.
 
 ## Pages and states reviewed
 
@@ -14,9 +14,9 @@ The public legal pages were opened individually at 390×844, 768×1024, and 1280
 
 1. **More than one main landmark:** the shared wrapper in `views/legal/layout.pug:14` is a `<main>`, while the terms and help content also use `<main>` in `views/legal/terms-and-conditions.pug:4` and `views/legal/help.pug:4`. The privacy page has another main landmark in `views/legal/partials/privacy-policy-content.pug:1`. axe-core reports `landmark-main-is-top-level` and `landmark-no-duplicate-main` on all three pages. Follow-up: [Issue #505](https://github.com/personalProjectsDeltaG8109/saludvital/issues/505).
 
-2. **Low contrast in terms section numbers:** `src/styles/input.css:2662-2676` uses foreground `#087e89` on background `#e5f7f4` for `.legal-section-number`. axe-core measured 4.34:1; the small bold text needs 4.5:1. The finding affects all eight numbered sections. Follow-up: [Issue #504](https://github.com/personalProjectsDeltaG8109/saludvital/issues/504).
+2. **Low contrast in terms section numbers — resolved:** the initial review measured 4.34:1 for `.legal-section-number`. PR #509 changed the text color, and the current contrast is 5.05:1. The issue was checked on mobile and desktop with axe-core and [Issue #504](https://github.com/personalProjectsDeltaG8109/saludvital/issues/504) is closed. The implementation is documented in the [Issue #504 change report](./ISSUE-504-terms-section-contrast.md).
 
-No source fix for either finding is included here; each has its own issue so its correction can be reviewed separately.
+No source fix for the duplicate main landmarks is included here; that defect has its own follow-up in Issue #505.
 
 ## Build artifact
 
@@ -34,4 +34,4 @@ The initial e2e run, before rebuilding CSS, failed because the tracked `public/c
 
 ## Remaining review
 
-The automated checks and browser keyboard probes are evidence for the states above, not proof of WCAG 2.2 AA compliance. A screen-reader spot check and a complete manual keyboard path review remain before Issue #503 can be closed. The follow-up issues #504 and #505 need their own implementation branches and reviews.
+The project owner confirmed that Windows Narrator reads paragraphs on the terms page when using reading mode; Tab alone moves between interactive controls and does not read each paragraph. This is a spot check of one public page, not a review of all page types. The automated checks and browser keyboard probes are evidence for the states above, not proof of WCAG 2.2 AA compliance. Screen-reader checks on representative Patient, Doctor, and Administrator pages and a complete manual keyboard path review remain before Issue #503 can be closed. Issue #504 has been fixed and closed; the duplicate main landmarks remain tracked separately in Issue #505.
