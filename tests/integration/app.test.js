@@ -102,6 +102,9 @@ describe("SaludVital application", () => {
             expect(response.text).toContain('href="/forgot-password"');
             expect(response.text).toContain('href="/register"');
             expect(response.text).toContain("data-password-toggle");
+            expect(response.text).toContain("data-password-toggle-slash");
+            expect(response.text).toContain("login-security-icon");
+            expect(response.text).not.toContain("→");
             expect(response.text).not.toContain("Recordarme");
             expect(response.text).not.toContain("whatsapp-float");
         } finally {
