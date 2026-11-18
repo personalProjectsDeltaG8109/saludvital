@@ -5,6 +5,7 @@ passwordToggles.forEach((passwordToggle) => {
     const targetSelector = passwordToggle.dataset.passwordToggle || "#password";
     const targetInput = document.querySelector(targetSelector);
     const toggleLabel = passwordToggle.querySelector("[data-password-toggle-label]");
+    const slash = passwordToggle.querySelector("[data-password-toggle-slash]");
 
     if (!targetInput || !toggleLabel) return;
 
@@ -13,6 +14,7 @@ passwordToggles.forEach((passwordToggle) => {
 
         targetInput.type = isPasswordVisible ? "password" : "text";
         toggleLabel.textContent = isPasswordVisible ? "Mostrar contraseña" : "Ocultar contraseña";
+        slash?.toggleAttribute("hidden", isPasswordVisible);
         passwordToggle.setAttribute(
             "aria-label",
             isPasswordVisible ? "Mostrar contraseña" : "Ocultar contraseña",
