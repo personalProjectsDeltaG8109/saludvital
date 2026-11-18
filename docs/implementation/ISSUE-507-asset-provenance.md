@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-18  
 **Branch:** `docs/507-asset-provenance`  
-**Status:** Preliminary inventory recorded. Owner evidence is still needed before the project can confirm permitted use or make ownership claims.
+**Status:** Preliminary inventory recorded. The project owner reports that all listed visual assets were generated with ChatGPT. This source statement is not independently verifiable from the repository and does not by itself establish exclusive copyright or rights in any material used as an input.
 
 ## What the repository confirms
 
@@ -12,6 +12,12 @@
 - The stylesheet imports Tailwind and the tracked public directory contains no local font files. No font-provider import was found in the editable stylesheet.
 - `package.json` declares `ISC`, and the README repeats that declaration. No standalone `LICENSE`, `NOTICE`, or attribution file is tracked. This does not prove that the project owns every bundled image or that the package declaration covers third-party art.
 - The public footer says “Todos los derechos reservados” in `views/auth/partials/footer/public-footer.pug`. Repository records alone do not confirm ownership of every asset displayed with that wording.
+
+## Owner-reported asset origin
+
+The project owner reports that all 54 tracked visual assets listed below were generated with ChatGPT. The repository does not contain the prompts, original generation records, or a file-by-file link to those conversations, so this is recorded as owner-provided provenance rather than independently verified evidence.
+
+OpenAI's Terms of Use say that, between OpenAI and the user and to the extent permitted by applicable law, the user owns the output. The terms also warn that outputs may not be unique and do not transfer rights to third-party material. Colombia's DNDA says that output generated only from AI prompts is not registrable as a human-authored work. These points mean the project can document the reported ChatGPT origin, but should not claim exclusive copyright solely because ChatGPT generated an image. See [OpenAI Terms of Use](https://openai.com/policies/terms-of-use/) and [DNDA guidance on AI-generated works](https://www.derechodeautor.gov.co/es/sala-de-prensa/campanas-pedagogicas/preguntale-al-abogado).
 
 ## Asset inventory
 
@@ -40,9 +46,9 @@ One installed transitive package (`config-chain`) provides its MIT license as an
 
 ## Information needed to finish
 
-For each visual file, the project owner needs to provide one of: the original creator/source and applicable license, proof that it was created for SaludVital with permission to use it, or confirmation that it should be replaced. Do not infer permission from a downloaded filename or a mockup.
+The owner-reported ChatGPT origin is now recorded for the visual files. To complete the review, confirm whether any generation used an existing logo, photograph, mockup, or other third-party image as an input, and retain the original outputs and prompts when available. Any such input needs its own source and permission review; generated output does not grant rights to the input.
 
-The owner should also confirm who owns the SaludVital logo/brand and whether the footer wording is appropriate. Until that evidence is available, the inventory records the facts and leaves ownership, attribution, and replacement decisions open. No asset was deleted, replaced, or re-licensed in this review.
+The owner should also confirm who owns the SaludVital logo/brand and whether the footer wording is appropriate. Until those questions are answered, the inventory records the reported origin but does not assert exclusive ownership or make replacement decisions. No asset was deleted, replaced, or re-licensed in this review.
 
 ## Verification
 
@@ -51,5 +57,6 @@ The owner should also confirm who owns the SaludVital logo/brand and whether the
 - Checked Git history for representative login artwork and logo files; history records additions but not original licenses.
 - Checked `package.json`, `package-lock.json`, installed direct dependency metadata, README license notes, footer wording, and tracked license/notice files.
 - Checked the editable stylesheet for font imports and local public font files.
+- Recorded the project owner's statement that all listed visual assets were generated with ChatGPT; this statement could not be independently confirmed from repository history.
 
 No application code or database files were changed. No screenshot or test change was required for this documentation-only inventory.
