@@ -19,7 +19,7 @@ const legalPages = [
         paths: ["/help"],
         activePath: "/help",
         heading: "Centro de ayuda",
-        pageContent: "¿Cómo ingreso?",
+        pageContent: "¿Cómo creo y verifico mi cuenta?",
     },
 ];
 
@@ -64,7 +64,33 @@ describe("public legal pages", () => {
 
         expect(response.status).toBe(200);
         expect(response.text).toContain("tus propios datos de identificación y contacto");
-        expect(response.text).toContain("No ingreses datos de otros usuarios");
-        expect(response.text).toContain("datos clínicos reales");
+        expect(response.text).toContain("No ingreses datos de otras personas");
+        expect(response.text).toContain("información clínica real");
+    });
+
+    test("help explains the current account, password, and appointment steps", async () => {
+        const response = await request(app).get("/help");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain(
+            "Deben abrir el enlace enviado al correo antes de iniciar sesión",
+        );
+        expect(response.text).toContain("30 minutos");
+        expect(response.text).toContain("recupero mi contraseña");
+        expect(response.text).toContain("al menos 24 horas");
+        expect(response.text).toContain("al menos 5 horas");
+        expect(response.text).toContain("hasta 3 reprogramaciones");
+        expect(response.text).toContain("tus propios datos de identificación y contacto");
+        expect(response.text).toContain("información clínica ficticia");
+    });
+
+    test("terms describe the demo scope without implying an official SENA service", async () => {
+        const response = await request(app).get("/terms");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain("No es un servicio oficial del SENA ni una clínica");
+        expect(response.text).toContain("horario debe iniciar con al menos 5 horas");
+        expect(response.text).toContain("cada cita puede reprogramarse hasta 3 veces");
+        expect(response.text).toContain("tus propios datos de identificación y contacto");
     });
 });

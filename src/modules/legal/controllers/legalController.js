@@ -32,7 +32,7 @@ export function showHelp(req, res) {
         pageHeading: "Centro de ayuda",
         pageEyebrow: "Estamos para orientarte",
         pageDescription:
-            "Encuentra respuestas básicas para ingresar y probar las funciones de SaludVital.",
+            "Aprende cómo verificar tu cuenta, recuperar el acceso y usar las funciones de demostración.",
         brandMessage:
             "Encuentra indicaciones rápidas para navegar el aplicativo y aprovechar tu cuenta de demostración.",
         activeLegalPage: "help",

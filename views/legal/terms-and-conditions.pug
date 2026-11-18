@@ -2,25 +2,25 @@ extends ./layout
 
 block legalBody
     main.legal-article(aria-label="Términos y condiciones")
-        p.legal-version Versión 1.1 · Actualizada el 13 de noviembre de 2026
+        p.legal-version Versión 1.2 · Actualizada el 18 de noviembre de 2026
 
         section#academic.legal-section
             .legal-section-heading
                 span.legal-section-number 01
                 h3 Uso académico
-            p SaludVital es un proyecto académico del programa de Análisis y Desarrollo de Software del SENA. La plataforma demuestra flujos de gestión de citas y no presta servicios médicos reales.
+            p SaludVital es un proyecto académico realizado en el contexto de formación ADSO del SENA. No es un servicio oficial del SENA ni una clínica, y no presta servicios médicos reales.
 
         section#demo-data.legal-section
             .legal-section-heading
                 span.legal-section-number 02
                 h3 Datos de demostración
-            p Los ejemplos precargados son ficticios. En pruebas autorizadas puedes usar tus propios datos de identificación y contacto. No ingreses datos de otros usuarios ni datos clínicos reales; si registras un contacto de emergencia, usa solo el campo destinado para ello.
+            p Los ejemplos precargados son ficticios. En pruebas autorizadas puedes usar tus propios datos de identificación y contacto. No ingreses datos de otras personas ni información clínica real. Si registras un contacto de emergencia, usa solo el campo destinado para ese fin.
 
         section#accounts.legal-section
             .legal-section-heading
                 span.legal-section-number 03
                 h3 Cuentas y acceso
-            p Cada persona debe usar solo la cuenta que le fue asignada o creada para las pruebas. No intentes acceder a cuentas, citas o información de otros usuarios.
+            p Cada persona debe usar solo la cuenta que le fue asignada o creada para las pruebas. Los pacientes deben verificar su correo para ingresar. No intentes acceder a cuentas, citas o información de otros usuarios.
 
         section#permitted-use.legal-section
             .legal-section-heading
@@ -28,23 +28,29 @@ block legalBody
                 h3 Uso permitido
             p Utiliza la plataforma de forma respetuosa y para aprendizaje, demostraciones y pruebas autorizadas. No intentes interrumpir el servicio, alterar datos ajenos ni evadir los controles de acceso.
 
-        section#availability.legal-section
+        section#appointments.legal-section
             .legal-section-heading
                 span.legal-section-number 05
+                h3 Citas de demostración
+            p Desde el portal del paciente, solo puedes cancelar una cita confirmada con al menos 24 horas de anticipación. Para solicitar una reprogramación, también debes contar con al menos 24 horas antes de la cita original; el nuevo horario debe iniciar con al menos 5 horas de anticipación y cada cita puede reprogramarse hasta 3 veces. El sistema comprueba que el horario siga disponible antes de guardar el cambio.
+
+        section#availability.legal-section
+            .legal-section-heading
+                span.legal-section-number 06
                 h3 Disponibilidad y cambios
             p Las funciones y los datos de prueba pueden cambiar o restablecerse durante el desarrollo. El equipo puede actualizar estas condiciones para reflejar cambios en el proyecto.
 
         section#medical-care.legal-section
             .legal-section-heading
-                span.legal-section-number 06
+                span.legal-section-number 07
                 h3 Atención médica
             p La información de esta plataforma no reemplaza la evaluación ni las indicaciones de profesionales de la salud. No uses SaludVital para emergencias o para tomar decisiones sobre tu tratamiento.
 
         section#contact.legal-section
             .legal-section-heading
-                span.legal-section-number 07
+                span.legal-section-number 08
                 h3 Contacto
-            p Si tienes preguntas sobre estas condiciones o sobre el proyecto, consulta con el equipo responsable de la demostración académica.
+            p Si tienes preguntas sobre estas condiciones o sobre el proyecto, solicita orientación al responsable de tu entorno o actividad académica.
 
         .legal-callout(role="note")
             span.legal-callout-symbol(aria-hidden="true") i
