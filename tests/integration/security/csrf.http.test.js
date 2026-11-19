@@ -25,6 +25,30 @@ describe("authenticated state-changing request origin checks", () => {
         expect(response.text).toBe("Solicitud no autorizada.");
     });
 
+    test("continues to reject a cross-origin login form when a session cookie exists", async () => {
+        const response = await request(app)
+            .post("/login")
+            .set("Cookie", "token=session-token")
+            .set("Origin", "https://evil.example")
+            .type("form")
+            .send({ email: "patient@example.test", password: "not-a-real-password" });
+
+        expect(response.status).toBe(403);
+        expect(response.text).toBe("Solicitud no autorizada.");
+    });
+
+    test("rejects a cross-origin logout request when a session cookie exists", async () => {
+        const response = await request(app)
+            .post("/logout")
+            .set("Cookie", "token=session-token")
+            .set("Origin", "https://evil.example")
+            .type("form")
+            .send({});
+
+        expect(response.status).toBe(403);
+        expect(response.text).toBe("Solicitud no autorizada.");
+    });
+
     test("allows a same-origin request to continue to normal authentication", async () => {
         const response = await request(app)
             .post("/session/activity")

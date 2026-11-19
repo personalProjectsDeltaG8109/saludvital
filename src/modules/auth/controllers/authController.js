@@ -113,13 +113,21 @@ function getLoginPageData(error, lockedUntil = null, showLoginSplash = false) {
 }
 
 function renderLoginPage(res, statusCode, error, lockedUntil = null, showLoginSplash = false) {
-    if (lockedUntil) {
-        res.set("Cache-Control", "no-store");
-    }
+    res.set("Cache-Control", "no-store");
 
     return res
         .status(statusCode)
         .render("auth/login", getLoginPageData(error, lockedUntil, showLoginSplash));
+}
+
+// Keep an active session from returning to or submitting the login form.
+export function redirectAuthenticatedUserFromLogin(req, res, next) {
+    const dashboard = dashboardRoutes[req.auth?.role];
+
+    if (!dashboard) return next();
+
+    res.set("Cache-Control", "no-store");
+    return res.redirect(303, dashboard);
 }
 
 export function showLogin(req, res) {

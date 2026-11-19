@@ -91,6 +91,27 @@ describe("Logout HTTP integration with persisted sessions", () => {
             const activeSession = await AuthSession.findOne({ where: { user_id: user.id } });
             expect(activeSession).not.toBeNull();
 
+            const backNavigationResponse = await request(app)
+                .get("/login")
+                .set("Cookie", authenticationCookie);
+
+            expect(backNavigationResponse.status).toBe(303);
+            expect(backNavigationResponse.headers.location).toBe(dashboard);
+            expect(backNavigationResponse.headers["cache-control"]).toContain("no-store");
+
+            const repeatedLoginResponse = await request(app)
+                .post("/login")
+                .set("Host", "localhost:3000")
+                .set("Cookie", authenticationCookie)
+                .set("Origin", "null")
+                .set("sec-fetch-site", "same-origin")
+                .type("form")
+                .send({ email, password });
+
+            expect(repeatedLoginResponse.status).toBe(303);
+            expect(repeatedLoginResponse.headers.location).toBe(dashboard);
+            expect(await AuthSession.count({ where: { user_id: user.id } })).toBe(1);
+
             const protectedResponse = await request(app)
                 .post("/session/activity")
                 .set("Cookie", authenticationCookie);
@@ -99,6 +120,9 @@ describe("Logout HTTP integration with persisted sessions", () => {
 
             const logoutResponse = await request(app)
                 .post("/logout")
+                .set("Host", "localhost:3000")
+                .set("Origin", "null")
+                .set("sec-fetch-site", "same-origin")
                 .set("Cookie", authenticationCookie);
 
             expect(logoutResponse.status).toBe(303);

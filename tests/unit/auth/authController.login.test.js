@@ -48,8 +48,14 @@ const { authenticateUser, clearLoginFailures, AuthenticationError, LoginTemporar
     await import("../../../src/modules/auth/services/authService.js");
 const { startSession, endSession, refreshSession } =
     await import("../../../src/modules/auth/services/sessionActivity.js");
-const { login, logout, reportSessionActivity, showLogin, showLoginLocked } =
-    await import("../../../src/modules/auth/controllers/authController.js");
+const {
+    login,
+    logout,
+    reportSessionActivity,
+    redirectAuthenticatedUserFromLogin,
+    showLogin,
+    showLoginLocked,
+} = await import("../../../src/modules/auth/controllers/authController.js");
 
 describe("Authentication controller", () => {
     let req;
@@ -102,6 +108,28 @@ describe("Authentication controller", () => {
             "auth/login",
             expect.objectContaining({ showLoginSplash: true }),
         );
+        expect(res.set).toHaveBeenCalledWith("Cache-Control", "no-store");
+    });
+
+    test.each([
+        ["Patient", "/patient/dashboard"],
+        ["Doctor", "/doctor/dashboard"],
+        ["Administrator", "/admin/dashboard"],
+    ])("redirects an active %s session to its dashboard", (role, dashboard) => {
+        req.auth = { role };
+
+        redirectAuthenticatedUserFromLogin(req, res, next);
+
+        expect(res.set).toHaveBeenCalledWith("Cache-Control", "no-store");
+        expect(res.redirect).toHaveBeenCalledWith(303, dashboard);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    test("continues to the login page when there is no supported active session", () => {
+        redirectAuthenticatedUserFromLogin(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(res.redirect).not.toHaveBeenCalled();
     });
 
     test("keeps the splash disabled on the locked login page", () => {

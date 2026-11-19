@@ -27,10 +27,34 @@ function createResponse() {
 describe("verifySameOrigin", () => {
     test.each([
         ["same-origin Origin", { origin: "http://127.0.0.1" }],
+        ["same-origin Origin with a development port", { origin: "http://localhost:3000" }],
         ["same-origin Referer", { referer: "http://127.0.0.1/patient/profile" }],
+        [
+            "same-origin Origin with broader site metadata",
+            {
+                origin: "http://127.0.0.1",
+                "sec-fetch-site": "same-site",
+            },
+        ],
+        [
+            "null Origin with same-origin Fetch Metadata",
+            { origin: "null", "sec-fetch-site": "same-origin" },
+        ],
+        [
+            "null Origin with browser-initiated same-origin metadata",
+            {
+                origin: "null",
+                "sec-fetch-site": "none",
+            },
+        ],
         ["no browser origin headers", {}],
     ])("allows %s", (_label, headers) => {
-        const request = createRequest({ headers, cookies: { token: "session-token" } });
+        const host = headers.origin === "http://localhost:3000" ? "localhost:3000" : undefined;
+        const request = createRequest({
+            headers,
+            host,
+            cookies: { token: "session-token" },
+        });
 
         expect(isSameOriginRequest(request)).toBe(true);
     });
@@ -39,6 +63,11 @@ describe("verifySameOrigin", () => {
         ["a cross-origin Origin", { origin: "https://evil.example" }],
         ["a cross-origin Referer", { referer: "https://evil.example/form" }],
         ["a cross-site fetch metadata value", { "sec-fetch-site": "cross-site" }],
+        ["same-site metadata without an exact origin", { "sec-fetch-site": "same-site" }],
+        [
+            "null Origin without same-origin metadata",
+            { origin: "null", "sec-fetch-site": "cross-site" },
+        ],
         ["a malformed Origin", { origin: "not-an-origin" }],
         ["a null Origin", { origin: "null" }],
     ])("rejects %s", (_label, headers) => {
