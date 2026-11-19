@@ -16,7 +16,7 @@ The public legal pages were opened individually at 390×844, 768×1024, and 1280
 
 2. **Low contrast in terms section numbers — resolved:** the initial review measured 4.34:1 for `.legal-section-number`. PR #509 changed the text color, and the current contrast is 5.05:1. The issue was checked on mobile and desktop with axe-core and [Issue #504](https://github.com/personalProjectsDeltaG8109/saludvital/issues/504) is closed. The implementation is documented in the [Issue #504 change report](./ISSUE-504-terms-section-contrast.md).
 
-No source fix for the duplicate main landmarks is included here; that defect has its own follow-up in Issue #505.
+The duplicate main landmarks are addressed in the Issue #505 change report. Its integration and browser accessibility checks pass on branch `fix/505-public-legal-main-landmarks`. The complete Playwright suite passed on rerun, including the browser-storage test; one earlier temporary 404 did not recur. Issue #505 remains open until its pull request is merged.
 
 ## Build artifact
 
