@@ -1183,6 +1183,143 @@
     }
 }
 
+/* Sharper icons and clearer text for the patient profile summary. */
+.profile-page .profile-content {
+    font-weight: 500;
+}
+
+.profile-page .profile-stat span.profile-stat-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    grid-row: span 2;
+    place-items: center;
+    border-radius: 10px;
+    color: #087bd0;
+    background: #e2f3ff;
+}
+
+.profile-page .profile-stat-icon svg,
+.profile-page .profile-quick-icon svg,
+.profile-page .profile-edit-button svg {
+    width: 19px;
+    height: 19px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.profile-page .profile-stat-icon.is-specialties {
+    color: #008b89;
+    background: #e0f8f5;
+}
+
+.profile-page .profile-stat-icon.is-tenure {
+    color: #7253d5;
+    background: #f0ebff;
+}
+
+.profile-page .profile-stat strong,
+.profile-page .profile-stat small,
+.profile-page .profile-section-heading h2,
+.profile-page .profile-data-list dt,
+.profile-page .profile-data-list dd,
+.profile-page .profile-contact-list p,
+.profile-page .profile-quick-card strong,
+.profile-page .profile-section > summary {
+    font-weight: 600;
+}
+
+.profile-page .profile-stat strong,
+.profile-page .profile-section-heading h2,
+.profile-page .profile-quick-card strong {
+    font-weight: 700;
+}
+
+.profile-page .profile-data-list dt {
+    color: #506b8b;
+}
+
+.profile-page .profile-overview .profile-quick-icon {
+    border-radius: 10px;
+}
+
+.profile-page .profile-quick-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.profile-page .profile-quick-icon.is-notifications {
+    color: #fff;
+    background: linear-gradient(145deg, #09b992, #079b83);
+}
+
+.profile-page .profile-quick-icon.is-notifications img {
+    width: 19px;
+    height: 19px;
+    object-fit: contain;
+}
+
+.profile-page .profile-quick-icon.is-security {
+    color: #087bd0;
+    background: #e5f3ff;
+}
+
+.profile-page .profile-quick-icon.is-danger {
+    color: #d92d48;
+    background: #fff0f2;
+}
+
+.profile-page .profile-edit-button {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid #cfe8fb;
+    border-radius: 10px;
+    color: #078bed;
+    background: #f0f8ff;
+    transition:
+        color 160ms ease,
+        background 160ms ease,
+        border-color 160ms ease,
+        transform 160ms ease;
+}
+
+.profile-page .profile-edit-button svg {
+    width: 17px;
+    height: 17px;
+}
+
+.profile-page .profile-edit-button:hover {
+    transform: translateY(-1px);
+    border-color: #078bed;
+    color: #fff;
+    background: #078bed;
+}
+
+.profile-page .profile-edit-button:focus-visible {
+    outline: 3px solid #12b8b0;
+    outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+    .profile-page .profile-stat span.profile-stat-icon {
+        width: 30px;
+        height: 30px;
+        grid-row: auto;
+        border-radius: 9px;
+    }
+
+    .profile-page .profile-stat-icon svg {
+        width: 17px;
+        height: 17px;
+    }
+}
+
 /* Keep the patient profile close to the clean dashboard layout at every width. */
 .profile-page .profile-content {
     width: min(100%, 1600px);
