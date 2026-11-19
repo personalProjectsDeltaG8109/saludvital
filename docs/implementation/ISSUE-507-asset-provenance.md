@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-18  
 **Branch:** `docs/507-asset-provenance`  
-**Status:** Preliminary inventory recorded. The project owner reports that all listed visual assets were generated with ChatGPT. This source statement is not independently verifiable from the repository and does not by itself establish exclusive copyright or rights in any material used as an input.
+**Status:** Inventory and available source evidence are documented. The project owner reports that the listed visual assets were generated with ChatGPT. Unknown reference sources and brand ownership are clearly marked, and the public footer no longer makes an unsupported rights claim. The report sets a review step before future redistribution or reuse.
 
 ## What the repository confirms
 
@@ -11,7 +11,7 @@
 - A literal-path search found no direct reference for ten files: `logo-primary-dark.png`, `logo-symbol-background.png`, `logo-symbol-dark.png`, `logo-vertical-background.png`, `mobile-login.jpg`, the four doctor portraits, and `shield-svgrepo-com.svg`. This search does not prove they are unused; code may build paths dynamically.
 - The stylesheet imports Tailwind and the tracked public directory contains no local font files. No font-provider import was found in the editable stylesheet.
 - `package.json` declares `ISC`, and the README repeats that declaration. No standalone `LICENSE`, `NOTICE`, or attribution file is tracked. This does not prove that the project owns every bundled image or that the package declaration covers third-party art.
-- The public footer says “Todos los derechos reservados” in `views/auth/partials/footer/public-footer.pug`. Repository records alone do not confirm ownership of every asset displayed with that wording.
+- The public footer previously said “Todos los derechos reservados”. Repository records did not confirm ownership of every displayed asset, so the wording has been replaced with a neutral academic-project description.
 
 ## Owner-reported asset origin
 
@@ -44,11 +44,13 @@ The following values were read from the installed package manifests. They descri
 
 One installed transitive package (`config-chain`) provides its MIT license as an object with a URL rather than a simple license string. It needs to be included in a normalized dependency notice if the project chooses to publish one.
 
-## Information needed to finish
+## Remaining source limits and safe next steps
 
-The owner-reported ChatGPT origin is now recorded for the visual files. To complete the review, confirm whether any generation used an existing logo, photograph, mockup, or other third-party image as an input, and retain the original outputs and prompts when available. Any such input needs its own source and permission review; generated output does not grant rights to the input.
+The owner reports that all listed visual assets were generated with ChatGPT. The repository does not contain the prompts or original generation records. It is not confirmed whether any logo, photograph, mockup, or other third-party image was used as an input. That input history remains unknown; the report does not assume that no third-party material was involved.
 
-The owner should also confirm who owns the SaludVital logo/brand and whether the footer wording is appropriate. Until those questions are answered, the inventory records the reported origin but does not assert exclusive ownership or make replacement decisions. No asset was deleted, replaced, or re-licensed in this review.
+The repository also does not establish who owns the SaludVital name or logo. The public footer now says “SaludVital · Proyecto académico ADSO · SENA” and no longer uses “Todos los derechos reservados” or a copyright symbol. This is a neutral project description, not a statement of ownership.
+
+Before future releases or reuse outside this academic project, review each asset with unknown inputs. Record source and permission evidence when available. If they cannot be confirmed, replace the asset with one whose source and permission are documented or request qualified review. The repository is already public; this report does not determine whether past public availability was authorized. No visual asset was deleted, replaced, or re-licensed in this review.
 
 ## Verification
 
@@ -58,5 +60,6 @@ The owner should also confirm who owns the SaludVital logo/brand and whether the
 - Checked `package.json`, `package-lock.json`, installed direct dependency metadata, README license notes, footer wording, and tracked license/notice files.
 - Checked the editable stylesheet for font imports and local public font files.
 - Recorded the project owner's statement that all listed visual assets were generated with ChatGPT; this statement could not be independently confirmed from repository history.
+- Removed the unsupported rights-reservation wording from the public footer; no asset files or license declarations were changed.
 
-No application code or database files were changed. No screenshot or test change was required for this documentation-only inventory.
+No database files, visual assets, or provider integrations were changed. The only application-facing change is the public footer wording.
