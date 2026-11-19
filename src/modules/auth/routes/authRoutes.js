@@ -15,6 +15,7 @@ import {
     resetPasswordController,
     verifyEmailAddress,
     reportSessionActivity,
+    redirectAuthenticatedUserFromLogin,
 } from "../controllers/authController.js";
 
 import {
@@ -104,12 +105,18 @@ authRoutes.get("/forgot-password", showForgotPassword);
 authRoutes.post("/forgot-password", passwordRecoveryLimiter, forgotPassword);
 authRoutes.get("/reset-password", showResetPassword);
 authRoutes.post("/reset-password", passwordRecoveryLimiter, resetPasswordController);
-authRoutes.get("/login", showLogin);
+authRoutes.get("/login", authenticateTokenOptional, redirectAuthenticatedUserFromLogin, showLogin);
 // Display the patient registration form.
 authRoutes.get("/register", showRegister);
 // Process patient registration.
 authRoutes.post("/register", registerLimiter, register);
-authRoutes.post("/login", loginLimiter, login);
+authRoutes.post(
+    "/login",
+    authenticateTokenOptional,
+    redirectAuthenticatedUserFromLogin,
+    loginLimiter,
+    login,
+);
 authRoutes.post("/logout", authenticateTokenOptional, logout);
 // Confirm an email address using its verification token.
 authRoutes.get("/verify-email", verifyEmailAddress);

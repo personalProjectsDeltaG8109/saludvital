@@ -22,14 +22,19 @@ function matchesRequestOrigin(request, candidate) {
 }
 
 export function isSameOriginRequest(request) {
-    const fetchSite = request.get("sec-fetch-site")?.toLowerCase();
-    if (fetchSite === "cross-site" || fetchSite === "same-site") return false;
-
     const origin = request.get("origin");
-    if (origin) return matchesRequestOrigin(request, origin);
+    if (origin && origin.toLowerCase() !== "null") {
+        return matchesRequestOrigin(request, origin);
+    }
 
     const referer = request.get("referer");
     if (referer) return matchesRequestOrigin(request, referer);
+
+    // Some browser contexts send Origin: null; Fetch Metadata is the safe fallback.
+    const fetchSite = request.get("sec-fetch-site")?.toLowerCase();
+    if (fetchSite) return fetchSite === "same-origin" || fetchSite === "none";
+
+    if (origin?.toLowerCase() === "null") return false;
 
     // Non-browser clients may omit both headers. SameSite=Lax remains active
     // on the authentication cookie, so preserve those clients' compatibility.
