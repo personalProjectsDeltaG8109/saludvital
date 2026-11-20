@@ -748,6 +748,37 @@ try {
 
     await registerPage.close();
 
+    // Each public legal page gets its single main landmark from the shared layout.
+    const legalLandmarkPage = await context.newPage();
+    for (const viewport of [
+        { name: "mobile", width: 375, height: 812 },
+        { name: "desktop", width: 1440, height: 900 },
+    ]) {
+        await legalLandmarkPage.setViewportSize(viewport);
+
+        for (const path of ["/privacy", "/terms", "/help"]) {
+            await legalLandmarkPage.goto(`${baseUrl}${path}`);
+
+            const mainLandmarkCount = await legalLandmarkPage.locator("main").count();
+            if (mainLandmarkCount !== 1) {
+                throw new Error(`${path} should expose exactly one main landmark.`);
+            }
+
+            const landmarkAccessibility = await new AxeBuilder({ page: legalLandmarkPage })
+                .withRules(["landmark-main-is-top-level", "landmark-no-duplicate-main"])
+                .analyze();
+
+            if (landmarkAccessibility.violations.length > 0) {
+                console.error(JSON.stringify(landmarkAccessibility.violations, null, 2));
+                throw new Error(`${path} has an invalid main landmark on ${viewport.name}.`);
+            }
+        }
+
+        console.log(`PASS: legal page main landmarks on ${viewport.name}.`);
+    }
+
+    await legalLandmarkPage.close();
+
     // Keep the legal section numbers above WCAG's normal-text contrast minimum.
     const termsPage = await context.newPage();
     for (const viewport of [

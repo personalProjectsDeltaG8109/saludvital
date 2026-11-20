@@ -30,6 +30,7 @@ describe("public legal pages", () => {
             const response = await request(app).get(path);
 
             expect(response.status).toBe(200);
+            expect(response.text.match(/<main\b/g) ?? []).toHaveLength(1);
             expect(response.text).toContain("legal-split");
             expect(response.text).toContain("legal-document-panel");
             expect(response.text).toContain(heading);

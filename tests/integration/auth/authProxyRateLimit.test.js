@@ -5,6 +5,7 @@ const railwayPublicDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
 
 describe("Authentication rate limits behind the Railway edge", () => {
     beforeAll(() => {
+        app.enable("view cache");
         process.env.RAILWAY_PUBLIC_DOMAIN = "saludvital-test.up.railway.app";
     });
 
