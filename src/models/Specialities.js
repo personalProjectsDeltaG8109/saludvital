@@ -20,6 +20,10 @@ const Specialities = database.define(
             type: DataTypes.STRING(255),
             allowNull: true,
         },
+        logo_url: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
