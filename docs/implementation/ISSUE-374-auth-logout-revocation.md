@@ -22,7 +22,6 @@
 
 ## Workflow Status
 
-- Feature branch: `feature/auth-logout-revocation-374`.
-- Local commit: recorded after the final verification run.
-- Push and pull request: pending explicit owner authorization, per the repository checklist workflow.
-- Merge: not performed.
+- Implementation branch: `feature/auth-logout-revocation-374`.
+- Pull request: [#375 — Revoke session when logging out](https://github.com/personalProjectsDeltaG8109/saludvital/pull/375) was merged into `develop` on 2026-11-09.
+- GitHub issue: [#374](https://github.com/personalProjectsDeltaG8109/saludvital/issues/374) was closed after the merge.
