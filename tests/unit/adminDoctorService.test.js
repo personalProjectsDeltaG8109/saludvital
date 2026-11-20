@@ -256,6 +256,7 @@ describe("Admin doctor management service", () => {
     });
 
     test("returns actual directory stats and specialty options", async () => {
+        Rol.findOne.mockResolvedValue({ id: 4 });
         Doctor.findAndCountAll.mockResolvedValue({
             rows: [
                 {
@@ -287,7 +288,7 @@ describe("Admin doctor management service", () => {
                 include: [
                     expect.objectContaining({
                         as: "user",
-                        where: { is_active: true },
+                        where: { is_active: true, role_id: 4 },
                         required: true,
                     }),
                 ],
@@ -300,7 +301,7 @@ describe("Admin doctor management service", () => {
                 include: [
                     expect.objectContaining({
                         as: "user",
-                        where: { is_active: false },
+                        where: { is_active: false, role_id: 4 },
                         required: true,
                     }),
                 ],
@@ -310,7 +311,14 @@ describe("Admin doctor management service", () => {
             4,
             expect.objectContaining({
                 distinct: true,
-                include: [expect.objectContaining({ as: "availability", required: true })],
+                include: expect.arrayContaining([
+                    expect.objectContaining({ as: "availability", required: true }),
+                    expect.objectContaining({
+                        as: "user",
+                        where: { role_id: 4 },
+                        required: true,
+                    }),
+                ]),
             }),
         );
     });

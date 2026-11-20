@@ -110,6 +110,14 @@ async function ensureActiveDoctor(doctorId, transaction) {
                 attributes: ["id", "is_active"],
                 required: true,
                 where: { is_active: true },
+                include: [
+                    {
+                        association: "rol",
+                        attributes: [],
+                        required: true,
+                        where: { name: "Doctor" },
+                    },
+                ],
             },
         ],
         transaction,
@@ -273,6 +281,14 @@ export async function getAdminDoctorScheduleExceptions(query = {}) {
                     attributes: [],
                     required: true,
                     where: { is_active: true },
+                    include: [
+                        {
+                            association: "rol",
+                            attributes: [],
+                            required: true,
+                            where: { name: "Doctor" },
+                        },
+                    ],
                 },
             ],
             order: [["display_name", "ASC"]],

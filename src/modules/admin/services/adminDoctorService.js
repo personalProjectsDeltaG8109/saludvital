@@ -60,14 +60,14 @@ function formatDoctor(record) {
     };
 }
 
-function countDoctorsByAccountStatus(isActive) {
+function countDoctorsByAccountStatus(isActive, doctorRoleId) {
     return Doctor.count({
         distinct: true,
         include: [
             {
                 model: User,
                 as: "user",
-                where: { is_active: isActive },
+                where: { is_active: isActive, role_id: doctorRoleId },
                 required: true,
             },
         ],
@@ -88,6 +88,12 @@ export async function getAdminDoctors(query = {}) {
     if (query.specialtyId) doctorWhere.specialty_id = parseId(query.specialtyId, "La especialidad");
 
     const userWhere = {};
+    const doctorRole = await Rol.findOne({
+        where: { name: "Doctor" },
+        attributes: ["id"],
+    });
+    if (!doctorRole) throw serviceError("No se encontró el rol de médico.", 500);
+    userWhere.role_id = doctorRole.id;
     if (query.status === "active" || query.status === "inactive") {
         userWhere.is_active = query.status === "active";
     }
@@ -122,12 +128,32 @@ export async function getAdminDoctors(query = {}) {
             offset: (requestedPage - 1) * PAGE_SIZE,
             distinct: true,
         }),
-        Doctor.count(),
-        countDoctorsByAccountStatus(true),
-        countDoctorsByAccountStatus(false),
         Doctor.count({
             distinct: true,
-            include: [{ model: DoctorAvailability, as: "availability", required: true }],
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: [],
+                    where: { role_id: doctorRole.id },
+                    required: true,
+                },
+            ],
+        }),
+        countDoctorsByAccountStatus(true, doctorRole.id),
+        countDoctorsByAccountStatus(false, doctorRole.id),
+        Doctor.count({
+            distinct: true,
+            include: [
+                { model: DoctorAvailability, as: "availability", required: true },
+                {
+                    model: User,
+                    as: "user",
+                    attributes: [],
+                    where: { role_id: doctorRole.id },
+                    required: true,
+                },
+            ],
         }),
         Specialities.findAll({
             where: { is_active: true },
@@ -275,6 +301,53 @@ export async function getAdminDoctorStatusImpact(rawDoctorId) {
     };
 }
 
+/** Cancel the future confirmed appointments for a role change or doctor deactivation. */
+export async function cancelUpcomingConfirmedDoctorAppointments(
+    doctorId,
+    actorId,
+    actorEmail,
+    transaction,
+    reason,
+) {
+    const cancelledStatus = await AppointmentStatus.findOne({
+        where: { name: CANCELLED_APPOINTMENT_STATUS },
+        transaction,
+    });
+    if (!cancelledStatus) {
+        throw serviceError("No está configurado el estado de citas canceladas.", 500);
+    }
+
+    const appointments = await getUpcomingConfirmedAppointments(doctorId, transaction);
+    for (const appointment of appointments) {
+        await appointment.update({ status_id: cancelledStatus.id }, { transaction });
+        await AppointmentHistory.create(
+            {
+                appointment_id: appointment.id,
+                actor_user_id: actorId,
+                actor_snapshot: `Administrator ${actorEmail}`.slice(0, 100),
+                event_type: "Cancelled",
+                previous_values: {
+                    status: CONFIRMED_APPOINTMENT_STATUS,
+                    start_at: new Date(appointment.start_at).toISOString(),
+                    end_at: new Date(appointment.end_at).toISOString(),
+                },
+                new_values: { status: CANCELLED_APPOINTMENT_STATUS },
+                reason,
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+        await cancelPendingAppointmentReminders(appointment.id, transaction);
+        await enqueueAppointmentNotifications({
+            appointmentId: appointment.id,
+            eventType: "appointment_cancellation",
+            transaction,
+        });
+    }
+
+    return appointments.length;
+}
+
 /** Change a doctor's account status and process affected appointments atomically. */
 export async function updateAdminDoctorStatus(actorUserId, rawDoctorId, isActive) {
     const doctorId = parseId(rawDoctorId, "El médico");
@@ -320,42 +393,13 @@ export async function updateAdminDoctorStatus(actorUserId, rawDoctorId, isActive
 
         let cancelledAppointmentCount = 0;
         if (!isActive) {
-            const cancelledStatus = await AppointmentStatus.findOne({
-                where: { name: CANCELLED_APPOINTMENT_STATUS },
+            cancelledAppointmentCount = await cancelUpcomingConfirmedDoctorAppointments(
+                doctorId,
+                actor.id,
+                actor.email,
                 transaction,
-            });
-            if (!cancelledStatus) {
-                throw serviceError("No está configurado el estado de citas canceladas.", 500);
-            }
-
-            const appointments = await getUpcomingConfirmedAppointments(doctorId, transaction);
-            for (const appointment of appointments) {
-                await appointment.update({ status_id: cancelledStatus.id }, { transaction });
-                await AppointmentHistory.create(
-                    {
-                        appointment_id: appointment.id,
-                        actor_user_id: actorId,
-                        actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
-                        event_type: "Cancelled",
-                        previous_values: {
-                            status: CONFIRMED_APPOINTMENT_STATUS,
-                            start_at: new Date(appointment.start_at).toISOString(),
-                            end_at: new Date(appointment.end_at).toISOString(),
-                        },
-                        new_values: { status: CANCELLED_APPOINTMENT_STATUS },
-                        reason: "The assigned doctor's account was deactivated by an administrator.",
-                        occurred_at: new Date(),
-                    },
-                    { transaction },
-                );
-                await cancelPendingAppointmentReminders(appointment.id, transaction);
-                await enqueueAppointmentNotifications({
-                    appointmentId: appointment.id,
-                    eventType: "appointment_cancellation",
-                    transaction,
-                });
-            }
-            cancelledAppointmentCount = appointments.length;
+                "The assigned doctor's account was deactivated by an administrator.",
+            );
         }
 
         await user.update({ is_active: isActive }, { transaction });
