@@ -15,3 +15,7 @@ The shared layout remains the only main area. The page content keeps its existin
 - `npm test -- --runInBand` — passed: 154 suites, 1,199 tests.
 - `npm run lint`, `npm run format:check`, and `npm run css:build` — passed.
 - `npm run test:e2e` — passed: all configured Playwright flows, including browser storage and the legal landmark/axe checks. An earlier attempt saw a temporary 404 during the browser-storage readiness check; the isolated test and complete suite passed on rerun.
+
+## Completion
+
+PR [#519](https://github.com/personalProjectsDeltaG8109/saludvital/pull/519) merged this change into `develop` on 2026-11-20. Issue [#505](https://github.com/personalProjectsDeltaG8109/saludvital/issues/505) is closed.
