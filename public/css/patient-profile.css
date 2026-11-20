@@ -1167,7 +1167,7 @@
     }
 
     .profile-quick-action::after {
-        content: "â€º";
+        content: "›";
         font-size: 1.35rem;
     }
 
@@ -1532,7 +1532,7 @@ body.sv-dashboard.profile-page .profile-hero {
 }
 
 .profile-page .profile-quick-action::after {
-    content: "â€º";
+    content: "›";
     font-size: 1.2rem;
 }
 
