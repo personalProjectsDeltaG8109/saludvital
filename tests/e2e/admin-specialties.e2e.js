@@ -35,7 +35,16 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.setContent(pageMarkup);
+    await page.route("**/uploads/specialty-logos/**", (route) =>
+        route.fulfill({
+            contentType: "image/svg+xml",
+            body: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#168de2"/></svg>',
+        }),
+    );
+    await page.route("http://localhost/", (route) =>
+        route.fulfill({ contentType: "text/html", body: pageMarkup }),
+    );
+    await page.goto("http://localhost/");
     if ((await page.locator(".admin-global-search").count()) !== 0)
         throw new Error("The administrator header must not render a duplicate global search.");
     if ((await page.locator("[data-specialty-search]").count()) !== 1)
@@ -130,6 +139,8 @@ try {
                                 id: 1,
                                 name: "Medicina General",
                                 description: "Atención integral.",
+                                logoUrl:
+                                    "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp",
                                 isActive: window.specialtyIsActive,
                                 doctorCount: 8,
                             };
@@ -145,6 +156,12 @@ try {
     });
     await page.addScriptTag({ content: specialtiesScript });
     await page.getByText("Medicina General").waitFor();
+    const customLogo = page.locator(
+        '.specialty-name-cell img[src="/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp"]',
+    );
+    if ((await customLogo.count()) !== 1) {
+        throw new Error("The specialties catalog did not render the custom specialty logo.");
+    }
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
@@ -253,7 +270,11 @@ try {
     await page.getByText("Inactiva", { exact: true }).waitFor();
 
     await page.locator("[data-specialty-status]").selectOption("all");
-    await page.getByRole("button", { name: "Página siguiente" }).click();
+    await page.waitForFunction(() => {
+        const nextButton = document.querySelector("[data-specialty-next]");
+        return nextButton && !nextButton.disabled;
+    });
+    await page.locator("[data-specialty-next]").click();
     await page.getByText("Pediatría").waitFor();
     await page.locator("[data-specialty-page-size]").selectOption("25");
     await page.waitForFunction(() =>

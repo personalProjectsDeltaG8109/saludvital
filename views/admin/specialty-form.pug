@@ -17,7 +17,17 @@ html(lang="es")
             +adminTopbar
             main.specialty-form-page
                 a.specialty-back-link(href="/admin/specialties")
-                    span(aria-hidden="true") ←
+                    svg(
+                        aria-hidden="true",
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round"
+                    )
+                        path(d="m15 18-6-6 6-6")
+                        path(d="M9 12h12")
                     | Volver a especialidades
                 header.specialty-form-heading
                     span.specialties-heading-icon(aria-hidden="true")
@@ -35,61 +45,172 @@ html(lang="es")
                     div
                         h1= isEditingSpecialty ? "Editar especialidad" : "Nueva especialidad"
                         p= isEditingSpecialty ? "Actualiza los datos de esta especialidad médica." : "Agrega una especialidad al catálogo médico de SaludVital."
-                form.specialty-form-card(
-                    data-specialty-create-form,
-                    data-mode=isEditingSpecialty ? "edit" : "create",
-                    data-specialty-id=isEditingSpecialty ? specialty.id : null,
-                    data-endpoint=isEditingSpecialty ? `/api/admin/specialties/${specialty.id}` : "/api/admin/specialties"
-                )
-                    .specialty-form-section-heading
-                        h2= isEditingSpecialty ? "Editar información" : "Información de la especialidad"
-                        p Los campos con asterisco son obligatorios.
-                    label.specialty-form-field(for="specialty-name")
-                        span Nombre de la especialidad
-                            b(aria-hidden="true") *
-                        input#specialty-name(
-                            type="text",
-                            name="name",
-                            maxlength="100",
-                            required,
-                            value=isEditingSpecialty ? specialty.name : "",
-                            autocomplete="off",
-                            aria-describedby="specialty-name-help"
-                        )
-                        small#specialty-name-help Máximo 100 caracteres.
-                    label.specialty-form-field(for="specialty-description")
-                        span Descripción
-                        textarea#specialty-description(
-                            name="description",
-                            rows="4",
-                            maxlength="255",
-                            aria-describedby="specialty-description-help"
-                        )= isEditingSpecialty ? specialty.description : ""
-                        small#specialty-description-help Opcional, máximo 255 caracteres.
-                    p.specialty-form-note
-                        span(aria-hidden="true") ✓
-                        if isEditingSpecialty
-                            | Los médicos asociados y el estado actual de la especialidad se conservarán.
-                        else
-                            | La especialidad se creará activa y estará disponible para asignarla a médicos.
-                    p.specialty-form-feedback(
-                        role="status",
-                        aria-live="polite",
-                        data-specialty-form-feedback
+                .specialty-form-layout
+                    form.specialty-form-card(
+                        data-specialty-create-form,
+                        data-mode=isEditingSpecialty ? "edit" : "create",
+                        data-specialty-id=isEditingSpecialty ? specialty.id : null,
+                        data-current-logo-url=isEditingSpecialty ? specialty.logoUrl : null,
+                        data-endpoint=isEditingSpecialty ? `/api/admin/specialties/${specialty.id}` : "/api/admin/specialties"
                     )
-                    p.specialty-form-error(
-                        role="alert",
-                        aria-live="assertive",
-                        data-specialty-form-error,
-                        hidden
-                    )
-                    footer.specialty-form-actions
-                        a.specialty-form-cancel(href="/admin/specialties") Cancelar
-                        button.specialty-form-submit(type="submit", data-specialty-submit)
+                        .specialty-form-section-heading
+                            h2= isEditingSpecialty ? "Editar información" : "Información de la especialidad"
+                            p Los campos con asterisco son obligatorios.
+                        label.specialty-form-field(for="specialty-name")
+                            span Nombre de la especialidad
+                                b(aria-hidden="true") *
+                            input#specialty-name(
+                                type="text",
+                                name="name",
+                                maxlength="100",
+                                required,
+                                value=isEditingSpecialty ? specialty.name : "",
+                                autocomplete="off",
+                                aria-describedby="specialty-name-help"
+                            )
+                            small#specialty-name-help Máximo 100 caracteres.
+                        label.specialty-form-field(for="specialty-description")
+                            span Descripción
+                            textarea#specialty-description(
+                                name="description",
+                                rows="4",
+                                maxlength="255",
+                                aria-describedby="specialty-description-help"
+                            )= isEditingSpecialty ? specialty.description : ""
+                            small#specialty-description-help Opcional, máximo 255 caracteres.
+                        .specialty-form-field
+                            span Logo de la especialidad
+                            .specialty-logo-control
+                                .specialty-logo-preview(data-specialty-logo-preview)
+                                    if isEditingSpecialty && specialty.logoUrl
+                                        img(
+                                            src=specialty.logoUrl,
+                                            alt="",
+                                            data-specialty-logo-image
+                                        )
+                                    else
+                                        svg(
+                                            data-specialty-logo-fallback,
+                                            aria-hidden="true",
+                                            viewBox="0 0 24 24",
+                                            fill="none",
+                                            stroke="currentColor",
+                                            stroke-width="1.8",
+                                            stroke-linecap="round",
+                                            stroke-linejoin="round"
+                                        )
+                                            path(d="m12 3 9 5-9 5-9-5 9-5Z")
+                                            path(d="m3 12 9 5 9-5")
+                                            path(d="m3 16 9 5 9-5")
+                                .specialty-logo-copy
+                                    strong(data-specialty-logo-name)= isEditingSpecialty && specialty.logoUrl ? "Logo personalizado" : "Usa una imagen propia"
+                                    small PNG, JPG o WebP. Máximo 2 MB.
+                                label.specialty-logo-upload(for="specialty-logo-input")
+                                    svg(
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="M12 16V4m0 0L7 9m5-5 5 5")
+                                        path(d="M5 14v5h14v-5")
+                                    | Elegir imagen
+                                    input#specialty-logo-input(
+                                        type="file",
+                                        accept="image/png,image/jpeg,image/webp",
+                                        aria-describedby="specialty-logo-help",
+                                        data-specialty-logo-input
+                                    )
+                                button.specialty-logo-remove(
+                                    type="button",
+                                    aria-label="Quitar logo personalizado",
+                                    data-specialty-logo-remove,
+                                    hidden=!(isEditingSpecialty && specialty.logoUrl)
+                                )
+                                    svg(
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="M3 6h18m-2 0-1 14H6L5 6m4 0V4h6v2m-5 4v6m4-6v6")
+                            small#specialty-logo-help.specialty-logo-help Si no agregas una imagen, se mostrará el logo predeterminado de especialidades.
+                        p.specialty-form-note
+                            svg(
+                                aria-hidden="true",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="M20 7 10 17l-5-5")
+                                circle(cx="12", cy="12", r="10")
                             if isEditingSpecialty
-                                | Guardar cambios
+                                | Los médicos asociados y el estado actual de la especialidad se conservarán.
                             else
-                                span(aria-hidden="true") +
-                                | Crear especialidad
+                                | Se creará activa y estará disponible para asignarla a médicos.
+                        p.specialty-form-feedback(
+                            role="status",
+                            aria-live="polite",
+                            data-specialty-form-feedback
+                        )
+                        p.specialty-form-error(
+                            role="alert",
+                            aria-live="assertive",
+                            data-specialty-form-error,
+                            hidden
+                        )
+                        footer.specialty-form-actions
+                            a.specialty-form-cancel(href="/admin/specialties") Cancelar
+                            button.specialty-form-submit(type="submit", data-specialty-submit)
+                                if isEditingSpecialty
+                                    | Guardar cambios
+                                else
+                                    svg(
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="M12 5v14m-7-7h14")
+                                    | Crear especialidad
+                    aside.specialty-live-preview(aria-label="Vista previa de la especialidad")
+                        h2 Vista previa
+                        p Así aparecerá en el catálogo.
+                        .specialty-live-preview-card
+                            span.specialty-live-preview-logo(data-specialty-live-logo)
+                                if isEditingSpecialty && specialty.logoUrl
+                                    img(src=specialty.logoUrl, alt="", data-specialty-live-image)
+                                else
+                                    svg(
+                                        data-specialty-live-fallback,
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="m12 3 9 5-9 5-9-5 9-5Z")
+                                        path(d="m3 12 9 5 9-5")
+                                        path(d="m3 16 9 5 9-5")
+                            span
+                                strong(data-specialty-live-name)= isEditingSpecialty ? specialty.name : "Nombre de especialidad"
+                                small(data-specialty-live-description)= isEditingSpecialty && specialty.description ? specialty.description : "Descripción de la especialidad"
+                        .specialty-live-preview-status
+                            span(aria-hidden="true")
+                            | Activa y disponible para médicos
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-specialty-form.js", defer)
