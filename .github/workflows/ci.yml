@@ -75,12 +75,6 @@ jobs:
             - name: Run Jest tests
               run: npm test
 
-            # Diagnose platform-specific formatting for the patient profile files.
-            - name: Format patient profile files for diagnosis
-              run: |
-                  npx prettier --write "views/patient/profile.pug" "public/css/patient-profile.css" --plugin @prettier/plugin-pug --end-of-line lf
-                  git diff -- "views/patient/profile.pug" "public/css/patient-profile.css"
-
             # Check formatting without modifying project files.
             - name: Check Prettier formatting
               env:
