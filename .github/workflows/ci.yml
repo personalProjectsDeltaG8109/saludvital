@@ -79,7 +79,7 @@ jobs:
             - name: Check Prettier formatting
               env:
                   PRETTIER_PLUGIN_PUG_LOG_LEVEL: error
-              run: npx prettier --check "app.js" "server.js" "package.json" "config/**/*.js" "src/**/*.js" "tests/**/*.js" "views/**/*.pug" "public/js/**/*.js" "public/css/**/*.css" "src/styles/**/*.css" ".github/workflows/ci.yml" --plugin @prettier/plugin-pug
+              run: npx prettier --check "app.js" "server.js" "package.json" "config/**/*.js" "src/**/*.js" "tests/**/*.js" "views/**/*.pug" "public/js/**/*.js" "public/css/**/*.css" "src/styles/**/*.css" ".github/workflows/ci.yml" --plugin @prettier/plugin-pug --end-of-line lf
 
             # Verify that Tailwind CSS compiles successfully.
             - name: Build Tailwind CSS
