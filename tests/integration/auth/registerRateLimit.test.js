@@ -2,6 +2,10 @@ import request from "supertest";
 import app from "../../../app.js";
 
 describe("Patient registration rate limiter", () => {
+    beforeAll(() => {
+        app.enable("view cache");
+    });
+
     // Use the real application and registration route without creating accounts.
     test("allows five requests and redirects the sixth request", async () => {
         // The first five requests reach the controller and fail consent validation.
