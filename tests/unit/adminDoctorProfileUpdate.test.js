@@ -29,6 +29,9 @@ jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.j
     storeProfilePhoto: jest.fn(),
     removeStoredProfilePhoto: jest.fn(),
 }));
+jest.unstable_mockModule("../../src/modules/admin/services/adminDoctorService.js", () => ({
+    cancelUpcomingConfirmedDoctorAppointments: jest.fn(),
+}));
 
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
@@ -72,7 +75,7 @@ describe("Admin doctor profile updates", () => {
         database.transaction.mockImplementation((callback) => callback(transaction));
         Rol.findOne.mockResolvedValue({ id: 1 });
         User.findByPk.mockResolvedValue({ id: 7, role_id: 4, is_active: true });
-        Rol.findByPk.mockResolvedValue({ id: 4, name: "Patient" });
+        Rol.findByPk.mockResolvedValue({ id: 4, name: "Doctor" });
         Doctor.findOne.mockResolvedValue({ id: 12 });
 
         await expect(updateAdminUser(1, 7, { isActive: false })).rejects.toMatchObject({
