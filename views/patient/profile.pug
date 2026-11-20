@@ -78,16 +78,44 @@ html(lang="es")
                                     span.profile-role Paciente
                                 .profile-contact-list
                                     p
-                                        span(aria-hidden="true") ✉
+                                        span.profile-contact-icon.is-email(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="3.5",
+                                                    y="5",
+                                                    width="17",
+                                                    height="14",
+                                                    rx="2.5"
+                                                )
+                                                path(d="m5 7 7 5.5L19 7")
                                         span= patient.user.email
                                     p
-                                        span(aria-hidden="true") ☎
+                                        span.profile-contact-icon.is-phone(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M7.2 3.8h3l1.3 4-2 1.7a15 15 0 0 0 5 5l1.7-2 4 1.3v3c0 1.1-.9 2-2 2A15.5 15.5 0 0 1 5.2 5.8c0-1.1.9-2 2-2Z"
+                                                )
                                         span= patient.phone.startsWith("+") ? patient.phone : "+57 " + patient.phone
                                     p
-                                        span(aria-hidden="true") ▣
+                                        span.profile-contact-icon.is-document(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="3.5",
+                                                    y="5",
+                                                    width="17",
+                                                    height="14",
+                                                    rx="2"
+                                                )
+                                                circle(cx="8", cy="11", r="1.5")
+                                                path(d="M6 15h4m3-5h4m-4 4h4")
                                         span= patient.document_type + " " + patient.document_number
                                     p
-                                        span(aria-hidden="true") ◉
+                                        span.profile-contact-icon.is-location(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"
+                                                )
+                                                circle(cx="12", cy="10", r="2.2")
                                         span= patient.municipality + ", " + patient.department
                             section.profile-quick-actions(aria-label="Seguridad y preferencias")
                                 a.profile-quick-card(href="/forgot-password?source=profile")
@@ -134,10 +162,10 @@ html(lang="es")
                                     small Citas realizadas
                                 article.profile-stat
                                     span.profile-stat-icon.is-specialties(aria-hidden="true")
-                                        svg(viewBox="0 0 24 24", fill="none")
-                                            path(
-                                                d="M7 4v5a5 5 0 0 0 10 0V4M7 6H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3M12 14v3m-4 3h8a4 4 0 0 0-8 0Z"
-                                            )
+                                        img(
+                                            src="/brand/admin-sidebar-icons/specialties.png",
+                                            alt=""
+                                        )
                                     strong= specialtyCount
                                     small Especialidades
                                 article.profile-stat
@@ -154,7 +182,17 @@ html(lang="es")
                                     data-section="personal"
                                 )
                                     summary
-                                        span.profile-section-icon(aria-hidden="true") ◉
+                                        span.profile-section-icon(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="4",
+                                                    y="4.5",
+                                                    width="16",
+                                                    height="15",
+                                                    rx="2.5"
+                                                )
+                                                circle(cx="9", cy="10", r="2")
+                                                path(d="M6.5 16a2.8 2.8 0 0 1 5 0m2-5h3m-3 3h3")
                                         span Información personal
                                         span.profile-section-chevron(aria-hidden="true") ›
                                     .profile-section-body
@@ -338,7 +376,12 @@ html(lang="es")
                                     data-section="medical"
                                 )
                                     summary
-                                        span.profile-section-icon.is-medical(aria-hidden="true") ♧
+                                        span.profile-section-icon.is-medical(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M20.5 8.8c0 5-8.5 10.5-8.5 10.5S3.5 13.8 3.5 8.8a4.6 4.6 0 0 1 8.5-2.4 4.6 4.6 0 0 1 8.5 2.4Z"
+                                                )
+                                                path(d="M8.5 11.5h2l1.2-2.2 1.6 4 1.1-1.8h1.1")
                                         span Información médica
                                         span.profile-section-chevron(aria-hidden="true") ›
                                     .profile-section-body
@@ -408,7 +451,10 @@ html(lang="es")
                                     data-section="emergency"
                                 )
                                     summary
-                                        span.profile-section-icon.is-emergency(aria-hidden="true") ♡
+                                        span.profile-section-icon.is-emergency(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                circle(cx="9", cy="8", r="3")
+                                                path(d="M3.5 19a5.5 5.5 0 0 1 11 0m3-10v6m-3-3h6")
                                         span Contacto de emergencia
                                         span.profile-section-chevron(aria-hidden="true") ›
                                     .profile-section-body
