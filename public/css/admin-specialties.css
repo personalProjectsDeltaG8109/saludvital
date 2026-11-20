@@ -69,10 +69,13 @@
     outline: 3px solid rgb(22 141 226 / 32%);
     outline-offset: 2px;
 }
-.specialties-primary-button > span {
-    font-size: 21px;
-    font-weight: 400;
-    line-height: 1;
+.specialties-primary-button > svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 220ms ease;
+}
+.specialties-primary-button:hover > svg {
+    transform: rotate(90deg);
 }
 
 .specialties-stats {
@@ -283,6 +286,11 @@
     width: 23px;
     height: 23px;
 }
+.specialty-row-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 .specialty-description {
     color: #526a90 !important;
     line-height: 1.4;
@@ -318,20 +326,22 @@
     background: #ed343d;
 }
 .specialty-edit-link {
-    display: inline-flex;
-    min-height: 32px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 11px;
+    display: inline-grid;
+    width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
     border-radius: 8px;
     color: #075fc3;
     background: #eaf4ff;
-    font-size: 11px;
-    font-weight: 650;
     text-decoration: none;
 }
 .specialty-edit-link:hover {
     background: #dceeff;
+}
+.specialty-edit-link svg {
+    width: 17px;
+    height: 17px;
 }
 .specialty-edit-link:focus-visible,
 .specialty-status-action:focus-visible {
@@ -339,11 +349,14 @@
     outline-offset: 2px;
 }
 .specialty-actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     white-space: nowrap;
 }
 .specialty-status-action {
     min-height: 32px;
-    margin-left: 5px;
+    margin-left: 0;
     padding: 0 9px;
     border: 0;
     border-radius: 8px;
@@ -422,27 +435,39 @@
 }
 
 .specialty-form-page {
-    width: min(100%, 1000px);
+    width: min(100%, 1180px);
     margin: 0 auto;
     padding: 25px clamp(16px, 2vw, 30px) 35px;
     color: #123b73;
 }
 .specialty-back-link {
     display: inline-flex;
+    min-height: 40px;
     align-items: center;
-    gap: 7px;
+    gap: 9px;
     margin-bottom: 20px;
-    color: #176fbe;
+    padding: 0 13px;
+    border: 1px solid #d8e7f4;
+    border-radius: 9px;
+    color: #0b548d;
+    background: #fff;
+    box-shadow: 0 3px 9px rgb(27 72 119 / 5%);
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
+    transition:
+        background 160ms ease,
+        border-color 160ms ease,
+        transform 160ms ease;
 }
 .specialty-back-link:hover {
-    text-decoration: underline;
+    transform: translateY(-1px);
+    border-color: #abd1eb;
+    background: #f3f9ff;
 }
-.specialty-back-link > span {
-    font-size: 19px;
-    line-height: 1;
+.specialty-back-link svg {
+    width: 17px;
+    height: 17px;
 }
 .specialty-form-heading {
     display: flex;
@@ -469,6 +494,12 @@
     width: 31px;
     height: 31px;
 }
+.specialty-form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+    align-items: start;
+    gap: 20px;
+}
 .specialty-form-card {
     display: grid;
     gap: 19px;
@@ -477,6 +508,88 @@
     border-radius: 15px;
     background: #fff;
     box-shadow: 0 7px 22px rgb(27 72 119 / 5%);
+}
+.specialty-live-preview {
+    padding: 22px;
+    border: 1px solid #e6eef7;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 7px 22px rgb(27 72 119 / 5%);
+}
+.specialty-live-preview h2 {
+    margin: 0;
+    color: #123b73;
+    font-size: 16px;
+}
+.specialty-live-preview > p {
+    margin: 5px 0 16px;
+    color: #7185a0;
+    font-size: 12px;
+}
+.specialty-live-preview-card {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    padding: 13px;
+    border: 1px solid #e4edf6;
+    border-radius: 11px;
+    background: #f5faff;
+}
+.specialty-live-preview-card > span:last-child {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+}
+.specialty-live-preview-card strong,
+.specialty-live-preview-card small {
+    overflow-wrap: anywhere;
+}
+.specialty-live-preview-card strong {
+    color: #123b73;
+    font-size: 13px;
+}
+.specialty-live-preview-card small {
+    color: #647b9d;
+    font-size: 11px;
+    line-height: 1.4;
+}
+.specialty-live-preview-logo,
+.specialty-logo-preview {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    overflow: hidden;
+    place-items: center;
+    border-radius: 11px;
+    color: #0a51ad;
+    background: #e9f2fc;
+}
+.specialty-live-preview-logo svg,
+.specialty-logo-preview svg {
+    width: 26px;
+    height: 26px;
+}
+.specialty-live-preview-logo img,
+.specialty-logo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.specialty-live-preview-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    color: #08774f;
+    font-size: 11px;
+}
+.specialty-live-preview-status > span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #08ad6c;
 }
 .specialty-form-section-heading {
     padding-bottom: 14px;
@@ -532,6 +645,93 @@
     font-size: 11px;
     font-weight: 400;
 }
+.specialty-logo-control {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px dashed #aac8df;
+    border-radius: 11px;
+    background: #f6fbff;
+}
+.specialty-logo-copy {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: 5px;
+}
+.specialty-logo-copy strong {
+    overflow-wrap: anywhere;
+    color: #163b70;
+    font-size: 12px;
+    font-weight: 650;
+}
+.specialty-logo-copy small,
+.specialty-logo-help {
+    color: #7185a0;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.45;
+}
+.specialty-logo-upload {
+    display: inline-flex;
+    min-height: 38px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 11px;
+    border: 1px solid #d5e5f2;
+    border-radius: 8px;
+    color: #0b548d;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 650;
+    cursor: pointer;
+}
+.specialty-logo-upload:hover {
+    background: #edf7ff;
+}
+.specialty-logo-upload svg,
+.specialty-logo-remove svg {
+    width: 16px;
+    height: 16px;
+}
+.specialty-logo-upload input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+.specialty-logo-upload:focus-within {
+    outline: 3px solid rgb(22 141 226 / 32%);
+    outline-offset: 2px;
+}
+.specialty-logo-remove {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border: 1px solid #f0d6d7;
+    border-radius: 8px;
+    color: #a3272d;
+    background: #fff7f7;
+    cursor: pointer;
+}
+.specialty-logo-remove[hidden] {
+    display: none;
+}
+.specialty-logo-remove:hover {
+    background: #ffeded;
+}
+.specialty-logo-help {
+    font-weight: 400;
+}
 .specialty-form-note {
     display: flex;
     align-items: flex-start;
@@ -544,10 +744,10 @@
     font-size: 12px;
     line-height: 1.5;
 }
-.specialty-form-note > span {
-    font-size: 16px;
-    font-weight: 800;
-    line-height: 1;
+.specialty-form-note > svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
 }
 .specialty-form-feedback {
     min-height: 17px;
@@ -600,12 +800,25 @@
     opacity: 0.65;
     cursor: wait;
 }
-.specialty-form-submit > span {
-    font-size: 20px;
-    font-weight: 400;
+.specialty-form-submit > svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 220ms ease;
+}
+.specialty-form-submit:hover > svg {
+    transform: rotate(90deg);
 }
 
 @media (max-width: 1000px) {
+    .specialty-form-page {
+        width: min(100%, 760px);
+    }
+    .specialty-form-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .specialty-live-preview {
+        grid-row: 1;
+    }
     .specialties-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -906,6 +1119,10 @@
     .specialty-form-page {
         padding: 18px 14px 25px;
     }
+    .specialty-back-link {
+        min-height: 42px;
+        margin-bottom: 16px;
+    }
     .specialty-form-heading {
         align-items: flex-start;
         gap: 11px;
@@ -932,6 +1149,24 @@
     .specialty-form-cancel,
     .specialty-form-submit {
         width: 100%;
+    }
+    .specialty-logo-control {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr) 36px;
+        gap: 10px;
+        padding: 11px;
+    }
+    .specialty-logo-upload {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 42px;
+    }
+    .specialty-logo-remove {
+        grid-column: 3;
+        grid-row: 1;
+    }
+    .specialty-live-preview {
+        padding: 17px;
     }
 }
 

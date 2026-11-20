@@ -32,6 +32,7 @@ describe("Admin specialty service", () => {
                     id: 4,
                     name: "Pediatría",
                     description: "Atención médica infantil.",
+                    logo_url: "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp",
                     is_active: true,
                 },
             ],
@@ -66,6 +67,7 @@ describe("Admin specialty service", () => {
                     id: 4,
                     name: "Pediatría",
                     description: "Atención médica infantil.",
+                    logoUrl: "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp",
                     isActive: true,
                     doctorCount: 5,
                 },
@@ -77,7 +79,7 @@ describe("Admin specialty service", () => {
 
     test("uses an empty description and zero assignments when data is missing", async () => {
         Specialities.findAndCountAll.mockResolvedValue({
-            rows: [{ id: 1, name: "General", description: null, is_active: false }],
+            rows: [{ id: 1, name: "General", description: null, logo_url: null, is_active: false }],
             count: 1,
         });
         Specialities.count.mockResolvedValueOnce(1).mockResolvedValueOnce(0);
@@ -87,6 +89,7 @@ describe("Admin specialty service", () => {
 
         expect(result.specialties[0]).toMatchObject({
             description: "",
+            logoUrl: null,
             isActive: false,
             doctorCount: 0,
         });

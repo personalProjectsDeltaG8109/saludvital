@@ -39,11 +39,7 @@ if (specialtiesPage) {
         if (event.key === "Escape") closeSidebar();
     });
 
-    function createSpecialtyIcon() {
-        const wrapper = document.createElement("span");
-        wrapper.className = "specialty-row-icon";
-        wrapper.setAttribute("aria-hidden", "true");
-
+    function createDefaultSpecialtyIcon() {
         const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         icon.setAttribute("viewBox", "0 0 24 24");
         icon.setAttribute("fill", "none");
@@ -51,6 +47,7 @@ if (specialtiesPage) {
         icon.setAttribute("stroke-width", "1.8");
         icon.setAttribute("stroke-linecap", "round");
         icon.setAttribute("stroke-linejoin", "round");
+        icon.setAttribute("aria-hidden", "true");
 
         const paths = ["m12 3 9 5-9 5-9-5 9-5Z", "m3 12 9 5 9-5", "m3 16 9 5 9-5"];
         for (const pathData of paths) {
@@ -59,7 +56,30 @@ if (specialtiesPage) {
             icon.append(path);
         }
 
-        wrapper.append(icon);
+        return icon;
+    }
+
+    function createSpecialtyIcon(logoUrl) {
+        const wrapper = document.createElement("span");
+        wrapper.className = "specialty-row-icon";
+        wrapper.setAttribute("aria-hidden", "true");
+
+        if (/^\/uploads\/specialty-logos\/[a-f0-9-]{36}\.webp$/i.test(logoUrl || "")) {
+            const image = document.createElement("img");
+            image.src = logoUrl;
+            image.alt = "";
+            image.loading = "lazy";
+            image.decoding = "async";
+            image.addEventListener(
+                "error",
+                () => wrapper.replaceChildren(createDefaultSpecialtyIcon()),
+                { once: true },
+            );
+            wrapper.append(image);
+        } else {
+            wrapper.append(createDefaultSpecialtyIcon());
+        }
+
         return wrapper;
     }
 
@@ -77,7 +97,7 @@ if (specialtiesPage) {
 
         const name = createCell("Especialidad");
         name.className = "specialty-name-cell";
-        name.append(createSpecialtyIcon());
+        name.append(createSpecialtyIcon(specialty.logoUrl));
         const nameText = document.createElement("span");
         nameText.textContent = specialty.name;
         name.append(nameText);
@@ -99,7 +119,21 @@ if (specialtiesPage) {
         editLink.className = "specialty-edit-link";
         editLink.href = `/admin/specialties/${specialty.id}/edit`;
         editLink.setAttribute("aria-label", `Editar ${specialty.name}`);
-        editLink.textContent = "Editar";
+        editLink.setAttribute("data-tooltip", "Editar especialidad");
+        const editIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        editIcon.setAttribute("viewBox", "0 0 24 24");
+        editIcon.setAttribute("fill", "none");
+        editIcon.setAttribute("stroke", "currentColor");
+        editIcon.setAttribute("stroke-width", "1.8");
+        editIcon.setAttribute("stroke-linecap", "round");
+        editIcon.setAttribute("stroke-linejoin", "round");
+        editIcon.setAttribute("aria-hidden", "true");
+        for (const pathData of ["M12 20h9", "M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"]) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", pathData);
+            editIcon.append(path);
+        }
+        editLink.append(editIcon);
         actions.append(editLink);
 
         const statusButton = document.createElement("button");
