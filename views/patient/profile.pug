@@ -14,17 +14,17 @@ html(lang="es")
     body.sv-dashboard.profile-page
         .sv-layout
             include partials/sidebar
-            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menú", data-close-sidebar)
+            button.sv-sidebar-backdrop(type="button", aria-label="Cerrar menÃº", data-close-sidebar)
             .sv-main
                 include partials/topbar
                 main.profile-content
                     section.profile-hero(aria-labelledby="profile-title")
                         .profile-hero-copy
                             h2#profile-title Mi perfil
-                            p Mantén tu información actualizada para una mejor atención médica.
+                            p MantÃ©n tu informaciÃ³n actualizada para una mejor atenciÃ³n mÃ©dica.
                         .profile-hero-badge
-                            span(aria-hidden="true") ✓
-                            span Tu información<br>segura y protegida
+                            span(aria-hidden="true") âœ“
+                            span Tu informaciÃ³n<br>segura y protegida
                     .profile-layout
                         aside.profile-overview
                             section.profile-card.profile-identity
@@ -78,16 +78,44 @@ html(lang="es")
                                     span.profile-role Paciente
                                 .profile-contact-list
                                     p
-                                        span(aria-hidden="true") ✉
+                                        span.profile-contact-icon.is-email(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="3.5",
+                                                    y="5",
+                                                    width="17",
+                                                    height="14",
+                                                    rx="2.5"
+                                                )
+                                                path(d="m5 7 7 5.5L19 7")
                                         span= patient.user.email
                                     p
-                                        span(aria-hidden="true") ☎
+                                        span.profile-contact-icon.is-phone(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M7.2 3.8h3l1.3 4-2 1.7a15 15 0 0 0 5 5l1.7-2 4 1.3v3c0 1.1-.9 2-2 2A15.5 15.5 0 0 1 5.2 5.8c0-1.1.9-2 2-2Z"
+                                                )
                                         span= patient.phone.startsWith("+") ? patient.phone : "+57 " + patient.phone
                                     p
-                                        span(aria-hidden="true") ▣
+                                        span.profile-contact-icon.is-document(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="3.5",
+                                                    y="5",
+                                                    width="17",
+                                                    height="14",
+                                                    rx="2"
+                                                )
+                                                circle(cx="8", cy="11", r="1.5")
+                                                path(d="M6 15h4m3-5h4m-4 4h4")
                                         span= patient.document_type + " " + patient.document_number
                                     p
-                                        span(aria-hidden="true") ◉
+                                        span.profile-contact-icon.is-location(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"
+                                                )
+                                                circle(cx="12", cy="10", r="2.2")
                                         span= patient.municipality + ", " + patient.department
                             section.profile-quick-actions(aria-label="Seguridad y preferencias")
                                 a.profile-quick-card(href="/forgot-password?source=profile")
@@ -98,16 +126,16 @@ html(lang="es")
                                             )
                                             path(d="M9.5 12.1 11.2 14l3.6-4")
                                     span
-                                        strong Recuperar contraseña
-                                        small Mantén tu cuenta segura con una contraseña fuerte.
-                                    span.profile-quick-action Cambiar contraseña →
+                                        strong Recuperar contraseÃ±a
+                                        small MantÃ©n tu cuenta segura con una contraseÃ±a fuerte.
+                                    span.profile-quick-action Cambiar contraseÃ±a â†’
                                 a.profile-quick-card(href="/patient/notifications")
                                     span.profile-quick-icon.is-notifications(aria-hidden="true")
                                         img(src="/brand/patient-sidebar/notifications.png", alt="")
                                     span
                                         strong Preferencias de notificaciones
-                                        small Configura cómo quieres recibir recordatorios y novedades.
-                                    span.profile-quick-action Gestionar notificaciones →
+                                        small Configura cÃ³mo quieres recibir recordatorios y novedades.
+                                    span.profile-quick-action Gestionar notificaciones â†’
                                 button.profile-quick-card.profile-delete-card(
                                     type="button",
                                     data-open-delete
@@ -119,8 +147,8 @@ html(lang="es")
                                             )
                                     span
                                         strong Eliminar cuenta
-                                        small La cuenta se desactivará y se cerrará tu sesión.
-                                    span.profile-quick-action Eliminar cuenta →
+                                        small La cuenta se desactivarÃ¡ y se cerrarÃ¡ tu sesiÃ³n.
+                                    span.profile-quick-action Eliminar cuenta â†’
                         .profile-main-column
                             section.profile-stats(aria-label="Resumen de actividad")
                                 article.profile-stat
@@ -134,10 +162,10 @@ html(lang="es")
                                     small Citas realizadas
                                 article.profile-stat
                                     span.profile-stat-icon.is-specialties(aria-hidden="true")
-                                        svg(viewBox="0 0 24 24", fill="none")
-                                            path(
-                                                d="M7 4v5a5 5 0 0 0 10 0V4M7 6H4v2a3 3 0 0 0 3 3m10-5h3v2a3 3 0 0 1-3 3M12 14v3m-4 3h8a4 4 0 0 0-8 0Z"
-                                            )
+                                        img(
+                                            src="/brand/admin-sidebar-icons/specialties.png",
+                                            alt=""
+                                        )
                                     strong= specialtyCount
                                     small Especialidades
                                 article.profile-stat
@@ -145,7 +173,7 @@ html(lang="es")
                                         svg(viewBox="0 0 24 24", fill="none")
                                             circle(cx="12", cy="12", r="9")
                                             path(d="M12 7v5l3 2")
-                                    strong= yearsAsPatient === 0 ? "Menos de 1 año" : yearsAsPatient === 1 ? "1 año" : yearsAsPatient + " años"
+                                    strong= yearsAsPatient === 0 ? "Menos de 1 aÃ±o" : yearsAsPatient === 1 ? "1 aÃ±o" : yearsAsPatient + " aÃ±os"
                                     small como paciente
                             .profile-details
                                 details.profile-card.profile-section(
@@ -154,18 +182,28 @@ html(lang="es")
                                     data-section="personal"
                                 )
                                     summary
-                                        span.profile-section-icon(aria-hidden="true") ◉
-                                        span Información personal
-                                        span.profile-section-chevron(aria-hidden="true") ›
+                                        span.profile-section-icon(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                rect(
+                                                    x="4",
+                                                    y="4.5",
+                                                    width="16",
+                                                    height="15",
+                                                    rx="2.5"
+                                                )
+                                                circle(cx="9", cy="10", r="2")
+                                                path(d="M6.5 16a2.8 2.8 0 0 1 5 0m2-5h3m-3 3h3")
+                                        span InformaciÃ³n personal
+                                        span.profile-section-chevron(aria-hidden="true") â€º
                                     .profile-section-body
                                         .profile-section-heading
                                             div
-                                                h2 Información personal
-                                                p Datos de contacto e identificación.
+                                                h2 InformaciÃ³n personal
+                                                p Datos de contacto e identificaciÃ³n.
                                             button.profile-edit-button(
                                                 type="button",
-                                                aria-label="Editar información personal",
-                                                title="Editar información personal",
+                                                aria-label="Editar informaciÃ³n personal",
+                                                title="Editar informaciÃ³n personal",
                                                 data-edit-section="personal"
                                             )
                                                 svg(
@@ -186,24 +224,24 @@ html(lang="es")
                                                     dd= patient.last_name
                                                 div
                                                     dt Tipo de documento
-                                                    dd= patient.document_type === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"
+                                                    dd= patient.document_type === "CC" ? "CÃ©dula de ciudadanÃ­a" : "CÃ©dula de extranjerÃ­a"
                                                 div
-                                                    dt Número de documento
+                                                    dt NÃºmero de documento
                                                     dd= patient.document_number
                                                 div
                                                     dt Fecha de nacimiento
                                                     dd= new Date(String(patient.date_of_birth).slice(0, 10) + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Bogota" })
                                                 div
-                                                    dt Teléfono
+                                                    dt TelÃ©fono
                                                     dd= patient.phone.startsWith("+") ? patient.phone : "+57 " + patient.phone
                                                 div
-                                                    dt Correo electrónico
+                                                    dt Correo electrÃ³nico
                                                     dd= patient.user.email
                                                     if patient.user.pending_email
                                                         small.profile-email-pending(role="status")
                                                             | Cambio pendiente: #{ patient.user.pending_email }. Tu correo actual sigue activo hasta confirmar el nuevo.
                                                 div
-                                                    dt Dirección de residencia
+                                                    dt DirecciÃ³n de residencia
                                                     dd= patient.address || "Sin registrar"
                                                 div
                                                     dt Departamento y municipio
@@ -245,7 +283,7 @@ html(lang="es")
                                                     )
                                                 label
                                                     span
-                                                        | Correo electrónico
+                                                        | Correo electrÃ³nico
                                                         span.profile-required-mark(
                                                             aria-hidden="true"
                                                         ) *
@@ -259,7 +297,7 @@ html(lang="es")
                                                     )
                                                 label
                                                     span
-                                                        | Teléfono
+                                                        | TelÃ©fono
                                                         span.profile-required-mark(
                                                             aria-hidden="true"
                                                         ) *
@@ -274,20 +312,20 @@ html(lang="es")
                                                 //- These identity fields are read-only for patient self-service.
                                                 .profile-locked-fields.profile-form-wide(
                                                     role="note",
-                                                    aria-label="Datos de identificación que requieren un administrador"
+                                                    aria-label="Datos de identificaciÃ³n que requieren un administrador"
                                                 )
                                                     .profile-locked-field
                                                         span Fecha de nacimiento
                                                         strong= new Date(String(patient.date_of_birth).slice(0, 10) + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric", timeZone: "America/Bogota" })
                                                     .profile-locked-field
                                                         span Tipo de documento
-                                                        strong= patient.document_type === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"
+                                                        strong= patient.document_type === "CC" ? "CÃ©dula de ciudadanÃ­a" : "CÃ©dula de extranjerÃ­a"
                                                     .profile-locked-field
-                                                        span Número de documento
+                                                        span NÃºmero de documento
                                                         strong= patient.document_number
-                                                    p.profile-locked-help Para solicitar un cambio, comunícate con un administrador.
+                                                    p.profile-locked-help Para solicitar un cambio, comunÃ­cate con un administrador.
                                                 label.profile-form-wide
-                                                    span Dirección de residencia
+                                                    span DirecciÃ³n de residencia
                                                     input(
                                                         type="text",
                                                         name="address",
@@ -338,18 +376,23 @@ html(lang="es")
                                     data-section="medical"
                                 )
                                     summary
-                                        span.profile-section-icon.is-medical(aria-hidden="true") ♧
-                                        span Información médica
-                                        span.profile-section-chevron(aria-hidden="true") ›
+                                        span.profile-section-icon.is-medical(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                path(
+                                                    d="M20.5 8.8c0 5-8.5 10.5-8.5 10.5S3.5 13.8 3.5 8.8a4.6 4.6 0 0 1 8.5-2.4 4.6 4.6 0 0 1 8.5 2.4Z"
+                                                )
+                                                path(d="M8.5 11.5h2l1.2-2.2 1.6 4 1.1-1.8h1.1")
+                                        span InformaciÃ³n mÃ©dica
+                                        span.profile-section-chevron(aria-hidden="true") â€º
                                     .profile-section-body
                                         .profile-section-heading
                                             div
-                                                h2 Información médica
-                                                p Esta información ayuda a brindarte una mejor atención.
+                                                h2 InformaciÃ³n mÃ©dica
+                                                p Esta informaciÃ³n ayuda a brindarte una mejor atenciÃ³n.
                                             button.profile-edit-button(
                                                 type="button",
-                                                aria-label="Editar información médica",
-                                                title="Editar información médica",
+                                                aria-label="Editar informaciÃ³n mÃ©dica",
+                                                title="Editar informaciÃ³n mÃ©dica",
                                                 data-edit-section="medical"
                                             )
                                                 svg(
@@ -369,7 +412,7 @@ html(lang="es")
                                                     dt Alergias
                                                     dd= patient.allergies || "Ninguna registrada"
                                                 div
-                                                    dt Condiciones médicas
+                                                    dt Condiciones mÃ©dicas
                                                     dd= patient.existing_conditions || "Ninguna registrada"
                                         form.profile-edit-form(hidden, data-profile-form="medical")
                                             .profile-form-grid
@@ -390,7 +433,7 @@ html(lang="es")
                                                         maxlength="255"
                                                     )= patient.allergies || ""
                                                 label.profile-form-wide
-                                                    span Condiciones médicas
+                                                    span Condiciones mÃ©dicas
                                                     textarea(
                                                         name="existing_conditions",
                                                         rows="2",
@@ -408,14 +451,17 @@ html(lang="es")
                                     data-section="emergency"
                                 )
                                     summary
-                                        span.profile-section-icon.is-emergency(aria-hidden="true") ♡
+                                        span.profile-section-icon.is-emergency(aria-hidden="true")
+                                            svg(viewBox="0 0 24 24", fill="none")
+                                                circle(cx="9", cy="8", r="3")
+                                                path(d="M3.5 19a5.5 5.5 0 0 1 11 0m3-10v6m-3-3h6")
                                         span Contacto de emergencia
-                                        span.profile-section-chevron(aria-hidden="true") ›
+                                        span.profile-section-chevron(aria-hidden="true") â€º
                                     .profile-section-body
                                         .profile-section-heading
                                             div
                                                 h2 Contacto de emergencia
-                                                p Dato opcional para demostraciones. Usa información ficticia; SaludVital no contacta a esta persona automáticamente.
+                                                p Dato opcional para demostraciones. Usa informaciÃ³n ficticia; SaludVital no contacta a esta persona automÃ¡ticamente.
                                             button.profile-edit-button(
                                                 type="button",
                                                 aria-label="Editar contacto de emergencia",
@@ -440,21 +486,21 @@ html(lang="es")
                                                         dt Apellidos
                                                         dd= emergencyContact.last_name
                                                     div
-                                                        dt Teléfono
+                                                        dt TelÃ©fono
                                                         dd= emergencyContact.phone.startsWith("+") ? emergencyContact.phone : "+57 " + emergencyContact.phone
                                                     div
-                                                        dt Correo electrónico
+                                                        dt Correo electrÃ³nico
                                                         dd= emergencyContact.email || "Sin registrar"
                                                     div
                                                         dt Parentesco
                                                         dd= emergencyContact.relationship || "Sin registrar"
                                             else
-                                                p.profile-no-emergency Aún no has agregado un contacto de emergencia.
+                                                p.profile-no-emergency AÃºn no has agregado un contacto de emergencia.
                                         form.profile-edit-form(
                                             hidden,
                                             data-profile-form="emergency"
                                         )
-                                            p.profile-required-legend El contacto es opcional. Si lo agregas, nombres, apellidos y teléfono son obligatorios (*). En demostraciones, usa datos ficticios; SaludVital no envía mensajes a este contacto.
+                                            p.profile-required-legend El contacto es opcional. Si lo agregas, nombres, apellidos y telÃ©fono son obligatorios (*). En demostraciones, usa datos ficticios; SaludVital no envÃ­a mensajes a este contacto.
                                             .profile-form-grid
                                                 label
                                                     span
@@ -482,7 +528,7 @@ html(lang="es")
                                                     )
                                                 label
                                                     span
-                                                        | Teléfono
+                                                        | TelÃ©fono
                                                         span.profile-required-mark(
                                                             aria-hidden="true"
                                                         ) *
@@ -494,7 +540,7 @@ html(lang="es")
                                                         pattern="[0-9]{7,15}"
                                                     )
                                                 label
-                                                    span Correo electrónico
+                                                    span Correo electrÃ³nico
                                                     input(
                                                         type="email",
                                                         name="email",
@@ -525,12 +571,12 @@ html(lang="es")
                                 type="button",
                                 aria-label="Cerrar",
                                 data-close-delete
-                            ) ×
+                            ) Ã—
                             span.profile-delete-icon(aria-hidden="true") !
                             h2#delete-account-title Eliminar cuenta
-                            p Esta acción cerrará tu acceso a SaludVital. Tus citas e historia clínica se conservarán asociadas a un perfil desactivado.
+                            p Esta acciÃ³n cerrarÃ¡ tu acceso a SaludVital. Tus citas e historia clÃ­nica se conservarÃ¡n asociadas a un perfil desactivado.
                             label
-                                span Contraseña actual
+                                span ContraseÃ±a actual
                                 input(
                                     type="password",
                                     name="password",
@@ -562,10 +608,11 @@ html(lang="es")
                             type="button",
                             aria-label="Cerrar foto",
                             data-close-profile-image
-                        ) ×
+                        ) Ã—
                         img.profile-avatar-image.profile-image-dialog-content(
                             src="",
                             alt="Foto de perfil ampliada",
                             data-profile-image-dialog-content
                         )
                 include partials/bottom-nav
+
