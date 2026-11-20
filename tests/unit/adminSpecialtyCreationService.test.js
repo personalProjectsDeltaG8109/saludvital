@@ -20,10 +20,16 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
 jest.unstable_mockModule("../../src/models/AuditLog.js", () => ({
     default: { create: jest.fn() },
 }));
+jest.unstable_mockModule("../../src/modules/admin/services/specialtyLogoStorageService.js", () => ({
+    storeSpecialtyLogo: jest.fn(),
+    removeSpecialtyLogo: jest.fn(),
+}));
 
 const { Specialities, User } = await import("../../src/models/associations.js");
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
+const specialtyLogoStorage =
+    await import("../../src/modules/admin/services/specialtyLogoStorageService.js");
 const {
     createAdminSpecialty,
     getAdminSpecialtyForEdit,
@@ -35,6 +41,10 @@ describe("Admin specialty creation service", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+        specialtyLogoStorage.storeSpecialtyLogo.mockResolvedValue(
+            "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp",
+        );
+        specialtyLogoStorage.removeSpecialtyLogo.mockResolvedValue(undefined);
         database.transaction.mockImplementation((callback) =>
             callback({ LOCK: { UPDATE: "UPDATE" } }),
         );
@@ -58,6 +68,7 @@ describe("Admin specialty creation service", () => {
             {
                 name: "Medicina Interna",
                 description: "Atención especializada.",
+                logo_url: null,
                 is_active: true,
             },
             expect.objectContaining({ transaction: expect.any(Object) }),
@@ -69,7 +80,7 @@ describe("Admin specialty creation service", () => {
                 action: "AdminSpecialtyCreated",
                 target_type: "MedicalSpecialty",
                 target_id: "12",
-                changes: { next: { name: "Medicina Interna" } },
+                changes: { next: { name: "Medicina Interna", hasCustomLogo: false } },
             }),
             expect.objectContaining({ transaction: expect.any(Object) }),
         );
@@ -77,6 +88,7 @@ describe("Admin specialty creation service", () => {
             id: 12,
             name: "Medicina Interna",
             description: "Atención especializada.",
+            logoUrl: null,
             isActive: true,
         });
     });
@@ -93,10 +105,37 @@ describe("Admin specialty creation service", () => {
         const result = await createAdminSpecialty(9, { name: "Pediatría" });
 
         expect(Specialities.create).toHaveBeenCalledWith(
-            { name: "Pediatría", description: null, is_active: true },
+            { name: "Pediatría", description: null, logo_url: null, is_active: true },
             expect.objectContaining({ transaction: expect.any(Object) }),
         );
         expect(result.description).toBe("");
+    });
+
+    test("stores an optional logo and returns its URL when creating an active specialty", async () => {
+        const logoUrl = "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp";
+        specialtyLogoStorage.storeSpecialtyLogo.mockResolvedValue(logoUrl);
+        Specialities.findOne.mockResolvedValue(null);
+        Specialities.create.mockResolvedValue({
+            id: 15,
+            name: "Cardiología",
+            description: null,
+            logo_url: logoUrl,
+            is_active: true,
+        });
+
+        const result = await createAdminSpecialty(9, {
+            name: "Cardiología",
+            logoDataUrl: "data:image/png;base64,AA==",
+        });
+
+        expect(specialtyLogoStorage.storeSpecialtyLogo).toHaveBeenCalledWith(
+            "data:image/png;base64,AA==",
+        );
+        expect(Specialities.create).toHaveBeenCalledWith(
+            { name: "Cardiología", description: null, logo_url: logoUrl, is_active: true },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(result).toMatchObject({ logoUrl, isActive: true });
     });
 
     test("rejects duplicate names before attempting to create a record", async () => {
@@ -162,6 +201,7 @@ describe("Admin specialty creation service", () => {
             id: 5,
             name: "Pediatría",
             description: "Atención infantil.",
+            logo_url: null,
             is_active: false,
         });
 
@@ -169,10 +209,11 @@ describe("Admin specialty creation service", () => {
             id: 5,
             name: "Pediatría",
             description: "Atención infantil.",
+            logoUrl: null,
             isActive: false,
         });
         expect(Specialities.findByPk).toHaveBeenCalledWith(5, {
-            attributes: ["id", "name", "description", "is_active"],
+            attributes: ["id", "name", "description", "logo_url", "is_active"],
         });
     });
 
@@ -220,6 +261,7 @@ describe("Admin specialty creation service", () => {
             id: 5,
             name: "Neurología",
             description: "Atención del sistema nervioso.",
+            logoUrl: null,
             isActive: false,
         });
     });
@@ -249,6 +291,66 @@ describe("Admin specialty creation service", () => {
         expect(specialty.update).not.toHaveBeenCalled();
         expect(AuditLog.create).not.toHaveBeenCalled();
         expect(result.isActive).toBe(true);
+    });
+
+    test("replaces a logo and removes the previous stored image after saving", async () => {
+        const oldLogoUrl = "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp";
+        const newLogoUrl = "/uploads/specialty-logos/22222222-2222-4222-8222-222222222222.webp";
+        specialtyLogoStorage.storeSpecialtyLogo.mockResolvedValue(newLogoUrl);
+        const specialty = {
+            id: 5,
+            name: "Pediatría",
+            description: null,
+            logo_url: oldLogoUrl,
+            is_active: true,
+            update: jest
+                .fn()
+                .mockImplementation(async (changes) => Object.assign(specialty, changes)),
+        };
+        Specialities.findByPk.mockResolvedValue(specialty);
+        Specialities.findOne.mockResolvedValue(null);
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+
+        const result = await updateAdminSpecialty("9", "5", {
+            name: "Pediatría",
+            logoDataUrl: "data:image/png;base64,AA==",
+        });
+
+        expect(specialty.update).toHaveBeenCalledWith(
+            { logo_url: newLogoUrl },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(specialtyLogoStorage.removeSpecialtyLogo).toHaveBeenCalledWith(oldLogoUrl);
+        expect(result.logoUrl).toBe(newLogoUrl);
+    });
+
+    test("removes the custom logo and falls back to the default image", async () => {
+        const oldLogoUrl = "/uploads/specialty-logos/11111111-1111-4111-8111-111111111111.webp";
+        const specialty = {
+            id: 5,
+            name: "Pediatría",
+            description: null,
+            logo_url: oldLogoUrl,
+            is_active: true,
+            update: jest
+                .fn()
+                .mockImplementation(async (changes) => Object.assign(specialty, changes)),
+        };
+        Specialities.findByPk.mockResolvedValue(specialty);
+        Specialities.findOne.mockResolvedValue(null);
+        User.findByPk.mockResolvedValue({ id: 9, email: "admin@example.com" });
+
+        const result = await updateAdminSpecialty("9", "5", {
+            name: "Pediatría",
+            removeLogo: true,
+        });
+
+        expect(specialty.update).toHaveBeenCalledWith(
+            { logo_url: null },
+            expect.objectContaining({ transaction: expect.any(Object) }),
+        );
+        expect(specialtyLogoStorage.removeSpecialtyLogo).toHaveBeenCalledWith(oldLogoUrl);
+        expect(result.logoUrl).toBeNull();
     });
 
     test("rejects duplicate specialty names without changing the record", async () => {

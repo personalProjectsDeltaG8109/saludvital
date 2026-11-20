@@ -2,9 +2,11 @@ import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import { Doctor, Specialities, User } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
+import { removeSpecialtyLogo, storeSpecialtyLogo } from "./specialtyLogoStorageService.js";
 
 const PAGE_SIZE_OPTIONS = [10, 25];
 const MAX_SEARCH_LENGTH = 100;
+const SPECIALTY_LOGO_URL_PATTERN = /^\/uploads\/specialty-logos\/[a-f0-9-]{36}\.webp$/i;
 
 function serviceError(message, statusCode = 400) {
     const error = new Error(message);
@@ -39,7 +41,29 @@ function validateSpecialtyInput(input = {}) {
         throw serviceError("La descripción no puede superar los 255 caracteres.");
     }
 
-    return { name, description: description || null };
+    if (
+        input.logoDataUrl !== undefined &&
+        input.logoDataUrl !== null &&
+        typeof input.logoDataUrl !== "string"
+    ) {
+        throw serviceError("Selecciona una imagen válida para el logo.");
+    }
+
+    const removeLogo = input.removeLogo === undefined ? false : input.removeLogo;
+    if (typeof removeLogo !== "boolean") {
+        throw serviceError("La opción para quitar el logo no es válida.");
+    }
+
+    const logoDataUrl = typeof input.logoDataUrl === "string" ? input.logoDataUrl : null;
+    if (removeLogo && logoDataUrl) {
+        throw serviceError("Elige una imagen nueva o quita el logo actual, no ambas opciones.");
+    }
+
+    return { name, description: description || null, logoDataUrl, removeLogo };
+}
+
+function normalizeSpecialtyLogoUrl(value) {
+    return typeof value === "string" && SPECIALTY_LOGO_URL_PATTERN.test(value) ? value : null;
 }
 
 function duplicateSpecialtyError() {
@@ -58,7 +82,7 @@ function parseSpecialtyId(value) {
 export async function getAdminSpecialtyForEdit(rawSpecialtyId) {
     const specialtyId = parseSpecialtyId(rawSpecialtyId);
     const specialty = await Specialities.findByPk(specialtyId, {
-        attributes: ["id", "name", "description", "is_active"],
+        attributes: ["id", "name", "description", "logo_url", "is_active"],
     });
 
     if (!specialty) throw serviceError("No encontramos esa especialidad.", 404);
@@ -67,6 +91,7 @@ export async function getAdminSpecialtyForEdit(rawSpecialtyId) {
         id: specialty.id,
         name: specialty.name,
         description: specialty.description || "",
+        logoUrl: normalizeSpecialtyLogoUrl(specialty.logo_url),
         isActive: specialty.is_active,
     };
 }
@@ -76,8 +101,10 @@ export async function updateAdminSpecialty(actorId, rawSpecialtyId, input) {
     const specialtyId = parseSpecialtyId(rawSpecialtyId);
     const specialtyInput = validateSpecialtyInput(input);
 
+    let storedLogoUrl = null;
+    let previousLogoUrl = null;
     try {
-        return await database.transaction(async (transaction) => {
+        const updatedSpecialty = await database.transaction(async (transaction) => {
             const specialty = await Specialities.findByPk(specialtyId, {
                 transaction,
                 lock: transaction.LOCK.UPDATE,
@@ -98,18 +125,31 @@ export async function updateAdminSpecialty(actorId, rawSpecialtyId, input) {
             if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
 
             const changes = {};
+            const fieldsToUpdate = {};
             if (specialty.name !== specialtyInput.name) {
                 changes.name = { previous: specialty.name, next: specialtyInput.name };
+                fieldsToUpdate.name = specialtyInput.name;
             }
             if ((specialty.description || null) !== specialtyInput.description) {
                 changes.description = {
                     previous: specialty.description || null,
                     next: specialtyInput.description,
                 };
+                fieldsToUpdate.description = specialtyInput.description;
+            }
+            if (specialtyInput.logoDataUrl) {
+                storedLogoUrl = await storeSpecialtyLogo(specialtyInput.logoDataUrl);
+                previousLogoUrl = normalizeSpecialtyLogoUrl(specialty.logo_url);
+                fieldsToUpdate.logo_url = storedLogoUrl;
+                changes.logo = { previous: previousLogoUrl, next: storedLogoUrl };
+            } else if (specialtyInput.removeLogo && specialty.logo_url) {
+                previousLogoUrl = normalizeSpecialtyLogoUrl(specialty.logo_url);
+                fieldsToUpdate.logo_url = null;
+                changes.logo = { previous: previousLogoUrl, next: null };
             }
 
             if (Object.keys(changes).length) {
-                await specialty.update(specialtyInput, { transaction });
+                await specialty.update(fieldsToUpdate, { transaction });
                 await AuditLog.create(
                     {
                         actor_user_id: actor.id,
@@ -131,10 +171,21 @@ export async function updateAdminSpecialty(actorId, rawSpecialtyId, input) {
                 id: specialty.id,
                 name: specialtyInput.name,
                 description: specialtyInput.description || "",
+                logoUrl: normalizeSpecialtyLogoUrl(
+                    Object.hasOwn(fieldsToUpdate, "logo_url")
+                        ? fieldsToUpdate.logo_url
+                        : specialty.logo_url,
+                ),
                 isActive: specialty.is_active,
             };
         });
+
+        if (previousLogoUrl && previousLogoUrl !== updatedSpecialty.logoUrl) {
+            await removeSpecialtyLogo(previousLogoUrl).catch(() => {});
+        }
+        return updatedSpecialty;
     } catch (error) {
+        if (storedLogoUrl) await removeSpecialtyLogo(storedLogoUrl).catch(() => {});
         if (error.name === "SequelizeUniqueConstraintError") {
             throw duplicateSpecialtyError();
         }
@@ -198,6 +249,7 @@ export async function createAdminSpecialty(actorId, input) {
     const specialtyInput = validateSpecialtyInput(input);
     if (!actorId) throw serviceError("No se encontró la sesión del administrador.", 401);
 
+    let storedLogoUrl = null;
     try {
         return await database.transaction(async (transaction) => {
             const existingSpecialty = await Specialities.findOne({
@@ -213,8 +265,16 @@ export async function createAdminSpecialty(actorId, input) {
             });
             if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
 
+            storedLogoUrl = specialtyInput.logoDataUrl
+                ? await storeSpecialtyLogo(specialtyInput.logoDataUrl)
+                : null;
             const specialty = await Specialities.create(
-                { ...specialtyInput, is_active: true },
+                {
+                    name: specialtyInput.name,
+                    description: specialtyInput.description,
+                    logo_url: storedLogoUrl,
+                    is_active: true,
+                },
                 { transaction },
             );
             await AuditLog.create(
@@ -225,7 +285,9 @@ export async function createAdminSpecialty(actorId, input) {
                     target_type: "MedicalSpecialty",
                     target_id: String(specialty.id),
                     target_description: specialty.name,
-                    changes: { next: { name: specialty.name } },
+                    changes: {
+                        next: { name: specialty.name, hasCustomLogo: Boolean(storedLogoUrl) },
+                    },
                     reason: "Administrator created a medical specialty.",
                     result: "Success",
                     occurred_at: new Date(),
@@ -237,10 +299,12 @@ export async function createAdminSpecialty(actorId, input) {
                 id: specialty.id,
                 name: specialty.name,
                 description: specialty.description || "",
+                logoUrl: storedLogoUrl,
                 isActive: specialty.is_active,
             };
         });
     } catch (error) {
+        if (storedLogoUrl) await removeSpecialtyLogo(storedLogoUrl).catch(() => {});
         if (error.name === "SequelizeUniqueConstraintError") {
             throw duplicateSpecialtyError();
         }
@@ -293,7 +357,7 @@ export async function getAdminSpecialties(query = {}) {
     const [specialtiesResult, total, active, assignedDoctors, doctorCounts] = await Promise.all([
         Specialities.findAndCountAll({
             where,
-            attributes: ["id", "name", "description", "is_active"],
+            attributes: ["id", "name", "description", "logo_url", "is_active"],
             order: [["name", "ASC"]],
             limit: pageSize,
             offset: (page - 1) * pageSize,
@@ -313,6 +377,7 @@ export async function getAdminSpecialties(query = {}) {
             id: specialty.id,
             name: specialty.name,
             description: specialty.description || "",
+            logoUrl: normalizeSpecialtyLogoUrl(specialty.logo_url),
             isActive: specialty.is_active,
             doctorCount: doctorCountBySpecialty.get(Number(specialty.id)) || 0,
         })),

@@ -92,6 +92,7 @@ describe("MySQL model integration", () => {
                 "id",
                 "name",
                 "description",
+                "logo_url",
                 "is_active",
                 "created_at",
                 "updated_at",
