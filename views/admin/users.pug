@@ -18,6 +18,8 @@ html(lang="es")
                 data-admin-users,
                 data-endpoint="/api/admin/users",
                 data-update-endpoint="/api/admin/users",
+                data-role-endpoint="/api/admin/users",
+                data-doctor-status-endpoint="/api/admin/doctors",
                 data-details-endpoint="/api/admin/users",
                 data-departments-endpoint="/api/admin/locations/departments",
                 data-municipalities-endpoint="/api/admin/locations/municipalities"
@@ -94,5 +96,35 @@ html(lang="es")
                         footer.admin-user-modal-actions
                             button.admin-user-cancel(type="button", data-user-modal-cancel) Cancelar
                             button.admin-user-save(type="submit", data-user-modal-save) Guardar cambios
+            .admin-user-modal-backdrop(hidden, data-role-modal)
+                section.admin-user-modal(
+                    role="dialog",
+                    aria-modal="true",
+                    aria-labelledby="admin-user-role-modal-title",
+                    tabindex="-1",
+                    data-role-dialog
+                )
+                    header.admin-user-modal-header
+                        div
+                            p.admin-eyebrow Administración de cuenta
+                            h2#admin-user-role-modal-title Completar perfil
+                        button.admin-user-modal-close(
+                            type="button",
+                            aria-label="Cerrar ventana de cambio de rol",
+                            data-role-modal-close
+                        ) ×
+                    .admin-user-modal-profile(data-role-modal-profile)
+                    p.admin-user-role-explanation(data-role-explanation)
+                    p.admin-user-role-impact(hidden, data-role-impact)
+                    p.admin-user-modal-feedback(
+                        role="alert",
+                        aria-live="assertive",
+                        data-role-feedback
+                    )
+                    form(data-role-form)
+                        .admin-user-edit-fields(data-role-fields)
+                        footer.admin-user-modal-actions
+                            button.admin-user-cancel(type="button", data-role-modal-cancel) Cancelar
+                            button.admin-user-save(type="submit", data-role-modal-save) Guardar rol y perfil
         script(src="/js/session-timeout.js", defer)
         script(src="/js/admin-users.js", defer)

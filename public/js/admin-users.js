@@ -14,6 +14,15 @@ if (page) {
     const nextButton = document.querySelector("[data-user-next]");
     const modal = document.querySelector("[data-user-modal]");
     const dialog = document.querySelector("[data-user-dialog]");
+    const roleModal = document.querySelector("[data-role-modal]");
+    const roleDialog = document.querySelector("[data-role-dialog]");
+    const roleModalProfile = document.querySelector("[data-role-modal-profile]");
+    const roleExplanation = document.querySelector("[data-role-explanation]");
+    const roleImpact = document.querySelector("[data-role-impact]");
+    const roleFeedback = document.querySelector("[data-role-feedback]");
+    const roleForm = document.querySelector("[data-role-form]");
+    const roleFields = document.querySelector("[data-role-fields]");
+    const roleSaveButton = document.querySelector("[data-role-modal-save]");
     const modalProfile = document.querySelector("[data-user-modal-profile]");
     const modalFeedback = document.querySelector("[data-user-modal-feedback]");
     const editForm = document.querySelector("[data-user-edit-form]");
@@ -30,9 +39,15 @@ if (page) {
         search: initialSearch,
         roleId: "",
         status: "",
+        specialties: [],
     };
     let focusedBeforeModal;
     let editingUser;
+    let changingRoleUser;
+    let changingRoleTarget;
+    let roleSelectToRestore;
+    let focusedBeforeRoleModal;
+    let roleSubmissionInProgress = false;
     let activeRequest;
     let doctorPhotoDataUrl = null;
     let doctorPhotoReadPromise = Promise.resolve();
@@ -581,6 +596,237 @@ if (page) {
         }
     }
 
+    function setRoleFeedback(message, kind = "error") {
+        roleFeedback.textContent = message;
+        roleFeedback.dataset.kind = kind;
+    }
+
+    function buildDoctorRoleFields(user) {
+        const specialtyOptions = [
+            { value: "", label: "Selecciona una especialidad" },
+            ...state.specialties.map((specialty) => ({
+                value: String(specialty.id),
+                label: specialty.name,
+            })),
+        ];
+        roleFields.replaceChildren(
+            formSection("Información del médico", [
+                formField("Nombre profesional", "displayName", user.displayName, {
+                    required: true,
+                    maxLength: 120,
+                    wide: true,
+                }),
+                formField("Especialidad", "specialtyId", "", {
+                    required: true,
+                    options: specialtyOptions,
+                    wide: true,
+                }),
+            ]),
+        );
+    }
+
+    async function openRoleModal(user, targetRole, roleSelect) {
+        changingRoleUser = user;
+        changingRoleTarget = targetRole;
+        roleSelectToRestore = roleSelect;
+        focusedBeforeRoleModal =
+            roleSelect || list.querySelector(`[data-user-edit-id="${user.id}"]`);
+        roleFields.replaceChildren();
+        roleImpact.hidden = true;
+        roleImpact.textContent = "";
+        setRoleFeedback("");
+        roleSaveButton.disabled = true;
+        roleSaveButton.textContent =
+            targetRole.id === user.role.id ? "Completar perfil" : "Guardar rol y perfil";
+        roleDialog.querySelector("h2").textContent =
+            `Perfil de ${roleLabel(targetRole.name).toLowerCase()}`;
+        roleModalProfile.textContent = `${user.displayName} · ${user.email}`;
+        roleExplanation.textContent =
+            targetRole.name === "Doctor"
+                ? "El rol se guardará junto con el perfil médico. Si ya existe un perfil de paciente, se conservará con su historial."
+                : user.hasPatientProfile
+                  ? "El rol se guardará con el perfil de paciente que ya está registrado. Los registros médicos existentes se conservarán."
+                  : "Para asignar el rol de paciente, la persona debe contar con un perfil y su consentimiento registrados.";
+        roleModal.hidden = false;
+        document.body.classList.add("has-admin-modal");
+        roleSubmissionInProgress = false;
+        roleDialog.focus();
+
+        try {
+            if (targetRole.name === "Doctor" && !user.isDoctorProfile) {
+                buildDoctorRoleFields(user);
+            } else if (targetRole.name === "Patient" && !user.hasPatientProfile) {
+                const note = document.createElement("p");
+                note.className = "admin-user-role-preserve-note";
+                note.textContent =
+                    "Primero registra el perfil de paciente con el titular de la cuenta. El administrador no puede aceptar el consentimiento en su nombre.";
+                roleFields.replaceChildren(note);
+                setRoleFeedback(
+                    "El cambio de rol está bloqueado hasta que exista el perfil de paciente.",
+                    "status",
+                );
+                return;
+            } else {
+                const note = document.createElement("p");
+                note.className = "admin-user-role-preserve-note";
+                note.textContent =
+                    "El perfil necesario ya está registrado. El cambio conservará los datos e historiales existentes.";
+                roleFields.replaceChildren(note);
+            }
+
+            if (targetRole.name === "Patient" && user.role.name === "Doctor" && user.doctorId) {
+                const response = await fetch(
+                    `${page.dataset.doctorStatusEndpoint}/${user.doctorId}/status-impact`,
+                    { headers: { Accept: "application/json" }, cache: "no-store" },
+                );
+                const impact = await response.json();
+                if (!response.ok) {
+                    throw new Error(impact.message || "No pudimos revisar las citas futuras.");
+                }
+                roleImpact.textContent = impact.upcomingAppointmentCount
+                    ? `${impact.upcomingAppointmentCount} citas futuras confirmadas se cancelarán y sus pacientes recibirán una notificación.`
+                    : "No hay citas futuras confirmadas para cancelar. El historial médico se conservará.";
+                roleImpact.hidden = false;
+            }
+            roleSaveButton.disabled = false;
+            roleFields.querySelector("input, select, textarea")?.focus();
+        } catch (error) {
+            setRoleFeedback(error.message || "No pudimos preparar el cambio de perfil.");
+        }
+    }
+
+    function closeRoleModal(force = false) {
+        if (roleSubmissionInProgress && !force) return;
+        roleModal.hidden = true;
+        roleFields.replaceChildren();
+        if (roleSelectToRestore && changingRoleUser) {
+            roleSelectToRestore.value = String(changingRoleUser.role.id);
+        }
+        changingRoleUser = null;
+        changingRoleTarget = null;
+        roleSelectToRestore = null;
+        if (modal.hidden) document.body.classList.remove("has-admin-modal");
+        if (focusedBeforeRoleModal?.isConnected) focusedBeforeRoleModal.focus();
+        else searchInput.focus();
+        focusedBeforeRoleModal = null;
+    }
+
+    async function saveRoleConversion(event) {
+        event.preventDefault();
+        if (!changingRoleUser || !changingRoleTarget || !roleForm.reportValidity()) return;
+        const values = new FormData(roleForm);
+        const value = (name) => String(values.get(name) || "").trim();
+        const payload = { roleId: changingRoleTarget.id };
+        if (changingRoleTarget.name === "Doctor" && !changingRoleUser.isDoctorProfile) {
+            payload.doctor = {
+                displayName: value("displayName"),
+                specialtyId: value("specialtyId"),
+            };
+        }
+        const changedUserId = changingRoleUser.id;
+        roleSubmissionInProgress = true;
+        roleSaveButton.disabled = true;
+        setRoleFeedback("Guardando el rol y el perfil…", "status");
+        try {
+            const response = await fetch(`${page.dataset.roleEndpoint}/${changedUserId}/role`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify(payload),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos guardar el cambio.");
+            closeRoleModal(true);
+            await loadUsers();
+            document.querySelector(`[data-user-edit-id="${changedUserId}"]`)?.focus();
+            setFeedback(data.message, "success");
+        } catch (error) {
+            setRoleFeedback(error.message || "Ocurrió un error al cambiar el rol.");
+        } finally {
+            roleSubmissionInProgress = false;
+            roleSaveButton.disabled = false;
+        }
+    }
+
+    function confirmDoctorDeactivation(doctorName, appointmentCount) {
+        return new Promise((resolve) => {
+            const dialogElement = document.createElement("dialog");
+            dialogElement.className = "admin-user-doctor-status-dialog";
+            const content = document.createElement("div");
+            content.className = "admin-user-doctor-status-content";
+            const title = document.createElement("h2");
+            title.textContent = "Desactivar médico";
+            const description = document.createElement("p");
+            const appointmentMessage = appointmentCount
+                ? `${appointmentCount} citas futuras confirmadas se cancelarán y sus pacientes recibirán una notificación.`
+                : "No hay citas futuras confirmadas que deban cancelarse.";
+            description.textContent = `La cuenta de ${doctorName} perderá acceso de inmediato. ${appointmentMessage} El historial se conservará.`;
+            const actions = document.createElement("div");
+            actions.className = "admin-user-doctor-status-actions";
+            const cancelButton = document.createElement("button");
+            cancelButton.type = "button";
+            cancelButton.className = "admin-user-cancel";
+            cancelButton.textContent = "Volver";
+            const confirmButton = document.createElement("button");
+            confirmButton.type = "button";
+            confirmButton.className = "admin-user-doctor-status-confirm";
+            confirmButton.textContent = "Desactivar cuenta";
+            actions.append(cancelButton, confirmButton);
+            content.append(title, description, actions);
+            dialogElement.append(content);
+            document.body.append(dialogElement);
+            cancelButton.addEventListener("click", () => dialogElement.close("cancel"));
+            confirmButton.addEventListener("click", () => dialogElement.close("confirm"));
+            dialogElement.addEventListener("close", () => {
+                const confirmed = dialogElement.returnValue === "confirm";
+                dialogElement.remove();
+                resolve(confirmed);
+            });
+            dialogElement.showModal();
+            cancelButton.focus();
+        });
+    }
+
+    async function changeDoctorAccountStatus(user, isActive, button) {
+        button.disabled = true;
+        setFeedback("Revisando el estado de la cuenta médica…");
+        try {
+            const endpoint = `${page.dataset.doctorStatusEndpoint}/${user.doctorId}`;
+            if (!isActive) {
+                const impactResponse = await fetch(`${endpoint}/status-impact`, {
+                    headers: { Accept: "application/json" },
+                    cache: "no-store",
+                });
+                const impact = await impactResponse.json();
+                if (!impactResponse.ok) {
+                    throw new Error(impact.message || "No pudimos revisar las citas del médico.");
+                }
+                if (
+                    !(await confirmDoctorDeactivation(
+                        user.displayName,
+                        impact.upcomingAppointmentCount,
+                    ))
+                ) {
+                    setFeedback("");
+                    return;
+                }
+            }
+
+            const response = await fetch(`${endpoint}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ isActive }),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos actualizar la cuenta.");
+            await loadUsers();
+            setFeedback(data.message, "success");
+        } catch (error) {
+            setFeedback(error.message || "Ocurrió un error al actualizar la cuenta.", "error");
+        } finally {
+            button.disabled = false;
+        }
+    }
+
     modal
         .querySelectorAll("[data-user-modal-close], [data-user-modal-cancel]")
         .forEach((button) => {
@@ -608,6 +854,31 @@ if (page) {
         }
     });
     editForm.addEventListener("submit", saveEditedProfile);
+    roleForm.addEventListener("submit", saveRoleConversion);
+    roleModal
+        .querySelectorAll("[data-role-modal-close], [data-role-modal-cancel]")
+        .forEach((button) => button.addEventListener("click", () => closeRoleModal()));
+    roleModal.addEventListener("click", (event) => {
+        if (event.target === roleModal) closeRoleModal();
+    });
+    roleDialog.addEventListener("keydown", (event) => {
+        if (event.key !== "Tab") return;
+        const focusable = [
+            ...roleDialog.querySelectorAll(
+                "button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)",
+            ),
+        ];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
 
     function createUserCard(user, roles) {
         const card = document.createElement("article");
@@ -662,20 +933,29 @@ if (page) {
             });
         roleSelect.addEventListener("change", () => {
             const selectedRole = Number(roleSelect.value);
-            const label = roleLabel(
-                roles.find((role) => role.id === selectedRole)?.name || "este rol",
-            );
-            if (!window.confirm(`¿Confirmas cambiar el rol de ${user.displayName} a ${label}?`)) {
+            const selected = roles.find((role) => role.id === selectedRole);
+            if (!selected) {
                 roleSelect.value = String(user.role.id);
                 return;
             }
-            void updateUser(user, { roleId: selectedRole });
+            void openRoleModal(user, selected, roleSelect);
         });
 
         const roleField = createField("Rol asignado", roleSelect, "admin-user-role");
         const profile = document.createElement("strong");
         profile.textContent = user.profileType;
         const profileField = createField("Tipo de perfil", profile, "admin-user-profile");
+        if (user.profileMismatch) {
+            const completeProfile = document.createElement("button");
+            completeProfile.type = "button";
+            completeProfile.className = "admin-user-complete-profile";
+            completeProfile.textContent = "Completar perfil";
+            completeProfile.addEventListener(
+                "click",
+                () => void openRoleModal(user, user.role, roleSelect),
+            );
+            profileField.append(completeProfile);
+        }
         const lastLogin = document.createElement("strong");
         lastLogin.textContent = formatDate(user.lastLoginAt);
         const lastLoginField = createField("Último acceso", lastLogin, "admin-user-last-login");
@@ -687,12 +967,13 @@ if (page) {
         editButton.className = "admin-user-edit";
         editButton.dataset.userEditId = String(user.id);
         editButton.setAttribute("aria-label", `Editar datos de ${user.displayName}`);
+        editButton.title = "Editar datos";
         editButton.innerHTML =
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg><span>Editar</span>';
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg>';
         editButton.addEventListener("click", () => void openEditModal(user.id, editButton));
         const toggle = document.createElement("button");
         toggle.type = "button";
-        toggle.className = `admin-user-toggle${user.isActive ? "" : " is-inactive"}`;
+        toggle.className = `admin-user-toggle ${user.isActive ? "is-deactivation" : "is-activation"}`;
         toggle.textContent = user.isActive ? "Desactivar cuenta" : "Activar cuenta";
         toggle.setAttribute(
             "aria-label",
@@ -700,17 +981,22 @@ if (page) {
         );
         toggle.addEventListener("click", () => {
             const nextIsActive = !user.isActive;
+            if (user.role.name === "Doctor" && user.doctorId) {
+                void changeDoctorAccountStatus(user, nextIsActive, toggle);
+                return;
+            }
             const action = nextIsActive ? "activar" : "desactivar";
             if (!window.confirm(`¿Confirmas ${action} la cuenta de ${user.displayName}?`)) return;
             void updateUser(user, { isActive: nextIsActive });
         });
         actions.append(editButton);
-        if (user.role.name !== "Doctor" && !user.isDoctorProfile) actions.append(toggle);
+        if (user.role.name !== "Doctor" || user.doctorId) actions.append(toggle);
         card.append(identity, roleField, profileField, lastLoginField, actions);
         return card;
     }
 
     function renderUsers(data) {
+        state.specialties = data.specialties || [];
         if (roleFilter.options.length === 1) {
             data.roles.forEach((role) => {
                 const option = document.createElement("option");
@@ -856,6 +1142,10 @@ if (page) {
     });
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+        if (!roleModal.hidden) {
+            closeRoleModal();
+            return;
+        }
         if (!modal.hidden) {
             closeEditModal();
             return;

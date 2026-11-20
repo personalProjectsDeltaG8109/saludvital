@@ -42,6 +42,7 @@ import {
     getAdminUserDetails,
     getAdminUsers,
     updateAdminUser,
+    updateAdminUserRole,
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import {
@@ -703,6 +704,22 @@ adminRoutes.patch("/api/admin/users/:userId", ...requireAdministrator, async (re
         return next(error);
     }
 });
+
+adminRoutes.patch(
+    "/api/admin/users/:userId/role",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await updateAdminUserRole(req.auth.userId, req.params.userId, req.body),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.get("/api/admin/users/:userId", ...requireAdministrator, async (req, res, next) => {
     try {

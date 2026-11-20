@@ -410,6 +410,14 @@ async function getActiveDoctor(doctorId, specialtyId, transaction, lockingRead =
                 required: true,
                 where: { is_active: true },
                 attributes: ["id", "is_active"],
+                include: [
+                    {
+                        association: "rol",
+                        attributes: [],
+                        required: true,
+                        where: { name: "Doctor" },
+                    },
+                ],
             },
         ],
         transaction,
@@ -595,6 +603,14 @@ export async function getAvailableDoctors(specialtyId) {
                 required: true,
                 where: { is_active: true },
                 attributes: ["id"],
+                include: [
+                    {
+                        association: "rol",
+                        attributes: [],
+                        required: true,
+                        where: { name: "Doctor" },
+                    },
+                ],
             },
         ],
         order: [["id", "ASC"]],
@@ -638,6 +654,14 @@ export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = 
                 required: true,
                 where: { is_active: true },
                 attributes: ["id"],
+                include: [
+                    {
+                        association: "rol",
+                        attributes: [],
+                        required: true,
+                        where: { name: "Doctor" },
+                    },
+                ],
             },
         ],
         attributes: ["id", "specialty_id"],

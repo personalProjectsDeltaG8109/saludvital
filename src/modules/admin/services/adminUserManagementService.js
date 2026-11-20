@@ -13,6 +13,7 @@ import {
     storeProfilePhoto,
 } from "../../../shared/services/profilePhotoStorageService.js";
 import { normalizeProfileEmail } from "./adminProfileFieldValidation.js";
+import { cancelUpcomingConfirmedDoctorAppointments } from "./adminDoctorService.js";
 import {
     normalizeProfilePhone,
     normalizeProfileText,
@@ -84,7 +85,7 @@ function userIncludes() {
         {
             model: Doctor,
             as: "doctor",
-            attributes: ["display_name", "profile_photo_url"],
+            attributes: ["id", "display_name", "profile_photo_url"],
             required: false,
         },
     ];
@@ -101,14 +102,28 @@ function toUserSummary(record) {
         .filter(Boolean)
         .join(" ")
         .trim();
-    const displayName = record.doctor?.display_name?.trim() || patientName || record.email;
-    const profileType = record.doctor
-        ? "Médico"
-        : record.patient
-          ? "Paciente"
-          : record.rol?.name === ADMIN_ROLE_NAME
-            ? "Administrador"
-            : "Sin perfil";
+    const doctorName = record.doctor?.display_name?.trim();
+    const assignedProfile =
+        record.rol?.name === "Doctor"
+            ? record.doctor
+            : record.rol?.name === "Patient"
+              ? record.patient
+              : null;
+    const displayName =
+        (record.rol?.name === "Doctor" ? doctorName || patientName : patientName || doctorName) ||
+        record.email;
+    const profileType = assignedProfile
+        ? record.rol.name === "Doctor"
+            ? "Médico"
+            : "Paciente"
+        : record.doctor
+          ? "Médico"
+          : record.patient
+            ? "Paciente"
+            : record.rol?.name === ADMIN_ROLE_NAME
+              ? "Administrador"
+              : "Sin perfil";
+    const profileMismatch = ["Patient", "Doctor"].includes(record.rol?.name) && !assignedProfile;
 
     return {
         id: record.id,
@@ -118,6 +133,9 @@ function toUserSummary(record) {
         isActive: record.is_active,
         profileType,
         isDoctorProfile: Boolean(record.doctor),
+        hasPatientProfile: Boolean(record.patient),
+        doctorId: record.doctor?.id || null,
+        profileMismatch,
         profilePhotoUrl: normalizeAdminPhotoUrl(
             record.doctor?.profile_photo_url || record.patient?.profile_photo_url,
         ),
@@ -146,7 +164,7 @@ export async function getAdminUsers(query = {}) {
         ];
     }
 
-    const [result, roles] = await Promise.all([
+    const [result, roles, specialties] = await Promise.all([
         User.findAndCountAll({
             where,
             attributes: ["id", "email", "role_id", "is_active", "created_at", "last_login_at"],
@@ -161,11 +179,17 @@ export async function getAdminUsers(query = {}) {
             subQuery: false,
         }),
         Rol.findAll({ attributes: ["id", "name", "description"], order: [["name", "ASC"]] }),
+        Specialities.findAll({
+            where: { is_active: true },
+            attributes: ["id", "name"],
+            order: [["name", "ASC"]],
+        }),
     ]);
 
     return {
         users: result.rows.map(toUserSummary),
         roles,
+        specialties,
         pagination: {
             page: filters.page,
             pageSize: filters.pageSize,
@@ -173,6 +197,168 @@ export async function getAdminUsers(query = {}) {
             totalPages: Math.ceil(result.count / filters.pageSize),
         },
     };
+}
+
+/** Change a user's patient or doctor role together with the matching profile record. */
+export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
+    const userId = parsePositiveInteger(rawUserId, "El usuario", null);
+    const actorId = parsePositiveInteger(actorUserId, "El administrador", null);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        throw serviceError("Los datos del cambio de perfil no son válidos.", 400);
+    }
+    const targetRoleId = parsePositiveInteger(payload.roleId, "El rol", null);
+
+    return database.transaction(async (transaction) => {
+        const administratorRole = await Rol.findOne({
+            where: { name: ADMIN_ROLE_NAME },
+            attributes: ["id"],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!administratorRole) throw serviceError("No se encontró el rol de administrador.", 500);
+
+        const user = await User.findByPk(userId, {
+            attributes: ["id", "email", "role_id", "is_active"],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
+
+        const [currentRole, targetRole, patient, doctor] = await Promise.all([
+            Rol.findByPk(user.role_id, { attributes: ["id", "name"], transaction }),
+            Rol.findByPk(targetRoleId, { attributes: ["id", "name"], transaction }),
+            Patient.findOne({
+                where: { user_id: user.id },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            }),
+            Doctor.findOne({
+                where: { user_id: user.id },
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            }),
+        ]);
+        if (!targetRole) throw serviceError("El rol seleccionado no existe.", 400);
+        if (!["Patient", "Doctor"].includes(targetRole.name)) {
+            throw serviceError(
+                "Desde esta pantalla solo puedes asignar el rol de paciente o médico.",
+                403,
+            );
+        }
+        if (!currentRole) throw serviceError("No se encontró el rol actual de la cuenta.", 500);
+
+        const actor = await User.findByPk(actorId, {
+            attributes: ["id", "email"],
+            transaction,
+        });
+        if (!actor) throw serviceError("No se encontró la sesión del administrador.", 401);
+
+        if (currentRole.name === ADMIN_ROLE_NAME && user.id === actor.id) {
+            throw serviceError("No puedes cambiar tu propio rol de administrador.", 409);
+        }
+        if (currentRole.name === ADMIN_ROLE_NAME && user.is_active) {
+            const activeAdministrators = await User.findAll({
+                where: { role_id: administratorRole.id, is_active: true },
+                attributes: ["id"],
+                transaction,
+                lock: transaction.LOCK.UPDATE,
+            });
+            if (activeAdministrators.length <= 1) {
+                throw serviceError(
+                    "No puedes cambiar el rol del último administrador activo.",
+                    409,
+                );
+            }
+        }
+
+        let createdProfile = null;
+        if (targetRole.name === "Doctor" && !doctor) {
+            const patientName = [patient?.first_name, patient?.last_name].filter(Boolean).join(" ");
+            const normalizedDoctor = validateDoctorAdminProfile({
+                doctor: {
+                    ...payload.doctor,
+                    displayName: payload.doctor?.displayName || patientName,
+                },
+            });
+            const specialty = await Specialities.findOne({
+                where: { id: normalizedDoctor.specialty_id, is_active: true },
+                attributes: ["id"],
+                transaction,
+            });
+            if (!specialty) throw serviceError("Selecciona una especialidad activa.", 400);
+
+            await Doctor.create(
+                {
+                    user_id: user.id,
+                    specialty_id: specialty.id,
+                    display_name: normalizedDoctor.display_name,
+                    professional_information: normalizedDoctor.professional_information,
+                    profile_photo_url: normalizedDoctor.profile_photo_url,
+                },
+                { transaction },
+            );
+            createdProfile = "Doctor";
+        }
+
+        if (targetRole.name === "Patient" && !patient) {
+            throw serviceError(
+                "Para asignar el rol de paciente, la persona debe tener un perfil registrado y su consentimiento. Completa ese registro con el titular de la cuenta.",
+                409,
+            );
+        }
+
+        let cancelledAppointmentCount = 0;
+        if (currentRole.name === "Doctor" && targetRole.name === "Patient" && doctor) {
+            cancelledAppointmentCount = await cancelUpcomingConfirmedDoctorAppointments(
+                doctor.id,
+                actor.id,
+                actor.email,
+                transaction,
+                "The doctor's role was changed to patient by an administrator.",
+            );
+        }
+
+        const roleChanged = currentRole.id !== targetRole.id;
+        if (!roleChanged && !createdProfile) {
+            throw serviceError("La cuenta ya tiene este rol y su perfil está completo.", 409);
+        }
+        if (roleChanged) await user.update({ role_id: targetRole.id }, { transaction });
+
+        await AuditLog.create(
+            {
+                actor_user_id: actor.id,
+                actor_snapshot: `Administrator ${actor.email}`.slice(0, 100),
+                action: "AdminUserRoleChanged",
+                target_type: "User",
+                target_id: String(user.id),
+                target_description: user.email,
+                changes: {
+                    previous: { roleId: currentRole.id, role: currentRole.name },
+                    next: { roleId: targetRole.id, role: targetRole.name },
+                    createdProfile,
+                    cancelledAppointmentCount,
+                },
+                reason: "Administrator changed the account role and kept its profile records consistent.",
+                result: "Success",
+                occurred_at: new Date(),
+            },
+            { transaction },
+        );
+
+        return {
+            message:
+                currentRole.name === "Doctor" && targetRole.name === "Patient"
+                    ? `El perfil de paciente quedó activo. Se conservaron los registros médicos y se cancelaron ${cancelledAppointmentCount} citas futuras del médico.`
+                    : createdProfile
+                      ? "El perfil y el rol se actualizaron correctamente."
+                      : "El rol se actualizó correctamente.",
+            user: {
+                id: user.id,
+                role: targetRole,
+                profileType: targetRole.name,
+            },
+        };
+    });
 }
 
 function normalizeUserUpdate(payload) {
@@ -240,17 +426,19 @@ export async function updateAdminUser(actorUserId, rawUserId, payload) {
             throw serviceError("No puedes asignar el rol de administrador desde este módulo.", 403);
         }
 
+        const currentRole = await Rol.findByPk(user.role_id, {
+            attributes: ["id", "name"],
+            transaction,
+        });
+        if (changes.roleId !== undefined && nextRoleId !== user.role_id) {
+            throw serviceError(
+                "Usa el flujo de cambio de perfil para actualizar el rol y sus datos asociados.",
+                409,
+            );
+        }
+
         if (changes.isActive !== undefined && changes.isActive !== user.is_active) {
-            const currentRole = await Rol.findByPk(user.role_id, {
-                attributes: ["name"],
-                transaction,
-            });
-            const doctorProfile = await Doctor.findOne({
-                where: { user_id: user.id },
-                attributes: ["id"],
-                transaction,
-            });
-            if (currentRole?.name === "Doctor" || doctorProfile) {
+            if (currentRole?.name === "Doctor") {
                 throw serviceError(
                     "Cambia el estado de un médico desde el módulo de Médicos para procesar sus citas futuras.",
                     409,
@@ -399,6 +587,20 @@ export async function getAdminUserDetails(rawUserId) {
 
     const patient = user.patient?.get({ plain: true }) || null;
     const doctor = user.doctor?.get({ plain: true }) || null;
+    const profileType =
+        user.rol?.name === "Doctor"
+            ? doctor
+                ? "Doctor"
+                : patient
+                  ? "Patient"
+                  : "Other"
+            : user.rol?.name === "Patient"
+              ? patient
+                  ? "Patient"
+                  : doctor
+                    ? "Doctor"
+                    : "Other"
+              : "Other";
     let emergencyContact = null;
     let departments = [];
     let municipalities = [];
@@ -433,7 +635,7 @@ export async function getAdminUserDetails(rawUserId) {
             email: user.email,
             isActive: user.is_active,
             role: user.rol,
-            profileType: doctor ? "Doctor" : patient ? "Patient" : "Other",
+            profileType,
             profilePhotoUrl: normalizeAdminPhotoUrl(
                 doctor?.profile_photo_url || patient?.profile_photo_url,
             ),

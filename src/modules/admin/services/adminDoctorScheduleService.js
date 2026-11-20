@@ -162,6 +162,14 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
                     as: "user",
                     attributes: ["id", "email", "is_active"],
                     required: true,
+                    include: [
+                        {
+                            association: "rol",
+                            attributes: [],
+                            required: true,
+                            where: { name: "Doctor" },
+                        },
+                    ],
                 },
                 {
                     model: Specialities,
@@ -203,7 +211,20 @@ export async function getAdminDoctorSchedules(query = {}, now = new Date()) {
                     as: "doctor",
                     attributes: ["id", "display_name"],
                     include: [
-                        { model: User, as: "user", attributes: ["email"], required: true },
+                        {
+                            model: User,
+                            as: "user",
+                            attributes: ["email"],
+                            required: true,
+                            include: [
+                                {
+                                    association: "rol",
+                                    attributes: [],
+                                    required: true,
+                                    where: { name: "Doctor" },
+                                },
+                            ],
+                        },
                         {
                             model: Specialities,
                             as: "specialty",
