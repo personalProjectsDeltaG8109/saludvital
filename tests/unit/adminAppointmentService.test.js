@@ -294,7 +294,7 @@ describe("admin appointment directory service", () => {
         });
     });
 
-    test("returns safe details for an existing appointment", async () => {
+    test("returns appointment details with the patient contact fields needed by the modal", async () => {
         Appointment.findByPk.mockResolvedValue(createAppointment());
 
         const result = await getAdminAppointmentDetails("10");
@@ -303,22 +303,35 @@ describe("admin appointment directory service", () => {
             id: 10,
             startAt: "2026-10-26T15:30:00.000Z",
             endAt: "2026-10-26T16:00:00.000Z",
-            patient: { id: 5, name: "María López", photoUrl: "/uploads/patient.jpg" },
+            patient: {
+                id: 5,
+                name: "María López",
+                photoUrl: "/uploads/patient.jpg",
+                document: "CC 123456",
+                phone: "3001234567",
+            },
             specialty: "Medicina General",
             doctor: "Dra. Ana Torres",
             status: "Confirmed",
             statusLabel: "Confirmada",
         });
-        expect(JSON.stringify(result)).not.toContain("123456");
-        expect(JSON.stringify(result)).not.toContain("3001234567");
         expect(JSON.stringify(result)).not.toContain("private clinical information");
+        expect(JSON.stringify(result)).not.toContain('"source"');
         expect(Appointment.findByPk).toHaveBeenCalledWith(
             10,
             expect.objectContaining({
                 include: expect.arrayContaining([
                     expect.objectContaining({
                         as: "patient",
-                        attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                        attributes: [
+                            "id",
+                            "first_name",
+                            "last_name",
+                            "document_type",
+                            "document_number",
+                            "phone",
+                            "profile_photo_url",
+                        ],
                     }),
                 ]),
             }),

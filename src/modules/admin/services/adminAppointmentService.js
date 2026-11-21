@@ -152,7 +152,10 @@ function createStatusPriorityOrder(statusRows) {
     ];
 }
 
-function formatAppointment(appointment, includePatientDocument = true) {
+function formatAppointment(
+    appointment,
+    { includePatientContact = false, includePatientDocument = true } = {},
+) {
     const patient = {
         id: appointment.patient.id,
         name: `${appointment.patient.first_name} ${appointment.patient.last_name}`.trim(),
@@ -163,6 +166,7 @@ function formatAppointment(appointment, includePatientDocument = true) {
             .filter(Boolean)
             .join(" ");
     }
+    if (includePatientContact) patient.phone = appointment.patient.phone || null;
 
     return {
         id: appointment.id,
@@ -176,7 +180,7 @@ function formatAppointment(appointment, includePatientDocument = true) {
     };
 }
 
-/** Return the limited appointment and participant details needed by the read-only view. */
+/** Return the appointment and limited patient contact details needed by the modal. */
 export async function getAdminAppointmentDetails(rawAppointmentId) {
     const appointmentId = Number(rawAppointmentId);
     if (!Number.isSafeInteger(appointmentId) || appointmentId < 1) {
@@ -197,7 +201,15 @@ export async function getAdminAppointmentDetails(rawAppointmentId) {
             {
                 model: Patient,
                 as: "patient",
-                attributes: ["id", "first_name", "last_name", "profile_photo_url"],
+                attributes: [
+                    "id",
+                    "first_name",
+                    "last_name",
+                    "document_type",
+                    "document_number",
+                    "phone",
+                    "profile_photo_url",
+                ],
                 required: true,
             },
             {
@@ -215,7 +227,7 @@ export async function getAdminAppointmentDetails(rawAppointmentId) {
         throw serviceError("No encontramos esa cita.", 404);
     }
 
-    return formatAppointment(appointment, false);
+    return formatAppointment(appointment, { includePatientContact: true });
 }
 
 /** Return a paginated, privacy-conscious appointment directory for administrators. */

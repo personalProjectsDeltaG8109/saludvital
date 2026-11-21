@@ -42,7 +42,7 @@ html(lang="es")
                         h1 Nueva cita médica
                         p Registra una cita con pacientes y horarios disponibles.
                 ol.admin-booking-steps(aria-label="Pasos para crear una cita")
-                    each label, index in ["Especialidad", "Médico", "Fecha y hora", "Confirmación"]
+                    each label, index in ["Paciente y especialidad", "Médico", "Fecha y hora", "Confirmación"]
                         li(data-step-indicator=index + 1)
                             span= index + 1
                             strong= label
@@ -56,10 +56,10 @@ html(lang="es")
                     p.appointment-create-error(role="alert", data-create-error, hidden)
                     section.admin-booking-panel(
                         data-booking-step="1",
-                        aria-labelledby="specialty-heading"
+                        aria-labelledby="patient-specialty-heading"
                     )
-                        h2#specialty-heading(tabindex="-1") 1. Selecciona la especialidad
-                        p Elige el paciente y la especialidad de su cita médica.
+                        h2#patient-specialty-heading(tabindex="-1") 1. Selecciona paciente y especialidad
+                        p Elige el paciente que será atendido y la especialidad que necesita.
                         label.appointment-create-field(for="booking-patient")
                             span Paciente
                             select#booking-patient(

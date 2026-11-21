@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import path from "node:path";
 import pug from "pug";
 import { chromium } from "playwright";
@@ -41,6 +42,14 @@ try {
     await page.setContent(markup, { waitUntil: "domcontentloaded" });
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: appointmentStyles });
+    assert.equal(
+        await page.getByRole("link", { name: "Volver a citas" }).getAttribute("href"),
+        "/admin/appointments",
+    );
+    assert.equal(
+        await page.getByRole("link", { name: "Cancelar", exact: true }).getAttribute("href"),
+        "/admin/appointments",
+    );
     await page.evaluate(() => {
         window.appointmentEditRequests = [];
         window.appointmentEditConflictNext = true;

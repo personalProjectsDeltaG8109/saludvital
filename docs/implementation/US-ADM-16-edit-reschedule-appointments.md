@@ -19,7 +19,7 @@ Issue [#139](https://github.com/personalProjectsDeltaG8109/saludvital/issues/139
 - Extended the existing transactional reschedule service to support administrator actor data and provider/reason changes while keeping the patient self-service path intact.
 - Locked old and new doctor rows in a stable order before the appointment row, then revalidated the appointment lifecycle and target scheduling rules.
 - Recorded changed fields and administrator identity in the existing appointment history. Reused reminder cancellation and reschedule notification handling.
-- Added edit links to confirmed appointments in the administrator directory and detail page.
+- Added an edit action to confirmed appointment rows in the administrator directory.
 - No schema change or new dependency was needed.
 
 ## Files
@@ -28,7 +28,6 @@ Issue [#139](https://github.com/personalProjectsDeltaG8109/saludvital/issues/139
 - src/modules/admin/services/adminAppointmentEditingService.js
 - src/modules/patient/services/appointmentService.js
 - views/admin/appointment-edit.pug
-- views/admin/appointment-details.pug
 - public/js/admin-appointment-edit.js
 - public/js/admin-appointments.js
 - public/css/admin-appointments.css

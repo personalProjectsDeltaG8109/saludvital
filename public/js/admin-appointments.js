@@ -22,11 +22,22 @@ if (appointmentsPage) {
     const cancellationForm = document.querySelector("[data-cancellation-form]");
     const cancellationReason = document.querySelector("[data-cancellation-reason]");
     const cancellationError = document.querySelector("[data-cancellation-error]");
+    const detailsDialog = document.querySelector("[data-appointment-details-dialog]");
+    const detailsFeedback = document.querySelector("[data-appointment-details-feedback]");
+    const detailsContent = document.querySelector("[data-appointment-details-content]");
+    const detailsSummary = document.querySelector("[data-appointment-details-summary]");
+    const detailsAvatar = document.querySelector("[data-appointment-details-avatar]");
+    const detailsPatientName = document.querySelector("[data-appointment-details-patient-name]");
+    const detailsPatientContact = document.querySelector(
+        "[data-appointment-details-patient-contact]",
+    );
+    const detailsFields = document.querySelector("[data-appointment-details-fields]");
     let selectedAppointmentId = null;
     let displayedAppointments = [];
     let currentPage = 1;
     let searchDebounce = null;
     let activeRequestId = 0;
+    let activeDetailsRequestId = 0;
 
     function createOption(select, value, label) {
         const option = document.createElement("option");
@@ -62,27 +73,72 @@ if (appointmentsPage) {
             .join("");
     }
 
+    function createIcon(name) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-width", "1.8");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("aria-hidden", "true");
+
+        const elements =
+            name === "edit"
+                ? [
+                      ["path", { d: "m15 5 4 4" }],
+                      ["path", { d: "M4 20h4l11-11a2.12 2.12 0 0 0-4-4L4 16v4z" }],
+                  ]
+                : [
+                      [
+                          "path",
+                          { d: "M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" },
+                      ],
+                      ["circle", { cx: "12", cy: "12", r: "2.5" }],
+                  ];
+
+        elements.forEach(([tag, attributes]) => {
+            const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            Object.entries(attributes).forEach(([attribute, value]) =>
+                element.setAttribute(attribute, value),
+            );
+            svg.append(element);
+        });
+        return svg;
+    }
+
     function createPatientCell(patient) {
         const cell = document.createElement("td");
         cell.dataset.label = "Paciente";
 
         const avatar = document.createElement("span");
         avatar.className = "appointment-patient-avatar";
+        const initials = document.createElement("span");
+        initials.className = "appointment-patient-initials";
+        initials.textContent = getInitials(patient.name);
         if (patient.photoUrl) {
             const image = document.createElement("img");
             image.src = patient.photoUrl;
             image.alt = "";
-            image.addEventListener("error", () => image.remove());
+            image.loading = "lazy";
+            initials.hidden = true;
+            image.addEventListener("load", () => {
+                initials.hidden = true;
+            });
+            image.addEventListener("error", () => {
+                image.remove();
+                initials.hidden = false;
+            });
             avatar.append(image);
         }
-        const initials = document.createElement("span");
-        initials.className = "appointment-patient-initials";
-        initials.textContent = getInitials(patient.name);
         avatar.append(initials);
 
         const name = document.createElement("span");
         name.textContent = patient.name;
-        cell.append(avatar, name);
+        const content = document.createElement("span");
+        content.className = "appointment-patient-cell";
+        content.append(avatar, name);
+        cell.append(content);
         return cell;
     }
 
@@ -98,6 +154,8 @@ if (appointmentsPage) {
         const date = document.createElement("td");
         date.dataset.label = "Fecha y hora";
         date.className = "appointment-date-cell";
+        const dateContent = document.createElement("span");
+        dateContent.className = "appointment-date-content";
         const dateText = document.createElement("span");
         dateText.textContent = formatDateTime(appointment.startAt, {
             day: "2-digit",
@@ -110,7 +168,8 @@ if (appointmentsPage) {
             minute: "2-digit",
             hour12: true,
         });
-        date.append(dateText, timeText);
+        dateContent.append(dateText, timeText);
+        date.append(dateContent);
 
         const documentCell = document.createElement("td");
         documentCell.dataset.label = "Documento";
@@ -130,11 +189,14 @@ if (appointmentsPage) {
 
         const actionsCell = document.createElement("td");
         actionsCell.dataset.label = "Acciones";
-        actionsCell.append(createAppointmentDetailsLink(appointment));
+        const actions = document.createElement("div");
+        actions.className = "appointment-row-actions";
+        actions.append(createAppointmentDetailsButton(appointment));
         if (appointment.status === "Confirmed") {
-            actionsCell.append(createAppointmentEditLink(appointment));
-            actionsCell.append(createAppointmentCancelButton(appointment));
+            actions.append(createAppointmentEditLink(appointment));
+            actions.append(createAppointmentCancelButton(appointment));
         }
+        actionsCell.append(actions);
 
         row.append(
             date,
@@ -148,13 +210,15 @@ if (appointmentsPage) {
         return row;
     }
 
-    function createAppointmentDetailsLink(appointment) {
-        const link = document.createElement("a");
-        link.className = "appointment-details-link";
-        link.href = `/admin/appointments/${appointment.id}`;
-        link.setAttribute("aria-label", `Ver detalles de la cita de ${appointment.patient.name}`);
-        link.textContent = "Ver";
-        return link;
+    function createAppointmentDetailsButton(appointment) {
+        const button = document.createElement("button");
+        button.className = "appointment-details-link appointment-action-icon";
+        button.type = "button";
+        button.dataset.viewAppointment = String(appointment.id);
+        button.setAttribute("aria-label", `Ver detalles de la cita de ${appointment.patient.name}`);
+        button.title = "Ver detalles";
+        button.append(createIcon("view"));
+        return button;
     }
 
     function createAppointmentEditLink(appointment) {
@@ -165,7 +229,9 @@ if (appointmentsPage) {
             "aria-label",
             `Editar y reprogramar la cita de ${appointment.patient.name}`,
         );
-        link.textContent = "Editar";
+        link.title = "Editar cita";
+        link.classList.add("appointment-action-icon");
+        link.append(createIcon("edit"));
         return link;
     }
 
@@ -204,14 +270,14 @@ if (appointmentsPage) {
         details.append(patient, specialtyText, doctorText);
 
         const status = createStatusBadge(appointment);
-        const detailsLink = createAppointmentDetailsLink(appointment);
+        const detailsButton = createAppointmentDetailsButton(appointment);
         const editLink =
             appointment.status === "Confirmed" ? createAppointmentEditLink(appointment) : null;
         const cancelButton =
             appointment.status === "Confirmed" ? createAppointmentCancelButton(appointment) : null;
         const actions = document.createElement("div");
         actions.className = "appointment-mobile-actions";
-        actions.append(detailsLink);
+        actions.append(detailsButton);
         if (editLink) actions.append(editLink);
         if (cancelButton) actions.append(cancelButton);
         card.append(
@@ -222,6 +288,97 @@ if (appointmentsPage) {
             actions,
         );
         return card;
+    }
+
+    function createDetailField(label, value) {
+        const row = document.createElement("div");
+        const term = document.createElement("dt");
+        const description = document.createElement("dd");
+        term.textContent = label;
+        description.textContent = value || "Sin información";
+        row.append(term, description);
+        return row;
+    }
+
+    function renderAppointmentDetails(appointment) {
+        const date = formatDateTime(appointment.startAt, {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        });
+        const time = formatDateTime(appointment.startAt, {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        });
+        detailsSummary.replaceChildren();
+        detailsSummary.append(
+            createDetailField("Número de cita", `#${appointment.id}`),
+            createDetailField("Fecha", date),
+            createDetailField("Hora", time),
+        );
+
+        detailsPatientName.textContent = appointment.patient.name;
+        detailsPatientContact.textContent = [
+            appointment.patient.document,
+            appointment.patient.phone,
+        ]
+            .filter(Boolean)
+            .join(" · ");
+        detailsAvatar.replaceChildren();
+        const fallback = document.createElement("span");
+        fallback.textContent = getInitials(appointment.patient.name);
+        if (appointment.patient.photoUrl) {
+            const image = document.createElement("img");
+            image.src = appointment.patient.photoUrl;
+            image.alt = "";
+            image.addEventListener(
+                "error",
+                () => {
+                    image.remove();
+                    fallback.hidden = false;
+                },
+                { once: true },
+            );
+            fallback.hidden = true;
+            detailsAvatar.append(fallback, image);
+        } else {
+            detailsAvatar.append(fallback);
+        }
+
+        detailsFields.replaceChildren(
+            createDetailField("Especialidad", appointment.specialty),
+            createDetailField("Médico", appointment.doctor),
+            createDetailField("Estado", appointment.statusLabel),
+        );
+        detailsContent.hidden = false;
+        detailsFeedback.textContent = "";
+    }
+
+    async function openAppointmentDetails(appointmentId) {
+        if (!detailsDialog) return;
+        const requestId = ++activeDetailsRequestId;
+        detailsContent.hidden = true;
+        detailsFeedback.textContent = "Cargando información de la cita...";
+        detailsDialog.showModal();
+        detailsDialog.querySelector("[data-appointment-details-close]").focus();
+        try {
+            const response = await fetch(`/api/admin/appointments/${appointmentId}`, {
+                headers: { Accept: "application/json" },
+                cache: "no-store",
+            });
+            const contentType = response.headers?.get("content-type") || "";
+            const result = contentType.includes("application/json") ? await response.json() : {};
+            if (!response.ok || response.redirected || !contentType.includes("application/json")) {
+                throw new Error(result.message || "No pudimos cargar los datos de la cita.");
+            }
+            if (requestId !== activeDetailsRequestId || !detailsDialog.open) return;
+            renderAppointmentDetails(result.appointment);
+        } catch (error) {
+            if (requestId !== activeDetailsRequestId || !detailsDialog.open) return;
+            detailsFeedback.textContent = error.message;
+        }
     }
 
     function openCancellationDialog(appointmentId, patientName) {
@@ -457,6 +614,11 @@ if (appointmentsPage) {
     });
 
     appointmentsPage.addEventListener("click", (event) => {
+        const detailsButton = event.target.closest("[data-view-appointment]");
+        if (detailsButton) {
+            openAppointmentDetails(detailsButton.dataset.viewAppointment);
+            return;
+        }
         const button = event.target.closest("[data-cancel-appointment]");
         if (!button || !cancellationDialog || !cancellationForm) return;
         const appointment = displayedAppointments.find(
@@ -465,6 +627,13 @@ if (appointmentsPage) {
         const patientName = appointment?.patient.name || "el paciente";
         openCancellationDialog(button.dataset.cancelAppointment, patientName);
     });
+
+    detailsDialog
+        ?.querySelector("[data-appointment-details-close]")
+        .addEventListener("click", () => {
+            activeDetailsRequestId += 1;
+            detailsDialog.close();
+        });
 
     cancellationForm?.querySelector("[data-cancellation-close]")?.addEventListener("click", () => {
         cancellationDialog.close();

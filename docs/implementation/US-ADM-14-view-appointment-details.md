@@ -4,19 +4,20 @@ Issue [#135](https://github.com/personalProjectsDeltaG8109/saludvital/issues/135
 
 ## Acceptance criteria
 
-- Only authenticated administrators can access the appointment details page and API.
-- The selected appointment is loaded from persisted appointment, patient, doctor, specialty, and status records.
-- The page displays its identifier, date/time, status, patient, specialty, and assigned doctor.
+- Only administrators can request appointment details.
+- The selected appointment is loaded from the appointment, patient, doctor, specialty, and status records.
+- The modal shows the appointment number, date and time, patient name and photo, patient document and phone, specialty, doctor, and status.
 - Only supported appointment statuses are displayed, using the existing Spanish labels.
-- The API omits patient document and phone values, appointment reasons, source metadata, passwords, and authentication credentials.
+- The response does not include the appointment reason, source metadata, passwords, credentials, or clinical history.
 - Missing, invalid, or unsupported-status records return a safe not-found result.
-- The responsive details page reuses the administrator shell and links back to the appointment directory.
+- Details open inside the appointment list and work on desktop and mobile; there is no separate details page.
 
 ## Implementation
 
-- Added a safe details lookup to the existing administrator appointment service. It selects only fields required by the read-only view and reuses the existing status mapping.
-- Added administrator-protected API and page routes. The page returns the existing not-found view for missing or unsupported appointments.
-- Added a details page using the appointment reference styles and a details link from desktop rows and mobile cards.
+- Updated the administrator details lookup to return only the patient contact fields needed in the modal and reused the existing status mapping.
+- Added a responsive modal that loads the selected appointment from the protected API.
+- Replaced the separate details-page action in desktop rows and mobile cards with an icon button that opens the modal.
+- Removed the old details page and route. The edit page now returns to the appointment list.
 - Did not add appointment editing, rescheduling, status controls, or other appointment workflows.
 - No migration or new dependency was needed.
 
@@ -25,7 +26,6 @@ Issue [#135](https://github.com/personalProjectsDeltaG8109/saludvital/issues/135
 - src/modules/admin/services/adminAppointmentService.js
 - src/modules/admin/routes/adminRoutes.js
 - views/admin/appointments.pug
-- views/admin/appointment-details.pug
 - public/js/admin-appointments.js
 - public/css/admin-appointments.css
 - tests/unit/adminAppointmentService.test.js
@@ -36,13 +36,12 @@ Issue [#135](https://github.com/personalProjectsDeltaG8109/saludvital/issues/135
 
 ## Verification
 
-- `npm.cmd test -- --runInBand`: passed (45 suites, 382 tests).
-- Focused appointment unit/integration checks: passed (3 suites, 36 tests).
-- `npm.cmd run test:e2e`: passed, including the appointment directory and detail page at 375×812, 768×1024, and 1440×900.
-- `npm.cmd run lint`: passed.
-- `npm.cmd run format:check`: passed.
-- `git diff --check`: passed.
-- E2E assertions confirm the displayed appointment status is from the supported status set; the detail view does not render unsupported status labels.
+- The test suite without database integration tests passed: 126 suites and 977 tests.
+- The application integration suite passed: 1 suite and 85 tests.
+- The appointment directory, CSV/PDF export, details modal, creation flow, and edit flow passed their browser tests.
+- `npm run lint`, `npm run format`, `npx prettier --write ...`, and `npm run css:build` passed.
+- `git diff --check` passed.
+- The full browser suite needs MySQL credentials for `saludvital_test`; it could not start because the local checkout has no database user configured.
 
 ## Dependency and integration order
 

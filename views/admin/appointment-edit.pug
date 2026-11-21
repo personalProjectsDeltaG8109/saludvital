@@ -25,9 +25,9 @@ html(lang="es")
                 data-availability-endpoint="/api/admin/appointment-booking/availability",
                 data-update-endpoint=`/api/admin/appointments/${appointment.id}/reschedule`
             )
-                a.appointment-details-back(href=`/admin/appointments/${appointment.id}`)
+                a.appointment-details-back(href="/admin/appointments")
                     span(aria-hidden="true") ‹
-                    | Volver al detalle
+                    | Volver a citas
                 header.appointments-heading
                     span.appointments-heading-icon(aria-hidden="true")
                         svg(
@@ -107,9 +107,7 @@ html(lang="es")
                                 )= appointment.reason
                         p.appointment-edit-limit= `Reprogramaciones disponibles: ${appointment.reschedulesRemaining}`
                         footer.appointment-edit-actions
-                            a.appointment-create-cancel(
-                                href=`/admin/appointments/${appointment.id}`
-                            ) Cancelar
+                            a.appointment-create-cancel(href="/admin/appointments") Cancelar
                             button.appointment-create-submit(
                                 type="submit",
                                 data-edit-submit,
@@ -120,7 +118,7 @@ html(lang="es")
                     section.appointment-edit-unavailable(role="status")
                         h2 No es posible editar esta cita
                         p= appointment.unavailableMessage
-                        a.appointment-create-submit(href=`/admin/appointments/${appointment.id}`) Volver al detalle
+                        a.appointment-create-submit(href="/admin/appointments") Volver a citas
                 dialog.appointment-create-success(
                     data-edit-success,
                     aria-labelledby="appointment-edit-success-title"
