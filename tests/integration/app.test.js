@@ -501,11 +501,10 @@ describe("SaludVital application", () => {
         expect(response.headers.location).toBe("/login");
     });
 
-    test("appointment details page requires an authenticated administrator", async () => {
+    test("the old appointment details page is replaced by the details modal", async () => {
         const response = await request(app).get("/admin/appointments/1").redirects(0);
 
-        expect(response.status).toBe(303);
-        expect(response.headers.location).toBe("/login");
+        expect(response.status).toBe(404);
     });
 
     test("appointment edit page requires an authenticated administrator", async () => {

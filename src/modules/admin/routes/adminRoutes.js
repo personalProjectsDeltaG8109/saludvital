@@ -619,30 +619,6 @@ adminRoutes.get(
         }
     },
 );
-adminRoutes.get(
-    "/admin/appointments/:appointmentId",
-    ...requireAdministrator,
-    async (req, res, next) => {
-        try {
-            const appointment = await getAdminAppointmentDetails(req.params.appointmentId);
-            return res.render("admin/appointment-details", {
-                pageTitle: `Cita #${appointment.id} | SaludVital`,
-                adminName: "Administrador",
-                appointment,
-            });
-        } catch (error) {
-            if (error.statusCode === 404) {
-                return res.status(404).render("errors/404", {
-                    pageTitle: "Cita no encontrada | SaludVital",
-                    homeHref: "/admin/dashboard",
-                    appointmentsHref: "/admin/appointments",
-                    supportHref: getConfiguredWhatsAppContactUrl(),
-                });
-            }
-            return next(error);
-        }
-    },
-);
 adminRoutes.get("/admin/specialties", ...requireAdministrator, (_req, res) => {
     return res.render("admin/specialties", {
         pageTitle: "Especialidades | SaludVital",
