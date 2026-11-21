@@ -229,7 +229,7 @@ try {
     await page.addScriptTag({ content: appointmentsScript });
     await page.getByText("María Fernanda López").first().waitFor();
     await page
-        .getByRole("link", { name: "Ver detalles de la cita de María Fernanda López" })
+        .getByRole("button", { name: "Ver detalles de la cita de María Fernanda López" })
         .first()
         .waitFor();
     await page
