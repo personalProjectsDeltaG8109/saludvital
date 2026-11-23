@@ -14,13 +14,15 @@ The registration form and the administrator patient form used the server's UTC d
 
 ## Verification
 
+- `npm run format` completed without changing files.
+- The requested Prettier command completed without changing files.
 - Focused Jest tests: 3 suites and 85 tests passed.
 - Full Jest suite: 158 suites and 1,223 tests passed.
 - ESLint passed.
-- Prettier check passed for every changed source and test file.
+- Tailwind CSS build passed.
+- Playwright end-to-end suite passed, including the browser and accessibility flows.
 - `git diff --check` passed.
-- Playwright was not run because this change only affects server-side date validation.
 
 ## Work status
 
-Implemented on `fix/534-colombia-birth-date-validation`. The changes are local and have not been pushed or opened as a pull request.
+Implemented on `fix/534-colombia-birth-date-validation`. The changes are ready for review in a pull request targeting `develop`.
