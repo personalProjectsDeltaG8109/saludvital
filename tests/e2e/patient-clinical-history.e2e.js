@@ -120,10 +120,107 @@ try {
         assert.equal(overflow, false, `Clinical history must not overflow at ${width}px.`);
     }
 
+    const racePage = await context.newPage();
+    await racePage.setContent(html);
+    for (const style of styles) await racePage.addStyleTag({ content: style });
+    await racePage.evaluate(() => {
+        window.__clinicalRequests = [];
+        window.fetch = (url) =>
+            new Promise((resolve, reject) => {
+                const consultationId = Number(url.split("/").pop());
+                window.__clinicalRequests.push({ consultationId, resolve, reject });
+            });
+    });
+    await racePage.addScriptTag({ content: script });
+
+    async function waitForRequestCount(count) {
+        await racePage.waitForFunction(
+            (expectedCount) => window.__clinicalRequests.length >= expectedCount,
+            count,
+        );
+    }
+
+    function createConsultationDetail(consultationId, doctorLabel) {
+        return {
+            id: consultationId,
+            specialty_label: `Especialidad ${consultationId}`,
+            doctor_label: doctorLabel,
+            date_label: "15 oct 2026",
+            time_label: "08:00 a. m. - 08:30 a. m.",
+            symptoms: "Consulta de prueba",
+            clinical_notes: "Notas de prueba",
+            vital_signs: {},
+            diagnoses: [],
+            prescriptions: [],
+            medical_orders: [],
+        };
+    }
+
+    async function resolveClinicalRequest(requestIndex, consultation) {
+        await racePage.evaluate(
+            ({ index, detail }) =>
+                window.__clinicalRequests[index].resolve({
+                    ok: true,
+                    json: async () => ({ consultation: detail }),
+                }),
+            { index: requestIndex, detail: consultation },
+        );
+    }
+
+    async function rejectClinicalRequest(requestIndex) {
+        await racePage.evaluate(
+            (index) => window.__clinicalRequests[index].reject(new Error("Request failed.")),
+            requestIndex,
+        );
+    }
+
+    const raceCards = racePage.locator("[data-consultation-card]");
+    await waitForRequestCount(1);
+    await raceCards.nth(1).click();
+    await waitForRequestCount(2);
+    await resolveClinicalRequest(1, createConsultationDetail(43, "Doctor B"));
+    await racePage.getByText("Doctor B").waitFor({ state: "visible" });
+    await resolveClinicalRequest(0, createConsultationDetail(42, "Doctor A"));
+    await racePage.waitForTimeout(20);
+    assert.equal(
+        await racePage
+            .locator(".clinical-visit-copy")
+            .innerText()
+            .then((text) => text.includes("Doctor B")),
+        true,
+    );
+    assert.equal(await raceCards.nth(1).getAttribute("aria-pressed"), "true");
+
+    await raceCards.nth(0).click();
+    await waitForRequestCount(3);
+    await raceCards.nth(1).click();
+    await waitForRequestCount(4);
+    await rejectClinicalRequest(2);
+    await resolveClinicalRequest(3, createConsultationDetail(43, "Doctor B"));
+    await racePage.getByText("Doctor B").waitFor({ state: "visible" });
+    assert.equal(await racePage.locator("[data-clinical-detail-error]").isVisible(), false);
+
+    await raceCards.nth(0).click();
+    await waitForRequestCount(5);
+    await raceCards.nth(0).click();
+    await resolveClinicalRequest(4, createConsultationDetail(42, "Doctor A"));
+    await racePage.locator("[data-clinical-detail-placeholder]").waitFor({ state: "visible" });
+    assert.equal(await racePage.locator("[data-clinical-detail-content]").innerText(), "");
+
+    await raceCards.nth(1).click();
+    await waitForRequestCount(6);
+    await racePage.locator("[data-consultation-search]").fill("Laura");
+    await waitForRequestCount(7);
+    await resolveClinicalRequest(5, createConsultationDetail(43, "Doctor B"));
+    await resolveClinicalRequest(6, createConsultationDetail(42, "Doctor A"));
+    await racePage.getByText("Doctor A").waitFor({ state: "visible" });
+    assert.equal(await raceCards.nth(0).getAttribute("aria-pressed"), "true");
+    assert.equal(await racePage.locator("[data-clinical-detail-error]").isVisible(), false);
+
     const accessibility = await new AxeBuilder({ page }).analyze();
     assert.deepEqual(accessibility.violations, []);
     console.log(
-        "Patient clinical history detail loading, filters, pagination layout, and accessibility passed.",
+        "Patient clinical history detail races, filters, responsive layout, and accessibility passed.",
     );
 } finally {
     await browser.close();
