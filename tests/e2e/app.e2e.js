@@ -5,6 +5,111 @@ import AxeBuilder from "@axe-core/playwright";
 
 const baseUrl = "http://127.0.0.1:3100";
 
+function createDeferredSignal() {
+    let resolveSignal;
+    const promise = new Promise((resolve) => {
+        resolveSignal = resolve;
+    });
+
+    return { promise, resolve: resolveSignal };
+}
+
+async function verifyStaleMunicipalityResponse(context, { responseStatus, clearDepartment }) {
+    const page = await context.newPage();
+    const requestStarted = createDeferredSignal();
+    const allowStaleResponse = createDeferredSignal();
+    const responseFinished = createDeferredSignal();
+    const routePattern = "**/api/locations/departments/*/municipalities";
+    let staleRequestHandled = false;
+
+    const routeHandler = async (route) => {
+        const pathname = new URL(route.request().url()).pathname;
+        const requestedDepartmentCode = pathname.split("/").at(-2);
+
+        if (requestedDepartmentCode !== "66" || staleRequestHandled) {
+            await route.continue();
+            return;
+        }
+
+        staleRequestHandled = true;
+        requestStarted.resolve();
+        await allowStaleResponse.promise;
+
+        const responseBody =
+            responseStatus === 200
+                ? { data: [{ code: "66001", name: "Test municipality" }] }
+                : { error: "Test municipality request failed." };
+
+        await route.fulfill({
+            status: responseStatus,
+            contentType: "application/json",
+            body: JSON.stringify(responseBody),
+        });
+        responseFinished.resolve();
+    };
+
+    await page.route(routePattern, routeHandler);
+
+    try {
+        await page.goto(`${baseUrl}/register`);
+
+        const departmentSelect = page.locator("#department");
+        const municipalitySelect = page.locator("#municipality");
+
+        await departmentSelect.locator('option[value="66"]').waitFor({ state: "attached" });
+        await departmentSelect.selectOption("66");
+        await requestStarted.promise;
+
+        if (clearDepartment) {
+            await departmentSelect.selectOption("");
+        } else {
+            await departmentSelect.selectOption("05");
+            await municipalitySelect.locator('option[value="05001"]').waitFor({
+                state: "attached",
+            });
+        }
+
+        allowStaleResponse.resolve();
+        await responseFinished.promise;
+        await page.waitForLoadState("networkidle");
+
+        if (clearDepartment) {
+            const placeholder = await municipalitySelect.locator("option").first().textContent();
+
+            if (
+                (await municipalitySelect.inputValue()) !== "" ||
+                !(await municipalitySelect.isDisabled()) ||
+                placeholder !== "Primero selecciona un departamento"
+            ) {
+                throw new Error("An outdated municipality response changed the cleared selection.");
+            }
+
+            return;
+        }
+
+        const currentDepartment = await departmentSelect.inputValue();
+        const hasOutdatedMunicipality =
+            (await municipalitySelect.locator('option[value="66001"]').count()) > 0;
+        const hasStaleError = (await municipalitySelect.textContent()).includes(
+            "No se pudieron cargar los municipios",
+        );
+
+        if (
+            currentDepartment !== "05" ||
+            (await municipalitySelect.locator('option[value="05001"]').count()) === 0 ||
+            hasOutdatedMunicipality ||
+            hasStaleError ||
+            (await municipalitySelect.isDisabled())
+        ) {
+            throw new Error("An outdated municipality response replaced the current selection.");
+        }
+    } finally {
+        allowStaleResponse.resolve();
+        await page.unroute(routePattern, routeHandler);
+        await page.close();
+    }
+}
+
 // Keep the child environment small and prevent .env from restoring provider credentials.
 const serverEnvironment = {
     PATH: process.env.PATH,
@@ -712,6 +817,26 @@ try {
     if ((await municipalitySelect.inputValue()) !== "") {
         throw new Error("Changing the department did not clear the previous municipality.");
     }
+
+    await verifyStaleMunicipalityResponse(context, {
+        responseStatus: 200,
+        clearDepartment: false,
+    });
+    console.log(
+        "PASS: an older successful municipality response cannot replace the latest department.",
+    );
+
+    await verifyStaleMunicipalityResponse(context, {
+        responseStatus: 500,
+        clearDepartment: false,
+    });
+    console.log("PASS: an older municipality error cannot replace the latest successful options.");
+
+    await verifyStaleMunicipalityResponse(context, {
+        responseStatus: 200,
+        clearDepartment: true,
+    });
+    console.log("PASS: clearing the department ignores its pending municipality response.");
 
     // Verify registration form accessibility on mobile and desktop.
     for (const viewport of [

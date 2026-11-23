@@ -6,6 +6,8 @@ const municipalitySelect = document.getElementById("municipality");
 
 // Do nothing on pages that do not contain the registration form.
 if (departmentSelect && municipalitySelect) {
+    let municipalityRequestId = 0;
+
     // Create options using textContent to avoid interpreting catalog values as HTML.
     function populateOptions(select, items, placeholder, getValue, getLabel) {
         select.replaceChildren(new Option(placeholder, ""));
@@ -50,6 +52,7 @@ if (departmentSelect && municipalitySelect) {
 
     // Reset municipalities whenever the selected department changes.
     departmentSelect.addEventListener("change", async () => {
+        const requestId = ++municipalityRequestId;
         const departmentCode = departmentSelect.value;
 
         municipalitySelect.disabled = true;
@@ -76,6 +79,10 @@ if (departmentSelect && municipalitySelect) {
 
             const { data } = await response.json();
 
+            if (!isCurrentMunicipalityRequest(requestId, departmentCode)) {
+                return;
+            }
+
             populateOptions(
                 municipalitySelect,
                 data,
@@ -86,6 +93,10 @@ if (departmentSelect && municipalitySelect) {
 
             municipalitySelect.disabled = false;
         } catch {
+            if (!isCurrentMunicipalityRequest(requestId, departmentCode)) {
+                return;
+            }
+
             populateOptions(
                 municipalitySelect,
                 [],
@@ -95,6 +106,11 @@ if (departmentSelect && municipalitySelect) {
             );
         }
     });
+
+    // Ignore results that belong to an earlier department selection.
+    function isCurrentMunicipalityRequest(requestId, departmentCode) {
+        return requestId === municipalityRequestId && departmentSelect.value === departmentCode;
+    }
 
     loadDepartments();
 }
