@@ -18,6 +18,7 @@ import {
     normalizeProfilePhone,
     normalizeProfileText,
 } from "../../../shared/services/profileFieldValidationService.js";
+import { getColombiaCalendarDate } from "../../../shared/utils/colombiaCalendarDate.js";
 import {
     isEmailUnavailable,
     isEmailUniqueConstraintError,
@@ -680,16 +681,14 @@ function validatePatientAdminProfile(payload) {
         throw serviceError("Ingresa una fecha de nacimiento válida.", 400);
     }
     const parsedBirthDate = new Date(`${dateOfBirth}T00:00:00.000Z`);
-    const today = new Date();
-    const todayUtc = new Date(
-        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
-    );
-    const earliestDate = new Date(todayUtc);
+    // Keep the administrator form aligned with the date patients see in Colombia.
+    const todayInColombia = new Date(`${getColombiaCalendarDate()}T00:00:00.000Z`);
+    const earliestDate = new Date(todayInColombia);
     earliestDate.setUTCFullYear(earliestDate.getUTCFullYear() - 120);
     if (
         Number.isNaN(parsedBirthDate.getTime()) ||
         parsedBirthDate.toISOString().slice(0, 10) !== dateOfBirth ||
-        parsedBirthDate > todayUtc ||
+        parsedBirthDate > todayInColombia ||
         parsedBirthDate < earliestDate
     ) {
         throw serviceError("La fecha de nacimiento debe ser válida y no futura.", 400);

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
 
 jest.unstable_mockModule("sequelize", () => ({
     Op: { ne: Symbol("ne"), or: Symbol("or") },
@@ -15,7 +15,7 @@ jest.unstable_mockModule("../../src/models/EmergencyContact.js", () => ({
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { findOne: jest.fn() },
     EmailOutbox: { create: jest.fn(), findOne: jest.fn(), update: jest.fn() },
-    Patient: {},
+    Patient: { findOne: jest.fn() },
     Rol: { findByPk: jest.fn(), findOne: jest.fn() },
     Specialities: { findOne: jest.fn() },
     User: { findByPk: jest.fn(), findOne: jest.fn() },
@@ -35,8 +35,10 @@ jest.unstable_mockModule("../../src/modules/admin/services/adminDoctorService.js
 
 const database = (await import("../../config/database.js")).default;
 const AuditLog = (await import("../../src/models/AuditLog.js")).default;
-const { Doctor, EmailOutbox, Rol, Specialities, User } =
+const EmergencyContact = (await import("../../src/models/EmergencyContact.js")).default;
+const { Doctor, EmailOutbox, Patient, Rol, Specialities, User } =
     await import("../../src/models/associations.js");
+const { resolveLocation } = await import("../../src/shared/services/colombiaLocationService.js");
 const photoService = await import("../../src/shared/services/profilePhotoStorageService.js");
 const { updateAdminUser, updateAdminUserProfile } =
     await import("../../src/modules/admin/services/adminUserManagementService.js");
@@ -67,8 +69,52 @@ function prepareDoctorUpdate() {
     return { doctor, transaction };
 }
 
+function preparePatientUpdate() {
+    const transaction = { LOCK: { UPDATE: "UPDATE" } };
+    const patient = {
+        id: 31,
+        user_id: 7,
+        update: jest.fn().mockResolvedValue(undefined),
+    };
+    database.transaction.mockImplementation((callback) => callback(transaction));
+    User.findByPk
+        .mockResolvedValueOnce({ id: 7, email: "patient@example.com", role_id: 2 })
+        .mockResolvedValueOnce({ id: 1, email: "admin@example.com" });
+    User.findOne.mockResolvedValue(null);
+    Rol.findByPk.mockResolvedValue({ name: "Patient" });
+    Patient.findOne.mockResolvedValueOnce(patient).mockResolvedValueOnce(null);
+    EmergencyContact.findOne.mockResolvedValue(null);
+    resolveLocation.mockReturnValue({ department: "Risaralda", municipality: "Pereira" });
+    AuditLog.create.mockResolvedValue({});
+
+    return { patient, transaction };
+}
+
+function patientProfileWithBirthDate(dateOfBirth) {
+    return {
+        email: "patient@example.com",
+        patient: {
+            firstName: "Ana",
+            lastName: "Pérez",
+            phone: "3001234567",
+            dateOfBirth,
+            documentType: "CC",
+            documentNumber: "123456789",
+            departmentCode: "66",
+            municipalityCode: "66001",
+            bloodType: "",
+            allergies: "",
+            existingConditions: "",
+            address: "",
+            profilePhotoUrl: "",
+        },
+        emergencyContact: {},
+    };
+}
+
 describe("Admin doctor profile updates", () => {
     beforeEach(() => jest.resetAllMocks());
+    afterEach(() => jest.useRealTimers());
 
     test("routes doctor status changes through the doctor workflow", async () => {
         const transaction = { LOCK: { UPDATE: "UPDATE" } };
@@ -278,5 +324,45 @@ describe("Admin doctor profile updates", () => {
         );
         expect(result.message).toContain("El correo actual sigue activo");
         expect(doctor.update).toHaveBeenCalled();
+    });
+
+    test("rejects tomorrow as a patient birth date after 7 p.m. in Colombia", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
+        const { patient } = preparePatientUpdate();
+
+        await expect(
+            updateAdminUserProfile(1, 7, patientProfileWithBirthDate("2026-11-21")),
+        ).rejects.toMatchObject({ statusCode: 400 });
+
+        expect(patient.update).not.toHaveBeenCalled();
+        expect(AuditLog.create).not.toHaveBeenCalled();
+    });
+
+    test("accepts today's patient birth date after 7 p.m. in Colombia", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
+        const { patient, transaction } = preparePatientUpdate();
+
+        await expect(
+            updateAdminUserProfile(1, 7, patientProfileWithBirthDate("2026-11-20")),
+        ).resolves.toMatchObject({ message: expect.any(String) });
+
+        expect(patient.update).toHaveBeenCalledWith(
+            expect.objectContaining({ date_of_birth: "2026-11-20" }),
+            { transaction },
+        );
+    });
+
+    test("accepts today's patient birth date just after midnight in Colombia", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T05:00:00.000Z"));
+        const { patient } = preparePatientUpdate();
+
+        await expect(
+            updateAdminUserProfile(1, 7, patientProfileWithBirthDate("2026-11-21")),
+        ).resolves.toMatchObject({ message: expect.any(String) });
+
+        expect(patient.update).toHaveBeenCalledWith(
+            expect.objectContaining({ date_of_birth: "2026-11-21" }),
+            expect.any(Object),
+        );
     });
 });
