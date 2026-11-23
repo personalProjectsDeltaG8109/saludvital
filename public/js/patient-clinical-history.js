@@ -8,6 +8,7 @@
     const detailLoading = document.querySelector("[data-clinical-detail-loading]");
     const detailError = document.querySelector("[data-clinical-detail-error]");
     const detailContent = document.querySelector("[data-clinical-detail-content]");
+    let detailRequestVersion = 0;
 
     function createElement(tagName, className, text) {
         const element = document.createElement(tagName);
@@ -175,14 +176,25 @@
         detailContent.replaceChildren(article);
     }
 
+    function isCurrentDetailRequest(requestVersion, card) {
+        return (
+            requestVersion === detailRequestVersion &&
+            !card.hidden &&
+            card.classList.contains("is-selected")
+        );
+    }
+
     async function loadConsultation(card) {
+        const requestVersion = ++detailRequestVersion;
         detailPlaceholder.hidden = true;
         detailError.hidden = true;
         detailLoading.hidden = false;
         detailContent.replaceChildren();
         try {
             if (card.dataset.previewDetail) {
-                renderConsultation(JSON.parse(card.dataset.previewDetail));
+                if (isCurrentDetailRequest(requestVersion, card)) {
+                    renderConsultation(JSON.parse(card.dataset.previewDetail));
+                }
                 return;
             }
             const response = await fetch(
@@ -191,11 +203,12 @@
             );
             if (!response.ok) throw new Error("Clinical history detail request failed.");
             const payload = await response.json();
+            if (!isCurrentDetailRequest(requestVersion, card)) return;
             renderConsultation(payload.consultation);
         } catch {
-            detailError.hidden = false;
+            if (isCurrentDetailRequest(requestVersion, card)) detailError.hidden = false;
         } finally {
-            detailLoading.hidden = true;
+            if (requestVersion === detailRequestVersion) detailLoading.hidden = true;
         }
     }
 
@@ -237,6 +250,8 @@
     }
 
     function closeConsultation() {
+        // Invalidate pending requests so a closed detail cannot reappear later.
+        detailRequestVersion += 1;
         cards.forEach((card) => {
             card.classList.remove("is-selected");
             card.setAttribute("aria-pressed", "false");
