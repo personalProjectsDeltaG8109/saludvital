@@ -26,7 +26,14 @@ html(lang="es")
                 )
                 header.schedule-heading
                     .schedule-heading-icon(aria-hidden="true")
-                        span ◷
+                        svg(
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8"
+                        )
+                            rect(x="3.5", y="5", width="17", height="16", rx="2.5")
+                            path(d="M7.5 3.5v3M16.5 3.5v3M3.5 10h17")
                     div
                         p.admin-eyebrow Gestión médica
                         h1 Horarios y disponibilidad
@@ -36,15 +43,47 @@ html(lang="es")
                         | Configurar horario
                 section.schedule-stats(aria-label="Resumen de horarios")
                     article.schedule-stat
-                        span Médicos activos
-                        strong(data-stat-active-doctors) —
+                        span.schedule-stat-icon.is-doctors(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8"
+                            )
+                                circle(cx="9", cy="8", r="3")
+                                path(
+                                    d="M3.5 19c0-3 2.4-5 5.5-5s5.5 2 5.5 5M16 11a3 3 0 0 0 0-6M17 14c2.2.5 3.5 2.2 3.5 5"
+                                )
+                        .schedule-stat-copy
+                            span Médicos activos
+                            strong(data-stat-active-doctors) —
                     article.schedule-stat.is-configured
-                        span Con horario configurado
-                        strong(data-stat-configured) —
+                        span.schedule-stat-icon.is-configured-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2"
+                            )
+                                path(d="m5 12 4.5 4.5L19 7")
+                        .schedule-stat-copy
+                            span Médicos con horario
+                            strong(data-stat-configured) —
+                            small Semana de la fecha seleccionada
                     article.schedule-stat.is-exceptions
-                        span Excepciones próximas
-                        strong(data-stat-exceptions) —
-                        small Próximos 7 días
+                        span.schedule-stat-icon.is-exceptions-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8"
+                            )
+                                rect(x="3.5", y="5", width="17", height="16", rx="2.5")
+                                path(d="M7.5 3.5v3M16.5 3.5v3M3.5 10h17M12 13v3l2 1")
+                        .schedule-stat-copy
+                            span Excepciones próximas
+                            strong(data-stat-exceptions) —
+                            small Próximos 7 días
                 section.schedule-filters-panel(aria-label="Filtros de horarios")
                     form.schedule-filters(data-schedule-filters)
                         label.schedule-search
@@ -70,29 +109,52 @@ html(lang="es")
                                 option(value="configured") Con horario
                                 option(value="unconfigured") Sin horario
                         label.schedule-week
-                            span Semana (lunes)
+                            span Fecha
                             .schedule-week-control
                                 button(
                                     type="button",
-                                    aria-label="Semana anterior",
+                                    aria-label="Período anterior",
                                     data-week-previous
                                 ) ‹
                                 input(
                                     type="date",
                                     data-schedule-week,
-                                    aria-label="Seleccionar lunes de la semana"
+                                    aria-label="Seleccionar fecha del calendario"
                                 )
                                 button(
                                     type="button",
-                                    aria-label="Semana siguiente",
+                                    aria-label="Período siguiente",
                                     data-week-next
                                 ) ›
-                        button.schedule-search-button(type="submit") Buscar
+                        fieldset.schedule-period-switch
+                            legend Período
+                            .schedule-period-options(
+                                role="group",
+                                aria-label="Período del calendario"
+                            )
+                                button(
+                                    type="button",
+                                    data-calendar-period="day",
+                                    aria-pressed="false"
+                                ) Día
+                                button(
+                                    type="button",
+                                    data-calendar-period="week",
+                                    aria-pressed="true"
+                                ) Semana
+                                button(
+                                    type="button",
+                                    data-calendar-period="month",
+                                    aria-pressed="false"
+                                ) Mes
+                    p.schedule-period-hint
+                        span(aria-hidden="true") i
+                        | El período seleccionado controla el calendario que se muestra abajo.
                 .schedule-content
                     section.schedule-panel(aria-labelledby="weekly-schedule-title")
                         header.schedule-panel-heading
                             div
-                                h2#weekly-schedule-title Horario semanal
+                                h2#weekly-schedule-title(data-schedule-view-title) Horario semanal
                                 p(data-schedule-week-label) Consulta los horarios registrados para la semana seleccionada.
                         p.schedule-feedback(
                             role="status",
@@ -109,7 +171,7 @@ html(lang="es")
                                 div
                                     h3#weekly-doctor-title(data-weekly-doctor-name) Horario del médico
                                     p(data-weekly-date-range)
-                                button.schedule-back-button(type="button", data-weekly-clear) Ver todos los médicos
+                                button.schedule-back-button(type="button", data-weekly-clear) Ocultar horario
                             p.weekly-feedback(
                                 role="status",
                                 aria-live="polite",
@@ -150,7 +212,10 @@ html(lang="es")
                                 li.is-appointment Cita
                                 li.is-blocked No disponible
                             p.weekly-empty(data-weekly-empty, hidden) Este médico no tiene horario configurado para la semana seleccionada.
-                        .schedule-doctor-list(data-schedule-doctor-list)
+                        .schedule-doctor-list(
+                            data-schedule-doctor-list,
+                            aria-label="Médicos disponibles"
+                        )
                         p.schedule-empty(data-schedule-empty, hidden) No hay médicos que coincidan con los filtros seleccionados.
                     aside.schedule-panel.schedule-exceptions-panel(
                         aria-labelledby="upcoming-exceptions-title"

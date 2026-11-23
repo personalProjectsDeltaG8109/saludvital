@@ -31,6 +31,7 @@
     const specialtySelect = page.querySelector("[data-schedule-specialty]");
     const statusSelect = page.querySelector("[data-schedule-status]");
     const weekInput = page.querySelector("[data-schedule-week]");
+    const periodButtons = [...page.querySelectorAll("[data-calendar-period]")];
     const configureOpenButton = page.querySelector("[data-configure-open]");
     const configureDialog = document.querySelector("[data-schedule-config-dialog]");
     const configureForm = document.querySelector("[data-schedule-config-form]");
@@ -42,7 +43,8 @@
     const configureSubmitButton = document.querySelector("[data-config-submit]");
     const configureDeleteButton = document.querySelector("[data-config-delete]");
     const exceptionDialog = document.querySelector("[data-exception-manager-dialog]");
-    const appointmentDialog = page.querySelector("[data-appointment-details-dialog]");
+    // The dialog is a sibling of the page so the browser can center it in the viewport.
+    const appointmentDialog = document.querySelector("[data-appointment-details-dialog]");
     const exceptionForm = document.querySelector("[data-exception-form]");
     const exceptionList = document.querySelector("[data-exception-list]");
     const exceptionLoading = document.querySelector("[data-exception-loading]");
@@ -68,10 +70,15 @@
     let pendingExceptionStatusRequest = null;
     let scheduleRequestId = 0;
     let weeklyRequestId = 0;
+    let selectedDoctorId = null;
+    let isDoctorScheduleDismissed = false;
+    let periodMode = "week";
+    let searchDebounceTimer = null;
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
     const errorMessage = page.querySelector("[data-schedule-error]");
     const doctorList = page.querySelector("[data-schedule-doctor-list]");
+    const weeklyGrid = page.querySelector("[data-weekly-grid]");
     const emptyMessage = page.querySelector("[data-schedule-empty]");
     const weeklyView = page.querySelector("[data-weekly-view]");
     const weeklyContent = page.querySelector("[data-weekly-content]");
@@ -79,7 +86,7 @@
     const weeklyError = page.querySelector("[data-weekly-error]");
     const exceptionsList = page.querySelector("[data-schedule-exceptions]");
     const exceptionsEmpty = page.querySelector("[data-schedule-exceptions-empty]");
-    const weekdayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const weekdayShortNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
     function setText(selector, value) {
         const element = page.querySelector(selector);
@@ -115,6 +122,62 @@
         }).format(new Date(value));
     }
 
+    function getMondayForDate(dateValue) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue || "")) return "";
+        const date = new Date(`${dateValue}T00:00:00Z`);
+        const weekday = date.getUTCDay() || 7;
+        date.setUTCDate(date.getUTCDate() - weekday + 1);
+        return date.toISOString().slice(0, 10);
+    }
+
+    function getSelectedWeekStart() {
+        return getMondayForDate(weekInput.value);
+    }
+
+    function getDateForWeekday(dayIndex) {
+        const monday = new Date(`${getSelectedWeekStart()}T00:00:00Z`);
+        monday.setUTCDate(monday.getUTCDate() + dayIndex);
+        return monday.toISOString().slice(0, 10);
+    }
+
+    function getCalendarWeekStartsForMonth(dateValue) {
+        const [year, month] = dateValue.split("-").map(Number);
+        const firstDay = new Date(Date.UTC(year, month - 1, 1));
+        const lastDay = new Date(Date.UTC(year, month, 0));
+        const firstMonday = new Date(
+            `${getMondayForDate(firstDay.toISOString().slice(0, 10))}T00:00:00Z`,
+        );
+        const weeks = [];
+        while (firstMonday <= lastDay) {
+            weeks.push(firstMonday.toISOString().slice(0, 10));
+            firstMonday.setUTCDate(firstMonday.getUTCDate() + 7);
+        }
+        return weeks;
+    }
+
+    function getMonthTitle(dateValue) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue || "")) return "Mes seleccionado";
+        const title = new Intl.DateTimeFormat("es-CO", {
+            month: "long",
+            year: "numeric",
+            timeZone: "America/Bogota",
+        }).format(new Date(`${dateValue}T12:00:00-05:00`));
+        return title.charAt(0).toLocaleUpperCase("es-CO") + title.slice(1);
+    }
+
+    function getDateLabel(dateValue, options = { dateStyle: "full" }) {
+        return new Intl.DateTimeFormat("es-CO", {
+            ...options,
+            timeZone: "America/Bogota",
+        }).format(new Date(`${dateValue}T12:00:00-05:00`));
+    }
+
+    function normalizeDateForPeriod(dateValue) {
+        if (periodMode === "day") return dateValue;
+        if (periodMode === "month") return `${dateValue.slice(0, 7)}-01`;
+        return getMondayForDate(dateValue);
+    }
+
     function getInitials(name) {
         return name
             .trim()
@@ -123,12 +186,6 @@
             .map((part) => part[0] || "")
             .join("")
             .toLocaleUpperCase("es-CO");
-    }
-
-    function getDateForWeekday(dayIndex) {
-        const monday = new Date(`${weekInput.value}T00:00:00Z`);
-        monday.setUTCDate(monday.getUTCDate() + dayIndex);
-        return monday.toISOString().slice(0, 10);
     }
 
     function getSafeImageUrl(value) {
@@ -253,7 +310,7 @@
             editButton.addEventListener("click", () =>
                 openScheduleEditor({
                     ...block,
-                    doctorId: doctorSelect.value,
+                    doctorId: selectedDoctorId || doctorSelect.value,
                 }),
             );
             item.append(details, editButton);
@@ -444,39 +501,46 @@
         const avatar = profilePhotoUrl
             ? `<img src="${escapeAttribute(profilePhotoUrl)}" alt="" loading="lazy">`
             : escapeAttribute(getInitials(doctor.name));
-        const days = weekdayNames
-            .map((day, index) => {
-                const date = getDateForWeekday(index);
-                const blocks = doctor.availability.filter(
-                    (block) =>
-                        block.dayOfWeek === index + 1 &&
-                        block.validFrom <= date &&
-                        (!block.validUntil || block.validUntil >= date),
-                );
-                const ranges = blocks.length
-                    ? blocks
-                          .map(
-                              (block) =>
-                                  `<div class="schedule-interval-item"><p>${formatTime(block.startTime)} – ${formatTime(block.endTime)}</p><button class="schedule-edit-block-button" type="button" data-edit-schedule="${block.id}" data-doctor-id="${doctor.id}" data-day-of-week="${block.dayOfWeek}" data-start-time="${escapeAttribute(block.startTime)}" data-end-time="${escapeAttribute(block.endTime)}" data-valid-from="${escapeAttribute(block.validFrom)}" data-valid-until="${escapeAttribute(block.validUntil || "")}" aria-label="Editar horario de ${escapeAttribute(day)}, ${formatTime(block.startTime)} a ${formatTime(block.endTime)}">Editar</button></div>`,
-                          )
-                          .join("")
-                    : '<p class="schedule-day-empty">Sin horario</p>';
-                return `<section class="schedule-day"><h4>${day}</h4>${ranges}</section>`;
-            })
-            .join("");
         const specialty = doctor.specialty?.name || "Sin especialidad asignada";
         const stateLabel = doctor.isActive ? "Activo" : "Cuenta inactiva";
         const stateClass = doctor.isActive ? "" : " is-inactive";
+        const isSelected = String(doctor.id) === String(selectedDoctorId);
+        const selectedClass = isSelected ? " is-selected" : "";
+        const expanded = isSelected ? "true" : "false";
 
-        return `<article class="schedule-doctor-card">
+        return `<article class="schedule-doctor-card${selectedClass}" data-doctor-card="${doctor.id}">
             <header class="schedule-doctor-heading">
-                <span class="schedule-doctor-avatar">${avatar}</span>
-                <div class="schedule-doctor-identity"><h3>${escapeAttribute(doctor.name)}</h3><p>${escapeAttribute(specialty)} · ${escapeAttribute(doctor.email)}</p></div>
+                <button class="schedule-doctor-select" type="button" data-view-week="${doctor.id}" data-doctor-name="${escapeAttribute(doctor.name)}" aria-expanded="${expanded}" aria-label="${isSelected ? "Ocultar" : "Ver"} horario de ${escapeAttribute(doctor.name)}">
+                    <span class="schedule-doctor-avatar">${avatar}</span>
+                    <span class="schedule-doctor-identity"><strong>${escapeAttribute(doctor.name)}</strong><span>${escapeAttribute(specialty)}</span></span>
+                </button>
                 <span class="schedule-doctor-state${stateClass}">${stateLabel}</span>
             </header>
-            <div class="schedule-week-grid" aria-label="Disponibilidad semanal de ${escapeAttribute(doctor.name)}">${days}</div>
-            <button class="schedule-view-week-button" type="button" data-view-week="${doctor.id}">Ver horario semanal</button>
         </article>`;
+    }
+
+    function updateDoctorCardSelection() {
+        doctorList.querySelectorAll("[data-doctor-card]").forEach((card) => {
+            const isSelected = card.dataset.doctorCard === String(selectedDoctorId);
+            card.classList.toggle("is-selected", isSelected);
+            const button = card.querySelector("[data-view-week]");
+            button?.setAttribute("aria-expanded", String(isSelected));
+            button?.setAttribute(
+                "aria-label",
+                `${isSelected ? "Ocultar" : "Ver"} horario de ${button.dataset.doctorName}`,
+            );
+        });
+    }
+
+    function hideSelectedDoctorSchedule() {
+        selectedDoctorId = null;
+        isDoctorScheduleDismissed = true;
+        weeklyRequestId += 1;
+        weeklyView.hidden = true;
+        weeklyContent.hidden = true;
+        weeklyFeedback.hidden = true;
+        weeklyError.hidden = true;
+        updateDoctorCardSelection();
     }
 
     function minuteOfDay(time) {
@@ -567,8 +631,14 @@
         return `<${tagName} class="${className}${isEditable ? " is-editable" : ""}" style="top:${top}px;height:${duration}px;${laneStyle}"${attributes}>${contents}</${tagName}>`;
     }
 
-    function renderWeeklyGrid(data) {
-        const allTimes = data.days.flatMap((day) =>
+    function getVisibleScheduleDays(data, mode, dateValue) {
+        return mode === "day" ? data.days.filter((day) => day.date === dateValue) : data.days;
+    }
+
+    function renderWeeklyGrid(data, days = data.days) {
+        if (!days.length)
+            return '<p class="weekly-mobile-empty">No hay datos disponibles para esta fecha.</p>';
+        const allTimes = days.flatMap((day) =>
             day.events.flatMap((event) => [
                 minuteOfDay(event.startTime),
                 minuteOfDay(event.endTime),
@@ -586,9 +656,10 @@
             );
         }
 
-        const header = `<div class="weekly-grid-header"><span>Hora</span>${data.days.map((day) => `<span><strong>${day.dayLabel.slice(0, 3)}</strong><small>${formatDayDate(day.date)}</small></span>`).join("")}</div>`;
+        const dayCountStyle = ` style="--schedule-day-count:${days.length}"`;
+        const header = `<div class="weekly-grid-header"${dayCountStyle}><span>Hora</span>${days.map((day) => `<span><strong>${day.dayLabel.slice(0, 3)}</strong><small>${formatDayDate(day.date)}</small></span>`).join("")}</div>`;
         const axis = `<div class="weekly-time-axis" style="height:${timelineHeight}px">${hourLabels.join("")}</div>`;
-        const columns = data.days
+        const columns = days
             .map((day) => {
                 const availability = day.events
                     .filter((event) => ["available", "additionalAvailability"].includes(event.type))
@@ -620,7 +691,7 @@
             })
             .join("");
 
-        const mobileDays = data.days
+        const mobileDays = days
             .map((day) => {
                 const events = day.events
                     .map((event) => {
@@ -652,10 +723,80 @@
             })
             .join("");
 
-        return `${header}<div class="weekly-grid-body">${axis}<div class="weekly-day-columns">${columns}</div></div><div class="weekly-mobile-grid">${mobileDays}</div>`;
+        return `${header}<div class="weekly-grid-body"${dayCountStyle}>${axis}<div class="weekly-day-columns">${columns}</div></div><div class="weekly-mobile-grid">${mobileDays}</div>`;
     }
 
-    function renderWorkingInformation(data) {
+    function getCalendarDays(dateValue) {
+        const [year, month] = dateValue.split("-").map(Number);
+        const firstDay = new Date(Date.UTC(year, month - 1, 1));
+        const lastDay = new Date(Date.UTC(year, month, 0));
+        const firstMonday = new Date(
+            `${getMondayForDate(firstDay.toISOString().slice(0, 10))}T00:00:00Z`,
+        );
+        const days = [];
+        for (
+            const date = new Date(firstMonday);
+            date <= lastDay;
+            date.setUTCDate(date.getUTCDate() + 1)
+        ) {
+            days.push(date.toISOString().slice(0, 10));
+        }
+        while (days.length % 7 !== 0) {
+            const nextDate = new Date(`${days.at(-1)}T00:00:00Z`);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+            days.push(nextDate.toISOString().slice(0, 10));
+        }
+        return days;
+    }
+
+    function renderMonthlyGrid(weekData, dateValue) {
+        const eventsByDate = new Map();
+        for (const week of weekData) {
+            for (const day of week.days || []) eventsByDate.set(day.date, day.events || []);
+        }
+        const selectedMonth = dateValue.slice(0, 7);
+        const weekdays = weekdayShortNames.map((day) => `<span>${day}</span>`).join("");
+        const monthDays = getCalendarDays(dateValue)
+            .map((date) => {
+                const inMonth = date.startsWith(selectedMonth);
+                const events = eventsByDate.get(date) || [];
+                const appointmentCount = events.filter(
+                    (event) => event.type === "appointment",
+                ).length;
+                const availableCount = events.filter((event) =>
+                    ["available", "additionalAvailability"].includes(event.type),
+                ).length;
+                const blockedCount = events.filter((event) => event.type === "blocked").length;
+                const summary = [
+                    appointmentCount ? `${appointmentCount} citas` : "",
+                    availableCount ? `${availableCount} horarios disponibles` : "",
+                    blockedCount ? `${blockedCount} bloqueos` : "",
+                ]
+                    .filter(Boolean)
+                    .join(", ");
+                const dateDescription = `${getDateLabel(date)}${summary ? `: ${summary}` : ": sin actividad registrada"}`;
+                const stateClass = date === dateValue ? " is-selected" : "";
+                const outsideClass = inMonth ? "" : " is-outside-month";
+                const indicators = [
+                    availableCount
+                        ? '<span class="schedule-month-indicator" aria-hidden="true"></span>'
+                        : "",
+                    appointmentCount
+                        ? '<span class="schedule-month-indicator is-appointment" aria-hidden="true"></span>'
+                        : "",
+                    blockedCount
+                        ? '<span class="schedule-month-indicator is-blocked" aria-hidden="true"></span>'
+                        : "",
+                ].join("");
+                return `<button class="schedule-month-day${stateClass}${outsideClass}" type="button" data-month-day="${date}" aria-label="${escapeAttribute(dateDescription)}"${inMonth ? "" : " disabled"}><span class="schedule-month-day-number">${Number(date.slice(-2))}</span><span class="schedule-month-indicators">${indicators}</span><span class="schedule-month-day-count">${escapeAttribute(summary || "Sin actividad")}</span></button>`;
+            })
+            .join("");
+        return `<div class="schedule-month-calendar" role="group" aria-label="Calendario de ${escapeAttribute(getMonthTitle(dateValue))}"><div class="schedule-month-weekdays" aria-hidden="true">${weekdays}</div><div class="schedule-month-days">${monthDays}</div></div>`;
+    }
+
+    function renderWorkingInformation(data, options = {}) {
+        const { mode = "week", dateValue = data.week.start, monthData = [] } = options;
+        const visibleDays = getVisibleScheduleDays(data, mode, dateValue);
         setText("[data-weekly-doctor-name]", data.doctor.name);
         setText("[data-weekly-specialty]", data.doctor.specialty || "Sin especialidad asignada");
         setText(
@@ -671,23 +812,79 @@
         const hours = data.workingDays.flatMap((day) =>
             day.intervals.map(
                 (interval) =>
-                    `${day.dayLabel}: ${formatTime(interval.startTime)}–${formatTime(interval.endTime)}`,
+                    `${day.dayLabel}: ${formatTime(interval.startTime)}-${formatTime(interval.endTime)}`,
             ),
         );
         setText(
             "[data-weekly-working-hours]",
             hours.length ? hours.join(" · ") : "Sin horario configurado",
         );
-        const start = new Date(`${data.week.start}T12:00:00-05:00`);
-        const end = new Date(`${data.week.end}T12:00:00-05:00`);
-        setText(
-            "[data-weekly-date-range]",
-            `${formatDate(start)} – ${formatDate(end, { day: "numeric", month: "short", year: "numeric" })}`,
+        let dateRangeLabel;
+        if (mode === "day") {
+            dateRangeLabel = getDateLabel(dateValue);
+        } else if (mode === "month") {
+            dateRangeLabel = getMonthTitle(dateValue);
+        } else {
+            const start = new Date(`${data.week.start}T12:00:00-05:00`);
+            const end = new Date(`${data.week.end}T12:00:00-05:00`);
+            dateRangeLabel = `${formatDate(start)} – ${formatDate(end, { day: "numeric", month: "short", year: "numeric" })}`;
+        }
+        setText("[data-weekly-date-range]", dateRangeLabel);
+        page.querySelector("[data-weekly-grid]").innerHTML =
+            mode === "month"
+                ? renderMonthlyGrid(monthData, dateValue)
+                : renderWeeklyGrid(data, visibleDays);
+        const selectedWeekday = new Date(`${dateValue}T00:00:00Z`).getUTCDay() || 7;
+        const editableBlocks =
+            mode === "day"
+                ? (data.availabilityBlocks || []).filter(
+                      (block) => block.dayOfWeek === selectedWeekday,
+                  )
+                : data.availabilityBlocks || [];
+        renderEditableScheduleBlocks(editableBlocks);
+        const hasVisibleEvents =
+            mode === "month"
+                ? monthData.some((week) =>
+                      week.days.some(
+                          (day) =>
+                              day.date.startsWith(dateValue.slice(0, 7)) && day.events.length > 0,
+                      ),
+                  )
+                : visibleDays.some((day) => day.events.length > 0);
+        const emptyMessage = page.querySelector("[data-weekly-empty]");
+        emptyMessage.hidden = hasVisibleEvents;
+        emptyMessage.textContent =
+            mode === "day"
+                ? "Este médico no tiene horarios ni actividad registrada para este día."
+                : mode === "month"
+                  ? "Este médico no tiene horarios ni actividad registrada para este mes."
+                  : "Este médico no tiene horario configurado para la semana seleccionada.";
+        page.querySelector(".weekly-view-layout")?.classList.toggle(
+            "is-month-view",
+            mode === "month",
         );
-        page.querySelector("[data-weekly-grid]").innerHTML = renderWeeklyGrid(data);
-        renderEditableScheduleBlocks(data.availabilityBlocks || []);
-        page.querySelector("[data-weekly-empty]").hidden =
-            data.workingDays.length > 0 || data.days.some((day) => day.events.length > 0);
+        const calendarCard = page.querySelector(".weekly-calendar-card");
+        if (calendarCard) {
+            calendarCard.setAttribute(
+                "aria-label",
+                mode === "day"
+                    ? "Agenda del día del médico"
+                    : mode === "month"
+                      ? "Calendario mensual del médico"
+                      : "Agenda semanal del médico",
+            );
+        }
+    }
+
+    async function fetchWeeklySchedule(doctorId, weekStart) {
+        const params = new URLSearchParams({ weekStart });
+        const response = await fetch(`${page.dataset.weeklyEndpoint}/${doctorId}/week?${params}`, {
+            headers: { Accept: "application/json" },
+        });
+        const data = await response.json();
+        if (!response.ok)
+            throw new Error(data.message || "No pudimos cargar el horario del médico.");
+        return data;
     }
 
     async function loadWeeklySchedule(doctorId) {
@@ -697,31 +894,39 @@
         page.querySelector("[data-weekly-empty]").hidden = true;
         weeklyError.hidden = true;
         weeklyFeedback.hidden = false;
-        weeklyFeedback.textContent = "Cargando disponibilidad de la semana…";
+        weeklyFeedback.textContent =
+            periodMode === "month"
+                ? "Cargando el calendario del mes…"
+                : periodMode === "day"
+                  ? "Cargando disponibilidad del día…"
+                  : "Cargando disponibilidad de la semana…";
         try {
-            const params = new URLSearchParams({ weekStart: weekInput.value });
-            const response = await fetch(
-                `${page.dataset.weeklyEndpoint}/${doctorId}/week?${params}`,
-                {
-                    headers: { Accept: "application/json" },
-                },
+            const weekStarts =
+                periodMode === "month"
+                    ? getCalendarWeekStartsForMonth(weekInput.value)
+                    : [getSelectedWeekStart()];
+            const weekData = await Promise.all(
+                weekStarts.map((weekStart) => fetchWeeklySchedule(doctorId, weekStart)),
             );
-            const data = await response.json();
             if (requestId !== weeklyRequestId) return;
-            if (!response.ok)
-                throw new Error(data.message || "No pudimos cargar la semana del médico.");
-            renderWorkingInformation(data);
+            const selectedWeekStart = getSelectedWeekStart();
+            const data =
+                weekData.find((week) => week.week.start === selectedWeekStart) || weekData[0];
+            renderWorkingInformation(data, {
+                mode: periodMode,
+                dateValue: weekInput.value,
+                monthData: weekData,
+            });
             weeklyContent.hidden = false;
             weeklyFeedback.hidden = true;
         } catch (error) {
             if (requestId !== weeklyRequestId) return;
             weeklyFeedback.hidden = true;
             weeklyError.textContent =
-                error.message || "Ocurrió un error al cargar la semana del médico.";
+                error.message || "Ocurrió un error al cargar el horario del médico.";
             weeklyError.hidden = false;
         }
     }
-
     function renderException(exception) {
         const isUnavailable = exception.type === "Unavailable";
         const typeLabel = isUnavailable ? "No disponible" : "Disponibilidad adicional";
@@ -1007,11 +1212,28 @@
     }
 
     function renderWeekLabel(week) {
-        const start = new Date(`${week.start}T12:00:00-05:00`);
-        const end = new Date(`${week.end}T12:00:00-05:00`);
-        const label = `${formatDate(start, { day: "numeric", month: "short" })} – ${formatDate(end, { day: "numeric", month: "short", year: "numeric" })}`;
-        page.querySelector("[data-schedule-week-label]").textContent = label;
-        weekInput.value = week.start;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(weekInput.value || "")) weekInput.value = week.start;
+        const selectedDate = weekInput.value;
+        const title =
+            periodMode === "day"
+                ? "Horario del día"
+                : periodMode === "month"
+                  ? "Horario mensual"
+                  : "Horario semanal";
+        setText("[data-schedule-view-title]", title);
+        const periodLabel =
+            periodMode === "day"
+                ? getDateLabel(selectedDate)
+                : periodMode === "month"
+                  ? getMonthTitle(selectedDate)
+                  : `${formatDate(new Date(`${week.start}T12:00:00-05:00`))} – ${formatDate(new Date(`${week.end}T12:00:00-05:00`), { day: "numeric", month: "short", year: "numeric" })}`;
+        setText("[data-schedule-week-label]", periodLabel);
+        periodButtons.forEach((button) => {
+            button.setAttribute(
+                "aria-pressed",
+                String(button.dataset.calendarPeriod === periodMode),
+            );
+        });
     }
 
     async function loadSchedules() {
@@ -1027,20 +1249,17 @@
         setText("[data-stat-active-doctors]", "—");
         setText("[data-stat-configured]", "—");
         setText("[data-stat-exceptions]", "—");
-        if (doctorSelect.value) {
-            weeklyView.hidden = false;
-            weeklyContent.hidden = true;
-            weeklyError.hidden = true;
-            weeklyFeedback.hidden = false;
-            weeklyFeedback.textContent = "Cargando disponibilidad de la semana…";
-        }
+        weeklyView.hidden = true;
+        weeklyContent.hidden = true;
+        weeklyError.hidden = true;
+        weeklyFeedback.hidden = true;
 
         const params = new URLSearchParams({
             search: searchInput.value.trim(),
             doctorId: doctorSelect.value,
             specialtyId: specialtySelect.value,
             status: statusSelect.value,
-            weekStart: weekInput.value,
+            weekStart: getSelectedWeekStart(),
         });
 
         try {
@@ -1063,20 +1282,37 @@
                 (specialty) => specialty.name,
             );
 
+            const visibleDoctorIds = new Set(data.doctors.map((doctor) => String(doctor.id)));
+            if (isDoctorScheduleDismissed) {
+                selectedDoctorId = null;
+            } else if (doctorSelect.value) {
+                selectedDoctorId = visibleDoctorIds.has(doctorSelect.value)
+                    ? doctorSelect.value
+                    : null;
+            } else if (!visibleDoctorIds.has(String(selectedDoctorId))) {
+                selectedDoctorId = null;
+            }
             doctorList.innerHTML = data.doctors.map(renderDoctor).join("");
-            doctorList.hidden = Boolean(doctorSelect.value);
-            weeklyView.hidden = !doctorSelect.value;
+            doctorList.hidden = false;
+            weeklyView.hidden = !selectedDoctorId;
             exceptionsList.innerHTML = data.exceptions.map(renderException).join("");
             exceptionsEmpty.hidden = data.exceptions.length > 0;
             feedback.hidden = true;
-            emptyMessage.hidden = Boolean(doctorSelect.value) || data.doctors.length > 0;
+            emptyMessage.hidden = data.doctors.length > 0;
             doctorList.querySelectorAll("[data-view-week]").forEach((button) => {
                 button.addEventListener("click", () => {
-                    doctorSelect.value = button.dataset.viewWeek;
-                    loadSchedules();
+                    if (selectedDoctorId === button.dataset.viewWeek) {
+                        hideSelectedDoctorSchedule();
+                        return;
+                    }
+                    selectedDoctorId = button.dataset.viewWeek;
+                    isDoctorScheduleDismissed = false;
+                    updateDoctorCardSelection();
+                    loadWeeklySchedule(selectedDoctorId);
                 });
             });
-            if (doctorSelect.value) await loadWeeklySchedule(doctorSelect.value);
+            updateDoctorCardSelection();
+            if (selectedDoctorId) await loadWeeklySchedule(selectedDoctorId);
         } catch (error) {
             if (requestId !== scheduleRequestId) return;
             feedback.hidden = true;
@@ -1084,14 +1320,14 @@
             errorMessage.hidden = false;
             exceptionsList.replaceChildren();
             exceptionsEmpty.hidden = false;
-            if (doctorSelect.value) {
+            weeklyView.hidden = !selectedDoctorId;
+            if (selectedDoctorId) {
                 weeklyFeedback.hidden = true;
-                weeklyError.textContent = "No pudimos actualizar la semana seleccionada.";
+                weeklyError.textContent = "No pudimos actualizar el horario seleccionado.";
                 weeklyError.hidden = false;
             }
         }
     }
-
     function formatAppointmentDate(dateValue) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue || "")) return "Fecha no disponible";
         return new Intl.DateTimeFormat("es-CO", {
@@ -1101,7 +1337,7 @@
     }
 
     function openAppointmentDetails(button) {
-        if (!appointmentDialog?.showModal) return;
+        if (!appointmentDialog?.showModal || appointmentDialog.open) return;
         lastAppointmentTrigger = button;
         const patientName = button.dataset.patientName || "Paciente";
         const startTime = button.dataset.appointmentStart;
@@ -1133,10 +1369,20 @@
         if (event.target === appointmentDialog) appointmentDialog.close();
     });
 
-    page.addEventListener("click", (event) => {
+    weeklyGrid.addEventListener("click", (event) => {
         const appointmentButton = event.target.closest("[data-appointment-open]");
-        if (appointmentButton && page.contains(appointmentButton)) {
+        if (appointmentButton && weeklyGrid.contains(appointmentButton)) {
             openAppointmentDetails(appointmentButton);
+        }
+    });
+
+    page.addEventListener("click", (event) => {
+        const monthDayButton = event.target.closest("[data-month-day]");
+        if (monthDayButton && page.contains(monthDayButton) && !monthDayButton.disabled) {
+            periodMode = "day";
+            weekInput.value = monthDayButton.dataset.monthDay;
+            renderWeekLabel({ start: getSelectedWeekStart(), end: getDateForWeekday(6) });
+            loadSchedules();
             return;
         }
         const button = event.target.closest("[data-edit-schedule]");
@@ -1158,11 +1404,24 @@
         event.target.click();
     });
 
-    function moveWeek(amount) {
+    function moveSelectedPeriod(direction) {
         if (!weekInput.value) return;
         const date = new Date(`${weekInput.value}T00:00:00Z`);
-        date.setUTCDate(date.getUTCDate() + amount * 7);
+        if (periodMode === "month") {
+            date.setUTCDate(1);
+            date.setUTCMonth(date.getUTCMonth() + direction);
+        } else {
+            date.setUTCDate(date.getUTCDate() + direction * (periodMode === "week" ? 7 : 1));
+        }
         weekInput.value = date.toISOString().slice(0, 10);
+        loadSchedules();
+    }
+
+    function selectPeriod(mode) {
+        if (!["day", "week", "month"].includes(mode) || mode === periodMode) return;
+        periodMode = mode;
+        weekInput.value = normalizeDateForPeriod(weekInput.value);
+        renderWeekLabel({ start: getSelectedWeekStart(), end: getDateForWeekday(6) });
         loadSchedules();
     }
 
@@ -1170,19 +1429,29 @@
         event.preventDefault();
         loadSchedules();
     });
-    page.querySelector("[data-week-previous]").addEventListener("click", () => moveWeek(-1));
-    page.querySelector("[data-week-next]").addEventListener("click", () => moveWeek(1));
-    doctorSelect.addEventListener("change", () => loadSchedules());
-    page.querySelector("[data-weekly-clear]").addEventListener("click", () => {
-        doctorSelect.value = "";
+    page.querySelector("[data-week-previous]").addEventListener("click", () =>
+        moveSelectedPeriod(-1),
+    );
+    page.querySelector("[data-week-next]").addEventListener("click", () => moveSelectedPeriod(1));
+    periodButtons.forEach((button) => {
+        button.addEventListener("click", () => selectPeriod(button.dataset.calendarPeriod));
+    });
+    searchInput.addEventListener("input", () => {
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(loadSchedules, 250);
+    });
+    doctorSelect.addEventListener("change", () => {
+        isDoctorScheduleDismissed = false;
         loadSchedules();
+    });
+    specialtySelect.addEventListener("change", () => loadSchedules());
+    statusSelect.addEventListener("change", () => loadSchedules());
+    page.querySelector("[data-weekly-clear]").addEventListener("click", () => {
+        hideSelectedDoctorSchedule();
     });
     weekInput.addEventListener("change", () => {
         if (!weekInput.value) return;
-        const selectedDate = new Date(`${weekInput.value}T00:00:00Z`);
-        const dayOfWeek = selectedDate.getUTCDay() || 7;
-        selectedDate.setUTCDate(selectedDate.getUTCDate() - dayOfWeek + 1);
-        weekInput.value = selectedDate.toISOString().slice(0, 10);
+        weekInput.value = normalizeDateForPeriod(weekInput.value);
         loadSchedules();
     });
     configureOpenButton?.addEventListener("click", () => {
