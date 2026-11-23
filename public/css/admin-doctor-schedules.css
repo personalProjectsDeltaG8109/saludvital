@@ -607,6 +607,38 @@
     color: #0754a6;
     border-color: #9ecaff;
     background: #dceeff;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 3px 5px;
+    font-family: inherit;
+    font-size: 10px;
+    line-height: 1.15;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        transform 140ms ease,
+        box-shadow 140ms ease;
+}
+.weekly-event.is-appointment:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgb(7 84 166 / 18%);
+}
+.weekly-event.is-appointment:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 65%);
+    outline-offset: 1px;
+}
+.weekly-event.is-appointment strong {
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.weekly-event.is-appointment .weekly-event-time {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
 }
 .weekly-event.is-blocked {
     color: #a52732;
@@ -1380,6 +1412,39 @@
         color: #0754a6;
         background: #e8f3ff;
     }
+    .weekly-mobile-event.is-appointment {
+        padding: 0;
+    }
+    .weekly-mobile-appointment {
+        display: grid;
+        width: 100%;
+        min-height: 44px;
+        gap: 3px;
+        padding: 8px 10px;
+        border: 0;
+        color: inherit;
+        background: transparent;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+    .weekly-mobile-appointment:focus-visible {
+        outline: 3px solid rgb(22 141 226 / 65%);
+        outline-offset: 1px;
+    }
+    .weekly-mobile-appointment strong {
+        overflow: hidden;
+        color: #0754a6;
+        font-size: 12px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .weekly-mobile-appointment small {
+        color: #31577f;
+        font-size: 11px;
+        font-weight: 600;
+    }
     .weekly-mobile-event.is-blocked {
         border-color: #f2b7b7;
         color: #a52732;
@@ -1445,6 +1510,144 @@
         flex: 1;
         padding: 0 9px;
         font-size: 11px;
+    }
+}
+
+.schedule-appointment-dialog {
+    width: min(440px, calc(100vw - 24px));
+    max-width: 440px;
+    max-height: 90vh;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid #d7e5f3;
+    border-radius: 16px;
+    color: #123e70;
+    background: #fff;
+    box-shadow: 0 18px 55px rgb(0 28 60 / 30%);
+}
+.schedule-appointment-dialog::backdrop {
+    background: rgb(5 32 61 / 48%);
+    backdrop-filter: blur(2px);
+}
+.schedule-appointment-content {
+    display: grid;
+    gap: 15px;
+    padding: 21px;
+}
+.schedule-appointment-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid #e4edf6;
+}
+.schedule-appointment-heading h2 {
+    margin: 0;
+    color: #0c2d75;
+    font-size: 18px;
+    font-weight: 700;
+}
+.schedule-appointment-heading p:last-child {
+    margin: 4px 0 0;
+    color: #5d7795;
+    font-size: 12px;
+}
+.schedule-appointment-close {
+    display: grid;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 1px solid #d9e6f3;
+    border-radius: 9px;
+    color: #31577f;
+    background: #f4f8fc;
+    font-size: 20px;
+    cursor: pointer;
+}
+.schedule-appointment-close:focus-visible {
+    outline: 3px solid rgb(22 141 226 / 65%);
+    outline-offset: 1px;
+}
+.schedule-appointment-patient {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+.schedule-appointment-avatar {
+    display: grid;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 50%;
+    color: #0878e8;
+    background: #e7f2ff;
+    font-size: 14px;
+    font-weight: 700;
+}
+.schedule-appointment-patient h3 {
+    margin: 0;
+    color: #123e70;
+    font-size: 15px;
+    font-weight: 700;
+}
+.schedule-appointment-patient p {
+    margin: 2px 0 0;
+    color: #647f9d;
+    font-size: 11px;
+}
+.schedule-appointment-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 13px;
+    border-radius: 11px;
+    background: #f5f9fd;
+}
+.schedule-appointment-fields > div {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+.schedule-appointment-fields dt {
+    color: #647f9d;
+    font-size: 10px;
+    font-weight: 500;
+}
+.schedule-appointment-fields dd {
+    margin: 0;
+    color: #123e70;
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+.schedule-appointment-status {
+    display: inline-flex;
+    padding: 4px 8px;
+    border-radius: 20px;
+    color: #087a50;
+    background: #e7f8f0;
+}
+.schedule-appointment-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+@media (max-width: 420px) {
+    .schedule-appointment-content {
+        gap: 12px;
+        padding: 16px;
+    }
+    .schedule-appointment-fields {
+        gap: 10px;
+        padding: 11px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .weekly-event.is-appointment {
+        transition: none;
     }
 }
 

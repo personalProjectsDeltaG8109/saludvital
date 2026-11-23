@@ -163,6 +163,49 @@ html(lang="es")
                         p.schedule-exceptions-empty(data-schedule-exceptions-empty, hidden) No hay excepciones próximas.
                         ul.schedule-exceptions-list(data-schedule-exceptions)
                 p.schedule-footnote Los horarios se muestran según la disponibilidad configurada. Cada cita utiliza la duración establecida por el sistema.
+            dialog.schedule-appointment-dialog(
+                data-appointment-details-dialog,
+                aria-labelledby="appointment-details-title",
+                aria-describedby="appointment-details-description"
+            )
+                section.schedule-appointment-content
+                    header.schedule-appointment-heading
+                        div
+                            p.admin-eyebrow Información de la cita
+                            h2#appointment-details-title Detalle de la cita
+                            p#appointment-details-description Consulta los datos de la atención programada.
+                        button.schedule-appointment-close(
+                            type="button",
+                            data-appointment-close,
+                            aria-label="Cerrar detalle"
+                        ) ×
+                    section.schedule-appointment-patient
+                        span.schedule-appointment-avatar(
+                            data-appointment-initials,
+                            aria-hidden="true"
+                        )
+                        div
+                            h3(data-appointment-patient) Paciente
+                            p Paciente
+                    dl.schedule-appointment-fields
+                        div
+                            dt Fecha
+                            dd(data-appointment-date) —
+                        div
+                            dt Hora
+                            dd(data-appointment-time) —
+                        div
+                            dt Especialidad
+                            dd(data-appointment-specialty) —
+                        div
+                            dt Médico
+                            dd(data-appointment-doctor) —
+                        div
+                            dt Estado
+                            dd
+                                span.schedule-appointment-status(data-appointment-status) —
+                    footer.schedule-appointment-actions
+                        button.schedule-config-submit(type="button", data-appointment-close) Cerrar
             dialog.schedule-config-dialog(
                 data-schedule-config-dialog,
                 aria-labelledby="schedule-config-title"

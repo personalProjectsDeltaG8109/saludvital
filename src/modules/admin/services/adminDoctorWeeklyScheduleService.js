@@ -5,6 +5,7 @@ import {
     Doctor,
     DoctorAvailability,
     DoctorScheduleException,
+    Patient,
     Specialities,
 } from "../../../models/associations.js";
 import { APPOINTMENT_SLOT_MINUTES } from "../../../config/appointmentScheduling.js";
@@ -141,11 +142,22 @@ function formatTimedRecord(record, type, date) {
         const status = record.status?.name;
         const label = APPOINTMENT_STATUS_LABELS[status];
         if (!label) return null;
+        const patientName = [record.patient?.first_name, record.patient?.last_name]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+        const patientFirstName = record.patient?.first_name?.trim().split(/\s+/)[0];
+        const patientLastName = record.patient?.last_name?.trim().split(/\s+/)[0];
+        const patientDisplayName = patientFirstName
+            ? `${patientFirstName}${patientLastName ? ` ${patientLastName.charAt(0)}.` : ""}`
+            : "Paciente";
         return {
             id: record.id,
             type,
             label,
             reference: `Cita #${record.id}`,
+            patientName: patientName || "Paciente",
+            patientDisplayName,
             status,
             statusLabel: label,
             ...interval,
@@ -228,6 +240,12 @@ export async function getAdminDoctorWeeklySchedule(rawDoctorId, rawWeekStart) {
             },
             attributes: ["id", "start_at", "end_at"],
             include: [
+                {
+                    model: Patient,
+                    as: "patient",
+                    attributes: ["first_name", "last_name"],
+                    required: true,
+                },
                 {
                     model: AppointmentStatus,
                     as: "status",
