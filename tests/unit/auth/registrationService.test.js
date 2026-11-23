@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, jest, test } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
 import { Op } from "sequelize";
 
 // Mock password hashing to keep registration tests fast and deterministic.
@@ -94,6 +94,8 @@ describe("Patient registration service", () => {
 
         bcrypt.hash.mockResolvedValue("$2b$12$mocked-password-hash");
     });
+
+    afterEach(() => jest.useRealTimers());
 
     // Reject missing data before opening a database transaction.
     test("rejects missing registration data", async () => {
@@ -309,6 +311,39 @@ describe("Patient registration service", () => {
         },
     );
 
+    test("accepts today's date and rejects tomorrow after 7 p.m. in Colombia", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
+
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2026-11-20" }),
+        ).resolves.toBeDefined();
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2026-11-21" }),
+        ).rejects.toBeInstanceOf(RegistrationError);
+    });
+
+    test("uses the new Colombia date immediately after local midnight", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T05:00:00.000Z"));
+
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2026-11-21" }),
+        ).resolves.toBeDefined();
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2026-11-22" }),
+        ).rejects.toBeInstanceOf(RegistrationError);
+    });
+
+    test("accepts a real leap-day date and rejects an impossible leap day", async () => {
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
+
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2004-02-29" }),
+        ).resolves.toBeDefined();
+        await expect(
+            registerPatient({ ...validData, date_of_birth: "2025-02-29" }),
+        ).rejects.toBeInstanceOf(RegistrationError);
+    });
+
     // Accept address and email values at their documented maximum lengths.
     test.each([
         ["address", { address: "A".repeat(150) }],
@@ -324,22 +359,14 @@ describe("Patient registration service", () => {
         expect(User.create).toHaveBeenCalledTimes(1);
     });
 
-    // Verify the maximum permitted age using UTC calendar dates.
+    // Verify the maximum permitted age using Colombia's calendar date.
     test("rejects a date of birth older than 120 years", async () => {
-        const todayUtc = new Date();
-        const oldestAllowedDate = new Date(
-            Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), todayUtc.getUTCDate()),
-        );
-
-        oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
-        oldestAllowedDate.setUTCDate(oldestAllowedDate.getUTCDate() - 1);
-
-        const dateOfBirth = oldestAllowedDate.toISOString().slice(0, 10);
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
 
         await expect(
             registerPatient({
                 ...validData,
-                date_of_birth: dateOfBirth,
+                date_of_birth: "1906-11-19",
             }),
         ).rejects.toBeInstanceOf(RegistrationError);
 
@@ -348,19 +375,12 @@ describe("Patient registration service", () => {
 
     // Accept a date of birth exactly 120 years before today.
     test("accepts a date of birth at the 120-year limit", async () => {
-        const todayUtc = new Date();
-        const oldestAllowedDate = new Date(
-            Date.UTC(todayUtc.getUTCFullYear(), todayUtc.getUTCMonth(), todayUtc.getUTCDate()),
-        );
-
-        oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
-
-        const dateOfBirth = oldestAllowedDate.toISOString().slice(0, 10);
+        jest.useFakeTimers().setSystemTime(new Date("2026-11-21T01:00:00.000Z"));
 
         await expect(
             registerPatient({
                 ...validData,
-                date_of_birth: dateOfBirth,
+                date_of_birth: "1906-11-20",
             }),
         ).resolves.toBeDefined();
 

@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import database from "../../../../config/database.js";
 import { EmailOutbox, Patient, PatientConsent, Rol, User } from "../../../models/associations.js";
 import { resolveLocation } from "../../../shared/services/colombiaLocationService.js";
+import { getColombiaCalendarDate } from "../../../shared/utils/colombiaCalendarDate.js";
 import { isEmailUnavailable, isEmailUniqueConstraintError } from "./emailChangeService.js";
 import { isValidPassword } from "./passwordPolicy.js";
 import {
@@ -140,13 +141,10 @@ function validateRegistration(data) {
         throw new RegistrationError("Ingresa un número de documento válido.");
     }
 
-    // Validate the date format, reject future dates, and enforce a maximum age of 120.
+    // Use Colombia's calendar day so UTC cannot make tomorrow look valid after 7 p.m. locally.
     const birthDate = new Date(`${data.date_of_birth}T00:00:00.000Z`);
-    const today = new Date();
-    const todayUtc = new Date(
-        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
-    );
-    const oldestAllowedDate = new Date(todayUtc);
+    const todayInColombia = new Date(`${getColombiaCalendarDate()}T00:00:00.000Z`);
+    const oldestAllowedDate = new Date(todayInColombia);
     oldestAllowedDate.setUTCFullYear(oldestAllowedDate.getUTCFullYear() - 120);
 
     const validDateFormat = /^\d{4}-\d{2}-\d{2}$/.test(data.date_of_birth);
@@ -157,7 +155,7 @@ function validateRegistration(data) {
     if (
         !validDateFormat ||
         !validCalendarDate ||
-        birthDate > todayUtc ||
+        birthDate > todayInColombia ||
         birthDate < oldestAllowedDate
     ) {
         throw new RegistrationError(
