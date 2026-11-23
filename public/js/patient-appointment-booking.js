@@ -33,6 +33,8 @@ if (form) {
         '<path d="M8 4v4a4 4 0 0 0 8 0V4M12 12v8m-4 0h8"/><circle cx="12" cy="5" r="2"/>',
         '<path d="M12 3v4m0 0a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0v-2a5 5 0 0 0-5-5Zm-5 8H5a2 2 0 0 0 0 4h2m10-4h2a2 2 0 0 1 0 4h-2"/>',
     ];
+    let doctorsRequestId = 0;
+    let timeSlotsRequestId = 0;
 
     function escapeHtml(value) {
         return String(value ?? "").replace(/[&<>"']/g, (character) => {
@@ -214,9 +216,12 @@ if (form) {
     }
 
     async function loadTimeSlots() {
+        const requestId = ++timeSlotsRequestId;
+        const requestedDoctorId = state.doctor?.id;
+        const requestedDate = state.date;
         state.time = "";
         timeList.replaceChildren();
-        if (!state.doctor || !state.date) {
+        if (!requestedDoctorId || !requestedDate) {
             setMessage("#time-message", "Selecciona un médico y un día para consultar horarios.");
             return;
         }
@@ -228,8 +233,10 @@ if (form) {
 
         try {
             const times = await getJson(
-                `/api/patient/doctors/${encodeURIComponent(state.doctor.id)}/availability?date=${encodeURIComponent(state.date)}`,
+                `/api/patient/doctors/${encodeURIComponent(requestedDoctorId)}/availability?date=${encodeURIComponent(requestedDate)}`,
             );
+            if (!isCurrentTimeSlotsRequest(requestId, requestedDoctorId, requestedDate)) return;
+
             setMessage(
                 "#time-message",
                 times.length
@@ -244,8 +251,17 @@ if (form) {
                 )
                 .join("");
         } catch (error) {
+            if (!isCurrentTimeSlotsRequest(requestId, requestedDoctorId, requestedDate)) return;
             setMessage("#time-message", error.message, true);
         }
+    }
+
+    function isCurrentTimeSlotsRequest(requestId, doctorId, date) {
+        return (
+            requestId === timeSlotsRequestId &&
+            String(state.doctor?.id) === String(doctorId) &&
+            state.date === date
+        );
     }
 
     function renderSummary() {
@@ -292,18 +308,31 @@ if (form) {
     }
 
     async function loadDoctors(specialtyId) {
+        const requestId = ++doctorsRequestId;
+        timeSlotsRequestId += 1;
         state.doctors = [];
         state.doctor = null;
         timeList.replaceChildren();
         setMessage("#doctor-message", "Cargando médicos disponibles...");
+        setMessage("#time-message", "Selecciona un médico y un día para consultar horarios.");
         try {
-            state.doctors = await getJson(
+            const doctors = await getJson(
                 `/api/patient/specialties/${encodeURIComponent(specialtyId)}/doctors`,
             );
+            if (!isCurrentDoctorsRequest(requestId, specialtyId)) return;
+
+            state.doctors = doctors;
             renderDoctors();
         } catch (error) {
+            if (!isCurrentDoctorsRequest(requestId, specialtyId)) return;
             setMessage("#doctor-message", error.message, true);
         }
+    }
+
+    function isCurrentDoctorsRequest(requestId, specialtyId) {
+        return (
+            requestId === doctorsRequestId && String(state.specialty?.id) === String(specialtyId)
+        );
     }
 
     specialtyList.addEventListener("click", async (event) => {
@@ -325,10 +354,13 @@ if (form) {
         if (!card) return;
         state.doctor = state.doctors.find((item) => String(item.id) === card.dataset.doctorId);
         state.time = "";
+        timeSlotsRequestId += 1;
+        timeList.replaceChildren();
         if (!window.matchMedia("(max-width: 760px)").matches) state.step = 3;
         renderDoctors();
         renderCalendar();
         updateStep();
+        if (state.date) loadTimeSlots();
     });
 
     document.querySelector("#specialty-search").addEventListener("input", (event) => {
