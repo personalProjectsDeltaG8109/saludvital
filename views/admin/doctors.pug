@@ -8,6 +8,7 @@ html(lang="es")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-doctors.css")
     body.admin-app
+        include partials/doctor-stat-icon.pug
         include partials/admin-shell.pug
         +adminSidebar("doctors")
         .admin-main-shell
@@ -19,24 +20,34 @@ html(lang="es")
                 data-status-endpoint="/api/admin/doctors"
             )
                 header.doctors-heading
-                    div
-                        p.admin-eyebrow Gestión médica
-                        h1 Médicos
-                        p Administra los profesionales médicos de SaludVital.
+                    .doctors-heading-main
+                        +doctorStatIcon("doctor", "heading")
+                        div
+                            p.admin-eyebrow Gestión médica
+                            h1 Médicos
+                            p Administra los profesionales médicos de SaludVital.
                     a.doctors-primary-button(href="/admin/doctors/new") + Crear médico
                 section.doctors-stats(aria-label="Resumen de médicos")
                     article.doctor-stat
-                        span Total de médicos
-                        strong(data-stat-total) —
-                    article.doctor-stat
-                        span Activos
-                        strong(data-stat-active) —
-                    article.doctor-stat
-                        span Con horario
-                        strong(data-stat-scheduled) —
-                    article.doctor-stat
-                        span Inactivos
-                        strong(data-stat-inactive) —
+                        +doctorStatIcon("total")
+                        .doctor-stat-content
+                            span Total de médicos
+                            strong(data-stat-total) —
+                    article.doctor-stat.is-active
+                        +doctorStatIcon("active")
+                        .doctor-stat-content
+                            span Activos
+                            strong(data-stat-active) —
+                    article.doctor-stat.is-scheduled
+                        +doctorStatIcon("scheduled")
+                        .doctor-stat-content
+                            span Con horario
+                            strong(data-stat-scheduled) —
+                    article.doctor-stat.is-inactive
+                        +doctorStatIcon("inactive")
+                        .doctor-stat-content
+                            span Inactivos
+                            strong(data-stat-inactive) —
                 section.doctors-panel(aria-label="Directorio de médicos")
                     .doctors-filters(role="search", aria-label="Buscar y filtrar médicos")
                         label
