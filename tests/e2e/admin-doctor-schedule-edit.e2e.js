@@ -201,12 +201,7 @@ try {
     await page.addStyleTag({ content: styles });
     await page.addScriptTag({ content: script });
     await page.locator("[data-configure-open]:not([disabled])").waitFor();
-    await page.locator("[data-schedule-doctor-list] [data-edit-schedule]").click();
-    await page.locator("[data-schedule-config-dialog]").waitFor({ state: "visible" });
-    assert.equal(await page.locator("[data-config-title]").textContent(), "Editar horario");
-    await page.locator("[data-config-close]").click();
-
-    await page.locator("[data-schedule-doctor]").selectOption("7");
+    await page.locator('[data-schedule-doctor-list] [data-view-week="7"]').click();
     await page.locator("[data-weekly-grid] [data-edit-schedule]").waitFor();
     await page.locator("[data-weekly-grid] [data-edit-schedule]").click();
     await page.locator("[data-schedule-config-dialog]").waitFor({ state: "visible" });
@@ -217,6 +212,7 @@ try {
     await page.locator("[data-weekly-editable-blocks] button").click();
     await page.locator("[data-schedule-config-dialog]").waitFor({ state: "visible" });
     assert.equal(await page.locator("[data-config-title]").textContent(), "Editar horario");
+    assert.equal(await page.locator("[data-config-doctor]").inputValue(), "7");
     assert.equal(await page.locator("[data-config-valid-from]").inputValue(), "2026-01-01");
     assert.equal(await page.locator("[data-day-enabled]").isChecked(), true);
     assert.equal(await page.locator("[data-interval-start]").inputValue(), "08:00");
