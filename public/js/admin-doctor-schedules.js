@@ -42,6 +42,7 @@
     const configureSubmitButton = document.querySelector("[data-config-submit]");
     const configureDeleteButton = document.querySelector("[data-config-delete]");
     const exceptionDialog = document.querySelector("[data-exception-manager-dialog]");
+    const appointmentDialog = page.querySelector("[data-appointment-details-dialog]");
     const exceptionForm = document.querySelector("[data-exception-form]");
     const exceptionList = document.querySelector("[data-exception-list]");
     const exceptionLoading = document.querySelector("[data-exception-loading]");
@@ -61,6 +62,7 @@
     const exceptionImpactMessage = exceptionImpact?.querySelector("p");
     const exceptionManager = document.querySelector("[data-exception-manager]");
     const exceptionToolbar = document.querySelector(".schedule-exception-toolbar");
+    let lastAppointmentTrigger = null;
     let managedExceptions = [];
     let exceptionDoctors = [];
     let pendingExceptionStatusRequest = null;
@@ -510,38 +512,59 @@
             });
     }
 
-    function renderTimelineEvent(event, rangeStart, pixelsPerMinute) {
+    function getPatientInitials(patientName) {
+        return String(patientName || "Paciente")
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((part) => part.charAt(0))
+            .join("")
+            .toLocaleUpperCase("es-CO");
+    }
+
+    function getAppointmentAttributes(event, date, doctor, timeLabel) {
+        const patientName = event.patientName || "Paciente";
+        return ` type="button" data-appointment-open data-patient-name="${escapeAttribute(patientName)}" data-patient-initials="${escapeAttribute(getPatientInitials(patientName))}" data-appointment-date="${escapeAttribute(date)}" data-appointment-start="${escapeAttribute(event.startTime)}" data-appointment-end="${escapeAttribute(event.endTime)}" data-appointment-specialty="${escapeAttribute(doctor.specialty || "Sin especialidad asignada")}" data-appointment-doctor="${escapeAttribute(doctor.name)}" data-appointment-status="${escapeAttribute(event.statusLabel || "Sin estado")}" aria-label="Ver detalles de la cita de ${escapeAttribute(patientName)}, ${escapeAttribute(timeLabel)}"`;
+    }
+
+    function renderTimelineEvent(event, date, doctor, rangeStart, pixelsPerMinute) {
+        const isAppointment = event.type === "appointment";
         const top = Math.max(0, (minuteOfDay(event.startTime) - rangeStart) * pixelsPerMinute);
         const duration = Math.max(
-            20,
+            isAppointment ? 28 : 20,
             (minuteOfDay(event.endTime) - minuteOfDay(event.startTime)) * pixelsPerMinute,
         );
-        const label =
-            event.type === "appointment"
-                ? `${event.reference} · ${event.statusLabel}`
-                : event.type === "blocked"
-                  ? `${event.label}${event.reason ? ` · ${event.reason}` : ""}`
-                  : event.label;
+        const label = isAppointment
+            ? event.patientName || "Cita agendada"
+            : event.type === "blocked"
+              ? `${event.label}${event.reason ? ` · ${event.reason}` : ""}`
+              : event.label;
         const timeLabel =
             event.startTime === "00:00" && event.endTime === "24:00"
                 ? "Todo el día"
                 : `${formatTime(event.startTime)}–${formatTime(event.endTime)}`;
-        const isAppointment = event.type === "appointment";
         const className = `weekly-event is-${event.type}`;
         const lane = Math.min(event.lane, 2);
-        const isWideEvent = ["available", "additionalAvailability", "blocked"].includes(event.type);
+        const isWideEvent = [
+            "available",
+            "additionalAvailability",
+            "blocked",
+            "appointment",
+        ].includes(event.type);
         const laneStyle = isWideEvent
             ? "left: 3%; width: 94%;"
             : `left: ${3 + lane * 31}%; width: 29%;`;
         const isEditable = event.type === "available" && event.scheduleId;
-        const editAttributes = isEditable
-            ? ` role="button" tabindex="0" data-edit-schedule="${event.scheduleId}" data-doctor-id="${event.doctorId}" data-day-of-week="${event.dayOfWeek}" data-start-time="${escapeAttribute(event.startTime)}" data-end-time="${escapeAttribute(event.endTime)}" data-valid-from="${escapeAttribute(event.validFrom)}" data-valid-until="${escapeAttribute(event.validUntil || "")}" aria-label="Editar horario disponible de ${escapeAttribute(formatTime(event.startTime))} a ${escapeAttribute(formatTime(event.endTime))}" title="Editar horario"`
-            : ` aria-label="${escapeAttribute(label)}, ${formatTime(event.startTime)} a ${formatTime(event.endTime)}"`;
-        return `<div class="${className}${isEditable ? " is-editable" : ""}" style="top:${top}px;height:${duration}px;${laneStyle}"${editAttributes}>
-            <strong>${escapeAttribute(isAppointment ? event.reference : event.label)}</strong>
-            <span>${escapeAttribute(isAppointment ? event.statusLabel : event.reason || `${formatTime(event.startTime)}–${formatTime(event.endTime)}`)}</span>
-            <small class="weekly-event-time">${escapeAttribute(timeLabel)}</small>
-        </div>`;
+        const attributes = isAppointment
+            ? getAppointmentAttributes(event, date, doctor, timeLabel)
+            : isEditable
+              ? ` role="button" tabindex="0" data-edit-schedule="${event.scheduleId}" data-doctor-id="${event.doctorId}" data-day-of-week="${event.dayOfWeek}" data-start-time="${escapeAttribute(event.startTime)}" data-end-time="${escapeAttribute(event.endTime)}" data-valid-from="${escapeAttribute(event.validFrom)}" data-valid-until="${escapeAttribute(event.validUntil || "")}" aria-label="Editar horario disponible de ${escapeAttribute(formatTime(event.startTime))} a ${escapeAttribute(formatTime(event.endTime))}" title="Editar horario"`
+              : ` aria-label="${escapeAttribute(label)}, ${formatTime(event.startTime)} a ${formatTime(event.endTime)}"`;
+        const tagName = isAppointment ? "button" : "div";
+        const contents = isAppointment
+            ? `<strong>${escapeAttribute(event.patientDisplayName || event.patientName || "Paciente")}</strong><small class="weekly-event-time">${escapeAttribute(timeLabel)}</small>`
+            : `<strong>${escapeAttribute(event.label)}</strong><span>${escapeAttribute(event.reason || `${formatTime(event.startTime)}–${formatTime(event.endTime)}`)}</span><small class="weekly-event-time">${escapeAttribute(timeLabel)}</small>`;
+        return `<${tagName} class="${className}${isEditable ? " is-editable" : ""}" style="top:${top}px;height:${duration}px;${laneStyle}"${attributes}>${contents}</${tagName}>`;
     }
 
     function renderWeeklyGrid(data) {
@@ -553,7 +576,7 @@
         );
         const rangeStart = Math.min(420, ...allTimes.map((time) => Math.floor(time / 60) * 60));
         const rangeEnd = Math.max(1140, ...allTimes.map((time) => Math.ceil(time / 60) * 60));
-        const pixelsPerMinute = 0.6;
+        const pixelsPerMinute = 0.9;
         const timelineHeight = (rangeEnd - rangeStart) * pixelsPerMinute;
         const hourLabels = [];
         for (let minute = rangeStart; minute <= rangeEnd; minute += 60) {
@@ -575,10 +598,22 @@
                 );
                 const items = [
                     ...availability.map((event) =>
-                        renderTimelineEvent(event, rangeStart, pixelsPerMinute),
+                        renderTimelineEvent(
+                            event,
+                            day.date,
+                            data.doctor,
+                            rangeStart,
+                            pixelsPerMinute,
+                        ),
                     ),
                     ...timedEvents.map((event) =>
-                        renderTimelineEvent(event, rangeStart, pixelsPerMinute),
+                        renderTimelineEvent(
+                            event,
+                            day.date,
+                            data.doctor,
+                            rangeStart,
+                            pixelsPerMinute,
+                        ),
                     ),
                 ].join("");
                 return `<section class="weekly-day-column"><h5>${day.dayLabel} · ${formatDayDate(day.date)}</h5><div class="weekly-day-timeline" style="height:${timelineHeight}px">${items}</div></section>`;
@@ -589,15 +624,24 @@
             .map((day) => {
                 const events = day.events
                     .map((event) => {
-                        const title = event.type === "appointment" ? event.reference : event.label;
-                        const description =
-                            event.type === "appointment"
-                                ? event.statusLabel
-                                : event.reason || title;
+                        const isAppointment = event.type === "appointment";
+                        const title = isAppointment
+                            ? event.patientDisplayName || event.patientName || "Paciente"
+                            : event.label;
+                        const description = event.reason || title;
                         const timeRange =
                             event.startTime === "00:00" && event.endTime === "24:00"
                                 ? "Todo el día"
                                 : `${formatTime(event.startTime)}–${formatTime(event.endTime)}`;
+                        if (isAppointment) {
+                            const buttonAttributes = getAppointmentAttributes(
+                                event,
+                                day.date,
+                                data.doctor,
+                                timeRange,
+                            );
+                            return `<li class="weekly-mobile-event is-appointment"><button class="weekly-mobile-appointment"${buttonAttributes}><strong>${escapeAttribute(title)}</strong><small>${escapeAttribute(timeRange)}</small></button></li>`;
+                        }
                         return `<li class="weekly-mobile-event is-${escapeAttribute(event.type)}"><strong>${escapeAttribute(title)}</strong><span>${escapeAttribute(description)}</span><small>${escapeAttribute(timeRange)}</small></li>`;
                     })
                     .join("");
@@ -1048,7 +1092,53 @@
         }
     }
 
+    function formatAppointmentDate(dateValue) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue || "")) return "Fecha no disponible";
+        return new Intl.DateTimeFormat("es-CO", {
+            dateStyle: "full",
+            timeZone: "America/Bogota",
+        }).format(new Date(`${dateValue}T12:00:00.000Z`));
+    }
+
+    function openAppointmentDetails(button) {
+        if (!appointmentDialog?.showModal) return;
+        lastAppointmentTrigger = button;
+        const patientName = button.dataset.patientName || "Paciente";
+        const startTime = button.dataset.appointmentStart;
+        const endTime = button.dataset.appointmentEnd;
+        appointmentDialog.querySelector("[data-appointment-patient]").textContent = patientName;
+        appointmentDialog.querySelector("[data-appointment-initials]").textContent =
+            button.dataset.patientInitials || getPatientInitials(patientName);
+        appointmentDialog.querySelector("[data-appointment-date]").textContent =
+            formatAppointmentDate(button.dataset.appointmentDate);
+        appointmentDialog.querySelector("[data-appointment-time]").textContent =
+            `${formatTime(startTime)}–${formatTime(endTime)}`;
+        appointmentDialog.querySelector("[data-appointment-specialty]").textContent =
+            button.dataset.appointmentSpecialty || "Sin especialidad asignada";
+        appointmentDialog.querySelector("[data-appointment-doctor]").textContent =
+            button.dataset.appointmentDoctor || "Médico no disponible";
+        appointmentDialog.querySelector("[data-appointment-status]").textContent =
+            button.dataset.appointmentStatus || "Estado no disponible";
+        appointmentDialog.showModal();
+    }
+
+    appointmentDialog?.querySelectorAll("[data-appointment-close]").forEach((button) => {
+        button.addEventListener("click", () => appointmentDialog.close());
+    });
+    appointmentDialog?.addEventListener("close", () => {
+        lastAppointmentTrigger?.focus();
+        lastAppointmentTrigger = null;
+    });
+    appointmentDialog?.addEventListener("click", (event) => {
+        if (event.target === appointmentDialog) appointmentDialog.close();
+    });
+
     page.addEventListener("click", (event) => {
+        const appointmentButton = event.target.closest("[data-appointment-open]");
+        if (appointmentButton && page.contains(appointmentButton)) {
+            openAppointmentDetails(appointmentButton);
+            return;
+        }
         const button = event.target.closest("[data-edit-schedule]");
         if (!button || !page.contains(button)) return;
         openScheduleEditor({

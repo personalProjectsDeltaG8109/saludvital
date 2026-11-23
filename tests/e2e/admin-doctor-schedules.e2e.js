@@ -3,6 +3,7 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const pageScript = await readFile(path.resolve("public/js/admin-doctor-schedules.js"), "utf8");
+const appStyles = await readFile(path.resolve("public/css/app.css"), "utf8");
 const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.css"), "utf8");
 const pageStyles = await readFile(path.resolve("public/css/admin-doctor-schedules.css"), "utf8");
 
@@ -32,8 +33,50 @@ const markup = `
                 </section>
                 <aside class="schedule-panel"><h2>Próximas excepciones</h2><p data-schedule-exceptions-empty hidden>No hay excepciones próximas.</p><ul data-schedule-exceptions></ul></aside>
             </div>
+            <dialog class="schedule-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-description">
+                <section class="schedule-appointment-content">
+                    <header class="schedule-appointment-heading">
+                        <div>
+                            <p class="admin-eyebrow">Información de la cita</p>
+                            <h2 id="appointment-details-title">Detalle de la cita</h2>
+                            <p id="appointment-details-description">Consulta los datos de la atención programada.</p>
+                        </div>
+                        <button class="schedule-appointment-close" type="button" data-appointment-close aria-label="Cerrar detalle">×</button>
+                    </header>
+                    <section class="schedule-appointment-patient">
+                        <span class="schedule-appointment-avatar" data-appointment-initials aria-hidden="true"></span>
+                        <div><h3 data-appointment-patient>Paciente</h3><p>Paciente</p></div>
+                    </section>
+                    <dl class="schedule-appointment-fields">
+                        <div><dt>Fecha</dt><dd data-appointment-date>—</dd></div>
+                        <div><dt>Hora</dt><dd data-appointment-time>—</dd></div>
+                        <div><dt>Especialidad</dt><dd data-appointment-specialty>—</dd></div>
+                        <div><dt>Médico</dt><dd data-appointment-doctor>—</dd></div>
+                        <div><dt>Estado</dt><dd><span class="schedule-appointment-status" data-appointment-status>—</span></dd></div>
+                    </dl>
+                    <footer class="schedule-appointment-actions"><button class="schedule-config-submit" type="button" data-appointment-close>Cerrar</button></footer>
+                </section>
+            </dialog>
         </main></div>
     </body></html>`;
+
+async function assertDialogCentered(dialog, viewport) {
+    const center = await dialog.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+            x: bounds.left + bounds.width / 2,
+            y: bounds.top + bounds.height / 2,
+        };
+    });
+    if (
+        Math.abs(center.x - viewport.width / 2) > 2 ||
+        Math.abs(center.y - viewport.height / 2) > 2
+    ) {
+        throw new Error(
+            `The appointment details dialog must be centered in the viewport: ${JSON.stringify(center)}.`,
+        );
+    }
+}
 
 const browser = await chromium.launch({ headless: true });
 
@@ -46,6 +89,7 @@ try {
         throw new Error("The administrator header must not render a duplicate global search.");
     if ((await page.locator("[data-schedule-search]").count()) !== 1)
         throw new Error("The schedules page must keep its local search field.");
+    await page.addStyleTag({ content: appStyles });
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: pageStyles });
     await page.evaluate(() => {
@@ -96,6 +140,8 @@ try {
                                         id: 12,
                                         type: "appointment",
                                         reference: "Cita #12",
+                                        patientName: "Ana María Torres",
+                                        patientDisplayName: "Ana T.",
                                         statusLabel: "Confirmada",
                                         startTime: "09:00",
                                         endTime: "09:30",
@@ -241,7 +287,29 @@ try {
     }
     await page.getByRole("button", { name: "Ver horario semanal" }).click();
     await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
-    await page.locator(".weekly-grid-body").getByText("Cita #12").waitFor();
+    await page.locator(".weekly-grid-body").getByText("Ana T.").waitFor();
+    const desktopAppointment = page.locator(".weekly-event.is-appointment").first();
+    await desktopAppointment.scrollIntoViewIfNeeded();
+    const desktopAppointmentText = await desktopAppointment.textContent();
+    if (
+        !desktopAppointmentText.includes("Ana T.") ||
+        desktopAppointmentText.includes("Confirmada")
+    ) {
+        throw new Error(
+            "The weekly appointment block should show only the patient's short name and time.",
+        );
+    }
+    await desktopAppointment.click();
+    const appointmentDialog = page.locator("[data-appointment-details-dialog]");
+    await appointmentDialog.waitFor({ state: "visible" });
+    await assertDialogCentered(appointmentDialog, { width: 1440, height: 900 });
+    if (
+        !(await appointmentDialog.textContent()).includes("Ana María Torres") ||
+        !(await appointmentDialog.textContent()).includes("Confirmada")
+    ) {
+        throw new Error("Selecting an appointment should open its full details and status.");
+    }
+    await appointmentDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
     const blockedPeriod = await page.locator(".weekly-event.is-blocked").textContent();
     if (!blockedPeriod.includes("No disponible") || !blockedPeriod.includes("Permiso")) {
         throw new Error("The weekly view must show unavailable exception reasons.");
@@ -289,6 +357,17 @@ try {
     ) {
         throw new Error("A full-day mobile exception should be labeled as such.");
     }
+    const mobileAppointment = page.locator(".weekly-mobile-event.is-appointment button").first();
+    const mobileAppointmentText = await mobileAppointment.textContent();
+    if (!mobileAppointmentText.includes("Ana T.") || mobileAppointmentText.includes("Confirmada")) {
+        throw new Error(
+            "The mobile appointment card should show only the patient's short name and time.",
+        );
+    }
+    await mobileAppointment.click();
+    await appointmentDialog.waitFor({ state: "visible" });
+    await assertDialogCentered(appointmentDialog, { width: 375, height: 812 });
+    await appointmentDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },

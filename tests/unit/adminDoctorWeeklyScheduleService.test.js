@@ -7,6 +7,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
     Doctor: { findByPk: jest.fn() },
     DoctorAvailability: { findAll: jest.fn() },
     DoctorScheduleException: { findAll: jest.fn() },
+    Patient: {},
     Specialities: {},
 }));
 
@@ -54,6 +55,7 @@ function setDefaults() {
             id: 51,
             start_at: new Date("2026-10-26T14:00:00.000Z"),
             end_at: new Date("2026-10-26T14:30:00.000Z"),
+            patient: { first_name: "Ana María", last_name: "Torres Marín" },
             status: { name: "Confirmed" },
         },
     ]);
@@ -109,6 +111,8 @@ describe("admin weekly doctor schedule service", () => {
                 id: 51,
                 type: "appointment",
                 reference: "Cita #51",
+                patientName: "Ana María Torres Marín",
+                patientDisplayName: "Ana T.",
                 statusLabel: "Confirmada",
                 startTime: "09:00",
                 endTime: "09:30",
@@ -145,6 +149,11 @@ describe("admin weekly doctor schedule service", () => {
             expect.objectContaining({
                 attributes: ["id", "start_at", "end_at"],
                 include: [
+                    expect.objectContaining({
+                        as: "patient",
+                        attributes: ["first_name", "last_name"],
+                        required: true,
+                    }),
                     expect.objectContaining({
                         as: "status",
                         where: {
