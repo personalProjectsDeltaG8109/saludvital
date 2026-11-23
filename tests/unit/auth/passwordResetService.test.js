@@ -53,7 +53,8 @@ describe("Password reset service", () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        endUserSessions.mockClear();
+        endUserSessions.mockReset();
+        endUserSessions.mockResolvedValue(undefined);
         database.transaction.mockImplementation(async (callback) => callback(transaction));
 
         User.findOne.mockResolvedValue(null);
@@ -232,7 +233,7 @@ describe("Password reset service", () => {
             );
         });
 
-        test("revokes the user's active sessions after a successful password reset", async () => {
+        test("revokes the user's active sessions inside the password reset transaction", async () => {
             const resetToken = { user_id: 42 };
             const user = {
                 id: 42,
@@ -251,7 +252,28 @@ describe("Password reset service", () => {
             ).resolves.toEqual({ reset: true });
 
             expect(endUserSessions).toHaveBeenCalledTimes(1);
-            expect(endUserSessions).toHaveBeenCalledWith("42");
+            expect(endUserSessions).toHaveBeenCalledWith("42", transaction);
+        });
+
+        test("does not report success when session revocation fails", async () => {
+            const resetToken = { user_id: 42 };
+            const user = {
+                id: 42,
+                email: "patient@example.com",
+                is_active: true,
+                email_verified_at: new Date(),
+                rol: { name: "Patient" },
+                update: jest.fn().mockResolvedValue(undefined),
+            };
+            PasswordResetToken.findOne.mockResolvedValue(resetToken);
+            User.findByPk.mockResolvedValue(user);
+            endUserSessions.mockRejectedValue(new Error("Session storage unavailable"));
+
+            await expect(
+                resetPassword("a".repeat(64), "SecurePass1!", "SecurePass1!"),
+            ).rejects.toThrow("Session storage unavailable");
+
+            expect(endUserSessions).toHaveBeenCalledWith("42", transaction);
         });
 
         test("does not change audit behavior for non-administrator password resets", async () => {
@@ -272,7 +294,7 @@ describe("Password reset service", () => {
             ).resolves.toEqual({ reset: true });
 
             expect(AuditLog.create).not.toHaveBeenCalled();
-            expect(endUserSessions).toHaveBeenCalledWith("42");
+            expect(endUserSessions).toHaveBeenCalledWith("42", transaction);
         });
 
         test("does not revoke sessions when the reset token is invalid", async () => {

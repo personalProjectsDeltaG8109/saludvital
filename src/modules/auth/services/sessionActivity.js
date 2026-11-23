@@ -98,6 +98,9 @@ export async function endSession(sessionId) {
 }
 
 // Password resets revoke every session belonging to the account.
-export async function endUserSessions(userId) {
-    await AuthSession.destroy({ where: { user_id: userId } });
+export async function endUserSessions(userId, transaction) {
+    await AuthSession.destroy({
+        where: { user_id: userId },
+        ...(transaction ? { transaction } : {}),
+    });
 }
