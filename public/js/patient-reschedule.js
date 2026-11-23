@@ -32,6 +32,7 @@
     let highestStepReached = 1;
     let monthCursor = new Date();
     monthCursor.setDate(1);
+    let timeRequestId = 0;
 
     const pad = (value) => String(value).padStart(2, "0");
     const dateKey = (date) =>
@@ -121,6 +122,7 @@
     }
 
     async function loadTimes(date) {
+        const requestId = ++timeRequestId;
         if (!selectedRow) {
             selectedDate = "";
             selectedTime = "";
@@ -132,6 +134,8 @@
 
         selectedDate = date;
         selectedTime = "";
+        const requestedAppointmentId = selectedRow.dataset.id;
+        const requestedDoctorId = selectedRow.dataset.doctorId;
         dateLabel.textContent = formatDate(date);
         timeList.replaceChildren();
         updateSummary();
@@ -139,10 +143,13 @@
 
         try {
             const response = await fetch(
-                `/api/patient/doctors/${selectedRow.dataset.doctorId}/availability?date=${encodeURIComponent(date)}&purpose=reschedule`,
+                `/api/patient/doctors/${encodeURIComponent(requestedDoctorId)}/availability?date=${encodeURIComponent(date)}&purpose=reschedule`,
                 { headers: { Accept: "application/json" }, credentials: "same-origin" },
             );
             const payload = await response.json();
+            if (!isCurrentTimeRequest(requestId, requestedAppointmentId, requestedDoctorId, date)) {
+                return;
+            }
             if (!response.ok || !payload.success)
                 throw new Error(payload.message || "No se pudieron consultar los horarios.");
 
@@ -173,8 +180,20 @@
                 timeList.append(button);
             });
         } catch (error) {
+            if (!isCurrentTimeRequest(requestId, requestedAppointmentId, requestedDoctorId, date)) {
+                return;
+            }
             setMessage(error.message || "Ocurrió un error al consultar los horarios.", true);
         }
+    }
+
+    function isCurrentTimeRequest(requestId, appointmentId, doctorId, date) {
+        return (
+            requestId === timeRequestId &&
+            selectedRow?.dataset.id === appointmentId &&
+            selectedRow?.dataset.doctorId === doctorId &&
+            selectedDate === date
+        );
     }
 
     function renderCalendar() {
@@ -215,6 +234,7 @@
 
     rows.forEach((row) =>
         row.querySelector("input").addEventListener("change", () => {
+            timeRequestId += 1;
             selectedRow = row;
             rows.forEach((item) => item.classList.toggle("is-selected", item === row));
             selectedDate = "";
