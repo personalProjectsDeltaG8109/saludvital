@@ -12,6 +12,48 @@
     gap: 20px;
     margin-bottom: 24px;
 }
+.doctors-heading-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+.doctor-stat-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    place-items: center;
+    border-radius: 14px;
+    color: #0873c9;
+    background: #e5f2ff;
+}
+.doctor-stat-icon svg {
+    width: 25px;
+    height: 25px;
+}
+.doctor-stat-icon.is-heading {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
+    border-radius: 17px;
+}
+.doctor-stat-icon.is-heading svg {
+    width: 32px;
+    height: 32px;
+}
+.doctor-stat-icon.is-active {
+    color: #00a875;
+    background: #e2f8ef;
+}
+.doctor-stat-icon.is-scheduled {
+    color: #00a7b5;
+    background: #e2f8f8;
+}
+.doctor-stat-icon.is-inactive {
+    color: #e78614;
+    background: #fff2dd;
+}
 .doctors-heading h1 {
     margin: 5px 0;
     font-size: clamp(1.7rem, 3vw, 2.3rem);
@@ -64,15 +106,25 @@
     box-shadow: 0 8px 28px rgb(18 59 115 / 5%);
 }
 .doctor-stat {
-    display: grid;
-    gap: 9px;
-    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+    padding: 18px;
 }
-.doctor-stat span {
+.doctor-stat-content {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+.doctor-stat-content > span {
     color: #647b9d;
+    font-size: 0.9rem;
+    font-weight: 550;
 }
 .doctor-stat strong {
     font-size: 1.8rem;
+    line-height: 1;
     color: #123b73;
 }
 .doctors-panel {
@@ -447,6 +499,7 @@
         gap: 9px;
     }
     .doctor-stat {
+        gap: 11px;
         padding: 14px;
     }
 }
@@ -459,6 +512,20 @@
         align-items: stretch;
         flex-direction: column;
     }
+    .doctors-heading-main {
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .doctor-stat-icon.is-heading {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+        border-radius: 14px;
+    }
+    .doctor-stat-icon.is-heading svg {
+        width: 27px;
+        height: 27px;
+    }
     .doctors-heading > .doctors-primary-button {
         width: 100%;
     }
@@ -466,10 +533,23 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .doctor-stat {
-        padding: 12px 9px;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 10px;
     }
-    .doctor-stat span {
-        font-size: 0.78rem;
+    .doctor-stat-icon {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+        border-radius: 11px;
+    }
+    .doctor-stat-icon svg {
+        width: 21px;
+        height: 21px;
+    }
+    .doctor-stat-content > span {
+        font-size: 0.76rem;
+        line-height: 1.25;
     }
     .doctor-stat strong {
         font-size: 1.35rem;
