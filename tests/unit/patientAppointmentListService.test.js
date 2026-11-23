@@ -89,6 +89,38 @@ describe("patient appointment list service", () => {
         ]);
     });
 
+    test("excludes missed appointments from upcoming results and counts", async () => {
+        const result = await getPatientAppointmentList(
+            9,
+            { filter: "upcoming" },
+            new Date("2026-11-10T15:00:00.000Z"),
+        );
+
+        const expectedStatusFilter = {
+            [Op.and]: [{ name: { [Op.notIn]: ["Cancelled", "Attended", "No Show"] } }],
+        };
+        const countQuery = models.Appointment.count.mock.calls[0][0];
+        const pageQuery = models.Appointment.findAll.mock.calls.at(-1)[0];
+
+        expect(countQuery.include[2].where).toEqual(expectedStatusFilter);
+        expect(pageQuery.include[2].where).toEqual(expectedStatusFilter);
+        expect(countQuery.where[Op.and]).toContainEqual({
+            start_at: { [Op.gte]: new Date("2026-11-10T05:00:00.000Z") },
+        });
+        expect(result.pagination).toMatchObject({ total: 21, totalPages: 3 });
+    });
+
+    test("keeps the dedicated no-show filter limited to missed appointments", async () => {
+        await getPatientAppointmentList(9, { filter: "no-show" });
+
+        const countQuery = models.Appointment.count.mock.calls[0][0];
+        const pageQuery = models.Appointment.findAll.mock.calls.at(-1)[0];
+        const expectedStatusFilter = { [Op.and]: [{ name: "No Show" }] };
+
+        expect(countQuery.include[2].where).toEqual(expectedStatusFilter);
+        expect(pageQuery.include[2].where).toEqual(expectedStatusFilter);
+    });
+
     test("rejects invalid page sizes and unsupported filters before querying appointments", async () => {
         await expect(getPatientAppointmentList(9, { pageSize: "11" })).rejects.toMatchObject({
             statusCode: 400,
