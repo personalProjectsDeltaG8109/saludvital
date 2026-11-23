@@ -128,7 +128,7 @@ function buildAppointmentWhere(patientId, filters, startOfToday) {
 
     if (filters.filter === "upcoming") {
         whereConditions.push({ start_at: { [Op.gte]: startOfToday } });
-        statusConditions.push({ name: { [Op.notIn]: ["Cancelled", "Attended"] } });
+        statusConditions.push({ name: { [Op.notIn]: ["Cancelled", "Attended", "No Show"] } });
     } else if (filters.filter !== "all") {
         const tabStatuses = {
             attended: "Attended",
