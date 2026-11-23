@@ -14,7 +14,7 @@ const markup = `
         <div class="admin-main-shell">
         <header class="admin-topbar"><button class="admin-menu-toggle" type="button" data-admin-open aria-expanded="false" aria-controls="schedule-sidebar"><span></span><span></span><span></span></button><button class="admin-notification-button" type="button" aria-label="Ver notificaciones"></button></header>
         <main class="doctor-schedules-page" data-doctor-schedules data-endpoint="/api/admin/doctor-schedules" data-weekly-endpoint="/api/admin/doctor-schedules">
-            <header class="schedule-heading"><div class="schedule-heading-icon">◷</div><div><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios médicos.</p></div></header>
+            <header class="schedule-heading"><div class="schedule-heading-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M7.5 3.5v3M16.5 3.5v3M3.5 10h17"></path></svg></div><div><p class="admin-eyebrow">Gestión médica</p><h1>Horarios y disponibilidad</h1><p>Gestiona los horarios de atención de los médicos y su disponibilidad.</p></div></header>
             <section class="schedule-stats"><strong data-stat-active-doctors>—</strong><strong data-stat-configured>—</strong><strong data-stat-exceptions>—</strong></section>
             <form class="schedule-filters" data-schedule-filters>
                 <label class="schedule-search">Buscar médico<input type="search" data-schedule-search></label>
@@ -22,10 +22,11 @@ const markup = `
                 <label>Especialidad<select data-schedule-specialty><option value="">Todas</option></select></label>
                 <label>Estado<select data-schedule-status><option value="all">Todos</option><option value="configured">Con horario</option><option value="unconfigured">Sin horario</option></select></label>
                 <label>Semana<div class="schedule-week-control"><button type="button" data-week-previous>‹</button><input type="date" data-schedule-week><button type="button" data-week-next>›</button></div></label>
+                <fieldset class="schedule-period-switch"><legend>Período</legend><div class="schedule-period-options"><button type="button" data-calendar-period="day" aria-pressed="false">Día</button><button type="button" data-calendar-period="week" aria-pressed="true">Semana</button><button type="button" data-calendar-period="month" aria-pressed="false">Mes</button></div></fieldset>
                 <button class="schedule-search-button" type="submit">Buscar</button>
             </form>
             <div class="schedule-content">
-                <section class="schedule-panel"><h2>Horario semanal</h2><p data-schedule-week-label></p><p data-schedule-feedback></p><p data-schedule-error hidden></p>
+                <section class="schedule-panel"><h2 data-schedule-view-title>Horario semanal</h2><p data-schedule-week-label></p><p data-schedule-feedback></p><p data-schedule-error hidden></p>
                     <section class="weekly-selected-view" data-weekly-view hidden><h3 data-weekly-doctor-name></h3><p data-weekly-date-range></p><button type="button" data-weekly-clear>Ver todos los médicos</button><p data-weekly-feedback hidden></p><p data-weekly-error hidden></p>
                         <div class="weekly-view-layout" data-weekly-content hidden><section class="weekly-calendar-card"><div class="weekly-grid" data-weekly-grid></div></section><aside class="weekly-information-panel"><dd data-weekly-specialty></dd><dd data-weekly-duration></dd><dd data-weekly-working-days></dd><dd data-weekly-working-hours></dd></aside></div><p data-weekly-empty hidden></p>
                     </section>
@@ -33,7 +34,8 @@ const markup = `
                 </section>
                 <aside class="schedule-panel"><h2>Próximas excepciones</h2><p data-schedule-exceptions-empty hidden>No hay excepciones próximas.</p><ul data-schedule-exceptions></ul></aside>
             </div>
-            <dialog class="schedule-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-description">
+        </main>
+        <dialog class="schedule-appointment-dialog" data-appointment-details-dialog aria-labelledby="appointment-details-title" aria-describedby="appointment-details-description">
                 <section class="schedule-appointment-content">
                     <header class="schedule-appointment-heading">
                         <div>
@@ -56,8 +58,8 @@ const markup = `
                     </dl>
                     <footer class="schedule-appointment-actions"><button class="schedule-config-submit" type="button" data-appointment-close>Cerrar</button></footer>
                 </section>
-            </dialog>
-        </main></div>
+        </dialog>
+        </div>
     </body></html>`;
 
 async function assertDialogCentered(dialog, viewport) {
@@ -85,6 +87,15 @@ try {
     page.setDefaultTimeout(5000);
     page.on("pageerror", (error) => console.error("BROWSER ERROR:", error.message));
     await page.setContent(markup);
+    if (
+        (await page
+            .locator("[data-doctor-schedules] [data-appointment-details-dialog]")
+            .count()) !== 0
+    ) {
+        throw new Error(
+            "The test fixture must keep the appointment dialog outside the schedules page.",
+        );
+    }
     if ((await page.locator(".admin-global-search").count()) !== 0)
         throw new Error("The administrator header must not render a duplicate global search.");
     if ((await page.locator("[data-schedule-search]").count()) !== 1)
@@ -92,6 +103,13 @@ try {
     await page.addStyleTag({ content: appStyles });
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: pageStyles });
+    const headingIconSize = await page.locator(".schedule-heading-icon svg").evaluate((icon) => {
+        const { width, height } = icon.getBoundingClientRect();
+        return { width, height };
+    });
+    if (headingIconSize.width !== 30 || headingIconSize.height !== 30) {
+        throw new Error("The schedule heading icon must stay compact inside its background.");
+    }
     await page.evaluate(() => {
         window.scheduleRequests = [];
         window.weeklyRequests = [];
@@ -285,7 +303,21 @@ try {
     if ((await page.locator("[data-stat-active-doctors]").textContent()) !== "18") {
         throw new Error("The schedule page must render summary data from the API.");
     }
-    await page.getByRole("button", { name: "Ver horario semanal" }).click();
+    if ((await page.locator(".schedule-doctor-chevron").count()) !== 0) {
+        throw new Error("Doctor cards should not show a boxed expand arrow.");
+    }
+    const doctorScheduleButton = page.locator('[data-view-week="1"]');
+    await doctorScheduleButton.click();
+    await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
+    if ((await doctorScheduleButton.getAttribute("aria-expanded")) !== "true") {
+        throw new Error("Opening a doctor's schedule should expose its expanded state.");
+    }
+    await doctorScheduleButton.click();
+    await page.locator("[data-weekly-view]").waitFor({ state: "hidden" });
+    if ((await doctorScheduleButton.getAttribute("aria-expanded")) !== "false") {
+        throw new Error("Clicking the selected doctor again should close the schedule.");
+    }
+    await doctorScheduleButton.click();
     await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
     await page.locator(".weekly-grid-body").getByText("Ana T.").waitFor();
     const desktopAppointment = page.locator(".weekly-event.is-appointment").first();
@@ -336,6 +368,59 @@ try {
     }
     console.log("PASS: weekly view shows persisted schedule states and doctor information.");
 
+    await page.locator('[data-calendar-period="day"]').click();
+    await page.locator(".weekly-day-column").waitFor();
+    if ((await page.locator(".weekly-day-column").count()) !== 1) {
+        throw new Error("The day view should show only the selected calendar date.");
+    }
+    if ((await page.locator("[data-schedule-view-title]").textContent()) !== "Horario del día") {
+        throw new Error("Selecting day mode should update the schedule heading.");
+    }
+    const dayAppointment = page.locator(".weekly-event.is-appointment").first();
+    await dayAppointment.click();
+    await appointmentDialog.waitFor({ state: "visible" });
+    if (!(await appointmentDialog.textContent()).includes("Ana María Torres")) {
+        throw new Error("Clicking a day appointment should open its details.");
+    }
+    await appointmentDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
+    await page.locator('[data-calendar-period="month"]').click();
+    await page.locator(".schedule-month-calendar").waitFor();
+    if ((await page.locator(".schedule-month-day").count()) < 28) {
+        throw new Error("Month mode should render a complete calendar grid.");
+    }
+    const monthlyRequestCount = await page.evaluate(() => window.weeklyRequests.length);
+    if (monthlyRequestCount < 5) {
+        throw new Error("Month mode should load each real week in the selected month.");
+    }
+    for (const viewport of [
+        { label: "mobile", width: 375, height: 812 },
+        { label: "tablet", width: 768, height: 1024 },
+        { label: "desktop", width: 1440, height: 900 },
+    ]) {
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+        const dimensions = await page.evaluate(() => ({
+            documentWidth: document.documentElement.scrollWidth,
+            viewportWidth: window.innerWidth,
+        }));
+        if (dimensions.documentWidth > dimensions.viewportWidth) {
+            throw new Error(
+                `Month calendar overflows at ${viewport.label}: ${JSON.stringify(dimensions)}.`,
+            );
+        }
+    }
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.locator('[data-month-day="2026-10-26"]').click();
+    if (
+        (await page.locator('[data-calendar-period="day"]').getAttribute("aria-pressed")) !== "true"
+    ) {
+        throw new Error("Selecting a month date should open its daily schedule.");
+    }
+    await page.locator('[data-calendar-period="week"]').click();
+    await page.locator("[data-weekly-content]").waitFor({ state: "visible" });
+    console.log(
+        "PASS: day and month controls load real schedule periods and month dates open the day view.",
+    );
+
     await page.setViewportSize({ width: 375, height: 812 });
     await page.waitForTimeout(200);
     const mobileDayHeights = await page
@@ -383,6 +468,17 @@ try {
             throw new Error(
                 `Schedule page overflows at ${viewport.label}: ${JSON.stringify(dimensions)}`,
             );
+        }
+        if (viewport.label === "mobile") {
+            const mobileIconSize = await page
+                .locator(".schedule-heading-icon svg")
+                .evaluate((icon) => {
+                    const { width, height } = icon.getBoundingClientRect();
+                    return { width, height };
+                });
+            if (mobileIconSize.width !== 24 || mobileIconSize.height !== 24) {
+                throw new Error("The schedule heading icon must scale down on mobile.");
+            }
         }
         console.log(
             `PASS: schedule layout has no horizontal overflow at ${viewport.label} (${viewport.width}x${viewport.height}).`,
