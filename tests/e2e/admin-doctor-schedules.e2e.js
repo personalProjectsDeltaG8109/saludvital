@@ -60,6 +60,24 @@ const markup = `
         </main></div>
     </body></html>`;
 
+async function assertDialogCentered(dialog, viewport) {
+    const center = await dialog.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+            x: bounds.left + bounds.width / 2,
+            y: bounds.top + bounds.height / 2,
+        };
+    });
+    if (
+        Math.abs(center.x - viewport.width / 2) > 2 ||
+        Math.abs(center.y - viewport.height / 2) > 2
+    ) {
+        throw new Error(
+            `The appointment details dialog must be centered in the viewport: ${JSON.stringify(center)}.`,
+        );
+    }
+}
+
 const browser = await chromium.launch({ headless: true });
 
 try {
@@ -284,6 +302,7 @@ try {
     await desktopAppointment.click();
     const appointmentDialog = page.locator("[data-appointment-details-dialog]");
     await appointmentDialog.waitFor({ state: "visible" });
+    await assertDialogCentered(appointmentDialog, { width: 1440, height: 900 });
     if (
         !(await appointmentDialog.textContent()).includes("Ana María Torres") ||
         !(await appointmentDialog.textContent()).includes("Confirmada")
@@ -347,6 +366,7 @@ try {
     }
     await mobileAppointment.click();
     await appointmentDialog.waitFor({ state: "visible" });
+    await assertDialogCentered(appointmentDialog, { width: 375, height: 812 });
     await appointmentDialog.getByRole("button", { name: "Cerrar", exact: true }).click();
 
     for (const viewport of [

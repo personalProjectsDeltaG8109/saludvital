@@ -1517,6 +1517,7 @@
     width: min(440px, calc(100vw - 24px));
     max-width: 440px;
     max-height: 90vh;
+    margin: auto;
     padding: 0;
     overflow: auto;
     border: 1px solid #d7e5f3;
