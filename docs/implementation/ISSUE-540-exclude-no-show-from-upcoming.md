@@ -28,4 +28,4 @@ The patient's “Próximas” filter could include an appointment already marked
 ## Work status
 
 - Branch: `fix/540-patient-upcoming-no-show`, based on the updated `develop`.
-- Pull request: [#541](https://github.com/personalProjectsDeltaG8109/saludvital/pull/541) targets `develop` and is open. GitHub CI run #636 is in progress.
+- Pull request: [#541](https://github.com/personalProjectsDeltaG8109/saludvital/pull/541) targets `develop` and is open. GitHub CI run #637 passed.
