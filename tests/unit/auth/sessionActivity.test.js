@@ -154,6 +154,17 @@ describe("Session activity service", () => {
         expect(destroy).toHaveBeenCalledWith({ where: { user_id: 101 } });
     });
 
+    test("uses the provided transaction when revoking all user sessions", async () => {
+        const transaction = { id: "reset-transaction" };
+
+        await endUserSessions(101, transaction);
+
+        expect(destroy).toHaveBeenCalledWith({
+            where: { user_id: 101 },
+            transaction,
+        });
+    });
+
     test("supports numeric and string user IDs consistently", async () => {
         await endUserSessions("101");
         expect(destroy).toHaveBeenCalledWith({ where: { user_id: "101" } });

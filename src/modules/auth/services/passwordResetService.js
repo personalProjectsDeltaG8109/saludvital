@@ -80,8 +80,7 @@ export async function resetPassword(token, password, confirmation) {
     const tokenHash = hashToken(token);
     const now = new Date();
 
-    // Commit the password update before revoking active sessions.
-    const result = await database.transaction(async (transaction) => {
+    return database.transaction(async (transaction) => {
         // Lock the token row to prevent concurrent reuse.
         const resetToken = await PasswordResetToken.findOne({
             where: {
@@ -142,14 +141,9 @@ export async function resetPassword(token, password, confirmation) {
             },
         );
 
-        return { reset: true, userId: String(user.id) };
-    });
+        // Keep every credential and session change in the same transaction.
+        await endUserSessions(String(user.id), transaction);
 
-    // Revoke sessions only after the transaction commits successfully.
-    if (result.reset) {
-        await endUserSessions(result.userId);
         return { reset: true };
-    }
-
-    return result;
+    });
 }
