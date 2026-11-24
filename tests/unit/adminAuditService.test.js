@@ -71,6 +71,7 @@ describe("administrator audit log directory", () => {
                     id: 7,
                     actor: "Administrador: private@example.co",
                     module: "Citas médicas",
+                    moduleIcon: "appointment",
                     action: "Cancelación de cita",
                     description:
                         "Se canceló una cita · Cita: Laura Méndez · Carlos Ramírez · Cardiología.",
@@ -221,6 +222,7 @@ describe("administrator audit log directory", () => {
             id: 21,
             actor: "Administrador: admin@example.co",
             module: "Usuarios y roles",
+            moduleIcon: "user",
             action: "Actualización de cuenta",
             targetType: "Usuarios y roles",
             targetId: "456",
