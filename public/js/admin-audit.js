@@ -38,11 +38,16 @@
     const cardList = page.querySelector("[data-audit-card-list]");
     const countLabel = page.querySelector("[data-audit-count]");
     const pagination = page.querySelector("[data-audit-pagination]");
+    const resultsFooter = page.querySelector(".admin-audit-footer");
     const detailDialog = page.querySelector("[data-audit-detail-dialog]");
     const detailClose = page.querySelector("[data-audit-detail-close]");
     const detailLoading = page.querySelector("[data-audit-detail-loading]");
     const detailError = page.querySelector("[data-audit-detail-error]");
     const detailContent = page.querySelector("[data-audit-detail-content]");
+    const detailSummaryIcon = page.querySelector("[data-audit-detail-icon]");
+    const detailSummaryAction = page.querySelector("[data-audit-detail-action]");
+    const detailSummaryModule = page.querySelector("[data-audit-detail-module]");
+    const detailSummaryDescription = page.querySelector("[data-audit-detail-description]");
     const detailFields = page.querySelector("[data-audit-detail-fields]");
     const changeSection = page.querySelector("[data-audit-change-section]");
     const changeGroups = page.querySelector("[data-audit-change-groups]");
@@ -51,14 +56,50 @@
     let filterOptionsLoaded = false;
     let currentPage = 1;
 
-    const moduleIcons = {
-        "Citas médicas": "▣",
-        Médicos: "♙",
-        Horarios: "◷",
-        Especialidades: "▱",
-        "Usuarios y roles": "♧",
-        Otros: "•",
+    const moduleIconNames = {
+        "Citas médicas": "appointment",
+        Médicos: "doctor",
+        Horarios: "schedule",
+        Especialidades: "specialty",
+        "Usuarios y roles": "user",
+        Otros: "system",
     };
+    const availableModuleIcons = new Set([
+        "appointment",
+        "doctor",
+        "schedule",
+        "specialty",
+        "user",
+        "system",
+        "eye",
+        "close",
+    ]);
+
+    function resolveModuleIcon(moduleName, moduleIcon) {
+        if (availableModuleIcons.has(moduleIcon)) return moduleIcon;
+        return moduleIconNames[moduleName] || "system";
+    }
+
+    function createIconUse(iconName) {
+        const safeIconName = availableModuleIcons.has(iconName) ? iconName : "system";
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("focusable", "false");
+        svg.setAttribute("aria-hidden", "true");
+        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", `#admin-module-icon-${safeIconName}`);
+        svg.append(use);
+        return svg;
+    }
+
+    function createModuleIcon(moduleName, moduleIcon) {
+        const iconName = resolveModuleIcon(moduleName, moduleIcon);
+        const icon = document.createElement("span");
+        icon.className = `admin-audit-module-icon is-${iconName}`;
+        icon.setAttribute("aria-hidden", "true");
+        icon.append(createIconUse(iconName));
+        return icon;
+    }
 
     function formatDateTime(value) {
         const date = new Date(value);
@@ -88,18 +129,13 @@
         return badge;
     }
 
-    function createModuleLabel(label) {
+    function createModuleLabel(label, moduleIcon) {
         const container = document.createElement("span");
         container.className = "admin-audit-module";
 
-        const icon = document.createElement("span");
-        icon.className = "admin-audit-module-icon";
-        icon.setAttribute("aria-hidden", "true");
-        icon.textContent = moduleIcons[label] || moduleIcons.Otros;
-
         const text = document.createElement("span");
         text.textContent = label;
-        container.append(icon, text);
+        container.append(createModuleIcon(label, moduleIcon), text);
         return container;
     }
 
@@ -127,7 +163,7 @@
             actorCell.textContent = record.actor;
 
             const moduleCell = document.createElement("td");
-            moduleCell.append(createModuleLabel(record.module));
+            moduleCell.append(createModuleLabel(record.module, record.moduleIcon));
 
             const actionCell = document.createElement("td");
             actionCell.append(createActionBadge(record.action));
@@ -148,11 +184,6 @@
         for (const record of records) {
             const card = document.createElement("li");
             card.className = "admin-audit-card";
-            const icon = document.createElement("span");
-            icon.className = "admin-audit-module-icon";
-            icon.setAttribute("aria-hidden", "true");
-            icon.textContent = moduleIcons[record.module] || moduleIcons.Otros;
-
             const main = document.createElement("div");
             main.className = "admin-audit-card-main";
             main.append(createActionBadge(record.action));
@@ -168,11 +199,23 @@
             const time = document.createElement("time");
             time.className = "admin-audit-card-time";
             time.dateTime = record.occurredAt;
-            time.textContent = formatDateTime(record.occurredAt).timeLabel;
+            const { dateLabel, timeLabel } = formatDateTime(record.occurredAt);
+            const date = document.createElement("span");
+            date.className = "admin-audit-card-date";
+            date.textContent = dateLabel;
+            const timeLabelElement = document.createElement("span");
+            timeLabelElement.className = "admin-audit-card-time-label";
+            timeLabelElement.textContent = timeLabel;
+            time.append(date, timeLabelElement);
 
             const detailButton = createDetailButton(record.id);
             detailButton.classList.add("admin-audit-card-detail");
-            card.append(icon, main, time, detailButton);
+            card.append(
+                createModuleIcon(record.module, record.moduleIcon),
+                main,
+                time,
+                detailButton,
+            );
             cardList.append(card);
         }
     }
@@ -181,7 +224,11 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "admin-audit-detail-button";
-        button.textContent = "Ver detalle";
+        const icon = createIconUse("eye");
+        icon.classList.add("admin-audit-detail-button-icon");
+        const label = document.createElement("span");
+        label.textContent = "Ver detalle";
+        button.append(icon, label);
         button.setAttribute("aria-label", `Ver detalle del evento #${eventId}`);
         button.addEventListener("click", () => openAuditDetail(eventId));
         return button;
@@ -225,16 +272,16 @@
         }
 
         const labels = [
-            ["before", "Antes"],
-            ["after", "Después"],
-            ["recorded", "Otros datos registrados"],
+            ["before", "Antes", "is-before"],
+            ["after", "Después", "is-after"],
+            ["recorded", "Otros datos", "is-recorded"],
         ];
-        for (const [key, label] of labels) {
+        for (const [key, label, className] of labels) {
             const values = changes[key] || [];
             if (!values.length) continue;
 
             const group = document.createElement("div");
-            group.className = "admin-audit-change-group";
+            group.className = `admin-audit-change-group ${className}`;
             const heading = document.createElement("h4");
             heading.textContent = label;
             const list = document.createElement("dl");
@@ -271,13 +318,16 @@
             if (!response.ok) throw new Error(data.message || "No pudimos cargar el evento.");
 
             const { dateLabel, timeLabel } = formatDateTime(data.occurredAt);
+            const detailIconName = resolveModuleIcon(data.module, data.moduleIcon);
+            detailSummaryIcon.className = `admin-audit-module-icon is-${detailIconName}`;
+            detailSummaryIcon.replaceChildren(createIconUse(detailIconName));
+            detailSummaryAction.replaceChildren(createActionBadge(data.action));
+            detailSummaryModule.textContent = data.module;
+            detailSummaryDescription.textContent = data.description;
             appendDefinitionList(detailFields, [
                 ["Fecha y hora", `${dateLabel}, ${timeLabel}`],
                 ["Usuario responsable", data.actor],
-                ["Módulo", data.module],
-                ["Acción", data.action],
-                ["Descripción", data.description],
-                ["Registro asociado", data.targetDescription || data.targetType || null],
+                ["Registro relacionado", data.targetDescription || data.targetType || null],
                 ["Resultado", data.result],
             ]);
             renderChangeGroups(data.changes);
@@ -313,6 +363,7 @@
     function renderPagination(pageInfo) {
         pagination.replaceChildren();
         pagination.hidden = pageInfo.totalPages < 2;
+        resultsFooter.hidden = pagination.hidden;
         if (pagination.hidden) return;
 
         const list = document.createElement("div");
