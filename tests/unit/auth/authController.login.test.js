@@ -37,6 +37,12 @@ jest.unstable_mockModule("../../../src/modules/auth/services/emailVerificationSe
 jest.unstable_mockModule("../../../src/modules/auth/services/registrationService.js", () => ({
     registerPatient: jest.fn(),
     RegistrationError: class RegistrationError extends Error {},
+    validatePatientRegistration: jest.fn(),
+}));
+
+jest.unstable_mockModule("../../../src/modules/auth/services/accountInvitationService.js", () => ({
+    completeAccountInvitation: jest.fn(),
+    getAccountInvitationByToken: jest.fn(),
 }));
 
 jest.unstable_mockModule("../../../src/modules/auth/services/passwordResetService.js", () => ({
