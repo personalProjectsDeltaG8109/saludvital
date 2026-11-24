@@ -20,6 +20,17 @@ const models = await import("../../src/models/associations.js");
 const { getDoctorAppointments } =
     await import("../../src/modules/doctor/services/doctorDashboardService.js");
 
+function createAppointment(id, statusName) {
+    return {
+        id,
+        start_at: new Date("2026-11-24T15:00:00.000Z"),
+        end_at: new Date("2026-11-24T15:30:00.000Z"),
+        patient: { first_name: "Ana", last_name: "Pérez" },
+        status: { name: statusName },
+        specialty: { name: "Medicina General" },
+    };
+}
+
 describe("doctor appointment summary cards", () => {
     const statuses = [
         { id: 1, name: "Confirmed" },
@@ -86,5 +97,46 @@ describe("doctor appointment summary cards", () => {
 
         expect(result.appointmentTotalCount).toBe(0);
         expect(result.appointmentStatuses.map(({ count }) => count)).toEqual([0, 0, 0]);
+    });
+
+    test("returns the consultation link only for its matching in-progress appointment", async () => {
+        models.Appointment.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [createAppointment(44, "In Progress")],
+        });
+        models.Consultation.findOne.mockResolvedValue({ id: 91, appointment_id: 44 });
+
+        const result = await getDoctorAppointments(42);
+
+        expect(models.Consultation.findOne).toHaveBeenCalledWith({
+            where: { doctor_id: 17, status: "InProgress" },
+            attributes: ["id", "appointment_id"],
+            raw: true,
+        });
+        expect(result.appointments[0].consultationId).toBe(91);
+    });
+
+    test("does not link an in-progress appointment to a different consultation", async () => {
+        models.Appointment.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [createAppointment(44, "In Progress")],
+        });
+        models.Consultation.findOne.mockResolvedValue({ id: 91, appointment_id: 45 });
+
+        const result = await getDoctorAppointments(42);
+
+        expect(result.appointments[0].consultationId).toBeNull();
+    });
+
+    test("does not return a consultation link when its identifier is unavailable", async () => {
+        models.Appointment.findAndCountAll.mockResolvedValue({
+            count: 1,
+            rows: [createAppointment(44, "In Progress")],
+        });
+        models.Consultation.findOne.mockResolvedValue({ id: null, appointment_id: 44 });
+
+        const result = await getDoctorAppointments(42);
+
+        expect(result.appointments[0].consultationId).toBeNull();
     });
 });

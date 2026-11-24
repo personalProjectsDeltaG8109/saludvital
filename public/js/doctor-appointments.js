@@ -97,6 +97,17 @@
             );
             startButton.textContent = "Iniciar consulta";
             actionCell.append(startButton);
+        } else if (
+            appointment.status === "In Progress" &&
+            Number.isSafeInteger(Number(appointment.consultationId)) &&
+            Number(appointment.consultationId) > 0
+        ) {
+            const continueLink = document.createElement("a");
+            continueLink.className =
+                "text-xs font-semibold text-teal-700 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary";
+            continueLink.href = `/doctor/consultations/${Number(appointment.consultationId)}`;
+            continueLink.textContent = "Continuar consulta";
+            actionCell.append(continueLink);
         } else if (appointment.status === "In Progress") {
             actionCell.textContent = "Consulta en curso";
             actionCell.classList.add("text-xs", "font-semibold", "text-teal-700");
