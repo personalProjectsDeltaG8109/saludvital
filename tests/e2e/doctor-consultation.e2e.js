@@ -40,6 +40,7 @@ const page = await context.newPage();
 let savedDraft = {};
 let completedPayload = null;
 let delayNextDraftRead = false;
+let releaseDelayedDraftRead;
 let failNextDraftRead = false;
 let draftSaveRequestCount = 0;
 
@@ -56,7 +57,9 @@ await page.route("**/api/doctor/consultations/88**", async (route) => {
         }
         if (delayNextDraftRead) {
             delayNextDraftRead = false;
-            await new Promise((resolve) => setTimeout(resolve, 450));
+            await new Promise((resolve) => {
+                releaseDelayedDraftRead = resolve;
+            });
         }
         return route.fulfill({
             status: 200,
@@ -104,7 +107,7 @@ try {
     delayNextDraftRead = true;
     await loadConsultationPage(false);
     const form = page.locator("[data-consultation-form]");
-    await page.waitForTimeout(50);
+    await page.locator('[data-consultation-form][data-draft-state="loading"]').waitFor();
     assert.equal(await form.getAttribute("data-draft-state"), "loading");
     assert.equal(await form.evaluate((element) => element.inert), true);
     assert.equal(await page.locator('[data-step-indicator="0"]').isDisabled(), true);
@@ -118,6 +121,8 @@ try {
     });
     assert.equal(draftSaveRequestCount, 0);
     assert.equal(completedPayload, null);
+    releaseDelayedDraftRead();
+    releaseDelayedDraftRead = null;
     await page.locator('[data-consultation-form][data-draft-state="ready"]').waitFor();
     assert.equal(await page.locator("#consultation-symptoms").inputValue(), "Texto guardado");
 
