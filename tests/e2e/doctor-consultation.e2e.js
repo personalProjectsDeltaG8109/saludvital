@@ -39,14 +39,30 @@ const context = await browser.newContext({ viewport: { width: 1366, height: 900 
 const page = await context.newPage();
 let savedDraft = {};
 let completedPayload = null;
+let delayNextDraftRead = false;
+let failNextDraftRead = false;
+let draftSaveRequestCount = 0;
 
 await page.route("**/api/doctor/consultations/88**", async (route) => {
     const request = route.request();
     if (request.method() === "GET") {
+        if (failNextDraftRead) {
+            failNextDraftRead = false;
+            return route.fulfill({
+                status: 503,
+                contentType: "application/json",
+                body: JSON.stringify({ message: "No fue posible cargar el borrador." }),
+            });
+        }
+        if (delayNextDraftRead) {
+            delayNextDraftRead = false;
+            await new Promise((resolve) => setTimeout(resolve, 450));
+        }
         return route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
+                id: 88,
                 symptoms: savedDraft.symptoms || "",
                 patient_feeling: savedDraft.patientFeeling || "",
                 clinical_notes: savedDraft.clinicalNotes || "",
@@ -57,6 +73,7 @@ await page.route("**/api/doctor/consultations/88**", async (route) => {
         });
     }
     if (request.url().endsWith("/draft")) {
+        draftSaveRequestCount += 1;
         savedDraft = request.postDataJSON();
         return route.fulfill({
             status: 200,
@@ -71,15 +88,60 @@ await page.route("**/doctor/appointments?status=Attended", (route) =>
     route.fulfill({ status: 200, contentType: "text/html", body: "Consulta finalizada." }),
 );
 
-async function loadConsultationPage() {
+async function loadConsultationPage(waitUntilDraftReady = true) {
     await page.setContent(html, { waitUntil: "domcontentloaded" });
     for (const content of stylesheets) await page.addStyleTag({ content });
     await page.addScriptTag({ content: vitalGuidanceScript });
     await page.addScriptTag({ content: consultationScript });
     await page.locator("[data-consultation-form]").waitFor();
+    if (waitUntilDraftReady) {
+        await page.locator('[data-consultation-form][data-draft-state="ready"]').waitFor();
+    }
 }
 
 try {
+    savedDraft = { symptoms: "Texto guardado" };
+    delayNextDraftRead = true;
+    await loadConsultationPage(false);
+    const form = page.locator("[data-consultation-form]");
+    await page.waitForTimeout(50);
+    assert.equal(await form.getAttribute("data-draft-state"), "loading");
+    assert.equal(await form.evaluate((element) => element.inert), true);
+    assert.equal(await page.locator('[data-step-indicator="0"]').isDisabled(), true);
+    await page.evaluate(() => {
+        document
+            .querySelector("[data-save-draft]")
+            .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        document
+            .querySelector("[data-complete-consultation]")
+            .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    assert.equal(draftSaveRequestCount, 0);
+    assert.equal(completedPayload, null);
+    await page.locator('[data-consultation-form][data-draft-state="ready"]').waitFor();
+    assert.equal(await page.locator("#consultation-symptoms").inputValue(), "Texto guardado");
+
+    savedDraft = {};
+    failNextDraftRead = true;
+    await loadConsultationPage(false);
+    const retryButton = page.locator("[data-retry-consultation]");
+    await retryButton.waitFor({ state: "visible" });
+    assert.equal(await form.getAttribute("data-draft-state"), "error");
+    assert.equal(await form.evaluate((element) => element.inert), true);
+    await page.evaluate(() => {
+        document
+            .querySelector("[data-save-draft]")
+            .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        document
+            .querySelector("[data-complete-consultation]")
+            .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    assert.equal(draftSaveRequestCount, 0);
+    assert.equal(completedPayload, null);
+    await retryButton.click();
+    await page.locator('[data-consultation-form][data-draft-state="ready"]').waitFor();
+    assert.equal(await retryButton.isHidden(), true);
+
     await loadConsultationPage();
     await page.locator("#consultation-symptoms").fill("Dolor de cabeza");
     await page.locator("#consultation-feeling").fill("Estable");

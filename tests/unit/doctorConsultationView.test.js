@@ -26,6 +26,18 @@ function findElementById(html, tagName, id) {
 }
 
 describe("doctor consultation form guidance", () => {
+    test("keeps the consultation form locked until its saved draft is loaded", () => {
+        const html = renderConsultationPage();
+        const form = html.match(/<form\b(?=[^>]*data-consultation-form)[^>]*>/)?.[0] || "";
+
+        expect(form).toContain('data-draft-state="loading"');
+        expect(form).toContain('aria-busy="true"');
+        expect(form).toContain(" inert");
+        expect(html).toMatch(/data-step-indicator="0"[^>]*disabled/);
+        expect(html).toMatch(/data-retry-consultation[^>]*hidden/);
+        expect(html).toContain("Cargando la información guardada de la consulta...");
+    });
+
     test("explains required fields and that drafts can be saved before completion", () => {
         const html = renderConsultationPage();
 
