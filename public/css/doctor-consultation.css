@@ -291,6 +291,19 @@
 .consultation-feedback.is-success {
     color: #087a55;
 }
+.consultation-retry {
+    border: 1px solid #b8d6ff;
+    border-radius: 0.7rem;
+    padding: 0.65rem 1rem;
+    background: #eef6ff;
+    color: #0757bb;
+    font-weight: 700;
+    cursor: pointer;
+}
+.consultation-retry:focus-visible {
+    outline: 3px solid #1682ff55;
+    outline-offset: 2px;
+}
 .consultation-summary {
     display: grid;
     grid-template-columns: minmax(130px, 0.5fr) 2fr;

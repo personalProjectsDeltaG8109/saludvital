@@ -7,9 +7,12 @@
     const steps = [...form.querySelectorAll("[data-consultation-step]")];
     const indicators = [...document.querySelectorAll("[data-step-indicator]")];
     const feedback = document.querySelector("[data-consultation-feedback]");
+    const retryDraftButton = document.querySelector("[data-retry-consultation]");
     const diagnoses = [];
     const medications = [];
     let currentStep = 0;
+    let draftIsReady = false;
+    let draftIsLoading = false;
 
     // Display elapsed time from the consultation's persisted start timestamp.
     const consultationTimer = document.querySelector("[data-consultation-timer]");
@@ -66,6 +69,17 @@
         feedback.classList.toggle("is-error", isError);
         feedback.classList.toggle("is-success", Boolean(message) && !isError);
     }
+
+    function setDraftState(state) {
+        form.dataset.draftState = state;
+        form.setAttribute("aria-busy", String(state === "loading"));
+        form.inert = state !== "ready";
+        indicators.forEach((indicator) => {
+            indicator.disabled = state !== "ready";
+        });
+    }
+
+    setDraftState("loading");
 
     function updateVitalWarnings() {
         const isAdultPatient = page.dataset.adultPatient === "true";
@@ -214,6 +228,7 @@
     }
 
     function showStep(index, focusHeading = true) {
+        if (!draftIsReady) return;
         currentStep = Math.max(0, Math.min(index, steps.length - 1));
         steps.forEach((step, stepIndex) => {
             step.hidden = stepIndex !== currentStep;
@@ -309,8 +324,6 @@
         }),
     );
 
-    showStep(0, false);
-
     document.querySelector("[data-add-diagnosis]").addEventListener("click", () => {
         const diagnosisInput = document.querySelector("[data-diagnosis-input]");
         const notesInput = document.querySelector("[data-diagnosis-notes]");
@@ -351,6 +364,7 @@
 
     document.querySelectorAll("[data-save-draft]").forEach((button) =>
         button.addEventListener("click", async () => {
+            if (!draftIsReady) return;
             if (preventInvalidMedicalOrders()) return;
             button.disabled = true;
             try {
@@ -371,6 +385,7 @@
     document
         .querySelector("[data-complete-consultation]")
         .addEventListener("click", async (event) => {
+            if (!draftIsReady) return;
             const button = event.currentTarget;
             const payload = collectPayload();
             if (preventInvalidMedicalOrders()) return;
@@ -393,14 +408,54 @@
             }
         });
 
-    fetch(`/api/doctor/consultations/${consultationId}`, {
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-    })
-        .then(async (response) => {
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || "No fue posible cargar el borrador.");
+    async function loadDraft() {
+        if (draftIsLoading || draftIsReady) return;
+        draftIsLoading = true;
+        retryDraftButton.hidden = true;
+        retryDraftButton.disabled = true;
+        setDraftState("loading");
+        setFeedback("Cargando la información guardada de la consulta...");
+
+        try {
+            const response = await fetch(`/api/doctor/consultations/${consultationId}`, {
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(data?.message || "No fue posible cargar el borrador.");
+            }
+            if (
+                !data ||
+                typeof data !== "object" ||
+                String(data.id) !== page.dataset.consultationId
+            ) {
+                throw new Error(
+                    "No fue posible confirmar la información guardada. Inténtalo de nuevo.",
+                );
+            }
+
             hydrate(data);
-        })
-        .catch((error) => setFeedback(error.message, true));
+            draftIsReady = true;
+            setDraftState("ready");
+            showStep(0, false);
+            updateVitalWarnings();
+            updateMedicalOrdersWarning();
+            setFeedback("");
+        } catch (error) {
+            setDraftState("error");
+            const message =
+                error instanceof TypeError
+                    ? "No fue posible conectar para cargar la consulta. Inténtalo de nuevo."
+                    : error.message || "No fue posible cargar el borrador. Inténtalo de nuevo.";
+            setFeedback(message, true);
+            retryDraftButton.hidden = false;
+        } finally {
+            draftIsLoading = false;
+            retryDraftButton.disabled = false;
+        }
+    }
+
+    retryDraftButton.addEventListener("click", loadDraft);
+    loadDraft();
 })();
