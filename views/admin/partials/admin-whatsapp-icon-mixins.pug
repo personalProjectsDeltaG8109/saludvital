@@ -1,0 +1,8 @@
+mixin adminWhatsappIcon(name, className)
+    svg(
+        class="admin-whatsapp-icon-svg " + className,
+        viewBox="0 0 24 24",
+        focusable="false",
+        aria-hidden="true"
+    )
+        use(href="#admin-whatsapp-icon-" + name)

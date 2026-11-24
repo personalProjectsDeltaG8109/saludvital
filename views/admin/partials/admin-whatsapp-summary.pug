@@ -1,3 +1,5 @@
+include admin-whatsapp-icon-mixins.pug
+
 .admin-whatsapp-summary
     .admin-whatsapp-count-grid
         article.admin-whatsapp-count-card
@@ -9,21 +11,21 @@
                 small= whatsapp.summary.activeConversations.toLocaleString("es-CO") + " activas en total"
         article.admin-whatsapp-count-card
             .admin-whatsapp-stat-icon.is-blue(aria-hidden="true")
-                span ◷
+                +adminWhatsappIcon("calendar-check", "admin-whatsapp-icon-svg")
             div
                 span Solicitudes de citas hoy
                 strong= whatsapp.summary.requestsToday.toLocaleString("es-CO")
                 small= whatsapp.summary.pendingRequestsToday.toLocaleString("es-CO") + " pendientes hoy"
         article.admin-whatsapp-count-card
             .admin-whatsapp-stat-icon.is-teal(aria-hidden="true")
-                span ▤
+                +adminWhatsappIcon("send", "admin-whatsapp-icon-svg")
             div
                 span Mensajes enviados hoy
                 strong= whatsapp.summary.sentToday.toLocaleString("es-CO")
                 small= whatsapp.summary.failedToday.toLocaleString("es-CO") + " fallidos hoy"
         article.admin-whatsapp-count-card.admin-whatsapp-service-stat
             .admin-whatsapp-stat-icon.is-neutral(aria-hidden="true")
-                span ?
+                +adminWhatsappIcon("activity", "admin-whatsapp-icon-svg")
             div
                 span Estado de conexión
                 strong No verificado
@@ -151,7 +153,17 @@
                                     span.admin-whatsapp-event-icon(
                                         class=event.status === "Failed" ? "is-error" : event.status === "Sent" ? "is-success" : "is-neutral",
                                         aria-hidden="true"
-                                    )= event.status === "Failed" ? "!" : event.status === "Sent" ? "✓" : "i"
+                                    )
+                                        +adminWhatsappIcon(
+                                            event.status === "Failed"
+                                                ? "alert-circle"
+                                                : event.status === "Sent"
+                                                  ? "check-circle"
+                                                  : event.status === "Processing"
+                                                    ? "refresh"
+                                                    : "clock",
+                                            "admin-whatsapp-icon-svg",
+                                        )
                                     span.admin-whatsapp-record-copy
                                         strong= event.event
                                         small= event.statusLabel
@@ -166,7 +178,8 @@
                 div
                     h2#whatsapp-chatbot-status-title Estado del chatbot
             .admin-whatsapp-unknown-state
-                span.admin-whatsapp-chatbot-icon(aria-hidden="true") ◉
+                span.admin-whatsapp-chatbot-icon(aria-hidden="true")
+                    +adminWhatsappIcon("bot", "admin-whatsapp-icon-svg")
                 div
                     strong Estado no disponible
                     p No existe una verificación operativa del chatbot en el sistema.

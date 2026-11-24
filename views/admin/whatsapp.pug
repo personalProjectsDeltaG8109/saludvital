@@ -1,3 +1,5 @@
+include partials/admin-whatsapp-icon-mixins.pug
+
 doctype html
 html(lang="es")
     head
@@ -27,6 +29,7 @@ html(lang="es")
         data-delivery-date-from=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateFrom,
         data-delivery-date-to=whatsapp.deliveryFilters && whatsapp.deliveryFilters.dateTo
     )
+        include partials/admin-whatsapp-icon-sprite.pug
         include partials/admin-shell.pug
         +adminSidebar("whatsapp")
         .admin-main-shell
@@ -47,7 +50,7 @@ html(lang="es")
                         type="button",
                         data-whatsapp-tab-link="settings"
                     )
-                        span(aria-hidden="true") ⚙
+                        +adminWhatsappIcon("settings", "admin-whatsapp-shortcut-icon")
                         span Configuración e integración
                 nav.admin-whatsapp-tabs(role="tablist", aria-label="Secciones de WhatsApp")
                     button#admin-whatsapp-tab-summary.admin-whatsapp-tab(
@@ -56,42 +59,54 @@ html(lang="es")
                         aria-selected=whatsapp.selectedTab === "summary" || whatsapp.selectedTab === "deliveries" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="summary"
-                    ) Resumen
+                    )
+                        +adminWhatsappIcon("chart", "admin-whatsapp-tab-icon")
+                        | Resumen
                     button#admin-whatsapp-tab-conversations.admin-whatsapp-tab(
                         type="button",
                         role="tab",
                         aria-selected=whatsapp.selectedTab === "conversations" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="conversations"
-                    ) Conversaciones
+                    )
+                        +adminWhatsappIcon("conversation", "admin-whatsapp-tab-icon")
+                        | Conversaciones
                     button#admin-whatsapp-tab-requests.admin-whatsapp-tab(
                         type="button",
                         role="tab",
                         aria-selected=whatsapp.selectedTab === "requests" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="requests"
-                    ) Solicitudes de citas
+                    )
+                        +adminWhatsappIcon("calendar-check", "admin-whatsapp-tab-icon")
+                        | Solicitudes de citas
                     button#admin-whatsapp-tab-flows.admin-whatsapp-tab(
                         type="button",
                         role="tab",
                         aria-selected=whatsapp.selectedTab === "flows" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="flows"
-                    ) Flujos del chatbot
+                    )
+                        +adminWhatsappIcon("branch", "admin-whatsapp-tab-icon")
+                        | Flujos del chatbot
                     button#admin-whatsapp-tab-templates.admin-whatsapp-tab(
                         type="button",
                         role="tab",
                         aria-selected=whatsapp.selectedTab === "templates" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="templates"
-                    ) Plantillas de mensajes
+                    )
+                        +adminWhatsappIcon("file-text", "admin-whatsapp-tab-icon")
+                        | Plantillas de mensajes
                     button#admin-whatsapp-tab-settings.admin-whatsapp-tab(
                         type="button",
                         role="tab",
                         aria-selected=whatsapp.selectedTab === "settings" ? "true" : "false",
                         aria-controls="admin-whatsapp-panel",
                         data-whatsapp-tab="settings"
-                    ) Configuración
+                    )
+                        +adminWhatsappIcon("settings", "admin-whatsapp-tab-icon")
+                        | Configuración
                 section#admin-whatsapp-panel.admin-whatsapp-panel(
                     class=whatsapp.selectedTab === "summary" ? "is-summary-panel" : "",
                     role="tabpanel",
@@ -223,20 +238,46 @@ html(lang="es")
                             .admin-whatsapp-count-grid(
                                 aria-label="Resumen de estados de mensajes WhatsApp"
                             )
+                                - const deliveryStatusIcons = { Pending: "clock", Processing: "refresh", Sent: "check-circle", Failed: "alert-circle", Cancelled: "ban", OutcomeUnknown: "help-circle", sent: "send", delivered: "check-circle", read: "eye", failed: "alert-circle" };
+                                - const deliveryStatusColors = { Pending: "is-amber", Processing: "is-blue", Sent: "is-green", Failed: "is-red", Cancelled: "is-neutral", OutcomeUnknown: "is-purple", sent: "is-blue", delivered: "is-green", read: "is-teal", failed: "is-red" };
                                 article.admin-whatsapp-count-card
-                                    span Total de mensajes
-                                    strong= whatsapp.deliveryTotal.toLocaleString("es-CO")
-                                    small Histórico de WhatsApp
+                                    span.admin-whatsapp-stat-icon.is-blue(aria-hidden="true")
+                                        +adminWhatsappIcon("message", "admin-whatsapp-icon-svg")
+                                    div
+                                        span Total de mensajes
+                                        strong= whatsapp.deliveryTotal.toLocaleString("es-CO")
+                                        small Histórico de WhatsApp
                                 each item in whatsapp.deliveryStatuses
                                     article.admin-whatsapp-count-card
-                                        span= item.label
-                                        strong= item.count.toLocaleString("es-CO")
+                                        span(
+                                            class="admin-whatsapp-stat-icon " + (deliveryStatusColors[item.status] || "is-blue"),
+                                            aria-hidden="true"
+                                        )
+                                            +adminWhatsappIcon(
+                                                deliveryStatusIcons[item.status] ||
+                                                    "message",
+                                                "admin-whatsapp-icon-svg",
+                                            )
+                                        div
+                                            span= item.label
+                                            strong= item.count.toLocaleString("es-CO")
                                 if whatsapp.providerDeliveryStatuses && whatsapp.providerDeliveryStatuses.some((item) => item.count > 0)
                                     each item in whatsapp.providerDeliveryStatuses
                                         if item.count > 0
                                             article.admin-whatsapp-count-card
-                                                span= item.label
-                                                strong= item.count.toLocaleString("es-CO")
+                                                span(
+                                                    class="admin-whatsapp-stat-icon " + (deliveryStatusColors[item.status] || "is-blue"),
+                                                    aria-hidden="true"
+                                                )
+                                                    +adminWhatsappIcon(
+                                                        deliveryStatusIcons[
+                                                            item.status
+                                                        ] || "message",
+                                                        "admin-whatsapp-icon-svg",
+                                                    )
+                                                div
+                                                    span= item.label
+                                                    strong= item.count.toLocaleString("es-CO")
                                 else
                                     p.admin-whatsapp-empty Meta aún no ha informado estados de entrega.
                             form.admin-whatsapp-request-filters(data-delivery-filters)
