@@ -9,6 +9,8 @@ import {
     showLogin,
     showRegister,
     register,
+    showAccountInvitation,
+    acceptAccountInvitation,
     showForgotPassword,
     forgotPassword,
     showResetPassword,
@@ -53,6 +55,24 @@ const registerLimiter = rateLimit({
             "/register?error=" +
                 encodeURIComponent("Demasiados intentos de registro. Inténtalo más tarde."),
         );
+    },
+});
+
+const accountInvitationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    keyGenerator: getAuthRateLimitKey,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req, res) => {
+        res.set({ "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });
+        return res.status(429).render("auth/accept-invitation", {
+            pageTitle: "Completa tu registro | SaludVital",
+            invitation: null,
+            token: "",
+            formData: {},
+            error: "Se alcanzó el límite de intentos. Pide una nueva invitación al administrador.",
+        });
     },
 });
 
@@ -110,6 +130,8 @@ authRoutes.get("/login", authenticateTokenOptional, redirectAuthenticatedUserFro
 authRoutes.get("/register", showRegister);
 // Process patient registration.
 authRoutes.post("/register", registerLimiter, register);
+authRoutes.get("/accept-invitation", showAccountInvitation);
+authRoutes.post("/accept-invitation", accountInvitationLimiter, acceptAccountInvitation);
 authRoutes.post(
     "/login",
     authenticateTokenOptional,

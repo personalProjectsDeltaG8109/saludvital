@@ -2,7 +2,13 @@ import { createHash, randomBytes } from "node:crypto";
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import environment from "../../../../config/environment.js";
-import { EmailOutbox, PasswordResetToken, User } from "../../../models/associations.js";
+import {
+    AccountInvitation,
+    EmailOutbox,
+    PasswordResetToken,
+    Rol,
+    User,
+} from "../../../models/associations.js";
 import { getSafeErrorDiagnostics } from "../../../shared/services/safeErrorDiagnostics.js";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService.js";
 
@@ -48,6 +54,13 @@ function buildVerificationUrl(token) {
     parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/verify-email`;
     parsedUrl.search = new URLSearchParams({ token }).toString();
 
+    return parsedUrl.toString();
+}
+
+function buildAccountInvitationUrl(token) {
+    const parsedUrl = getValidatedPublicBaseUrl();
+    parsedUrl.pathname = `${parsedUrl.pathname.replace(/\/+$/, "")}/accept-invitation`;
+    parsedUrl.search = new URLSearchParams({ token }).toString();
     return parsedUrl.toString();
 }
 
@@ -176,6 +189,40 @@ async function prepareVerificationToken(userId) {
     });
 }
 
+async function prepareAccountInvitationToken(userId) {
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + VERIFICATION_TOKEN_MINUTES * 60 * 1000);
+
+    return database.transaction(async (transaction) => {
+        const invitation = await AccountInvitation.findOne({
+            where: { user_id: userId, accepted_at: null, cancelled_at: null },
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    include: [{ model: Rol, as: "rol", attributes: ["name"] }],
+                },
+            ],
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        const user = invitation?.user;
+        if (!invitation || !user || user.is_active || user.email_verified_at) {
+            throw new Error("The account invitation is unavailable.");
+        }
+
+        await invitation.update({ token_hash: tokenHash, expires_at: expiresAt }, { transaction });
+
+        return {
+            email: user.email,
+            token,
+            accountType: user.rol?.name === "Administrator" ? "administrator" : "patient",
+        };
+    });
+}
+
 /**
  * Create a password reset token and persist only its SHA-256 hash.
  */
@@ -291,6 +338,13 @@ export async function processNextEmailOutboxJob() {
 
             await sendVerificationEmail(email, verificationUrl, {
                 isEmailChange,
+            });
+        } else if (job.eventType === "account_invitation") {
+            getValidatedPublicBaseUrl();
+            const { email, token, accountType } = await prepareAccountInvitationToken(job.userId);
+            await sendVerificationEmail(email, buildAccountInvitationUrl(token), {
+                isAccountInvitation: true,
+                accountType,
             });
         } else if (job.eventType === "password_reset") {
             // Validate configuration before creating or invalidating reset tokens.

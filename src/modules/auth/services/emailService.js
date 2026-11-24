@@ -34,7 +34,7 @@ async function sendResendEmail({ to, subject, text, html }) {
 export async function sendVerificationEmail(
     email,
     verificationUrl,
-    { isEmailChange = false } = {},
+    { isEmailChange = false, isAccountInvitation = false, accountType = "patient" } = {},
 ) {
     const safeVerificationUrl = verificationUrl
         .replaceAll("&", "&amp;")
@@ -42,35 +42,61 @@ export async function sendVerificationEmail(
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
 
-    const subject = isEmailChange
-        ? "Confirma tu nuevo correo de SaludVital"
-        : "Confirma tu cuenta de SaludVital";
-    const title = isEmailChange ? "Confirma tu nuevo correo" : "¡Confirma tu cuenta!";
-    const description = isEmailChange
-        ? "Recibimos una solicitud para cambiar el correo de tu cuenta. Confirma esta dirección para aplicar el cambio. Tu correo actual seguirá activo hasta entonces."
-        : "Gracias por registrarte en SaludVital. Para activar tu cuenta y comenzar a disfrutar de nuestros servicios, haz clic en el siguiente botón:";
-    const actionLabel = isEmailChange ? "Confirmar nuevo correo" : "Confirmar cuenta";
-    const textContent = isEmailChange
+    const invitationDescription =
+        accountType === "administrator"
+            ? "El equipo de SaludVital te invitó a crear una cuenta de administrador. Abre el enlace para confirmar tu correo y elegir una contraseña."
+            : "El equipo de SaludVital te invitó a crear una cuenta de paciente. Abre el enlace para completar tus datos, aceptar el aviso de privacidad y elegir una contraseña.";
+    const subject = isAccountInvitation
+        ? "Tienes una invitación de SaludVital"
+        : isEmailChange
+          ? "Confirma tu nuevo correo de SaludVital"
+          : "Confirma tu cuenta de SaludVital";
+    const title = isAccountInvitation
+        ? "Activa tu cuenta"
+        : isEmailChange
+          ? "Confirma tu nuevo correo"
+          : "¡Confirma tu cuenta!";
+    const description = isAccountInvitation
+        ? invitationDescription
+        : isEmailChange
+          ? "Recibimos una solicitud para cambiar el correo de tu cuenta. Confirma esta dirección para aplicar el cambio. Tu correo actual seguirá activo hasta entonces."
+          : "Gracias por registrarte en SaludVital. Para activar tu cuenta y comenzar a disfrutar de nuestros servicios, haz clic en el siguiente botón:";
+    const actionLabel = isAccountInvitation
+        ? "Completar registro"
+        : isEmailChange
+          ? "Confirmar nuevo correo"
+          : "Confirmar cuenta";
+    const textContent = isAccountInvitation
         ? [
               "Hola:",
               "",
-              "Recibimos una solicitud para cambiar el correo de tu cuenta de SaludVital.",
-              "Confirma esta dirección para aplicar el cambio. Tu correo actual seguirá activo hasta entonces:",
+              invitationDescription,
+              "Completa el registro desde este enlace:",
               verificationUrl,
               "",
-              "Por seguridad, el enlace tiene una vigencia limitada.",
-              "Si no solicitaste este cambio, puedes ignorar este mensaje.",
+              "El enlace tiene una vigencia limitada. Si no esperabas esta invitación, puedes ignorar este mensaje.",
           ].join("\n")
-        : [
-              "Hola:",
-              "",
-              "Gracias por registrarte en SaludVital.",
-              "Para confirmar tu cuenta y comenzar a usar SaludVital, abre este enlace:",
-              verificationUrl,
-              "",
-              "Por seguridad, el enlace tiene una vigencia limitada.",
-              "Si no creaste esta cuenta, puedes ignorar este mensaje.",
-          ].join("\n");
+        : isEmailChange
+          ? [
+                "Hola:",
+                "",
+                "Recibimos una solicitud para cambiar el correo de tu cuenta de SaludVital.",
+                "Confirma esta dirección para aplicar el cambio. Tu correo actual seguirá activo hasta entonces:",
+                verificationUrl,
+                "",
+                "Por seguridad, el enlace tiene una vigencia limitada.",
+                "Si no solicitaste este cambio, puedes ignorar este mensaje.",
+            ].join("\n")
+          : [
+                "Hola:",
+                "",
+                "Gracias por registrarte en SaludVital.",
+                "Para confirmar tu cuenta y comenzar a usar SaludVital, abre este enlace:",
+                verificationUrl,
+                "",
+                "Por seguridad, el enlace tiene una vigencia limitada.",
+                "Si no creaste esta cuenta, puedes ignorar este mensaje.",
+            ].join("\n");
 
     await sendResendEmail({
         to: email,

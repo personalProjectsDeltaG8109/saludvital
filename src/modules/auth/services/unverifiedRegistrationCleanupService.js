@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import database from "../../../../config/database.js";
 import {
+    AccountInvitation,
     Appointment,
     AppointmentHistory,
     AuditLog,
@@ -91,19 +92,14 @@ async function hasProtectedRecords(userId, patientId, transaction) {
     );
 }
 
-async function deleteExpiredRegistration(userId, expiredBefore) {
+async function deleteExpiredRegistration(userId, expiredBefore, now) {
     return database.transaction(async (transaction) => {
         const user = await User.findByPk(userId, {
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
 
-        if (
-            !user ||
-            user.email_verified_at ||
-            user.pending_email ||
-            new Date(user.created_at) > expiredBefore
-        ) {
+        if (!user || user.email_verified_at || user.pending_email) {
             return false;
         }
 
@@ -111,8 +107,24 @@ async function deleteExpiredRegistration(userId, expiredBefore) {
             attributes: ["name"],
             transaction,
         });
-
-        if (role?.name !== "Patient") return false;
+        const invitation = await AccountInvitation.findOne({
+            where: { user_id: user.id },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        const isUnacceptedInvitation = Boolean(invitation && !invitation.accepted_at);
+        const invitationHasExpired = invitation
+            ? invitation.expires_at
+                ? new Date(invitation.expires_at) <= now
+                : new Date(invitation.updated_at || invitation.created_at) <= expiredBefore
+            : new Date(user.created_at) <= expiredBefore;
+        if (!invitationHasExpired) return false;
+        if (
+            role?.name !== "Patient" &&
+            !(role?.name === "Administrator" && isUnacceptedInvitation)
+        ) {
+            return false;
+        }
 
         const patient = await Patient.findOne({
             where: { user_id: user.id },
@@ -129,9 +141,12 @@ async function deleteExpiredRegistration(userId, expiredBefore) {
             lock: transaction.LOCK.UPDATE,
         });
 
+        const expectedEventType = isUnacceptedInvitation
+            ? "account_invitation"
+            : "email_verification";
         if (
             emailJobs.some(
-                (job) => job.status === "processing" || job.event_type !== "email_verification",
+                (job) => job.status === "processing" || job.event_type !== expectedEventType,
             )
         ) {
             return false;
@@ -141,13 +156,14 @@ async function deleteExpiredRegistration(userId, expiredBefore) {
 
         if (emailJobs.length) {
             await EmailOutbox.destroy({
-                where: { user_id: user.id, event_type: "email_verification" },
+                where: { user_id: user.id, event_type: expectedEventType },
                 transaction,
             });
         }
 
         await PatientConsent.destroy({ where: { user_id: user.id }, transaction });
         if (patient) await patient.destroy({ transaction });
+        if (invitation) await invitation.destroy({ transaction });
         await user.destroy({ transaction });
 
         return true;
@@ -189,7 +205,7 @@ export async function cleanExpiredUnverifiedRegistrations({
 
     let deletedCount = 0;
     for (const candidate of candidates) {
-        if (await deleteExpiredRegistration(candidate.id, expiredBefore)) deletedCount += 1;
+        if (await deleteExpiredRegistration(candidate.id, expiredBefore, now)) deletedCount += 1;
     }
 
     return {

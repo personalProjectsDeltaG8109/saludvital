@@ -46,6 +46,12 @@ import {
     updateAdminUserProfile,
 } from "../services/adminUserManagementService.js";
 import {
+    cancelAdminAccountInvitation,
+    createAdminAccountInvitation,
+    getAdminAccountInvitations,
+    resendAdminAccountInvitation,
+} from "../services/adminAccountInvitationService.js";
+import {
     getAdminWhatsAppConversation,
     getAdminWhatsAppData,
 } from "../services/adminWhatsAppService.js";
@@ -671,6 +677,66 @@ adminRoutes.get("/api/admin/users", ...requireAdministrator, async (req, res, ne
         return next(error);
     }
 });
+
+adminRoutes.get(
+    "/api/admin/account-invitations",
+    ...requireAdministrator,
+    async (_req, res, next) => {
+        try {
+            return res.json(await getAdminAccountInvitations());
+        } catch (error) {
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.post(
+    "/api/admin/account-invitations",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res
+                .status(201)
+                .json(await createAdminAccountInvitation(req.auth.userId, req.body));
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.post(
+    "/api/admin/account-invitations/:invitationId/resend",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await resendAdminAccountInvitation(req.auth.userId, req.params.invitationId),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
+
+adminRoutes.delete(
+    "/api/admin/account-invitations/:invitationId",
+    ...requireAdministrator,
+    async (req, res, next) => {
+        try {
+            return res.json(
+                await cancelAdminAccountInvitation(req.auth.userId, req.params.invitationId),
+            );
+        } catch (error) {
+            if (error.statusCode)
+                return res.status(error.statusCode).json({ message: error.message });
+            return next(error);
+        }
+    },
+);
 
 adminRoutes.patch("/api/admin/users/:userId", ...requireAdministrator, async (req, res, next) => {
     try {

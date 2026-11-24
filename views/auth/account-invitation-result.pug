@@ -1,0 +1,52 @@
+doctype html
+html(lang="es")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        meta(name="theme-color", content="#123B73")
+        title= pageTitle
+        link(rel="icon", type="image/x-icon", href="/brand/logo-symbol.ico")
+        link(rel="stylesheet", href="/css/app.css")
+    body.login-page.registration-page.min-h-screen.text-primary.antialiased
+        main.registration-shell
+            .registration-layout
+                include ./partials/login-desktop
+                section.registration-panel(aria-labelledby="activation-title")
+                    include ./partials/login-mobile
+                    .registration-card.text-center
+                        span.mx-auto.grid.h-16.w-16.place-items-center.rounded-full.bg-emerald-50.text-emerald-600(
+                            aria-hidden="true"
+                        )
+                            svg(
+                                width="34",
+                                height="34",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="m5 12 4 4L19 6")
+                        h1#activation-title.mt-5.text-2xl.font-bold.tracking-tight.text-primary(
+                            class="sm:text-3xl"
+                        ) Cuenta activada correctamente
+                        p.mt-3.text-sm.leading-6.text-slate-600= `${displayName}, tu cuenta de ${roleLabel.toLowerCase()} está lista.`
+                        p.mt-2.break-all.text-sm.font-semibold.text-primary= email
+                        a.mt-6.flex.w-full.items-center.justify-center.gap-2.rounded-full.bg-primary.px-5.py-3.font-semibold.text-white.shadow-md.transition(
+                            href="/login"
+                        )
+                            | Iniciar sesión
+                            svg(
+                                width="18",
+                                height="18",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round",
+                                aria-hidden="true"
+                            )
+                                path(d="M5 12h14")
+                                path(d="m12 5 7 7-7 7")

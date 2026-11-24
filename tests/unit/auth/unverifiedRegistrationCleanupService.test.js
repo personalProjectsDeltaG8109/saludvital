@@ -4,6 +4,7 @@ const transaction = { LOCK: { UPDATE: "UPDATE" } };
 const modelNames = [
     "Appointment",
     "AppointmentHistory",
+    "AccountInvitation",
     "AuditLog",
     "ChatbotFlowVersion",
     "Doctor",
@@ -132,6 +133,48 @@ describe("Unverified registration cleanup service", () => {
         await cleanExpiredUnverifiedRegistrations({ now });
 
         expect(models.Patient.findOne).not.toHaveBeenCalled();
+        expect(user.destroy).not.toHaveBeenCalled();
+    });
+
+    test("removes an expired unaccepted administrator invitation and its account", async () => {
+        const invitation = {
+            expires_at: new Date(now.getTime() - 1000),
+            updated_at: new Date(now.getTime() - 31 * 60 * 1000),
+            accepted_at: null,
+            destroy: jest.fn(),
+        };
+        models.Rol.findByPk.mockResolvedValue({ name: "Administrator" });
+        models.AccountInvitation.findOne.mockResolvedValue(invitation);
+        models.Patient.findOne.mockResolvedValue(null);
+        models.EmailOutbox.findAll.mockResolvedValue([
+            { id: 101, event_type: "account_invitation", status: "sent" },
+        ]);
+
+        await expect(
+            cleanExpiredUnverifiedRegistrations({ now, retentionMinutes: 30 }),
+        ).resolves.toEqual({ deletedCount: 1, examinedCount: 1, nextAfterUserId: 0 });
+
+        expect(invitation.destroy).toHaveBeenCalledWith({ transaction });
+        expect(models.EmailOutbox.destroy).toHaveBeenCalledWith({
+            where: { user_id: user.id, event_type: "account_invitation" },
+            transaction,
+        });
+        expect(user.destroy).toHaveBeenCalledWith({ transaction });
+    });
+
+    test("keeps an invitation until its activation link expires", async () => {
+        const invitation = {
+            expires_at: new Date(now.getTime() + 60 * 1000),
+            updated_at: new Date(now.getTime() - 60 * 60 * 1000),
+            accepted_at: null,
+            destroy: jest.fn(),
+        };
+        models.Rol.findByPk.mockResolvedValue({ name: "Patient" });
+        models.AccountInvitation.findOne.mockResolvedValue(invitation);
+
+        await cleanExpiredUnverifiedRegistrations({ now, retentionMinutes: 30 });
+
+        expect(invitation.destroy).not.toHaveBeenCalled();
         expect(user.destroy).not.toHaveBeenCalled();
     });
 
