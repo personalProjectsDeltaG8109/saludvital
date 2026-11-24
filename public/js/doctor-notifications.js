@@ -19,6 +19,15 @@ function updateNotificationCount(count) {
     bell.setAttribute("aria-label", `Notificaciones, ${count} sin leer`);
 }
 
+function updateUnreadCount(count) {
+    if (!Number.isSafeInteger(count) || count < 0) return;
+
+    updateNotificationCount(count);
+
+    const pageCount = document.querySelector("[data-unread-count]");
+    if (pageCount) pageCount.textContent = `${count} sin leer`;
+}
+
 async function refreshNotificationCount() {
     if (!bell) return;
     try {
@@ -29,7 +38,7 @@ async function refreshNotificationCount() {
         if (!response.ok) return;
         const result = await response.json();
         if (!result.success) return;
-        updateNotificationCount(result.unreadCount);
+        updateUnreadCount(result.unreadCount);
     } catch {
         // Keep the bell usable if the unread count cannot be refreshed.
     }
@@ -93,9 +102,7 @@ async function markAllNotificationsRead(button) {
         const result = await response.json();
         button.remove();
         feedback.textContent = "Todas las notificaciones se marcaron como leídas.";
-        updateNotificationCount(result.unreadCount);
-        document.querySelector("[data-unread-count]").textContent =
-            `${result.unreadCount} sin leer`;
+        updateUnreadCount(result.unreadCount);
     } catch {
         button.disabled = false;
         feedback.textContent = "No pudimos actualizar las notificaciones. Inténtalo de nuevo.";
