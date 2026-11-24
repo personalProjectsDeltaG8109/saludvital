@@ -29,7 +29,7 @@ const html = pug.renderFile(path.resolve("views/doctor/notifications.pug"), {
         pageSize: 20,
         totalItems: 2,
         totalPages: 1,
-        unreadCount: 1,
+        unreadCount: 2,
         items: [
             {
                 id: 1,
@@ -105,16 +105,46 @@ try {
     );
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate((source) => {
-        window.fetch = async () => ({
-            ok: true,
-            json: async () => ({ success: true, unreadCount: 0 }),
-        });
+        window.__unreadCount = 2;
+        window.__failNextRead = false;
+        window.fetch = async (requestUrl) => {
+            if (String(requestUrl).endsWith("/unread-count")) {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        success: true,
+                        unreadCount: window.__unreadCount,
+                    }),
+                };
+            }
+
+            if (String(requestUrl).endsWith("/read-all")) {
+                window.__unreadCount = 0;
+                return { ok: true, json: async () => ({ unreadCount: 0 }) };
+            }
+
+            if (
+                String(requestUrl).includes("/api/doctor/notifications/") &&
+                String(requestUrl).endsWith("/read")
+            ) {
+                if (window.__failNextRead) {
+                    window.__failNextRead = false;
+                    return { ok: false, json: async () => ({}) };
+                }
+
+                window.__unreadCount = Math.max(0, window.__unreadCount - 1);
+                return { ok: true, json: async () => ({ isRead: true }) };
+            }
+
+            return { ok: false, json: async () => ({}) };
+        };
         const script = document.createElement("script");
         script.textContent = source;
         document.body.append(script);
     }, notificationScript);
 
     await page.getByRole("heading", { name: "Notificaciones" }).waitFor();
+    await page.getByText("2 sin leer").waitFor();
     await page.locator("[data-notification-details]").first().click();
     const detailDialog = page.getByRole("dialog", { name: "Detalle de notificación" });
     const detailLabel = detailDialog.locator("[data-detail-label]");
@@ -132,11 +162,22 @@ try {
     assert.ok(Math.abs(desktopDialogBox.y + desktopDialogBox.height / 2 - 450) < 2);
     await page.keyboard.press("Escape");
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.locator("[data-mark-notification-read]").first().click();
+    await page.evaluate(() => {
+        window.__failNextRead = true;
+    });
+    const markReadButton = page.locator("[data-mark-notification-read]").first();
+    await markReadButton.click();
+    await page.getByText("No se pudo actualizar. Reintentar").waitFor();
+    assert.equal(await page.locator(".doctor-notification-item.is-unread").count(), 2);
+    await markReadButton.click();
     await page.locator(".doctor-notification-item.is-read").first().waitFor();
+    await page.getByText("1 sin leer").waitFor();
+    await page.locator(".sv-notification-count").getByText("1").waitFor();
     await page.locator("[data-mark-all-notifications-read]").click();
     await page.getByText("Todas las notificaciones se marcaron como leídas.").waitFor();
     assert.equal(await page.locator(".doctor-notification-item.is-unread").count(), 0);
+    await page.getByText("0 sin leer").waitFor();
+    await page.locator(".sv-notification-count").waitFor({ state: "detached" });
     assert.equal(
         await page.locator("body").evaluate((body) => body.scrollWidth <= innerWidth),
         true,
