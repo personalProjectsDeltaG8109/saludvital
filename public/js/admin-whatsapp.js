@@ -55,6 +55,87 @@ if (whatsappPage) {
         return node;
     }
 
+    const availableIconNames = new Set([
+        "activity",
+        "alert-circle",
+        "ban",
+        "bot",
+        "branch",
+        "calendar-check",
+        "chart",
+        "check-circle",
+        "clock",
+        "conversation",
+        "eye",
+        "file-text",
+        "help-circle",
+        "mail",
+        "message",
+        "phone",
+        "refresh",
+        "send",
+        "settings",
+        "whatsapp",
+    ]);
+
+    function createIconBadge(iconName, className) {
+        const badge = element("span", className);
+        badge.setAttribute("aria-hidden", "true");
+
+        if (iconName === "whatsapp") {
+            const logo = element("img", "admin-whatsapp-brand-icon");
+            logo.src = "/brand/whatsapp-svgrepo-com.svg";
+            logo.alt = "";
+            badge.append(logo);
+            return badge;
+        }
+
+        const safeIconName = availableIconNames.has(iconName) ? iconName : "message";
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "admin-whatsapp-icon-svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("focusable", "false");
+        svg.setAttribute("aria-hidden", "true");
+
+        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", "#admin-whatsapp-icon-" + safeIconName);
+        svg.append(use);
+        badge.append(svg);
+        return badge;
+    }
+
+    function deliveryIconName(status) {
+        const icons = {
+            Pending: "clock",
+            Processing: "refresh",
+            Sent: "check-circle",
+            Failed: "alert-circle",
+            Cancelled: "ban",
+            OutcomeUnknown: "help-circle",
+            sent: "send",
+            delivered: "check-circle",
+            read: "eye",
+            failed: "alert-circle",
+        };
+        return icons[status] || "message";
+    }
+
+    function deliveryColorClass(status) {
+        const colors = {
+            Pending: "is-amber",
+            Processing: "is-blue",
+            Sent: "is-green",
+            Failed: "is-red",
+            Cancelled: "is-neutral",
+            OutcomeUnknown: "is-purple",
+            sent: "is-blue",
+            delivered: "is-green",
+            read: "is-teal",
+            failed: "is-red",
+        };
+        return colors[status] || "is-blue";
+    }
+
     function formatTime(value, includeDate = false) {
         if (!value) return "";
         return new Intl.DateTimeFormat("es-CO", {
@@ -120,10 +201,9 @@ if (whatsappPage) {
         parent.append(element("p", "admin-whatsapp-empty", message));
     }
 
-    function createCard(title, value, note, icon, colorClass) {
+    function createCard(title, value, note, iconName, colorClass) {
         const card = element("article", "admin-whatsapp-count-card");
-        const iconBox = element("span", "admin-whatsapp-stat-icon " + colorClass, icon);
-        iconBox.setAttribute("aria-hidden", "true");
+        const iconBox = createIconBadge(iconName, "admin-whatsapp-stat-icon " + colorClass);
         const copy = element("div");
         copy.append(
             element("span", "", title),
@@ -316,10 +396,9 @@ if (whatsappPage) {
                       ? "is-success"
                       : "is-neutral";
             row.append(
-                element(
-                    "span",
+                createIconBadge(
+                    deliveryIconName(event.status),
                     "admin-whatsapp-event-icon " + iconClass,
-                    event.status === "Failed" ? "!" : event.status === "Sent" ? "✓" : "i",
                 ),
             );
             const copy = element("span", "admin-whatsapp-record-copy");
@@ -339,7 +418,7 @@ if (whatsappPage) {
         card.append(element("h2", "", "Estado del chatbot"));
         const state = element("div", "admin-whatsapp-unknown-state");
         state.append(
-            element("span", "admin-whatsapp-chatbot-icon", "◉"),
+            createIconBadge("bot", "admin-whatsapp-chatbot-icon"),
             element("strong", "", "Estado no disponible"),
             element("p", "", data.chatbotStatusMessage),
         );
@@ -387,21 +466,21 @@ if (whatsappPage) {
                 "Conversaciones hoy",
                 data.summary.conversationsToday,
                 data.summary.activeConversations.toLocaleString("es-CO") + " activas en total",
-                "◉",
+                "conversation",
                 "is-green",
             ),
             createCard(
                 "Solicitudes de citas hoy",
                 data.summary.requestsToday,
                 data.summary.pendingRequestsToday.toLocaleString("es-CO") + " pendientes hoy",
-                "▣",
+                "calendar-check",
                 "is-blue",
             ),
             createCard(
                 "Mensajes enviados hoy",
                 data.summary.sentToday,
                 data.summary.failedToday.toLocaleString("es-CO") + " fallidos hoy",
-                "▤",
+                "send",
                 "is-teal",
             ),
         );
@@ -409,7 +488,7 @@ if (whatsappPage) {
             "article",
             "admin-whatsapp-count-card admin-whatsapp-service-stat",
         );
-        integrationCard.append(element("span", "admin-whatsapp-stat-icon is-neutral", "?"));
+        integrationCard.append(createIconBadge("activity", "admin-whatsapp-stat-icon is-neutral"));
         const integrationCopy = element("div");
         integrationCopy.append(
             element("span", "", "Estado de conexión"),
@@ -541,13 +620,19 @@ if (whatsappPage) {
                     "Total de mensajes",
                     data.deliveryTotal,
                     "Histórico de WhatsApp",
-                    "#",
-                    "",
+                    "message",
+                    "is-blue",
                 ),
             );
             data.deliveryStatuses.forEach((item) => {
                 summary.append(
-                    createCard(item.label, item.count, "Registros almacenados", "•", ""),
+                    createCard(
+                        item.label,
+                        item.count,
+                        "Registros almacenados",
+                        deliveryIconName(item.status),
+                        deliveryColorClass(item.status),
+                    ),
                 );
             });
             const providerStatuses = (data.providerDeliveryStatuses || []).filter(
@@ -556,7 +641,13 @@ if (whatsappPage) {
             if (providerStatuses.length) {
                 providerStatuses.forEach((item) => {
                     summary.append(
-                        createCard(item.label, item.count, "Estado informado por Meta", "•", ""),
+                        createCard(
+                            item.label,
+                            item.count,
+                            "Estado informado por Meta",
+                            deliveryIconName(item.status),
+                            deliveryColorClass(item.status),
+                        ),
                     );
                 });
             } else {
@@ -1004,8 +1095,7 @@ if (whatsappPage) {
 
     function createTemplateStatusCard(title, value, description, colorClass) {
         const card = element("article", "admin-whatsapp-count-card");
-        const icon = element("span", `admin-whatsapp-stat-icon ${colorClass}`, "▤");
-        icon.setAttribute("aria-hidden", "true");
+        const icon = createIconBadge("file-text", `admin-whatsapp-stat-icon ${colorClass}`);
         const details = element("div");
         details.append(element("span", "", title), element("strong", "", value));
         details.append(element("small", "", description));
@@ -1177,7 +1267,10 @@ if (whatsappPage) {
             element("h2", "", "Configuraci\u00f3n e integraci\u00f3n"),
             element("p", "", "Administra los canales que conectan a SaludVital con tus pacientes."),
         );
-        heading.append(element("span", "admin-whatsapp-info-icon is-green", "\u2699"), headingCopy);
+        heading.append(
+            createIconBadge("settings", "admin-whatsapp-info-icon is-green"),
+            headingCopy,
+        );
         const overview = element("section", "admin-whatsapp-channel-overview");
         const overviewHeading = element("header", "admin-whatsapp-channel-section-heading");
         const overviewCopy = element("div");
@@ -1197,7 +1290,7 @@ if (whatsappPage) {
             {
                 key: "whatsapp",
                 accent: "is-green",
-                icon: "\u25c9",
+                icon: "whatsapp",
                 title: providers.whatsapp?.name || configuration.provider,
                 configured: Boolean(providers.whatsapp?.configured),
                 description:
@@ -1206,7 +1299,7 @@ if (whatsappPage) {
             {
                 key: "email",
                 accent: "is-blue",
-                icon: "\u2709",
+                icon: "mail",
                 title: providers.email?.name || "Resend",
                 configured: Boolean(
                     providers.email?.credentialsConfigured && providers.email?.senderConfigured,
@@ -1217,7 +1310,7 @@ if (whatsappPage) {
             {
                 key: "sms",
                 accent: "is-purple",
-                icon: "\u25a4",
+                icon: "phone",
                 title: providers.sms?.name || "Inalambria REST API",
                 configured: Boolean(providers.sms?.credentialsConfigured),
                 description: "Entrega de notificaciones por SMS.",
@@ -1261,10 +1354,9 @@ if (whatsappPage) {
             tab.setAttribute("aria-controls", tabPanel.id);
             tab.dataset.communicationChannel = provider.key;
             tab.prepend(
-                element(
-                    "span",
-                    "admin-whatsapp-channel-tab-icon " + provider.accent,
+                createIconBadge(
                     provider.icon,
+                    "admin-whatsapp-channel-tab-icon " + provider.accent,
                 ),
             );
             tab.addEventListener("click", () => selectChannel(provider.key));
@@ -1300,7 +1392,7 @@ if (whatsappPage) {
             ),
         );
         chatbotCard.append(
-            element("span", "admin-whatsapp-settings-summary-icon", "\u2726"),
+            createIconBadge("bot", "admin-whatsapp-settings-summary-icon"),
             chatbotCopy,
             createStatusBadge(
                 configuration.chatbotEnabled ? "Habilitado" : "Deshabilitado",
@@ -1320,7 +1412,7 @@ if (whatsappPage) {
             ),
         );
         deliveryCard.append(
-            element("span", "admin-whatsapp-delivery-indicator", "\u25cf"),
+            createIconBadge("send", "admin-whatsapp-delivery-icon"),
             deliveryCopy,
             createStatusBadge(
                 configuration.notificationDeliveryEnabled ? "Habilitado" : "Deshabilitado",
@@ -1358,7 +1450,7 @@ if (whatsappPage) {
         const title = element("div", "admin-whatsapp-provider-title");
         title.append(element("h3", "", provider.title), element("p", "", provider.description));
         heading.append(
-            element("span", "admin-whatsapp-provider-icon " + provider.accent, provider.icon),
+            createIconBadge(provider.icon, "admin-whatsapp-provider-icon " + provider.accent),
             title,
         );
         const status = element("div", "admin-whatsapp-provider-status");
@@ -1389,7 +1481,7 @@ if (whatsappPage) {
         if (channel === "email") {
             title = "Correo (Resend)";
             description = "Canal para notificaciones y verificaci\u00f3n de cuenta.";
-            icon = "\u2709";
+            icon = "mail";
             accent = "is-blue";
             fields = [
                 ["Clave del proveedor", providers.email?.credentialsConfigured],
@@ -1400,7 +1492,7 @@ if (whatsappPage) {
         } else if (channel === "sms") {
             title = "SMS (Inalambria REST API)";
             description = "Canal de mensajes de texto.";
-            icon = "\u25a4";
+            icon = "phone";
             accent = "is-purple";
             fields = [
                 ["Clave del proveedor", providers.sms?.credentialsConfigured],
@@ -1409,7 +1501,7 @@ if (whatsappPage) {
         } else {
             title = "WhatsApp Cloud API";
             description = "Canal de WhatsApp y recepci\u00f3n de eventos mediante webhook.";
-            icon = "\u25c9";
+            icon = "whatsapp";
             accent = "is-green";
             fields = [
                 ["Token de acceso", providers.whatsapp?.credentialsConfigured],
@@ -1423,7 +1515,7 @@ if (whatsappPage) {
         const heading = element("header", "admin-whatsapp-channel-detail-heading");
         const titleCopy = element("div");
         titleCopy.append(element("h4", "", title), element("p", "", description));
-        heading.append(element("span", "admin-whatsapp-provider-icon " + accent, icon), titleCopy);
+        heading.append(createIconBadge(icon, "admin-whatsapp-provider-icon " + accent), titleCopy);
         fields.forEach(([label, isConfigured]) => {
             const row = element("div");
             row.append(element("dt", "", label));
