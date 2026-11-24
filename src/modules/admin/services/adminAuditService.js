@@ -1,7 +1,11 @@
 import { Op } from "sequelize";
 import { Appointment, Doctor, Rol, Specialities, User } from "../../../models/associations.js";
 import AuditLog from "../../../models/AuditLog.js";
-import { getAuditActionLabel, getAuditModuleLabel } from "./adminAuditPresentation.js";
+import {
+    getAuditActionLabel,
+    getAuditModuleLabel,
+    getAuditModulePresentation,
+} from "./adminAuditPresentation.js";
 
 const PAGE_SIZE = 10;
 const BOGOTA_OFFSET_HOURS = 5;
@@ -192,6 +196,7 @@ function formatAuditRecord(record, appointment = null) {
         occurredAt: record.occurred_at,
         actor: getActorLabel(record, record.actor),
         module: getAuditModuleLabel(record.target_type),
+        moduleIcon: getAuditModulePresentation(record.target_type).icon,
         action: getAuditActionLabel(record.action),
         description: getSafeDescription(record, appointment),
     };

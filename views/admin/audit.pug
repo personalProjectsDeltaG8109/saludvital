@@ -12,6 +12,7 @@ html(lang="es")
     body.admin-app.admin-audit-page
         include partials/admin-shell.pug
         +adminSidebar("audit")
+        include partials/admin-module-icon-sprite.pug
         .admin-main-shell
             +adminTopbar
             main.admin-audit-content(data-admin-audit, data-endpoint="/api/admin/audit-logs")
@@ -60,12 +61,17 @@ html(lang="es")
                     data-audit-results,
                     hidden
                 )
+                    header.admin-audit-results-heading
+                        div
+                            h2 Actividad registrada
+                            p Revisa las acciones recientes y abre un evento para conocer sus cambios.
+                        p.admin-audit-count(data-audit-count, aria-live="polite")
                     .admin-audit-table-wrap
                         table.admin-audit-table
                             thead
                                 tr
                                     th(scope="col") Fecha y hora
-                                    th(scope="col") Usuario
+                                    th(scope="col") Usuario responsable
                                     th(scope="col") Módulo
                                     th(scope="col") Acción
                                     th(scope="col") Detalle
@@ -73,7 +79,6 @@ html(lang="es")
                             tbody(data-audit-table-body)
                     ul.admin-audit-cards(data-audit-card-list, aria-live="polite")
                     footer.admin-audit-footer
-                        p(data-audit-count, aria-live="polite")
                         nav.admin-audit-pagination(
                             aria-label="Paginación de auditoría",
                             data-audit-pagination,
@@ -92,7 +97,9 @@ html(lang="es")
                             type="button",
                             data-audit-detail-close,
                             aria-label="Cerrar detalle"
-                        ) ×
+                        )
+                            svg(viewBox="0 0 24 24", aria-hidden="true")
+                                use(href="#admin-module-icon-close")
                     p.admin-audit-detail-loading(
                         role="status",
                         aria-live="polite",
@@ -106,7 +113,18 @@ html(lang="es")
                         hidden
                     )
                     div(data-audit-detail-content, hidden)
-                        dl.admin-audit-detail-fields(data-audit-detail-fields)
+                        section.admin-audit-detail-summary(aria-label="Resumen del evento")
+                            span.admin-audit-module-icon(
+                                data-audit-detail-icon,
+                                aria-hidden="true"
+                            )
+                            .admin-audit-detail-summary-copy
+                                div(data-audit-detail-action)
+                                strong(data-audit-detail-module)
+                                p(data-audit-detail-description)
+                        section.admin-audit-event-section
+                            h3 Información del evento
+                            dl.admin-audit-detail-fields(data-audit-detail-fields)
                         section.admin-audit-change-section(data-audit-change-section, hidden)
                             h3 Cambios registrados
                             div(data-audit-change-groups)

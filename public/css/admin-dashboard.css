@@ -798,6 +798,12 @@ a.admin-nav-link:focus-visible,
 .admin-feed-list li:last-child {
     border-bottom: 0;
 }
+.admin-module-icon-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
 .admin-feed-icon {
     display: grid;
     width: 36px;
