@@ -107,6 +107,10 @@
     background: #eaf1f8;
 }
 .admin-whatsapp-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
     min-height: 42px;
     flex: 1;
     padding: 0 15px;
@@ -118,6 +122,11 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+}
+.admin-whatsapp-tab .admin-whatsapp-tab-icon {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
 }
 .admin-whatsapp-tab[aria-selected="true"] {
     color: #fff;
@@ -1395,9 +1404,14 @@
     .admin-whatsapp-tab {
         min-width: 0;
         min-height: 42px;
+        gap: 4px;
         padding: 5px 4px;
         font-size: 10px;
         line-height: 1.25;
+    }
+    .admin-whatsapp-tab .admin-whatsapp-tab-icon {
+        width: 15px;
+        height: 15px;
     }
     .admin-whatsapp-panel {
         padding: 0;
@@ -2838,5 +2852,126 @@
     }
     .admin-whatsapp-request-table {
         min-width: 450px;
+    }
+}
+/* Shared SVG icons keep the WhatsApp dashboard sharp at every screen size. */
+.admin-whatsapp-icon-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+.admin-whatsapp-icon-svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.admin-whatsapp-stat-icon .admin-whatsapp-icon-svg {
+    width: 25px;
+    height: 25px;
+}
+.admin-whatsapp-event-icon .admin-whatsapp-icon-svg {
+    width: 17px;
+    height: 17px;
+}
+.admin-whatsapp-brand-icon {
+    display: block;
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+}
+.admin-whatsapp-stat-icon.is-blue,
+.admin-whatsapp-provider-icon.is-blue,
+.admin-whatsapp-channel-tab-icon.is-blue {
+    color: #0875dc;
+    background: #e5f3ff;
+}
+.admin-whatsapp-stat-icon.is-purple,
+.admin-whatsapp-provider-icon.is-purple,
+.admin-whatsapp-channel-tab-icon.is-purple {
+    color: #6951c6;
+    background: #f0edff;
+}
+.admin-whatsapp-stat-icon.is-amber {
+    color: #b86c00;
+    background: #fff4dc;
+}
+.admin-whatsapp-stat-icon.is-red {
+    color: #d84242;
+    background: #ffebeb;
+}
+.admin-whatsapp-stat-icon.is-teal {
+    color: #119c9b;
+    background: #e1f9f6;
+}
+.admin-whatsapp-event-icon .admin-whatsapp-icon-svg,
+.admin-whatsapp-chatbot-icon .admin-whatsapp-icon-svg,
+.admin-whatsapp-info-icon .admin-whatsapp-icon-svg,
+.admin-whatsapp-settings-summary-icon .admin-whatsapp-icon-svg,
+.admin-whatsapp-delivery-icon .admin-whatsapp-icon-svg {
+    width: 23px;
+    height: 23px;
+}
+.admin-whatsapp-chatbot-icon,
+.admin-whatsapp-info-icon,
+.admin-whatsapp-settings-summary-icon,
+.admin-whatsapp-delivery-icon {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+}
+.admin-whatsapp-delivery-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    color: #0875dc;
+    background: #e5f3ff;
+}
+.admin-whatsapp-provider-icon .admin-whatsapp-icon-svg {
+    width: 25px;
+    height: 25px;
+}
+.admin-whatsapp-channel-tab {
+    gap: 7px;
+}
+.admin-whatsapp-channel-tab-icon {
+    display: inline-grid;
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 8px;
+}
+.admin-whatsapp-channel-tab-icon .admin-whatsapp-icon-svg {
+    width: 16px;
+    height: 16px;
+}
+.admin-whatsapp-shortcut-icon {
+    display: block;
+    flex: 0 0 auto;
+    width: 19px;
+    height: 19px;
+}
+.admin-whatsapp-event-icon.is-neutral {
+    color: #b86c00;
+    background: #fff4dc;
+}
+@media (max-width: 760px) {
+    .admin-whatsapp-channel-tab {
+        gap: 4px;
+    }
+    .admin-whatsapp-channel-tab-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+    }
+    .admin-whatsapp-channel-tab-icon .admin-whatsapp-icon-svg {
+        width: 14px;
+        height: 14px;
     }
 }
