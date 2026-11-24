@@ -293,7 +293,7 @@ if (page) {
         const email = formField("Correo de la cuenta", "email", user.email, {
             type: "email",
             required: true,
-            maxLength: 100,
+            maxLength: 320,
             wide: true,
         });
         const personalFields = [
@@ -468,7 +468,7 @@ if (page) {
                 formField("Correo de la cuenta", "email", user.email, {
                     type: "email",
                     required: true,
-                    maxLength: 100,
+                    maxLength: 320,
                     wide: true,
                 }),
             ]),
