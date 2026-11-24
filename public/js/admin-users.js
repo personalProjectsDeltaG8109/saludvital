@@ -49,6 +49,9 @@ if (page) {
     let focusedBeforeRoleModal;
     let roleSubmissionInProgress = false;
     let activeRequest;
+    // Request versions prevent slower responses from replacing the latest editor state.
+    let editRequestVersion = 0;
+    let municipalityRequestVersion = 0;
     let doctorPhotoDataUrl = null;
     let doctorPhotoReadPromise = Promise.resolve();
 
@@ -270,6 +273,8 @@ if (page) {
     }
 
     function addPatientFields(user, departments, municipalities) {
+        const editorVersion = editRequestVersion;
+        const editorUserId = user.id;
         const patient = user.patient;
         const departmentOptions = [
             { value: "", label: "Selecciona un departamento" },
@@ -413,12 +418,25 @@ if (page) {
         const departmentSelect = editFields.querySelector('[name="departmentCode"]');
         const municipalitySelect = editFields.querySelector('[name="municipalityCode"]');
         departmentSelect.addEventListener("change", async () => {
+            const departmentCode = departmentSelect.value;
+            const requestVersion = ++municipalityRequestVersion;
             municipalitySelect.replaceChildren(new Option("Cargando municipios…", ""));
             try {
                 const url = new URL(page.dataset.municipalitiesEndpoint, window.location.origin);
-                url.searchParams.set("departmentCode", departmentSelect.value);
+                url.searchParams.set("departmentCode", departmentCode);
                 const response = await fetch(url, { headers: { Accept: "application/json" } });
                 const values = await response.json();
+                if (
+                    !isCurrentMunicipalityRequest(
+                        editorVersion,
+                        editorUserId,
+                        requestVersion,
+                        departmentCode,
+                        departmentSelect,
+                    )
+                ) {
+                    return;
+                }
                 if (!response.ok)
                     throw new Error(values.message || "No pudimos cargar los municipios.");
                 municipalitySelect.replaceChildren(new Option("Selecciona un municipio", ""));
@@ -426,6 +444,18 @@ if (page) {
                     municipalitySelect.add(new Option(municipality.name, municipality.code)),
                 );
             } catch (error) {
+                if (
+                    !isCurrentMunicipalityRequest(
+                        editorVersion,
+                        editorUserId,
+                        requestVersion,
+                        departmentCode,
+                        departmentSelect,
+                    )
+                ) {
+                    return;
+                }
+                municipalitySelect.replaceChildren(new Option("Selecciona un municipio", ""));
                 setModalFeedback(error.message, "error");
             }
         });
@@ -477,8 +507,33 @@ if (page) {
         modalFeedback.dataset.kind = kind;
     }
 
+    function isCurrentEditRequest(requestVersion, userId) {
+        return (
+            requestVersion === editRequestVersion &&
+            !modal.hidden &&
+            Number(editingUser?.id ?? userId) === Number(userId)
+        );
+    }
+
+    function isCurrentMunicipalityRequest(
+        editorVersion,
+        userId,
+        requestVersion,
+        departmentCode,
+        departmentSelect,
+    ) {
+        return (
+            isCurrentEditRequest(editorVersion, userId) &&
+            requestVersion === municipalityRequestVersion &&
+            editFields.contains(departmentSelect) &&
+            departmentSelect.value === departmentCode
+        );
+    }
+
     function closeEditModal(force = false) {
         if (saveButton.disabled && !force) return;
+        editRequestVersion += 1;
+        municipalityRequestVersion += 1;
         modal.hidden = true;
         document.body.classList.remove("has-admin-modal");
         editFields.replaceChildren();
@@ -490,9 +545,13 @@ if (page) {
     }
 
     async function openEditModal(userId, trigger) {
+        const requestVersion = ++editRequestVersion;
+        municipalityRequestVersion += 1;
+        const requestedUserId = Number(userId);
         focusedBeforeModal = trigger;
         doctorPhotoDataUrl = null;
         doctorPhotoReadPromise = Promise.resolve();
+        editingUser = null;
         modal.hidden = false;
         document.body.classList.add("has-admin-modal");
         dialog.focus();
@@ -505,6 +564,7 @@ if (page) {
                 cache: "no-store",
             });
             const data = await response.json();
+            if (!isCurrentEditRequest(requestVersion, requestedUserId)) return;
             if (!response.ok) throw new Error(data.message || "No pudimos cargar el perfil.");
             editingUser = data.user;
             addRoleProfilePhoto(modalProfile, data.user);
@@ -517,6 +577,7 @@ if (page) {
             }
             editFields.querySelector("input, select, textarea")?.focus();
         } catch (error) {
+            if (!isCurrentEditRequest(requestVersion, requestedUserId)) return;
             setModalFeedback(error.message || "No pudimos cargar el perfil.");
         }
     }
