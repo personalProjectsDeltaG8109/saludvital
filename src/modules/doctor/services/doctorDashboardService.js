@@ -122,6 +122,24 @@ function serializeAppointment(appointment, { includePatientPhoto = false } = {})
     };
 }
 
+function getAppointmentConsultationId(appointment, consultation) {
+    if (!consultation || appointment.status?.name !== "In Progress") return null;
+
+    const consultationId = Number(consultation.id);
+    const appointmentId = Number(appointment.id);
+    const consultationAppointmentId = Number(consultation.appointment_id);
+
+    if (
+        !Number.isSafeInteger(consultationId) ||
+        consultationId < 1 ||
+        consultationAppointmentId !== appointmentId
+    ) {
+        return null;
+    }
+
+    return consultationId;
+}
+
 async function getDoctorForUser(userId) {
     return Doctor.findOne({
         where: { user_id: userId },
@@ -171,10 +189,7 @@ function serializeNextAppointment(appointment, activeConsultation, includePatien
         ...serializeAppointment(appointment, { includePatientPhoto }),
         reason: appointment.specialty?.name || "Consulta médica",
         hasActiveConsultation: Boolean(activeConsultation),
-        consultationId:
-            status === "In Progress" && activeConsultation?.appointment_id === appointment.id
-                ? activeConsultation.id
-                : null,
+        consultationId: getAppointmentConsultationId(appointment, activeConsultation),
         canStart: status === "Confirmed" && !activeConsultation,
     };
 }
@@ -296,8 +311,7 @@ export async function getDoctorDashboardData(userId, now = new Date()) {
         hasActiveConsultation: Boolean(activeConsultation),
         todayAppointments: visibleAppointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
-            consultationId:
-                appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
+            consultationId: getAppointmentConsultationId(appointment, activeConsultation),
             canStart:
                 ["Confirmed", "No Show"].includes(appointment.status?.name) && !activeConsultation,
             hasActiveConsultation: Boolean(activeConsultation),
@@ -392,7 +406,7 @@ export async function getDoctorAppointments(userId, query = {}) {
     const filters = parseAppointmentFilters(query);
     const activeConsultation = await Consultation.findOne({
         where: { doctor_id: doctor.id, status: "InProgress" },
-        attributes: ["id"],
+        attributes: ["id", "appointment_id"],
         raw: true,
     });
     const where = { doctor_id: doctor.id };
@@ -530,8 +544,7 @@ export async function getDoctorAppointments(userId, query = {}) {
         hasActiveConsultation: Boolean(activeConsultation),
         appointments: appointments.map((appointment) => ({
             ...serializeAppointment(appointment, { includePatientPhoto: true }),
-            consultationId:
-                appointment.status?.name === "In Progress" ? activeConsultation?.id : null,
+            consultationId: getAppointmentConsultationId(appointment, activeConsultation),
             specialty: appointment.specialty?.name || "Consulta médica",
             canStart:
                 ["Confirmed", "No Show"].includes(appointment.status?.name) && !activeConsultation,
