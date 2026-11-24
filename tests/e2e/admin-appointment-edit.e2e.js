@@ -53,6 +53,9 @@ try {
     await page.evaluate(() => {
         window.appointmentEditRequests = [];
         window.appointmentEditConflictNext = true;
+        window.appointmentEditRaceMode = { doctors: false, availability: false };
+        window.appointmentEditPendingDoctors = {};
+        window.appointmentEditPendingAvailability = {};
         window.fetch = async (request, options = {}) => {
             const url = new URL(request, window.location.origin);
             window.appointmentEditRequests.push({ url: url.pathname + url.search, options });
@@ -65,13 +68,25 @@ try {
                     ],
                 };
             } else if (url.pathname.endsWith("/doctors")) {
+                const specialtyId = url.searchParams.get("specialtyId");
+                if (window.appointmentEditRaceMode.doctors) {
+                    return new Promise((resolve) => {
+                        window.appointmentEditPendingDoctors[specialtyId] = resolve;
+                    });
+                }
                 result = {
                     doctors:
-                        url.searchParams.get("specialtyId") === "5"
+                        specialtyId === "5"
                             ? [{ id: 7, name: "Dr. Luis Morales" }]
                             : [{ id: 6, name: "Dra. Ana Torres" }],
                 };
             } else if (url.pathname.endsWith("/availability")) {
+                const date = url.searchParams.get("date");
+                if (window.appointmentEditRaceMode.availability) {
+                    return new Promise((resolve) => {
+                        window.appointmentEditPendingAvailability[date] = resolve;
+                    });
+                }
                 result = { times: ["11:00"] };
             } else if (options.method === "PATCH" && window.appointmentEditConflictNext) {
                 window.appointmentEditConflictNext = false;
@@ -94,9 +109,123 @@ try {
     await page.addScriptTag({ content: script });
     await page.getByRole("heading", { name: "Editar y reprogramar cita" }).waitFor();
     await page.locator('[data-edit-specialty] option[value="3"]').waitFor({ state: "attached" });
+    await page.locator('[data-edit-time] option[value="11:00"]').waitFor({ state: "attached" });
     if (/pendiente/i.test(await page.locator("main").innerText())) {
         throw new Error("The appointment editor must not display the unsupported status.");
     }
+
+    await page.evaluate(() => {
+        window.appointmentEditRaceMode.doctors = true;
+    });
+    await page.locator("[data-edit-specialty]").selectOption("5");
+    await page.waitForFunction(() => Boolean(window.appointmentEditPendingDoctors["5"]));
+    await page.locator("[data-edit-specialty]").selectOption("3");
+    await page.waitForFunction(() => Boolean(window.appointmentEditPendingDoctors["3"]));
+    await page.evaluate(() => {
+        window.appointmentEditPendingDoctors["3"]({
+            ok: true,
+            status: 200,
+            json: async () => ({ doctors: [{ id: 6, name: "Dra. Ana Torres" }] }),
+        });
+    });
+    await page.waitForFunction(() => document.querySelector("[data-edit-doctor]").value === "6");
+    await page.evaluate(() => {
+        window.appointmentEditPendingDoctors["5"]({
+            ok: true,
+            status: 200,
+            json: async () => ({ doctors: [{ id: 7, name: "Dr. Luis Morales" }] }),
+        });
+        window.appointmentEditRaceMode.doctors = false;
+    });
+    await page.waitForTimeout(0);
+    assert.equal(await page.locator("[data-edit-specialty]").inputValue(), "3");
+    assert.equal(await page.locator("[data-edit-doctor]").inputValue(), "6");
+    assert.deepEqual(
+        await page
+            .locator("[data-edit-doctor] option")
+            .evaluateAll((options) => options.map((option) => option.value)),
+        ["", "6"],
+    );
+
+    const raceDates = await page.locator("[data-edit-date]").evaluate((input) => {
+        const [year, month, day] = input.min.split("-").map(Number);
+        return [4, 5, 6, 7].map((offset) =>
+            new Date(Date.UTC(year, month - 1, day + offset)).toISOString().slice(0, 10),
+        );
+    });
+    await page.evaluate(() => {
+        window.appointmentEditRaceMode.availability = true;
+    });
+    await page.locator("[data-edit-date]").fill(raceDates[0]);
+    await page.waitForFunction(
+        (date) => Boolean(window.appointmentEditPendingAvailability[date]),
+        raceDates[0],
+    );
+    await page.locator("[data-edit-date]").fill(raceDates[1]);
+    await page.waitForFunction(
+        (date) => Boolean(window.appointmentEditPendingAvailability[date]),
+        raceDates[1],
+    );
+    await page.evaluate((date) => {
+        window.appointmentEditPendingAvailability[date]({
+            ok: true,
+            status: 200,
+            json: async () => ({ times: ["13:00"] }),
+        });
+    }, raceDates[1]);
+    await page.locator('[data-edit-time] option[value="13:00"]').waitFor({ state: "attached" });
+    await page.evaluate((date) => {
+        window.appointmentEditPendingAvailability[date]({
+            ok: true,
+            status: 200,
+            json: async () => ({ times: ["12:00"] }),
+        });
+    }, raceDates[0]);
+    await page.waitForTimeout(0);
+    assert.equal(await page.locator("[data-edit-date]").inputValue(), raceDates[1]);
+    assert.equal(await page.locator('[data-edit-time] option[value="13:00"]').count(), 1);
+    assert.equal(await page.locator('[data-edit-time] option[value="12:00"]').count(), 0);
+
+    await page.locator("[data-edit-date]").fill(raceDates[2]);
+    await page.waitForFunction(
+        (date) => Boolean(window.appointmentEditPendingAvailability[date]),
+        raceDates[2],
+    );
+    await page.locator("[data-edit-date]").fill(raceDates[3]);
+    await page.waitForFunction(
+        (date) => Boolean(window.appointmentEditPendingAvailability[date]),
+        raceDates[3],
+    );
+    await page.evaluate((date) => {
+        window.appointmentEditPendingAvailability[date]({
+            ok: true,
+            status: 200,
+            json: async () => ({ times: ["14:00"] }),
+        });
+    }, raceDates[3]);
+    await page.locator('[data-edit-time] option[value="14:00"]').waitFor({ state: "attached" });
+    await page.evaluate((date) => {
+        window.appointmentEditPendingAvailability[date]({
+            ok: false,
+            status: 503,
+            json: async () => ({ message: "Error de una fecha anterior." }),
+        });
+        window.appointmentEditRaceMode.availability = false;
+    }, raceDates[2]);
+    await page.waitForTimeout(0);
+    assert.equal(await page.locator("[data-edit-date]").inputValue(), raceDates[3]);
+    assert.equal(await page.locator('[data-edit-time] option[value="14:00"]').count(), 1);
+    assert.equal(await page.locator("[data-edit-error]").isVisible(), false);
+
+    const availableDate = await page.locator("[data-edit-date]").evaluate((input) => {
+        const [year, month, day] = input.min.split("-").map(Number);
+        return new Date(Date.UTC(year, month - 1, day + 2)).toISOString().slice(0, 10);
+    });
+    await page.locator("[data-edit-date]").fill(availableDate);
+    await page.locator('[data-edit-time] option[value="11:00"]').waitFor({ state: "attached" });
+    console.log(
+        "PASS: outdated doctor and availability responses cannot replace the latest selection.",
+    );
 
     for (const viewport of [
         { label: "mobile", width: 375, height: 812 },
@@ -116,10 +245,6 @@ try {
     await page.locator("[data-edit-specialty]").selectOption("5");
     await page.locator('[data-edit-doctor] option[value="7"]').waitFor({ state: "attached" });
     await page.locator("[data-edit-doctor]").selectOption("7");
-    const availableDate = await page.locator("[data-edit-date]").evaluate((input) => {
-        const [year, month, day] = input.min.split("-").map(Number);
-        return new Date(Date.UTC(year, month - 1, day + 2)).toISOString().slice(0, 10);
-    });
     await page.locator("[data-edit-date]").fill(availableDate);
     await page.locator("[data-edit-time]").selectOption("11:00");
     await page.locator("[data-edit-reason]").fill("Control de seguimiento");
