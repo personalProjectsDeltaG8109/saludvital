@@ -14,6 +14,8 @@ if (editPage) {
         const currentSpecialtyId = editPage.dataset.currentSpecialtyId;
         const currentDoctorId = editPage.dataset.currentDoctorId;
         const patientId = editPage.dataset.patientId;
+        let doctorsRequestVersion = 0;
+        let availabilityRequestVersion = 0;
 
         function setError(message) {
             error.textContent = message || "";
@@ -55,7 +57,28 @@ if (editPage) {
             return `${values.year}-${values.month}-${values.day}`;
         }
 
+        function isCurrentDoctorRequest(requestVersion, requestedSpecialtyId) {
+            return (
+                requestVersion === doctorsRequestVersion &&
+                specialtySelect.value === requestedSpecialtyId
+            );
+        }
+
+        function isCurrentAvailabilityRequest(requestVersion, requestedSelection) {
+            return (
+                requestVersion === availabilityRequestVersion &&
+                specialtySelect.value === requestedSelection.specialtyId &&
+                doctorSelect.value === requestedSelection.doctorId &&
+                dateInput.value === requestedSelection.date
+            );
+        }
+
         async function loadDoctors() {
+            const requestVersion = ++doctorsRequestVersion;
+            const requestedSpecialtyId = specialtySelect.value;
+
+            // A specialty change also invalidates any availability request in flight.
+            availabilityRequestVersion += 1;
             resetSelect(doctorSelect, "Cargando médicos...");
             resetSelect(timeSelect, "Selecciona un horario disponible");
             submitButton.disabled = true;
@@ -68,6 +91,8 @@ if (editPage) {
                 const url = new URL(editPage.dataset.doctorsEndpoint, window.location.origin);
                 url.searchParams.set("specialtyId", specialtySelect.value);
                 const { doctors } = await requestJson(url);
+                if (!isCurrentDoctorRequest(requestVersion, requestedSpecialtyId)) return;
+
                 resetSelect(
                     doctorSelect,
                     doctors.length ? "Selecciona un médico" : "No hay médicos disponibles",
@@ -92,26 +117,43 @@ if (editPage) {
                     doctorSelect.value = "";
                 }
             } catch (requestError) {
+                if (!isCurrentDoctorRequest(requestVersion, requestedSpecialtyId)) return;
+
                 resetSelect(doctorSelect, "No se pudieron cargar los médicos");
                 setError(requestError.message);
             }
         }
 
         async function loadAvailability() {
+            const requestVersion = ++availabilityRequestVersion;
+            const requestedSelection = {
+                specialtyId: specialtySelect.value,
+                doctorId: doctorSelect.value,
+                date: dateInput.value,
+            };
+
             resetSelect(timeSelect, "Selecciona un horario disponible");
             submitButton.disabled = true;
-            if (!specialtySelect.value || !doctorSelect.value || !dateInput.value) return;
+            if (
+                !requestedSelection.specialtyId ||
+                !requestedSelection.doctorId ||
+                !requestedSelection.date
+            ) {
+                return;
+            }
 
             timeSelect.replaceChildren(new Option("Consultando horarios...", ""));
             setError("");
             const url = new URL(editPage.dataset.availabilityEndpoint, window.location.origin);
             url.searchParams.set("patientId", patientId);
-            url.searchParams.set("specialtyId", specialtySelect.value);
-            url.searchParams.set("doctorId", doctorSelect.value);
-            url.searchParams.set("date", dateInput.value);
+            url.searchParams.set("specialtyId", requestedSelection.specialtyId);
+            url.searchParams.set("doctorId", requestedSelection.doctorId);
+            url.searchParams.set("date", requestedSelection.date);
 
             try {
                 const { times } = await requestJson(url);
+                if (!isCurrentAvailabilityRequest(requestVersion, requestedSelection)) return;
+
                 resetSelect(
                     timeSelect,
                     times.length ? "Selecciona un nuevo horario" : "No hay horarios disponibles",
@@ -132,6 +174,8 @@ if (editPage) {
                     ? "Elige la nueva asignación y un horario disponible."
                     : "No hay horarios disponibles para esta selección.";
             } catch (requestError) {
+                if (!isCurrentAvailabilityRequest(requestVersion, requestedSelection)) return;
+
                 resetSelect(timeSelect, "No se pudieron consultar los horarios");
                 setError(requestError.message);
             }
