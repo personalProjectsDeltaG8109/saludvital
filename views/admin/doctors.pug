@@ -7,7 +7,7 @@ html(lang="es")
         link(rel="stylesheet", href="/css/app.css")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-doctors.css")
-    body.admin-app
+    body.admin-app.admin-doctors-shell
         include partials/doctor-stat-icon.pug
         include partials/admin-shell.pug
         +adminSidebar("doctors")
@@ -26,7 +26,17 @@ html(lang="es")
                             p.admin-eyebrow Gestión médica
                             h1 Médicos
                             p Administra los profesionales médicos de SaludVital.
-                    a.doctors-primary-button(href="/admin/doctors/new") + Crear médico
+                    a.doctors-primary-button(href="/admin/doctors/new")
+                        svg(
+                            aria-hidden="true",
+                            viewBox="0 0 24 24",
+                            fill="none",
+                            stroke="currentColor",
+                            stroke-width="1.8",
+                            stroke-linecap="round"
+                        )
+                            path(d="M12 5v14m-7-7h14")
+                        | Crear médico
                 section.doctors-stats(aria-label="Resumen de médicos")
                     article.doctor-stat
                         +doctorStatIcon("total")
