@@ -41,6 +41,7 @@ html(lang="es")
                         button.is-active(
                             type="button",
                             data-step-indicator="0",
+                            disabled,
                             data-step-title="Atención",
                             aria-current="step"
                         )
@@ -89,7 +90,15 @@ html(lang="es")
                         aria-live="polite",
                         data-consultation-feedback
                     )
-                    form.consultation-form(data-consultation-form, novalidate)
+                        | Cargando la información guardada de la consulta...
+                    button.consultation-retry(type="button", data-retry-consultation, hidden) Reintentar carga
+                    form.consultation-form(
+                        data-consultation-form,
+                        data-draft-state="loading",
+                        aria-busy="true",
+                        inert,
+                        novalidate
+                    )
                         section.consultation-step(data-consultation-step="0")
                             h2(tabindex="-1") Atención
                             p#consultation-form-guidance.consultation-form-guidance
