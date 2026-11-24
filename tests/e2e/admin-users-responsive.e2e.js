@@ -105,6 +105,31 @@ const html = renderedHtml.replace(/src="(\/brand\/[^\"]+)"/g, (_, assetPath) => 
 });
 const browser = await chromium.launch({ headless: true });
 
+async function verifyAccountEmailLength(page, profileLabel) {
+    const emailInput = page.locator('[data-user-edit-fields] [name="email"]');
+    await emailInput.waitFor();
+
+    const maximumLength = await emailInput.evaluate((input) => input.maxLength);
+    if (maximumLength !== 320) {
+        throw new Error(`${profileLabel} account email must allow 320 characters.`);
+    }
+
+    for (const length of [100, 105, 320, 321]) {
+        await emailInput.fill("");
+        await emailInput.pressSequentially("x".repeat(length));
+        const actualLength = (await emailInput.inputValue()).length;
+        const expectedLength = Math.min(length, 320);
+
+        if (actualLength !== expectedLength) {
+            throw new Error(
+                `${profileLabel} account email accepted ${actualLength} characters for an input of ${length}.`,
+            );
+        }
+    }
+
+    console.log(`PASS: ${profileLabel} account email accepts up to 320 characters.`);
+}
+
 try {
     const page = await browser.newPage({ viewport: { width: 762, height: 900 } });
     await page.route("http://saludvital.test/**", (route) =>
@@ -290,6 +315,7 @@ try {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
     await page.locator('[name="displayName"]').waitFor();
+    await verifyAccountEmailLength(page, "doctor");
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(7, details);
     }, patientDetailsFixture);
@@ -359,6 +385,7 @@ try {
         .locator(".admin-user-form-section")
         .filter({ has: page.getByRole("heading", { name: "Contacto de emergencia" }) });
     await emergencySection.waitFor();
+    await verifyAccountEmailLength(page, "patient");
     const emergencyNote = await emergencySection.locator(".admin-user-form-hint").innerText();
     if (
         !emergencyNote.includes("usa información ficticia") ||
