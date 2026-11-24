@@ -67,8 +67,26 @@ const patientDetailsFixture = {
         },
         emergencyContact: null,
     },
-    departments: [{ code: "66", name: "Risaralda" }],
+    departments: [
+        { code: "05", name: "Antioquia" },
+        { code: "11", name: "Bogotá" },
+        { code: "66", name: "Risaralda" },
+    ],
     municipalities: [{ code: "66001", name: "Pereira" }],
+};
+const doctorDetailsFixture = {
+    user: {
+        id: 8,
+        email: "carlos.mendez@example.com",
+        profileType: "Doctor",
+        profilePhotoUrl: null,
+        doctor: {
+            display_name: "Dr. Carlos Méndez",
+            specialty_id: 5,
+            professional_information: "",
+        },
+    },
+    specialties: [{ id: 5, name: "Medicina General" }],
 };
 const renderedHtml = pug.renderFile(path.resolve("views/admin/users.pug"), {
     pageTitle: "Usuarios y roles | SaludVital",
@@ -89,13 +107,59 @@ const browser = await chromium.launch({ headless: true });
 
 try {
     const page = await browser.newPage({ viewport: { width: 762, height: 900 } });
-    await page.setContent(html);
+    await page.route("http://saludvital.test/**", (route) =>
+        route.fulfill({ contentType: "text/html", body: html }),
+    );
+    await page.goto("http://saludvital.test/admin/users");
     await page.evaluate(
-        ({ listFixture, detailsFixture }) => {
+        ({ listFixture, detailsFixture, doctorFixture }) => {
+            const controls = {
+                holdDetails: false,
+                holdMunicipalities: false,
+                pendingDetails: [],
+                pendingMunicipalities: [],
+                resolveDetail(userId, payload, ok = true) {
+                    const index = this.pendingDetails.findIndex(
+                        (request) => request.userId === Number(userId),
+                    );
+                    if (index < 0) return false;
+                    const [request] = this.pendingDetails.splice(index, 1);
+                    request.resolve({ ok, json: async () => payload });
+                    return true;
+                },
+                resolveMunicipalities(departmentCode, payload, ok = true) {
+                    const index = this.pendingMunicipalities.findIndex(
+                        (request) => request.departmentCode === departmentCode,
+                    );
+                    if (index < 0) return false;
+                    const [request] = this.pendingMunicipalities.splice(index, 1);
+                    request.resolve({ ok, json: async () => payload });
+                    return true;
+                },
+            };
+            window.adminUsersTestControls = controls;
             window.fetch = async (requestUrl, requestOptions = {}) => {
-                const pathname = String(requestUrl).split("?")[0];
-                if (pathname === "/api/admin/users/7") {
-                    return { ok: true, json: async () => detailsFixture };
+                const requestUrlObject = new URL(requestUrl, window.location.origin);
+                const pathname = requestUrlObject.pathname;
+                const userDetailsMatch = pathname.match(/^\/api\/admin\/users\/(\d+)$/);
+                if (userDetailsMatch) {
+                    const userId = Number(userDetailsMatch[1]);
+                    if (controls.holdDetails) {
+                        return new Promise((resolve) => {
+                            controls.pendingDetails.push({ userId, resolve });
+                        });
+                    }
+                    const userDetails = userId === 8 ? doctorFixture : detailsFixture;
+                    return { ok: true, json: async () => userDetails };
+                }
+                if (pathname === "/api/admin/locations/municipalities") {
+                    const departmentCode = requestUrlObject.searchParams.get("departmentCode");
+                    if (controls.holdMunicipalities) {
+                        return new Promise((resolve) => {
+                            controls.pendingMunicipalities.push({ departmentCode, resolve });
+                        });
+                    }
+                    return { ok: true, json: async () => detailsFixture.municipalities };
                 }
                 if (pathname === "/api/admin/users/7/role") {
                     const patient = listFixture.users.find((user) => user.id === 7);
@@ -127,7 +191,11 @@ try {
                 return { ok: true, json: async () => payload };
             };
         },
-        { listFixture: userFixture, detailsFixture: patientDetailsFixture },
+        {
+            listFixture: userFixture,
+            detailsFixture: patientDetailsFixture,
+            doctorFixture: doctorDetailsFixture,
+        },
     );
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: userStyles });
@@ -206,6 +274,86 @@ try {
         }
     }
 
+    await page.evaluate(() => {
+        window.adminUsersTestControls.holdDetails = true;
+    });
+    await page.locator('[data-user-edit-id="7"]').click();
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 7),
+    );
+    await page.locator("[data-user-modal-cancel]").click();
+    await page.locator('[data-user-edit-id="8"]').click();
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 8),
+    );
+    await page.evaluate((details) => {
+        window.adminUsersTestControls.resolveDetail(8, details);
+    }, doctorDetailsFixture);
+    await page.locator('[name="displayName"]').waitFor();
+    await page.evaluate((details) => {
+        window.adminUsersTestControls.resolveDetail(7, details);
+    }, patientDetailsFixture);
+    await page.waitForTimeout(50);
+    if (
+        (await page.locator('[name="displayName"]').inputValue()) !== "Dr. Carlos Méndez" ||
+        (await page.locator("[data-user-modal-feedback]").innerText())
+    ) {
+        throw new Error("An older user response changed the currently selected account editor.");
+    }
+    console.log("PASS: an older account response cannot replace the latest user editor.");
+    await page.locator("[data-user-modal-cancel]").click();
+
+    await page.evaluate(() => {
+        window.adminUsersTestControls.holdDetails = true;
+    });
+    await page.locator('[data-user-edit-id="7"]').click();
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 7),
+    );
+    await page.locator("[data-user-modal-cancel]").click();
+    await page.locator('[data-user-edit-id="8"]').click();
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 8),
+    );
+    await page.evaluate((details) => {
+        window.adminUsersTestControls.resolveDetail(8, details);
+    }, doctorDetailsFixture);
+    await page.locator('[name="displayName"]').waitFor();
+    await page.evaluate(() => {
+        window.adminUsersTestControls.resolveDetail(
+            7,
+            { message: "No se pudo cargar una solicitud anterior." },
+            false,
+        );
+    });
+    await page.waitForTimeout(50);
+    if (await page.locator("[data-user-modal-feedback]").innerText()) {
+        throw new Error("An older account error replaced the current editor feedback.");
+    }
+    console.log("PASS: an older account error cannot replace the current editor.");
+    await page.locator("[data-user-modal-cancel]").click();
+
+    await page.evaluate(() => {
+        window.adminUsersTestControls.holdDetails = true;
+    });
+    await page.locator('[data-user-edit-id="7"]').click();
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 7),
+    );
+    await page.locator("[data-user-modal-cancel]").click();
+    await page.evaluate((details) => {
+        window.adminUsersTestControls.resolveDetail(7, details);
+        window.adminUsersTestControls.holdDetails = false;
+    }, patientDetailsFixture);
+    await page.waitForTimeout(50);
+    if (
+        !(await page.locator("[data-user-modal]").isHidden()) ||
+        (await page.locator('[name="firstName"]').count())
+    ) {
+        throw new Error("An older user response reopened a closed editor.");
+    }
+    console.log("PASS: closing the editor prevents a pending response from reopening it.");
+
     await page.locator('[data-user-edit-id="7"]').click();
     const emergencySection = page
         .locator(".admin-user-form-section")
@@ -219,6 +367,91 @@ try {
         throw new Error(`Emergency-contact guidance is missing or unclear: ${emergencyNote}`);
     }
     console.log("PASS: administrator edit dialog explains emergency-contact demo use.");
+
+    await page.evaluate(() => {
+        window.adminUsersTestControls.holdMunicipalities = true;
+    });
+    const departmentSelect = page.locator('[name="departmentCode"]');
+    const municipalitySelect = page.locator('[name="municipalityCode"]');
+    await departmentSelect.selectOption("05");
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingMunicipalities.some(
+            (request) => request.departmentCode === "05",
+        ),
+    );
+    await departmentSelect.selectOption("11");
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingMunicipalities.some(
+            (request) => request.departmentCode === "11",
+        ),
+    );
+    await page.evaluate(() => {
+        window.adminUsersTestControls.resolveMunicipalities("11", [
+            { code: "11001", name: "Bogotá" },
+        ]);
+    });
+    await page.waitForFunction(() =>
+        [...document.querySelector('[name="municipalityCode"]').options].some(
+            (option) => option.value === "11001",
+        ),
+    );
+    await page.evaluate(() => {
+        window.adminUsersTestControls.resolveMunicipalities("05", [
+            { code: "05001", name: "Medellín" },
+        ]);
+    });
+    await page.waitForTimeout(50);
+    const currentMunicipalities = await municipalitySelect
+        .locator("option")
+        .evaluateAll((options) => options.map((option) => option.value));
+    if (currentMunicipalities.join(",") !== ",11001") {
+        throw new Error(
+            `An older department response replaced current municipalities: ${currentMunicipalities}.`,
+        );
+    }
+
+    await departmentSelect.selectOption("66");
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingMunicipalities.some(
+            (request) => request.departmentCode === "66",
+        ),
+    );
+    await departmentSelect.selectOption("05");
+    await page.waitForFunction(() =>
+        window.adminUsersTestControls.pendingMunicipalities.some(
+            (request) => request.departmentCode === "05",
+        ),
+    );
+    await page.evaluate(() => {
+        window.adminUsersTestControls.resolveMunicipalities("05", [
+            { code: "05001", name: "Medellín" },
+        ]);
+    });
+    await page.waitForFunction(() =>
+        [...document.querySelector('[name="municipalityCode"]').options].some(
+            (option) => option.value === "05001",
+        ),
+    );
+    await page.evaluate(() => {
+        window.adminUsersTestControls.resolveMunicipalities(
+            "66",
+            { message: "Error de una solicitud anterior." },
+            false,
+        );
+        window.adminUsersTestControls.holdMunicipalities = false;
+    });
+    await page.waitForTimeout(50);
+    const currentDepartmentFeedback = await page.locator("[data-user-modal-feedback]").innerText();
+    if (
+        (await municipalitySelect
+            .locator("option")
+            .evaluateAll((options) => options.map((option) => option.value).join(","))) !==
+            ",05001" ||
+        currentDepartmentFeedback
+    ) {
+        throw new Error("An older department error changed the current municipality selection.");
+    }
+    console.log("PASS: only municipalities for the latest department remain available.");
     await page.locator("[data-user-modal-cancel]").click();
 
     const patientRole = page.getByRole("combobox", { name: "Rol de Dra. Laura Méndez" });
