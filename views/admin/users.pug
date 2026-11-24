@@ -22,16 +22,56 @@ html(lang="es")
                 data-doctor-status-endpoint="/api/admin/doctors",
                 data-details-endpoint="/api/admin/users",
                 data-departments-endpoint="/api/admin/locations/departments",
-                data-municipalities-endpoint="/api/admin/locations/municipalities"
+                data-municipalities-endpoint="/api/admin/locations/municipalities",
+                data-invitations-endpoint="/api/admin/account-invitations"
             )
                 header.admin-users-heading
                     div
                         p.admin-eyebrow Gestión médica
                         h1 Usuarios y roles
                         p Revisa las cuentas registradas y administra su acceso a SaludVital.
-                    .admin-users-total(aria-live="polite")
-                        strong(data-user-count) —
-                        span cuentas
+                    .admin-users-heading-actions
+                        .admin-users-total(aria-live="polite")
+                            strong(data-user-count) —
+                            span cuentas
+                        button.admin-invite-trigger(type="button", data-invitation-open)
+                            svg(
+                                width="19",
+                                height="19",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="2",
+                                stroke-linecap="round",
+                                stroke-linejoin="round",
+                                aria-hidden="true"
+                            )
+                                path(d="M12 5v14M5 12h14")
+                            | Invitar cuenta
+                section.admin-invitations-panel(aria-labelledby="admin-invitations-title")
+                    header.admin-invitations-header
+                        div
+                            h2#admin-invitations-title Invitaciones pendientes
+                            p Envía un enlace seguro para que la persona complete su registro.
+                        span.admin-invitation-icon(aria-hidden="true")
+                            svg(
+                                width="22",
+                                height="22",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                path(d="M4 6h16v12H4z")
+                                path(d="m4 7 8 6 8-6")
+                    p.admin-invitations-feedback(
+                        role="status",
+                        aria-live="polite",
+                        data-invitation-feedback
+                    ) Cargando invitaciones…
+                    .admin-invitation-list(data-invitation-list, aria-live="polite")
                 section.admin-users-panel(aria-labelledby="admin-users-title")
                     header.admin-users-panel-header
                         div
@@ -68,6 +108,94 @@ html(lang="es")
                             button.admin-page-button(type="button", data-user-prev, disabled) Anterior
                             button.admin-page-button(type="button", data-user-next, disabled) Siguiente
                 p.admin-users-note Los cambios de rol y estado se registran para auditoría. Las cuentas no se eliminan.
+            .admin-user-modal-backdrop(hidden, data-invitation-modal)
+                section.admin-user-modal.admin-invitation-modal(
+                    role="dialog",
+                    aria-modal="true",
+                    aria-labelledby="admin-invitation-modal-title",
+                    tabindex="-1",
+                    data-invitation-dialog
+                )
+                    header.admin-user-modal-header
+                        div
+                            p.admin-eyebrow Nueva cuenta
+                            h2#admin-invitation-modal-title Invitar a SaludVital
+                            p.admin-invitation-intro Elige el tipo de cuenta. Enviaremos un enlace al correo para completar el registro.
+                        button.admin-user-modal-close(
+                            type="button",
+                            aria-label="Cerrar invitación",
+                            data-invitation-close
+                        ) ×
+                    p.admin-user-modal-feedback(
+                        role="alert",
+                        aria-live="assertive",
+                        data-invitation-modal-feedback
+                    )
+                    form(data-invitation-form)
+                        fieldset.admin-invitation-roles
+                            legend Tipo de cuenta
+                            label.admin-invitation-role-card.is-selected(data-account-role-card)
+                                input(type="radio", name="accountType", value="patient", checked)
+                                span.admin-invitation-role-icon(aria-hidden="true")
+                                    svg(
+                                        width="23",
+                                        height="23",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2")
+                                        circle(cx="12", cy="7", r="4")
+                                span
+                                    strong Paciente
+                                    small Completa sus datos y acepta el aviso de privacidad.
+                            label.admin-invitation-role-card(data-account-role-card)
+                                input(type="radio", name="accountType", value="administrator")
+                                span.admin-invitation-role-icon.is-admin(aria-hidden="true")
+                                    svg(
+                                        width="23",
+                                        height="23",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(
+                                            d="M12 3 4.5 6v5.5c0 4.6 3.2 7.6 7.5 9.5 4.3-1.9 7.5-4.9 7.5-9.5V6L12 3Z"
+                                        )
+                                        path(d="m9 12 2 2 4-4")
+                                span
+                                    strong Administrador
+                                    small Obtiene acceso al panel después de confirmar el correo.
+                        .admin-invitation-form-fields
+                            label.admin-user-form-field(for="invitation-name")
+                                span Nombre completo
+                                input#invitation-name(
+                                    type="text",
+                                    name="displayName",
+                                    autocomplete="name",
+                                    maxlength="120",
+                                    required
+                                )
+                            label.admin-user-form-field(for="invitation-email")
+                                span Correo electrónico
+                                input#invitation-email(
+                                    type="email",
+                                    name="email",
+                                    autocomplete="email",
+                                    maxlength="320",
+                                    required
+                                )
+                        p.admin-invitation-consent-note(data-invitation-note) El paciente completa su información personal y de salud, acepta el aviso de privacidad y crea su propia contraseña.
+                        footer.admin-user-modal-actions
+                            button.admin-user-cancel(type="button", data-invitation-cancel) Cancelar
+                            button.admin-user-save(type="submit", data-invitation-submit)
+                                | Enviar invitación
             .admin-user-modal-backdrop(hidden, data-user-modal)
                 section.admin-user-modal(
                     role="dialog",

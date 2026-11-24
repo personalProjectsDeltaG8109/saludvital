@@ -983,6 +983,10 @@ if (page) {
         const roleSelect = document.createElement("select");
         roleSelect.className = "admin-user-role-select";
         roleSelect.setAttribute("aria-label", `Rol de ${user.displayName}`);
+        roleSelect.disabled = Boolean(user.isPendingInvitation);
+        if (user.isPendingInvitation) {
+            roleSelect.title = "Completa la activación desde Invitaciones pendientes.";
+        }
         roles
             .filter((role) => role.name !== "Administrator" || role.id === user.role.id)
             .forEach((role) => {
@@ -1023,6 +1027,14 @@ if (page) {
 
         const actions = document.createElement("div");
         actions.className = "admin-user-actions";
+        if (user.isPendingInvitation) {
+            const pendingNote = document.createElement("span");
+            pendingNote.className = "admin-user-pending-note";
+            pendingNote.textContent = "Gestiona esta cuenta en Invitaciones pendientes";
+            actions.append(pendingNote);
+            card.append(identity, roleField, profileField, lastLoginField, actions);
+            return card;
+        }
         const editButton = document.createElement("button");
         editButton.type = "button";
         editButton.className = "admin-user-edit";
@@ -1126,6 +1138,220 @@ if (page) {
         }
     }
 
+    const invitationModal = document.querySelector("[data-invitation-modal]");
+    const invitationDialog = document.querySelector("[data-invitation-dialog]");
+    const invitationForm = document.querySelector("[data-invitation-form]");
+    const invitationList = document.querySelector("[data-invitation-list]");
+    const invitationFeedback = document.querySelector("[data-invitation-feedback]");
+    const invitationModalFeedback = document.querySelector("[data-invitation-modal-feedback]");
+    const invitationNote = document.querySelector("[data-invitation-note]");
+    const invitationSubmit = document.querySelector("[data-invitation-submit]");
+    let focusedBeforeInvitation;
+
+    function setInvitationFeedback(message, kind = "") {
+        invitationFeedback.textContent = message;
+        invitationFeedback.classList.toggle("is-error", kind === "error");
+        invitationFeedback.classList.toggle("is-success", kind === "success");
+    }
+
+    function invitationStatus(status) {
+        const labels = {
+            pending: "Correo pendiente",
+            sent: "Invitación enviada",
+            failed: "No se pudo enviar",
+            expired: "Enlace vencido",
+        };
+        return labels[status] || "Correo pendiente";
+    }
+
+    function invitationIcon(kind) {
+        return kind === "administrator"
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 7.6 7.5 9.5 4.3-1.9 7.5-4.9 7.5-9.5V6L12 3Z"/><path d="m9 12 2 2 4-4"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+
+    function invitationActionButton(label, className, iconMarkup, handler) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `admin-invitation-action ${className}`;
+        button.setAttribute("aria-label", label);
+        button.title = label;
+        button.innerHTML = iconMarkup;
+        button.addEventListener("click", handler);
+        return button;
+    }
+
+    async function loadInvitations() {
+        try {
+            const response = await fetch(page.dataset.invitationsEndpoint, {
+                headers: { Accept: "application/json" },
+                cache: "no-store",
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.message || "No pudimos cargar las invitaciones.");
+            renderInvitations(data.invitations || []);
+        } catch (error) {
+            invitationList.replaceChildren();
+            setInvitationFeedback(error.message || "No pudimos cargar las invitaciones.", "error");
+        }
+    }
+
+    function renderInvitations(invitations) {
+        invitationList.replaceChildren();
+        if (!invitations.length) {
+            const empty = document.createElement("p");
+            empty.className = "admin-invitations-empty";
+            empty.textContent = "No hay invitaciones pendientes. Las nuevas aparecerán aquí.";
+            invitationList.append(empty);
+            setInvitationFeedback("");
+            return;
+        }
+
+        invitations.forEach((invitation) => {
+            const row = document.createElement("article");
+            row.className = "admin-invitation-row";
+            const symbol = document.createElement("span");
+            symbol.className = `admin-invitation-avatar${invitation.accountType === "administrator" ? " is-admin" : ""}`;
+            symbol.innerHTML = invitationIcon(invitation.accountType);
+            const identity = document.createElement("div");
+            identity.className = "admin-invitation-identity";
+            const name = document.createElement("strong");
+            name.textContent = invitation.displayName || invitation.email;
+            const email = document.createElement("span");
+            email.textContent = invitation.email;
+            identity.append(name, email);
+            const role = document.createElement("span");
+            role.className = "admin-invitation-role";
+            role.textContent = invitation.role;
+            const status = document.createElement("span");
+            status.className = `admin-invitation-status is-${invitation.status}`;
+            status.textContent = invitationStatus(invitation.status);
+            const actions = document.createElement("div");
+            actions.className = "admin-invitation-actions";
+            const resendIcon =
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 11.6-2L20 12M4 12l2.8 5a7 7 0 0 0 11.6-2"/></svg>';
+            const cancelIcon =
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6"/></svg>';
+            actions.append(
+                invitationActionButton("Volver a enviar", "is-resend", resendIcon, () => {
+                    void manageInvitation(invitation.id, "resend");
+                }),
+                invitationActionButton("Cancelar invitación", "is-cancel", cancelIcon, () => {
+                    void manageInvitation(invitation.id, "cancel");
+                }),
+            );
+            row.append(symbol, identity, role, status, actions);
+            invitationList.append(row);
+        });
+        setInvitationFeedback(
+            `${invitations.length} ${invitations.length === 1 ? "invitación pendiente" : "invitaciones pendientes"}.`,
+        );
+    }
+
+    async function manageInvitation(invitationId, action) {
+        if (
+            action === "cancel" &&
+            !window.confirm(
+                "¿Quieres cancelar esta invitación? La persona ya no podrá usar el enlace.",
+            )
+        ) {
+            return;
+        }
+        const endpoint = `${page.dataset.invitationsEndpoint}/${invitationId}`;
+        try {
+            const response = await fetch(action === "resend" ? `${endpoint}/resend` : endpoint, {
+                method: action === "resend" ? "POST" : "DELETE",
+                headers: { Accept: "application/json" },
+            });
+            const data = await response.json();
+            if (!response.ok)
+                throw new Error(data.message || "No pudimos actualizar la invitación.");
+            setInvitationFeedback(data.message, "success");
+            await loadInvitations();
+        } catch (error) {
+            setInvitationFeedback(error.message || "No pudimos actualizar la invitación.", "error");
+        }
+    }
+
+    function openInvitationModal() {
+        focusedBeforeInvitation = document.activeElement;
+        invitationModal.hidden = false;
+        document.body.classList.add("has-admin-modal");
+        invitationDialog.querySelector("input[name='displayName']")?.focus();
+    }
+
+    function closeInvitationModal() {
+        invitationModal.hidden = true;
+        document.body.classList.remove("has-admin-modal");
+        invitationForm.reset();
+        invitationModalFeedback.textContent = "";
+        document.querySelector("[data-account-role-card]")?.classList.add("is-selected");
+        focusedBeforeInvitation?.focus();
+    }
+
+    document
+        .querySelector("[data-invitation-open]")
+        ?.addEventListener("click", openInvitationModal);
+    invitationModal
+        .querySelectorAll("[data-invitation-close], [data-invitation-cancel]")
+        .forEach((button) => button.addEventListener("click", closeInvitationModal));
+    invitationModal.addEventListener("click", (event) => {
+        if (event.target === invitationModal) closeInvitationModal();
+    });
+    invitationDialog.addEventListener("keydown", (event) => {
+        if (event.key !== "Tab") return;
+        const focusable = [
+            ...invitationDialog.querySelectorAll(
+                "button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled)",
+            ),
+        ];
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+    invitationModal.querySelectorAll("input[name='accountType']").forEach((radio) => {
+        radio.addEventListener("change", () => {
+            invitationModal.querySelectorAll("[data-account-role-card]").forEach((card) => {
+                card.classList.toggle("is-selected", card.querySelector("input").checked);
+            });
+            invitationNote.textContent =
+                radio.value === "patient"
+                    ? "El paciente completa su información personal y de salud, acepta el aviso de privacidad y crea su propia contraseña."
+                    : "El administrador confirma su correo y elige su contraseña antes de poder ingresar al panel.";
+        });
+    });
+    invitationForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        invitationSubmit.disabled = true;
+        invitationModalFeedback.textContent = "Enviando invitación…";
+        const formData = new FormData(invitationForm);
+        try {
+            const response = await fetch(page.dataset.invitationsEndpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify(Object.fromEntries(formData)),
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || "No pudimos crear la invitación.");
+            closeInvitationModal();
+            setInvitationFeedback(data.message, "success");
+            await Promise.all([loadInvitations(), loadUsers()]);
+        } catch (error) {
+            invitationModalFeedback.textContent =
+                error.message || "No pudimos crear la invitación.";
+        } finally {
+            invitationSubmit.disabled = false;
+        }
+    });
+
     async function updateUser(user, changes) {
         document
             .querySelectorAll(".admin-user-role-select, .admin-user-toggle")
@@ -1203,6 +1429,10 @@ if (page) {
     });
     document.addEventListener("keydown", (event) => {
         if (event.key !== "Escape") return;
+        if (!invitationModal.hidden) {
+            closeInvitationModal();
+            return;
+        }
         if (!roleModal.hidden) {
             closeRoleModal();
             return;
@@ -1215,4 +1445,5 @@ if (page) {
     });
 
     void loadUsers();
+    void loadInvitations();
 }

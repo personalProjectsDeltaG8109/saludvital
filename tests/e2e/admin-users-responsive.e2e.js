@@ -103,7 +103,10 @@ for (const [, assetPath] of renderedHtml.matchAll(/src="(\/brand\/[^\"]+)"/g)) {
 const html = renderedHtml.replace(/src="(\/brand\/[^\"]+)"/g, (_, assetPath) => {
     return `src="${brandImages.get(assetPath)}"`;
 });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,
+});
 
 async function verifyAccountEmailLength(page, profileLabel) {
     const emailInput = page.locator('[data-user-edit-fields] [name="email"]');
