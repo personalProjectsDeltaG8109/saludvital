@@ -35,10 +35,17 @@ const notification = {
     failureSummary: null,
 };
 
+const smsNotification = {
+    ...notification,
+    id: 2,
+    channel: "SMS",
+    providerStatus: "Entregado por Inalambria",
+};
+
 function responseData(pageNumber, rows = [notification]) {
     return {
         period: { days: 30, start: "2026-10-01T05:00:00.000Z", end: "2026-10-31T05:00:00.000Z" },
-        summary: { totalSent: 1, delivered: 1, failed: 0, pending: 0 },
+        summary: { totalSent: rows.length, delivered: rows.length, failed: 0, pending: 0 },
         rows,
         filters: { channel: "all", status: "all", search: "" },
         pagination: {
@@ -69,7 +76,12 @@ try {
                 body: JSON.stringify({ message: "No pudimos cargar las notificaciones." }),
             });
         }
-        const rows = url.searchParams.get("search") === "sin resultados" ? [] : [notification];
+        const rows =
+            url.searchParams.get("search") === "sin resultados"
+                ? []
+                : url.searchParams.get("channel") === "SMS"
+                  ? [smsNotification]
+                  : [notification];
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -108,6 +120,40 @@ try {
                             label: "Notificación registrada",
                             occurredAt: "2026-10-30T14:59:00.000Z",
                             description: '<img src=x onerror="alert(1)">',
+                        },
+                    ],
+                    eventHistoryNote: "Solo se muestran los datos registrados.",
+                },
+            }),
+        }),
+    );
+    await page.route("http://localhost/api/admin/notifications/2", (route) =>
+        route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+                notification: {
+                    id: 2,
+                    eventType: "Recordatorio de cita",
+                    channel: "SMS",
+                    recipientName: "Paciente de prueba",
+                    maskedRecipient: "â€¢â€¢â€¢ 8332",
+                    applicationStatus: "Aceptada por el proveedor",
+                    providerStatus: "Entregado por Inalambria",
+                    providerReference: "â€¢â€¢â€¢â€¢5678",
+                    createdAt: "2026-10-30T15:00:00.000Z",
+                    scheduledAt: "2026-10-30T14:59:00.000Z",
+                    acceptedAt: "2026-10-30T15:00:00.000Z",
+                    updatedAt: "2026-10-30T15:01:00.000Z",
+                    attemptCount: 1,
+                    failure: null,
+                    appointment: null,
+                    events: [
+                        {
+                            type: "provider",
+                            label: "Entregado por Inalambria",
+                            occurredAt: "2026-10-30T15:01:00.000Z",
+                            description: "Inalambria informó la entrega del SMS.",
                         },
                     ],
                     eventHistoryNote: "Solo se muestran los datos registrados.",
@@ -162,6 +208,23 @@ try {
     if (!(await detailButton.evaluate((button) => button === document.activeElement))) {
         throw new Error("Closing the detail dialog should restore focus to its opening button.");
     }
+
+    await page.getByRole("button", { name: /SMS/ }).click();
+    await page
+        .locator("[data-notifications-mobile-list] .admin-notifications-provider-status")
+        .filter({ hasText: "Entregado por Inalambria" })
+        .waitFor();
+    const smsDetailButton = page.getByRole("button", {
+        name: "Ver detalles de la notificación #2",
+    });
+    await smsDetailButton.click();
+    await detailDialog.waitFor({ state: "visible" });
+    await detailDialog.getByText("Entregado por Inalambria").first().waitFor();
+    if ((await detailDialog.getByText(/Meta/).count()) !== 0) {
+        throw new Error("SMS delivery details must name Inalambria, not Meta.");
+    }
+    await page.keyboard.press("Escape");
+    await detailDialog.waitFor({ state: "hidden" });
 
     await page.getByRole("button", { name: /WhatsApp/ }).click();
     await page.locator("[data-notification-search]").fill("Laura");

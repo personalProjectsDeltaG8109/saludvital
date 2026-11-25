@@ -120,6 +120,41 @@ describe("administrator notification detail service", () => {
         expect(detail.appointment).toBeNull();
     });
 
+    test.each([
+        ["SMS", "delivered", "Entregado por Inalambria", "Inalambria informó"],
+        ["SMS", "failed", "Fallido según Inalambria", "Inalambria informó"],
+        ["WhatsApp", "read", "Leído por Meta", "Meta informó"],
+    ])(
+        "attributes %s %s events to the correct provider",
+        async (channel, status, label, source) => {
+            Notification.findByPk.mockResolvedValue(
+                notificationRecord({ channel, provider_delivery_status: status }),
+            );
+
+            const detail = await getAdminNotificationDetails("52");
+
+            expect(detail.providerStatus).toBe(label);
+            expect(detail.events.at(-1)).toMatchObject({
+                type: "provider",
+                label,
+                description: expect.stringContaining(source),
+            });
+            if (channel === "SMS") expect(JSON.stringify(detail)).not.toContain("Meta");
+        },
+    );
+
+    test("does not treat email delivery fields as confirmed provider events", async () => {
+        Notification.findByPk.mockResolvedValue(
+            notificationRecord({ channel: "Email", provider_delivery_status: "delivered" }),
+        );
+
+        const detail = await getAdminNotificationDetails("52");
+
+        expect(detail.providerStatus).toBe("Sin confirmación final del proveedor");
+        expect(detail.events.map(({ type }) => type)).toEqual(["created", "accepted"]);
+        expect(detail.failure).toBeNull();
+    });
+
     test("returns a safe failure category without raw errors or secrets", async () => {
         Notification.findByPk.mockResolvedValue(
             notificationRecord({
