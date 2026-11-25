@@ -32,6 +32,7 @@ const VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const VERIFIED_SESSION_TTL_MS = 15 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
 const SEND_CODE_COOLDOWN_MS = 2 * 60 * 1000;
+const MAX_WHATSAPP_LIST_ROWS = 10;
 const INTENT_BY_FLOW_STEP = {
     booking: "book",
     appointments: "consult",
@@ -114,46 +115,66 @@ function safeText(value) {
         .slice(0, 200);
 }
 
-function createChoiceList(labels, values, page = 0, pageSize = 10) {
-    const start = page * pageSize;
-    const options = labels.slice(start, start + pageSize).map((title, index) => ({
+function createChoiceList(labels, values, page = 0, pageSize) {
+    const choicePageSize =
+        pageSize ||
+        (labels.length > MAX_WHATSAPP_LIST_ROWS
+            ? MAX_WHATSAPP_LIST_ROWS - 1
+            : MAX_WHATSAPP_LIST_ROWS);
+    const start = page * choicePageSize;
+    const options = labels.slice(start, start + choicePageSize).map((title, index) => ({
         id: `choice:${start + index + 1}`,
         title: safeText(title).slice(0, 24) || `Opción ${start + index + 1}`,
     }));
-    const hasNextPage = start + pageSize < labels.length;
+    const hasNextPage = start + choicePageSize < labels.length;
     if (hasNextPage) options.push({ id: "choice:next", title: "Ver más opciones" });
     return {
         options,
         choices: values,
         page,
-        pageSize,
+        pageSize: choicePageSize,
         hasNextPage,
         labels,
     };
 }
 
 function parseChoice(text, state) {
+    const choices = state.choices || [];
+    const pageSize =
+        Number.isInteger(state.pageSize) && state.pageSize > 0 ? state.pageSize : choices.length;
+    const page = Number.isInteger(state.page) && state.page >= 0 ? state.page : 0;
+    const pageStart = page * pageSize;
+    const pageEnd = Math.min(pageStart + pageSize, choices.length);
+    if (pageStart >= pageEnd) return null;
+
     const match = /^(?:choice:)?(\d+)$/.exec(text.trim());
     if (match) {
-        const choice = state.choices?.[Number(match[1]) - 1];
-        return choice === undefined ? null : choice;
+        const choiceIndex = Number(match[1]) - 1;
+        return choiceIndex >= pageStart && choiceIndex < pageEnd ? choices[choiceIndex] : null;
     }
     const normalizedText = text.trim().toLocaleLowerCase("es-CO");
     const matchingIndexes = (state.labels || []).flatMap((label, index) =>
-        String(label).trim().toLocaleLowerCase("es-CO") === normalizedText ? [index] : [],
+        index >= pageStart &&
+        index < pageEnd &&
+        String(label).trim().toLocaleLowerCase("es-CO") === normalizedText
+            ? [index]
+            : [],
     );
-    return matchingIndexes.length === 1 ? state.choices[matchingIndexes[0]] : null;
+    return matchingIndexes.length === 1 ? choices[matchingIndexes[0]] : null;
 }
 
 async function sendResponse(conversation, contactId, text, options = []) {
-    const payloadText = options.length
-        ? `${text}\n\n${options
-              .filter((option) => option.id !== "choice:next")
+    const visibleChoices = options.filter((option) => option.id !== "choice:next");
+    const hasNextPage = visibleChoices.length !== options.length;
+    const payloadText = visibleChoices.length
+        ? `${text}\n\n${visibleChoices
               .map((option, index) => {
                   const optionNumber = option.id.match(/^(?:choice|menu):(\d+)$/)?.[1];
                   return `${optionNumber || index + 1}. ${option.title}`;
               })
-              .join("\n")}\n\nTambién puedes responder con el número de la opción.`
+              .join("\n")}\n\nTambién puedes responder con el número de la opción.${
+              hasNextPage ? '\nEscribe "ver más opciones" para continuar.' : ""
+          }`
         : text;
     const result = await sendWhatsAppReply({ to: `+${contactId}`, text: payloadText, options });
     const now = new Date();
@@ -335,19 +356,42 @@ async function showPagedChoices(conversation, contactId, text, labels, values, s
         );
         return;
     }
-    const page = 0;
-    const list = createChoiceList(labels, values, page);
+    const list = createChoiceList(labels, values);
     await conversation.update({
         chatbot_state: {
             ...state,
             step,
             choices: list.choices,
             labels: list.labels,
-            page,
+            page: list.page,
             pageSize: list.pageSize,
         },
     });
     await sendResponse(conversation, contactId, text, list.options);
+}
+
+function isNextChoicePageRequest(text) {
+    return ["choice:next", "ver más opciones", "mas opciones", "más opciones"].includes(
+        text.trim().toLocaleLowerCase("es-CO"),
+    );
+}
+
+function hasNextChoicePage(state) {
+    return (
+        Number.isInteger(state.page) &&
+        Number.isInteger(state.pageSize) &&
+        state.page >= 0 &&
+        state.pageSize > 0 &&
+        Array.isArray(state.choices) &&
+        state.choices.length > (state.page + 1) * state.pageSize
+    );
+}
+
+async function showNextChoicePage(conversation, contactId, state) {
+    const nextPage = state.page + 1;
+    const list = createChoiceList(state.labels || [], state.choices, nextPage, state.pageSize);
+    await conversation.update({ chatbot_state: { ...state, page: list.page } });
+    await sendResponse(conversation, contactId, "Selecciona una opción:", list.options);
 }
 
 async function continueIntent(conversation, contactId, intent) {
@@ -541,24 +585,8 @@ async function handleSelection(conversation, contactId, text, userId, state) {
     }
 
     const choice = parseChoice(text.replace(/^choice:/, "choice:"), state);
-    if (
-        ["choice:next", "ver más opciones", "mas opciones", "más opciones"].includes(
-            text.toLocaleLowerCase("es-CO"),
-        ) &&
-        state.pageSize &&
-        state.choices?.length > (state.page + 1) * state.pageSize
-    ) {
-        const start = (state.page + 1) * state.pageSize;
-        const options = state.choices.slice(start, start + state.pageSize).map((item, index) => ({
-            id: `choice:${start + index + 1}`,
-            title:
-                safeText(state.labels?.[start + index]).slice(0, 24) ||
-                `Opción ${start + index + 1}`,
-        }));
-        if (start + state.pageSize < state.choices.length)
-            options.push({ id: "choice:next", title: "Ver más opciones" });
-        await conversation.update({ chatbot_state: { ...state, page: state.page + 1 } });
-        await sendResponse(conversation, contactId, "Selecciona una opción:", options);
+    if (isNextChoicePageRequest(text) && hasNextChoicePage(state)) {
+        await showNextChoicePage(conversation, contactId, state);
         return;
     }
 
