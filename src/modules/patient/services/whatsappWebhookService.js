@@ -19,6 +19,7 @@ import {
     getAvailableTimeSlots,
     getPatientAppointmentsForWhatsApp,
     getReschedulableAppointments,
+    getUpcomingConfirmedAppointmentsForWhatsApp,
     reschedulePatientAppointment,
 } from "./appointmentService.js";
 import { sendWhatsAppIdentityCode } from "./resendEmailService.js";
@@ -506,9 +507,9 @@ async function continueIntent(conversation, contactId, intent) {
         );
     }
     if (intent === "consult") {
-        const appointments = await getPatientAppointmentsForWhatsApp(userId);
+        const appointments = await getUpcomingConfirmedAppointmentsForWhatsApp(userId);
         if (!appointments.length) {
-            return showMainMenu(conversation, contactId, "No tienes citas registradas.");
+            return showMainMenu(conversation, contactId, "No tienes próximas citas confirmadas.");
         }
         const summary = appointments
             .map((item) => {
@@ -521,13 +522,13 @@ async function continueIntent(conversation, contactId, intent) {
                     minute: "2-digit",
                     timeZone: "America/Bogota",
                 }).format(new Date(item.start_at));
-                return `• ${date}, ${time} — ${item.specialty.name} — ${item.status.name}`;
+                return `• ${date}, ${time} — ${item.specialty.name} — Estado: Confirmada`;
             })
             .join("\n");
         await showMainMenu(
             conversation,
             contactId,
-            `Estas son tus citas más recientes:\n${summary}`,
+            `Estas son tus próximas citas confirmadas:\n${summary}`,
         );
         return;
     }
