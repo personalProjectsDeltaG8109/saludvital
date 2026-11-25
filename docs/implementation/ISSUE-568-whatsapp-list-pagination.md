@@ -29,3 +29,4 @@ WhatsApp lists support at most ten rows. The chatbot previously filled all ten r
 
 - Issue: [#568](https://github.com/personalProjectsDeltaG8109/saludvital/issues/568)
 - Branch: `fix/568-whatsapp-list-pagination`
+- Pull request: [#571](https://github.com/personalProjectsDeltaG8109/saludvital/pull/571) (open; awaiting review and merge).
