@@ -26,10 +26,24 @@ html(lang="es")
                 data-invitations-endpoint="/api/admin/account-invitations"
             )
                 header.admin-users-heading
-                    div
-                        p.admin-eyebrow Gestión médica
-                        h1 Usuarios y roles
-                        p Revisa las cuentas registradas y administra su acceso a SaludVital.
+                    .admin-users-heading-main
+                        span.admin-users-heading-icon(aria-hidden="true")
+                            svg(
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.8",
+                                stroke-linecap="round",
+                                stroke-linejoin="round"
+                            )
+                                circle(cx="9", cy="8", r="3.5")
+                                path(d="M2.8 20v-1.2a6.2 6.2 0 0 1 12.4 0V20")
+                                path(d="M16.2 4.8a3.5 3.5 0 0 1 0 6.4")
+                                path(d="M18.2 14.4a5.4 5.4 0 0 1 3 4.9V20")
+                        .admin-users-heading-copy
+                            p.admin-eyebrow Gestión médica
+                            h1 Usuarios y roles
+                            p Revisa las cuentas registradas y administra su acceso a SaludVital.
                     .admin-users-heading-actions
                         .admin-users-total(aria-live="polite")
                             strong(data-user-count) —
@@ -125,7 +139,18 @@ html(lang="es")
                             type="button",
                             aria-label="Cerrar invitación",
                             data-invitation-close
-                        ) ×
+                        )
+                            svg(
+                                width="18",
+                                height="18",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.9",
+                                stroke-linecap="round",
+                                aria-hidden="true"
+                            )
+                                path(d="m6 6 12 12M18 6 6 18")
                     p.admin-user-modal-feedback(
                         role="alert",
                         aria-live="assertive",
@@ -212,7 +237,18 @@ html(lang="es")
                             type="button",
                             aria-label="Cerrar ventana de edición",
                             data-user-modal-close
-                        ) ×
+                        )
+                            svg(
+                                width="18",
+                                height="18",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.9",
+                                stroke-linecap="round",
+                                aria-hidden="true"
+                            )
+                                path(d="m6 6 12 12M18 6 6 18")
                     .admin-user-modal-profile(data-user-modal-profile)
                     p.admin-user-modal-feedback(
                         role="alert",
@@ -240,7 +276,18 @@ html(lang="es")
                             type="button",
                             aria-label="Cerrar ventana de cambio de rol",
                             data-role-modal-close
-                        ) ×
+                        )
+                            svg(
+                                width="18",
+                                height="18",
+                                viewBox="0 0 24 24",
+                                fill="none",
+                                stroke="currentColor",
+                                stroke-width="1.9",
+                                stroke-linecap="round",
+                                aria-hidden="true"
+                            )
+                                path(d="m6 6 12 12M18 6 6 18")
                     .admin-user-modal-profile(data-role-modal-profile)
                     p.admin-user-role-explanation(data-role-explanation)
                     p.admin-user-role-impact(hidden, data-role-impact)

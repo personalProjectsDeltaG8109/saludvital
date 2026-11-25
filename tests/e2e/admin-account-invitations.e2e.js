@@ -89,10 +89,16 @@ try {
     await page.addStyleTag({ content: userStyles });
     await page.addScriptTag({ content: userScript });
     await page.waitForSelector(".admin-invitations-empty");
+    if (!(await page.locator(".admin-users-heading-icon svg").count())) {
+        throw new Error("The Users and Roles page heading is missing its vector icon.");
+    }
 
     await page.getByRole("button", { name: "Invitar cuenta" }).click();
     const modal = page.locator("[data-invitation-dialog]");
     await modal.waitFor();
+    if (!(await modal.locator("[data-invitation-close] svg").count())) {
+        throw new Error("The invitation modal close control is missing its vector icon.");
+    }
     if (
         !(await modal.innerText()).includes(
             "El paciente completa su información personal y de salud",
@@ -158,12 +164,28 @@ try {
     await page.getByRole("button", { name: "Invitar cuenta" }).click();
     const mobileModal = page.locator("[data-invitation-dialog]");
     const mobileModalBounds = await mobileModal.evaluate((element) => {
-        const { left, right, width } = element.getBoundingClientRect();
-        return { left, right, width, viewport: document.documentElement.clientWidth };
+        const { left, right, top, bottom } = element.getBoundingClientRect();
+        return {
+            left,
+            right,
+            top,
+            bottom,
+            viewportWidth: document.documentElement.clientWidth,
+            viewportHeight: document.documentElement.clientHeight,
+        };
     });
-    if (mobileModalBounds.left < 0 || mobileModalBounds.right > mobileModalBounds.viewport + 1) {
+    if (
+        mobileModalBounds.left < 12 ||
+        mobileModalBounds.right > mobileModalBounds.viewportWidth - 12 ||
+        mobileModalBounds.top < 12 ||
+        mobileModalBounds.bottom > mobileModalBounds.viewportHeight - 12 ||
+        Math.abs(
+            (mobileModalBounds.top + mobileModalBounds.bottom) / 2 -
+                mobileModalBounds.viewportHeight / 2,
+        ) > 2
+    ) {
         throw new Error(
-            `The invitation form does not fit on mobile: ${JSON.stringify(mobileModalBounds)}.`,
+            `The invitation form is not centered with mobile spacing: ${JSON.stringify(mobileModalBounds)}.`,
         );
     }
     if (process.env.ADMIN_USERS_SCREENSHOT_DIR) {
@@ -172,10 +194,11 @@ try {
                 process.env.ADMIN_USERS_SCREENSHOT_DIR,
                 "admin-invitation-modal-mobile.png",
             ),
-            fullPage: true,
+            fullPage: false,
         });
     }
-    await page.locator("[data-invitation-cancel]").click();
+    await page.locator("[data-invitation-close]").click();
+    await mobileModal.waitFor({ state: "hidden" });
     await page.setViewportSize({ width: 1440, height: 1000 });
     console.log("PASS: invitation form fits on mobile.");
 
