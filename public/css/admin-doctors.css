@@ -940,3 +940,507 @@ body.admin-doctors-shell .admin-mobile-notification {
 [hidden] {
     display: none !important;
 }
+
+/* Doctor creation form follows the specialty form layout. */
+.admin-doctor-create-page .doctor-form-page {
+    width: min(100%, 1180px);
+    max-width: none;
+    margin: 0 auto;
+    padding: 25px clamp(16px, 2vw, 30px) 35px;
+    color: #123b73;
+}
+.admin-doctor-create-page .doctor-form-back-link {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 20px;
+    padding: 0 13px;
+    border: 1px solid #d8e7f4;
+    border-radius: 9px;
+    color: #0b548d;
+    background: #fff;
+    box-shadow: 0 3px 9px rgb(27 72 119 / 5%);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+        background 160ms ease,
+        border-color 160ms ease,
+        transform 160ms ease;
+}
+.admin-doctor-create-page .doctor-form-back-link:hover {
+    transform: translateY(-1px);
+    border-color: #abd1eb;
+    background: #f3f9ff;
+}
+.admin-doctor-create-page .doctor-form-back-link svg {
+    width: 17px;
+    height: 17px;
+}
+.doctor-form-heading {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.doctor-form-heading > .doctor-stat-icon.is-heading {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+    border-radius: 14px;
+}
+.doctor-form-heading > .doctor-stat-icon.is-heading svg {
+    width: 29px;
+    height: 29px;
+}
+.doctor-form-heading h1 {
+    margin: 0;
+    color: #082f7c;
+    font-size: clamp(24px, 2vw, 30px);
+    letter-spacing: -0.03em;
+}
+.doctor-form-heading p:not(.admin-eyebrow) {
+    margin: 5px 0 0;
+    color: #647b9d;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.doctor-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+    align-items: start;
+    gap: 20px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.doctor-form-card,
+.doctor-live-preview {
+    min-width: 0;
+    border: 1px solid #e6eef7;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 7px 22px rgb(27 72 119 / 5%);
+}
+.doctor-form-card {
+    display: grid;
+    gap: 19px;
+    padding: clamp(18px, 3vw, 30px);
+}
+.doctor-form-card-heading {
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e9eff6;
+}
+.doctor-form-card-heading h2,
+.doctor-live-preview h2 {
+    margin: 0;
+    color: #123b73;
+    font-size: 17px;
+}
+.doctor-form-card-heading p,
+.doctor-live-preview > p {
+    margin: 5px 0 0;
+    color: #7185a0;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.admin-doctor-create-page .doctor-photo-card {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 13px;
+    padding: 13px;
+    border: 1px dashed #aac8df;
+    border-radius: 11px;
+    background: #f6fbff;
+}
+.admin-doctor-create-page .doctor-photo-preview {
+    width: 60px;
+    height: 60px;
+    flex: 0 0 60px;
+    border: 2px solid #fff;
+    color: #0a51ad;
+    background: #e9f2fc;
+    box-shadow: 0 2px 9px rgb(18 59 115 / 10%);
+}
+.admin-doctor-create-page .doctor-photo-preview svg {
+    width: 28px;
+    height: 28px;
+}
+.admin-doctor-create-page .doctor-photo-preview > span {
+    display: grid;
+    place-items: center;
+}
+.admin-doctor-create-page .doctor-photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.admin-doctor-create-page .doctor-photo-copy {
+    min-width: 0;
+    flex: 1;
+    gap: 4px;
+}
+.admin-doctor-create-page .doctor-photo-copy strong {
+    font-size: 12px;
+    font-weight: 650;
+}
+.admin-doctor-create-page .doctor-photo-copy small {
+    color: #7185a0;
+    font-size: 11px;
+    line-height: 1.45;
+}
+.admin-doctor-create-page .doctor-photo-button,
+.admin-doctor-create-page .doctor-photo-remove {
+    min-height: 38px;
+    gap: 7px;
+    padding: 0 11px;
+    border: 1px solid #d5e5f2;
+    border-radius: 8px;
+    color: #0b548d;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 650;
+}
+.admin-doctor-create-page .doctor-photo-button:hover {
+    background: #edf7ff;
+}
+.admin-doctor-create-page .doctor-photo-button:focus-within {
+    outline: 3px solid rgb(22 141 226 / 32%);
+    outline-offset: 2px;
+}
+.admin-doctor-create-page .doctor-photo-button svg {
+    width: 16px;
+    height: 16px;
+}
+.admin-doctor-create-page .doctor-photo-remove {
+    flex: 0 0 auto;
+    color: #647b9d;
+}
+.admin-doctor-create-page .doctor-form-section {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px 13px;
+}
+.admin-doctor-create-page .doctor-form-section h2 {
+    grid-column: 1 / -1;
+    margin: 0 0 1px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e9eff6;
+    color: #123b73;
+    font-size: 15px;
+}
+.admin-doctor-create-page .doctor-form-field {
+    display: grid;
+    min-width: 0;
+    align-self: start;
+    gap: 7px;
+    color: #284a75;
+    font-size: 12px;
+    font-weight: 650;
+}
+.admin-doctor-create-page .doctor-form-field b {
+    color: #dc3545;
+}
+.admin-doctor-create-page .doctor-form-field-wide {
+    grid-column: 1 / -1;
+}
+.admin-doctor-create-page .doctor-form-field input,
+.admin-doctor-create-page .doctor-form-field select,
+.admin-doctor-create-page .doctor-form-field textarea {
+    min-height: 45px;
+    padding: 11px 13px;
+    border-color: #d8e4f0;
+    border-radius: 9px;
+    color: #163b70;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 400;
+}
+.admin-doctor-create-page .doctor-form-field textarea {
+    min-height: 104px;
+    resize: vertical;
+}
+.admin-doctor-create-page .doctor-form-field input:focus,
+.admin-doctor-create-page .doctor-form-field select:focus,
+.admin-doctor-create-page .doctor-form-field textarea:focus {
+    border-color: #168de2;
+    outline: 3px solid rgb(22 141 226 / 14%);
+}
+.doctor-form-field-hint {
+    color: #788ba5;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.45;
+}
+.admin-doctor-create-page .doctor-form-feedback {
+    min-height: 17px;
+    margin: 0;
+    color: #647b9d;
+    font-size: 12px;
+}
+.doctor-form-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+    padding: 12px;
+    border-radius: 9px;
+    color: #08774f;
+    background: #e8f8f0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.doctor-form-note svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+}
+.admin-doctor-create-page .doctor-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 5px;
+}
+.admin-doctor-create-page .doctor-form-actions .doctors-secondary-button,
+.admin-doctor-create-page .doctor-form-actions .doctors-primary-button {
+    min-height: 44px;
+    padding: 0 17px;
+    border: 1px solid #d8e4f0;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 650;
+}
+.admin-doctor-create-page .doctor-form-actions .doctors-primary-button {
+    gap: 7px;
+    border-color: transparent;
+    background: linear-gradient(115deg, #087cf0, #0561cf);
+}
+.admin-doctor-create-page .doctor-form-submit > svg {
+    transition: transform 220ms ease;
+}
+.admin-doctor-create-page .doctor-form-submit:hover > svg {
+    transform: rotate(90deg);
+}
+.doctor-live-preview {
+    padding: 22px;
+}
+.doctor-live-preview-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: #0b548d;
+    font-size: 11px;
+    font-weight: 650;
+}
+.doctor-live-preview-label svg {
+    width: 16px;
+    height: 16px;
+}
+.doctor-live-preview h2 {
+    font-size: 16px;
+}
+.doctor-live-preview > p {
+    font-size: 12px;
+}
+.doctor-live-preview-profile {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 13px;
+    border: 1px solid #e4edf6;
+    border-radius: 11px;
+    background: #f5faff;
+}
+.doctor-live-preview-avatar {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    place-items: center;
+    border-radius: 50%;
+    color: #0a51ad;
+    background: #e2effd;
+    font-size: 13px;
+    font-weight: 750;
+}
+.doctor-live-preview-name {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+}
+.doctor-live-preview-name strong,
+.doctor-live-preview-name small {
+    overflow-wrap: anywhere;
+}
+.doctor-live-preview-name strong {
+    color: #123b73;
+    font-size: 12px;
+}
+.doctor-live-preview-name small {
+    color: #647b9d;
+    font-size: 11px;
+}
+.doctor-live-preview-details {
+    display: grid;
+    gap: 13px;
+    margin-top: 16px;
+}
+.doctor-live-preview-detail {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+}
+.doctor-live-preview-detail-icon {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    place-items: center;
+    color: #0873c9;
+}
+.doctor-live-preview-detail-icon svg {
+    width: 17px;
+    height: 17px;
+}
+.doctor-live-preview-detail strong,
+.doctor-live-preview-detail small {
+    display: block;
+}
+.doctor-live-preview-detail strong {
+    color: #123b73;
+    font-size: 11px;
+}
+.doctor-live-preview-detail small {
+    margin-top: 4px;
+    color: #7185a0;
+    font-size: 11px;
+    line-height: 1.45;
+}
+.doctor-live-preview-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 16px 0 0;
+    padding-top: 13px;
+    border-top: 1px solid #e9eff6;
+    color: #7185a0;
+    font-size: 11px;
+    line-height: 1.5;
+}
+.doctor-live-preview-note svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: #0873c9;
+}
+.doctor-success {
+    margin-top: 18px;
+    padding: clamp(20px, 4vw, 36px);
+    border: 1px solid #d8eee2;
+    border-radius: 14px;
+    background: #f2fbf5;
+    color: #123b73;
+}
+.doctor-success h2 {
+    margin-top: 0;
+    color: #16864f;
+}
+
+@media (max-width: 1000px) {
+    .admin-doctor-create-page .doctor-form-page {
+        width: min(100%, 760px);
+    }
+    .admin-doctor-create-page .doctor-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .admin-doctor-create-page .doctor-live-preview {
+        grid-row: 1;
+    }
+}
+@media (max-width: 520px) {
+    .admin-doctor-create-page .doctor-form-page {
+        padding: 18px 14px 25px;
+    }
+    .doctor-form-heading {
+        align-items: flex-start;
+        gap: 11px;
+    }
+    .doctor-form-heading > .doctor-stat-icon.is-heading {
+        width: 47px;
+        height: 47px;
+        flex-basis: 47px;
+        border-radius: 12px;
+    }
+    .doctor-form-heading > .doctor-stat-icon.is-heading svg {
+        width: 25px;
+        height: 25px;
+    }
+    .doctor-form-heading h1 {
+        font-size: 22px;
+    }
+    .doctor-form-heading p:not(.admin-eyebrow) {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    .admin-doctor-create-page .doctor-form-card {
+        gap: 16px;
+        padding: 17px 14px;
+        border-radius: 13px;
+    }
+    .admin-doctor-create-page .doctor-form-section {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 13px;
+    }
+    .admin-doctor-create-page .doctor-form-section h2,
+    .admin-doctor-create-page .doctor-form-field-wide {
+        grid-column: 1;
+    }
+    .admin-doctor-create-page .doctor-form-field {
+        font-size: 12px;
+    }
+    .admin-doctor-create-page .doctor-form-field input,
+    .admin-doctor-create-page .doctor-form-field select,
+    .admin-doctor-create-page .doctor-form-field textarea {
+        font-size: 16px;
+    }
+    .admin-doctor-create-page .doctor-photo-card {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 11px;
+    }
+    .admin-doctor-create-page .doctor-photo-preview {
+        width: 54px;
+        height: 54px;
+        flex-basis: 54px;
+    }
+    .admin-doctor-create-page .doctor-photo-copy {
+        flex: 1 1 calc(100% - 70px);
+    }
+    .admin-doctor-create-page .doctor-photo-button {
+        flex: 1 1 auto;
+        margin-left: 64px;
+        min-height: 42px;
+    }
+    .admin-doctor-create-page .doctor-form-actions {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+    .admin-doctor-create-page .doctor-form-actions > * {
+        width: 100%;
+    }
+    .doctor-live-preview {
+        padding: 17px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .admin-doctor-create-page .doctor-form-submit > svg {
+        transition: none;
+    }
+}
