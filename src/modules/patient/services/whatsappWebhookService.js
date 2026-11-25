@@ -15,6 +15,7 @@ import {
     cancelPatientAppointment,
     getAvailableDoctors,
     getAvailableSpecialties,
+    getAvailableAppointmentDates,
     getAvailableTimeSlots,
     getPatientAppointmentsForWhatsApp,
     getReschedulableAppointments,
@@ -391,6 +392,84 @@ async function showNextChoicePage(conversation, contactId, state) {
     await sendResponse(conversation, contactId, "Selecciona una opción:", list.options);
 }
 
+function getCurrentBogotaDate() {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addCalendarDays(date, dayCount) {
+    const [year, month, day] = date.split("-").map(Number);
+    const localDate = new Date(Date.UTC(year, month - 1, day + dayCount));
+    return [
+        localDate.getUTCFullYear(),
+        String(localDate.getUTCMonth() + 1).padStart(2, "0"),
+        String(localDate.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+}
+
+function formatAppointmentDateChoice(date) {
+    const localNoon = new Date(`${date}T12:00:00-05:00`);
+    return new Intl.DateTimeFormat("es-CO", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "America/Bogota",
+    }).format(localNoon);
+}
+
+async function showAvailableDateChoices(
+    conversation,
+    contactId,
+    userId,
+    doctorId,
+    purpose,
+    state,
+    {
+        startDate = getCurrentBogotaDate(),
+        message,
+        excludeAppointmentId = state.appointmentId,
+    } = {},
+) {
+    const dayCount = 15;
+    const availableDates = await getAvailableAppointmentDates(doctorId, userId, {
+        purpose,
+        startDate,
+        dayCount,
+        excludeAppointmentId,
+    });
+    const choices = availableDates.map(({ date }) => date);
+    const labels = availableDates.map(({ date }) => formatAppointmentDateChoice(date));
+
+    // Keep the date list reachable beyond the first bounded two-week window.
+    choices.push({ showMoreDates: true });
+    labels.push("Ver más fechas");
+
+    return showPagedChoices(
+        conversation,
+        contactId,
+        message ||
+            (availableDates.length
+                ? "Selecciona una fecha con horarios disponibles. Puedes consultar los siguientes 15 días si lo necesitas:"
+                : "No encontramos horarios disponibles en este período. Puedes revisar los siguientes 15 días:"),
+        labels,
+        choices,
+        purpose === "reschedule" ? "reschedule_date" : "booking_date",
+        {
+            ...state,
+            doctorId,
+            dateWindowStart: startDate,
+            dateWindowDays: dayCount,
+        },
+    );
+}
+
 async function continueIntent(conversation, contactId, intent) {
     const patient = await Patient.findByPk(conversation.patient_id, {
         include: [
@@ -616,36 +695,56 @@ async function handleSelection(conversation, contactId, text, userId, state) {
                 contactId,
                 "Responde con el número de un médico disponible.",
             );
-        await conversation.update({
-            chatbot_state: {
-                step: "booking_date",
-                intent: "book",
-                specialtyId: state.specialtyId,
-                doctorId: choice.id,
-            },
+        return showAvailableDateChoices(conversation, contactId, userId, choice.id, "booking", {
+            intent: "book",
+            specialtyId: state.specialtyId,
         });
-        return sendResponse(
-            conversation,
-            contactId,
-            "Escribe la fecha que prefieres en formato AAAA-MM-DD.",
-        );
     }
     if (state.step === "booking_date" || state.step === "reschedule_date") {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(text))
+        if (choice?.showMoreDates) {
+            const nextStartDate = addCalendarDays(
+                state.dateWindowStart || getCurrentBogotaDate(),
+                state.dateWindowDays || 15,
+            );
+            return showAvailableDateChoices(
+                conversation,
+                contactId,
+                userId,
+                state.doctorId,
+                state.step === "reschedule_date" ? "reschedule" : "booking",
+                state,
+                {
+                    startDate: nextStartDate,
+                    excludeAppointmentId: state.appointmentId,
+                },
+            );
+        }
+        if (typeof choice !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(choice))
             return sendResponse(
                 conversation,
                 contactId,
-                "Escribe una fecha válida con formato AAAA-MM-DD.",
+                "Elige una de las fechas disponibles que aparecen en la lista. Escribe *menu* para volver.",
             );
+
         const doctorId = state.doctorId;
         const purpose = state.step === "reschedule_date" ? "reschedule" : "booking";
-        const slots = await getAvailableTimeSlots(doctorId, text, userId, { purpose });
+        const slots = await getAvailableTimeSlots(doctorId, choice, userId, { purpose });
         if (!slots.length)
-            return sendResponse(
+            return showAvailableDateChoices(
                 conversation,
                 contactId,
-                "No hay horarios disponibles para esa fecha. Prueba otra fecha en formato AAAA-MM-DD.",
+                userId,
+                doctorId,
+                purpose,
+                state,
+                {
+                    startDate: state.dateWindowStart || getCurrentBogotaDate(),
+                    message:
+                        "Ese día acaba de ocuparse. Elige otra fecha disponible o consulta los siguientes 15 días:",
+                    excludeAppointmentId: state.appointmentId,
+                },
             );
+
         const labels = slots.map((time) => time.slice(0, 5));
         return showPagedChoices(
             conversation,
@@ -654,7 +753,7 @@ async function handleSelection(conversation, contactId, text, userId, state) {
             labels,
             labels,
             state.step === "booking_date" ? "booking_time" : "reschedule_time",
-            { ...state, date: text },
+            { ...state, date: choice },
         );
     }
     if (state.step === "booking_time") {
@@ -708,19 +807,17 @@ async function handleSelection(conversation, contactId, text, userId, state) {
     if (state.step === "reschedule_appointment") {
         if (!choice)
             return sendResponse(conversation, contactId, "Selecciona una cita de la lista.");
-        await conversation.update({
-            chatbot_state: {
-                step: "reschedule_date",
-                intent: "reschedule",
-                appointmentId: choice.id,
-                doctorId: choice.doctorId,
-                specialtyId: choice.specialtyId,
-            },
-        });
-        return sendResponse(
+        return showAvailableDateChoices(
             conversation,
             contactId,
-            "Escribe la nueva fecha en formato AAAA-MM-DD.",
+            userId,
+            choice.doctorId,
+            "reschedule",
+            {
+                intent: "reschedule",
+                appointmentId: choice.id,
+                specialtyId: choice.specialtyId,
+            },
         );
     }
     if (state.step === "reschedule_time") {

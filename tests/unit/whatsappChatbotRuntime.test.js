@@ -21,6 +21,7 @@ const mockAppointmentService = {
     bookAppointment: jest.fn(),
     cancelPatientAppointment: jest.fn(),
     getAvailableDoctors: jest.fn(),
+    getAvailableAppointmentDates: jest.fn(),
     getAvailableSpecialties: jest.fn(),
     getAvailableTimeSlots: jest.fn(),
     getPatientAppointmentsForWhatsApp: jest.fn(),
@@ -138,6 +139,7 @@ describe("WhatsApp chatbot appointment safeguards", () => {
         mockMessage.update.mockResolvedValue([1]);
         mockModels.Notification.update.mockResolvedValue([1]);
         mockMessage.create.mockResolvedValue({ id: 11 });
+        mockAppointmentService.getAvailableAppointmentDates.mockResolvedValue([]);
         mockMessage.findOne.mockResolvedValue({
             delivery_status: null,
             delivery_status_at: null,
@@ -189,6 +191,242 @@ describe("WhatsApp chatbot appointment safeguards", () => {
         expect(mockAppointmentService.bookAppointment).not.toHaveBeenCalled();
         expect(mockSendWhatsApp.sendWhatsAppReply).toHaveBeenCalledWith(
             expect.objectContaining({ text: expect.stringContaining("número de documento") }),
+        );
+    });
+
+    test("shows only real available dates after the patient selects a booking doctor", async () => {
+        const conversation = createConversation({
+            step: "booking_doctor",
+            intent: "book",
+            specialtyId: 4,
+            choices: [{ id: 9 }],
+            labels: ["Dr. Carlos Ramírez"],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getAvailableAppointmentDates.mockResolvedValue([
+            { date: "2026-11-25", times: ["09:00"] },
+            { date: "2026-11-27", times: ["10:00"] },
+        ]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-doctor-date-list",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableAppointmentDates).toHaveBeenCalledWith(
+            9,
+            42,
+            expect.objectContaining({ purpose: "booking", dayCount: 15 }),
+        );
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({
+                step: "booking_date",
+                dateWindowDays: 15,
+                choices: ["2026-11-25", "2026-11-27", { showMoreDates: true }],
+            }),
+        );
+        const reply = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0];
+        expect(reply.text).toContain("Selecciona una fecha con horarios disponibles");
+        expect(reply.text).not.toContain("AAAA-MM-DD");
+        expect(reply.options.at(-1).title).toBe("Ver más fechas");
+        expect(reply.options[0].title).toContain("2026");
+    });
+
+    test("excludes the selected appointment when listing reschedule dates", async () => {
+        const conversation = createConversation({
+            step: "reschedule_appointment",
+            intent: "reschedule",
+            choices: [{ id: 55, doctorId: 9, specialtyId: 4 }],
+            labels: ["Cita del 1 nov."],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getAvailableAppointmentDates.mockResolvedValue([
+            { date: "2026-11-25", times: ["09:00"] },
+        ]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-reschedule-appointment-date-list",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableAppointmentDates).toHaveBeenCalledWith(
+            9,
+            42,
+            expect.objectContaining({
+                purpose: "reschedule",
+                dayCount: 15,
+                excludeAppointmentId: 55,
+            }),
+        );
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({ step: "reschedule_date", appointmentId: 55 }),
+        );
+    });
+
+    test("loads times only for a date selected from the current WhatsApp list", async () => {
+        const conversation = createConversation({
+            step: "booking_date",
+            intent: "book",
+            specialtyId: 4,
+            doctorId: 9,
+            dateWindowStart: "2026-11-24",
+            dateWindowDays: 15,
+            choices: ["2026-11-25", { showMoreDates: true }],
+            labels: ["mié., 25 nov.", "Ver más fechas"],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getAvailableTimeSlots.mockResolvedValue(["09:00", "09:30"]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-date-choice",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableTimeSlots).toHaveBeenCalledWith(
+            9,
+            "2026-11-25",
+            42,
+            { purpose: "booking" },
+        );
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({ step: "booking_time", date: "2026-11-25" }),
+        );
+    });
+
+    test("refreshes date choices when the selected date no longer has available times", async () => {
+        const conversation = createConversation({
+            step: "booking_date",
+            intent: "book",
+            specialtyId: 4,
+            doctorId: 9,
+            dateWindowStart: "2026-11-24",
+            dateWindowDays: 15,
+            choices: ["2026-11-25", { showMoreDates: true }],
+            labels: ["mié., 25 nov.", "Ver más fechas"],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getAvailableTimeSlots.mockResolvedValue([]);
+        mockAppointmentService.getAvailableAppointmentDates.mockResolvedValue([
+            { date: "2026-11-26", times: ["10:00"] },
+        ]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-stale-date",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableTimeSlots).toHaveBeenCalledWith(
+            9,
+            "2026-11-25",
+            42,
+            { purpose: "booking" },
+        );
+        expect(mockAppointmentService.getAvailableAppointmentDates).toHaveBeenCalledWith(
+            9,
+            42,
+            expect.objectContaining({ purpose: "booking", startDate: "2026-11-24" }),
+        );
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({
+                step: "booking_date",
+                choices: ["2026-11-26", { showMoreDates: true }],
+            }),
+        );
+        expect(mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text).toContain(
+            "Ese día acaba de ocuparse",
+        );
+    });
+
+    test("rejects typed dates that were not offered in the current list", async () => {
+        const conversation = createConversation({
+            step: "booking_date",
+            intent: "book",
+            specialtyId: 4,
+            doctorId: 9,
+            choices: ["2026-11-25", { showMoreDates: true }],
+            labels: ["mié., 25 nov.", "Ver más fechas"],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-typed-date",
+                from: "573001234567",
+                type: "text",
+                text: { body: "2026-11-26" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableTimeSlots).not.toHaveBeenCalled();
+        expect(mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text).toContain(
+            "Elige una de las fechas disponibles",
+        );
+    });
+
+    test("offers the next real date window when the patient requests more dates", async () => {
+        const conversation = createConversation({
+            step: "booking_date",
+            intent: "book",
+            specialtyId: 4,
+            doctorId: 9,
+            dateWindowStart: "2026-11-24",
+            dateWindowDays: 15,
+            choices: ["2026-11-25", { showMoreDates: true }],
+            labels: ["mié., 25 nov.", "Ver más fechas"],
+            page: 0,
+            pageSize: 10,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getAvailableAppointmentDates.mockResolvedValue([]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-more-dates",
+                from: "573001234567",
+                type: "text",
+                text: { body: "2" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableAppointmentDates).toHaveBeenCalledWith(
+            9,
+            42,
+            expect.objectContaining({ purpose: "booking", startDate: "2026-12-09", dayCount: 15 }),
+        );
+        expect(mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text).toContain(
+            "No encontramos horarios disponibles en este período",
         );
     });
 
@@ -405,13 +643,17 @@ describe("WhatsApp chatbot appointment safeguards", () => {
             }),
         );
 
-        expect(conversation.chatbot_state).toEqual({
-            step: "reschedule_date",
-            intent: "reschedule",
-            appointmentId: 20,
-            doctorId: 9,
-            specialtyId: 2,
-        });
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({
+                step: "reschedule_date",
+                intent: "reschedule",
+                appointmentId: 20,
+                doctorId: 9,
+                specialtyId: 2,
+                dateWindowDays: 15,
+                choices: [{ showMoreDates: true }],
+            }),
+        );
     });
 
     test("allows a patient to reach a later booking specialty by its displayed name", async () => {
