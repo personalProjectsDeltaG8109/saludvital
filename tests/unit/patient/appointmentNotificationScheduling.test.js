@@ -52,8 +52,12 @@ const {
 const { enqueueAppointmentNotifications } =
     await import("../../../src/modules/patient/services/notificationAutomationService.js");
 const AuditLog = (await import("../../../src/models/AuditLog.js")).default;
-const { bookAppointment, cancelPatientAppointment, getAvailableTimeSlots } =
-    await import("../../../src/modules/patient/services/appointmentService.js");
+const {
+    bookAppointment,
+    cancelPatientAppointment,
+    getAvailableAppointmentDates,
+    getAvailableTimeSlots,
+} = await import("../../../src/modules/patient/services/appointmentService.js");
 
 describe("appointment reminder scheduling", () => {
     const transaction = { LOCK: { UPDATE: "UPDATE" } };
@@ -76,7 +80,13 @@ describe("appointment reminder scheduling", () => {
         Appointment.findOne.mockResolvedValue(null);
         DoctorAvailability.findOne.mockResolvedValue({ id: 3 });
         DoctorAvailability.findAll.mockResolvedValue([
-            { start_time: "14:00:00", end_time: "16:30:00" },
+            {
+                day_of_week: 7,
+                valid_from: "2026-11-01",
+                valid_until: null,
+                start_time: "14:00:00",
+                end_time: "16:30:00",
+            },
         ]);
         DoctorScheduleException.findOne.mockResolvedValue(null);
         DoctorScheduleException.findAll.mockResolvedValue([]);
@@ -239,6 +249,129 @@ describe("appointment reminder scheduling", () => {
         });
 
         expect(slots).toEqual(["15:00", "15:30", "16:00"]);
+    });
+
+    test("returns only dates with available slots using one bounded set of availability queries", async () => {
+        const dates = await getAvailableAppointmentDates(7, 2, {
+            purpose: "reschedule",
+            startDate: "2026-11-01",
+            dayCount: 15,
+        });
+
+        expect(dates).toEqual([
+            { date: "2026-11-01", times: ["15:00", "15:30", "16:00"] },
+            { date: "2026-11-08", times: ["14:00", "14:30", "15:00", "15:30", "16:00"] },
+            { date: "2026-11-15", times: ["14:00", "14:30", "15:00", "15:30", "16:00"] },
+        ]);
+        expect(DoctorAvailability.findAll).toHaveBeenCalledTimes(1);
+        expect(DoctorScheduleException.findAll).toHaveBeenCalledTimes(1);
+        expect(Appointment.findAll).toHaveBeenCalledTimes(2);
+        const weekdayFilter = DoctorAvailability.findAll.mock.calls[0][0].where.day_of_week;
+        const weekdays = Object.getOwnPropertySymbols(weekdayFilter).map(
+            (operator) => weekdayFilter[operator],
+        );
+        expect(weekdays).toContainEqual([7, 1, 2, 3, 4, 5, 6]);
+    });
+
+    test("returns no appointment dates when the doctor has no active schedule", async () => {
+        DoctorAvailability.findAll.mockResolvedValueOnce([]);
+
+        const dates = await getAvailableAppointmentDates(7, 2, {
+            startDate: "2026-11-01",
+            dayCount: 1,
+        });
+
+        expect(dates).toEqual([]);
+        expect(DoctorAvailability.findAll).toHaveBeenCalledTimes(1);
+    });
+
+    test("does not offer a date when the patient already has an appointment in that specialty", async () => {
+        Appointment.findAll.mockResolvedValueOnce([]).mockResolvedValueOnce([
+            {
+                id: 88,
+                specialty_id: 4,
+                start_at: new Date("2026-11-01T14:00:00.000Z"),
+                end_at: new Date("2026-11-01T14:30:00.000Z"),
+            },
+        ]);
+
+        const dates = await getAvailableAppointmentDates(7, 2, {
+            startDate: "2026-11-01",
+            dayCount: 1,
+        });
+
+        expect(dates).toEqual([]);
+    });
+
+    test("does not offer a date when the patient already has the daily appointment limit", async () => {
+        Appointment.findAll.mockResolvedValueOnce([]).mockResolvedValueOnce([
+            {
+                id: 88,
+                specialty_id: 2,
+                start_at: new Date("2026-11-01T14:00:00.000Z"),
+                end_at: new Date("2026-11-01T14:30:00.000Z"),
+            },
+            {
+                id: 89,
+                specialty_id: 3,
+                start_at: new Date("2026-11-01T15:00:00.000Z"),
+                end_at: new Date("2026-11-01T15:30:00.000Z"),
+            },
+        ]);
+
+        const dates = await getAvailableAppointmentDates(7, 2, {
+            startDate: "2026-11-01",
+            dayCount: 1,
+        });
+
+        expect(dates).toEqual([]);
+    });
+
+    test("ignores the appointment being moved when checking reschedule date limits", async () => {
+        Appointment.findAll.mockResolvedValueOnce([]).mockResolvedValueOnce([
+            {
+                id: 99,
+                specialty_id: 4,
+                start_at: new Date("2026-11-01T14:00:00.000Z"),
+                end_at: new Date("2026-11-01T14:30:00.000Z"),
+            },
+        ]);
+
+        const dates = await getAvailableAppointmentDates(7, 2, {
+            purpose: "reschedule",
+            startDate: "2026-11-01",
+            dayCount: 1,
+            excludeAppointmentId: 99,
+        });
+
+        expect(dates).toEqual([{ date: "2026-11-01", times: ["15:00", "15:30", "16:00"] }]);
+    });
+
+    test("rejects date windows larger than the supported bound", async () => {
+        await expect(
+            getAvailableAppointmentDates(7, 2, {
+                startDate: "2026-11-01",
+                dayCount: 32,
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(DoctorAvailability.findAll).not.toHaveBeenCalled();
+    });
+
+    test("rejects malformed dates and unsupported availability requests", async () => {
+        await expect(
+            getAvailableAppointmentDates(7, 2, {
+                startDate: "2026-02-30",
+                dayCount: 1,
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        await expect(
+            getAvailableAppointmentDates(7, 2, {
+                purpose: "preview",
+                startDate: "2026-11-01",
+                dayCount: 1,
+            }),
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(DoctorAvailability.findAll).not.toHaveBeenCalled();
     });
 
     test("rejects Pediatrics availability for a patient who will be 18 on that date", async () => {

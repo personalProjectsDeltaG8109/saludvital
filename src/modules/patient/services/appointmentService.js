@@ -35,6 +35,7 @@ const CONFIRMED_STATUS = "Confirmed";
 const CANCELLED_STATUS = "Cancelled";
 // Require at least one day of notice before a patient cancels an appointment.
 const CANCELLATION_NOTICE_HOURS = 24;
+const MAX_AVAILABILITY_RANGE_DAYS = 31;
 
 /**
  * Validate and normalize a positive integer identifier.
@@ -123,6 +124,172 @@ function buildDateTime(date, time) {
 
     // Convert Colombia's UTC-5 wall-clock time into a UTC instant.
     return new Date(Date.UTC(year, month - 1, day, hours + 5, minutes));
+}
+
+function parseCalendarDate(date) {
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
+    }
+
+    const [year, month, day] = date.split("-").map(Number);
+    const localDay = new Date(Date.UTC(year, month - 1, day));
+    if (
+        localDay.getUTCFullYear() !== year ||
+        localDay.getUTCMonth() !== month - 1 ||
+        localDay.getUTCDate() !== day
+    ) {
+        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
+    }
+
+    return localDay;
+}
+
+function formatCalendarDate(date) {
+    return [
+        date.getUTCFullYear(),
+        String(date.getUTCMonth() + 1).padStart(2, "0"),
+        String(date.getUTCDate()).padStart(2, "0"),
+    ].join("-");
+}
+
+function addCalendarDays(date, days) {
+    const localDay = parseCalendarDate(date);
+    localDay.setUTCDate(localDay.getUTCDate() + days);
+    return formatCalendarDate(localDay);
+}
+
+function getWeekdaysInRange(startDate, dayCount) {
+    const weekdays = Array.from({ length: dayCount }, (_, index) => {
+        const weekday = parseCalendarDate(addCalendarDays(startDate, index)).getUTCDay();
+        return weekday === 0 ? 7 : weekday;
+    });
+    return [...new Set(weekdays)];
+}
+
+function validateAvailabilityPurpose(purpose) {
+    if (!["booking", "reschedule"].includes(purpose)) {
+        throw new AppointmentError("El tipo de consulta de horarios no es válido.", 400);
+    }
+}
+
+function getMinimumAvailableStart(purpose) {
+    const minimumAdvanceMinutes =
+        purpose === "reschedule" ? MINIMUM_RESCHEDULE_ADVANCE_MINUTES : MINIMUM_ADVANCE_MINUTES;
+    return new Date(Date.now() + minimumAdvanceMinutes * 60 * 1000);
+}
+
+function getAvailableTimesForDate({
+    date,
+    patient,
+    specialty,
+    schedules,
+    exceptions,
+    appointments,
+    patientAppointments,
+    minimumStart,
+    skipIneligiblePatient = false,
+}) {
+    const localDay = parseCalendarDate(date);
+    const weekday = localDay.getUTCDay() === 0 ? 7 : localDay.getUTCDay();
+    const nextDate = addCalendarDays(date, 1);
+    const dateStart = buildDateTime(date, "00:00");
+    const dateEnd = buildDateTime(nextDate, "00:00");
+    const dateSchedules = schedules.filter((schedule) => {
+        const validFrom = String(schedule.valid_from).slice(0, 10);
+        const validUntil = schedule.valid_until ? String(schedule.valid_until).slice(0, 10) : null;
+        return (
+            Number(schedule.day_of_week) === weekday &&
+            validFrom <= date &&
+            (!validUntil || validUntil >= date)
+        );
+    });
+    const dateExceptions = exceptions.filter(
+        (exception) => exception.start_at < dateEnd && exception.end_at > dateStart,
+    );
+    const dateAppointments = appointments.filter(
+        (appointment) => appointment.start_at < dateEnd && appointment.end_at > dateStart,
+    );
+    const datePatientAppointments = patientAppointments.filter(
+        (appointment) => appointment.start_at < dateEnd && appointment.end_at > dateStart,
+    );
+
+    try {
+        validatePediatricsEligibility(patient, specialty, dateStart);
+    } catch (error) {
+        if (
+            skipIneligiblePatient &&
+            error instanceof AppointmentError &&
+            error.statusCode === 400
+        ) {
+            return [];
+        }
+        throw error;
+    }
+
+    const availableTimes = [];
+    for (
+        let minutes = 0;
+        minutes < 24 * 60 - APPOINTMENT_SLOT_MINUTES;
+        minutes += APPOINTMENT_SLOT_MINUTES
+    ) {
+        const endMinutes = minutes + APPOINTMENT_SLOT_MINUTES;
+        const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+        const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
+        const startAt = buildDateTime(date, time);
+        const endAt = buildDateTime(date, endTime);
+
+        if (startAt < minimumStart) continue;
+
+        const fitsRegularSchedule = dateSchedules.some((schedule) => {
+            const scheduleStart = String(schedule.start_time).slice(0, 5);
+            const scheduleEnd = String(schedule.end_time).slice(0, 5);
+            return time >= scheduleStart && endTime <= scheduleEnd;
+        });
+        const fitsAdditionalAvailability = dateExceptions.some(
+            (exception) =>
+                exception.exception_type === "AdditionalAvailability" &&
+                exception.start_at <= startAt &&
+                exception.end_at >= endAt,
+        );
+        if (!fitsRegularSchedule && !fitsAdditionalAvailability) continue;
+
+        const isBlocked = dateExceptions.some(
+            (exception) =>
+                exception.exception_type === "Unavailable" &&
+                exception.start_at < endAt &&
+                exception.end_at > startAt,
+        );
+        const isBooked = dateAppointments.some(
+            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
+        );
+        const conflictsWithPatientAppointment = datePatientAppointments.some(
+            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
+        );
+
+        if (!isBlocked && !isBooked && !conflictsWithPatientAppointment) {
+            availableTimes.push(time);
+        }
+    }
+
+    return availableTimes;
+}
+
+function patientCanBookOnDate(patientAppointments, date, specialtyId, excludeAppointmentId) {
+    const startAt = buildDateTime(date, "00:00");
+    const endAt = buildDateTime(addCalendarDays(date, 1), "00:00");
+    const appointmentsOnDate = patientAppointments.filter(
+        (appointment) =>
+            appointment.start_at >= startAt &&
+            appointment.start_at < endAt &&
+            (!excludeAppointmentId || Number(appointment.id) !== Number(excludeAppointmentId)),
+    );
+
+    return (
+        appointmentsOnDate.length < MAX_DAILY_APPOINTMENTS &&
+        !appointmentsOnDate.some(
+            (appointment) => Number(appointment.specialty_id) === Number(specialtyId),
+        )
+    );
 }
 
 /**
@@ -617,34 +784,10 @@ export async function getAvailableDoctors(specialtyId) {
     });
 }
 
-/**
- * Return appointment start times that fit a doctor's schedule for a local date.
- */
-export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = "booking" } = {}) {
+async function getAvailabilityContext(doctorId, userId) {
     doctorId = validatePositiveIntegerId(doctorId);
     userId = validatePositiveIntegerId(userId);
-
-    if (!["booking", "reschedule"].includes(purpose)) {
-        throw new AppointmentError("El tipo de consulta de horarios no es válido.", 400);
-    }
-
-    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
-    }
-
-    const [year, month, day] = date.split("-").map(Number);
-    const localDay = new Date(Date.UTC(year, month - 1, day));
-
-    if (
-        localDay.getUTCFullYear() !== year ||
-        localDay.getUTCMonth() !== month - 1 ||
-        localDay.getUTCDate() !== day
-    ) {
-        throw new AppointmentError("Debes seleccionar una fecha válida para la cita.", 400);
-    }
-
     const patient = await getPatientByUserId(userId);
-
     const doctor = await Doctor.findOne({
         where: { id: doctorId },
         include: [
@@ -667,32 +810,31 @@ export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = 
         attributes: ["id", "specialty_id"],
     });
 
-    if (!doctor) {
-        throw new AppointmentError("El médico seleccionado no está disponible.", 404);
-    }
-
+    if (!doctor) throw new AppointmentError("El médico seleccionado no está disponible.", 404);
     const specialty = await getActiveSpecialty(doctor.specialty_id);
-    const appointmentStart = buildDateTime(date, "00:00");
-    validatePediatricsEligibility(patient, specialty, appointmentStart);
+    return { doctorId, patient, specialty };
+}
 
-    const dateStart = buildDateTime(date, "00:00");
-    const nextLocalDay = new Date(Date.UTC(year, month - 1, day + 1));
-    const nextDate = [
-        nextLocalDay.getUTCFullYear(),
-        String(nextLocalDay.getUTCMonth() + 1).padStart(2, "0"),
-        String(nextLocalDay.getUTCDate()).padStart(2, "0"),
-    ].join("-");
-    const dateEnd = buildDateTime(nextDate, "00:00");
-    const weekday = localDay.getUTCDay() === 0 ? 7 : localDay.getUTCDay();
+async function getAvailabilityRecords({ doctorId, patientId, startDate, dayCount }) {
+    const endDate = addCalendarDays(startDate, dayCount);
+    const startAt = buildDateTime(startDate, "00:00");
+    const endAt = buildDateTime(endDate, "00:00");
+    const createActiveStatusInclude = () => ({
+        model: AppointmentStatus,
+        as: "status",
+        required: true,
+        where: { name: { [Op.ne]: CANCELLED_STATUS } },
+        attributes: [],
+    });
 
-    const [schedules, exceptions, appointments, patientAppointments] = await Promise.all([
+    return Promise.all([
         DoctorAvailability.findAll({
             where: {
                 doctor_id: doctorId,
-                day_of_week: weekday,
+                day_of_week: { [Op.in]: getWeekdaysInRange(startDate, dayCount) },
                 is_active: true,
-                valid_from: { [Op.lte]: date },
-                [Op.or]: [{ valid_until: null }, { valid_until: { [Op.gte]: date } }],
+                valid_from: { [Op.lte]: addCalendarDays(startDate, dayCount - 1) },
+                [Op.or]: [{ valid_until: null }, { valid_until: { [Op.gte]: startDate } }],
             },
         }),
         DoctorScheduleException.findAll({
@@ -700,97 +842,120 @@ export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = 
                 doctor_id: doctorId,
                 is_active: true,
                 exception_type: { [Op.in]: ["Unavailable", "AdditionalAvailability"] },
-                start_at: { [Op.lt]: dateEnd },
-                end_at: { [Op.gt]: dateStart },
+                start_at: { [Op.lt]: endAt },
+                end_at: { [Op.gt]: startAt },
             },
             attributes: ["start_at", "end_at", "exception_type"],
         }),
         Appointment.findAll({
             where: {
                 doctor_id: doctorId,
-                start_at: { [Op.lt]: dateEnd },
-                end_at: { [Op.gt]: dateStart },
+                start_at: { [Op.lt]: endAt },
+                end_at: { [Op.gt]: startAt },
             },
-            include: [
-                {
-                    model: AppointmentStatus,
-                    as: "status",
-                    required: true,
-                    where: { name: { [Op.ne]: CANCELLED_STATUS } },
-                    attributes: [],
-                },
-            ],
+            include: [createActiveStatusInclude()],
             attributes: ["start_at", "end_at"],
         }),
         Appointment.findAll({
             where: {
-                patient_id: patient.id,
-                start_at: { [Op.lt]: dateEnd },
-                end_at: { [Op.gt]: dateStart },
+                patient_id: patientId,
+                start_at: { [Op.lt]: endAt },
+                end_at: { [Op.gt]: startAt },
             },
-            include: [
-                {
-                    model: AppointmentStatus,
-                    as: "status",
-                    required: true,
-                    where: { name: { [Op.ne]: CANCELLED_STATUS } },
-                    attributes: [],
-                },
-            ],
-            attributes: ["start_at", "end_at"],
+            include: [createActiveStatusInclude()],
+            attributes: ["id", "specialty_id", "start_at", "end_at"],
         }),
     ]);
+}
 
-    const minimumAdvanceMinutes =
-        purpose === "reschedule" ? MINIMUM_RESCHEDULE_ADVANCE_MINUTES : MINIMUM_ADVANCE_MINUTES;
-    const minimumStart = new Date(Date.now() + minimumAdvanceMinutes * 60 * 1000);
-    const availableTimes = [];
+/**
+ * Return the doctor's available start times for one Colombian calendar day.
+ */
+export async function getAvailableTimeSlots(doctorId, date, userId, { purpose = "booking" } = {}) {
+    validateAvailabilityPurpose(purpose);
+    parseCalendarDate(date);
+    const context = await getAvailabilityContext(doctorId, userId);
+    validatePediatricsEligibility(context.patient, context.specialty, buildDateTime(date, "00:00"));
+    const [schedules, exceptions, appointments, patientAppointments] = await getAvailabilityRecords(
+        {
+            doctorId: context.doctorId,
+            patientId: context.patient.id,
+            startDate: date,
+            dayCount: 1,
+        },
+    );
 
-    for (
-        let minutes = 0;
-        minutes < 24 * 60 - APPOINTMENT_SLOT_MINUTES;
-        minutes += APPOINTMENT_SLOT_MINUTES
-    ) {
-        const endMinutes = minutes + APPOINTMENT_SLOT_MINUTES;
-        const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
-        const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, "0")}:${String(endMinutes % 60).padStart(2, "0")}`;
-        const startAt = buildDateTime(date, time);
-        const endAt = buildDateTime(date, endTime);
+    return getAvailableTimesForDate({
+        date,
+        ...context,
+        schedules,
+        exceptions,
+        appointments,
+        patientAppointments,
+        minimumStart: getMinimumAvailableStart(purpose),
+    });
+}
 
-        if (startAt < minimumStart) continue;
-
-        const fitsRegularSchedule = schedules.some((schedule) => {
-            const scheduleStart = String(schedule.start_time).slice(0, 5);
-            const scheduleEnd = String(schedule.end_time).slice(0, 5);
-            return time >= scheduleStart && endTime <= scheduleEnd;
-        });
-
-        const fitsAdditionalAvailability = exceptions.some(
-            (exception) =>
-                exception.exception_type === "AdditionalAvailability" &&
-                exception.start_at <= startAt &&
-                exception.end_at >= endAt,
-        );
-
-        if (!fitsRegularSchedule && !fitsAdditionalAvailability) continue;
-
-        const isBlocked = exceptions.some(
-            (exception) =>
-                exception.exception_type === "Unavailable" &&
-                exception.start_at < endAt &&
-                exception.end_at > startAt,
-        );
-        const isBooked = appointments.some(
-            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
-        );
-        const conflictsWithPatientAppointment = patientAppointments.some(
-            (appointment) => appointment.start_at < endAt && appointment.end_at > startAt,
-        );
-
-        if (!isBlocked && !isBooked && !conflictsWithPatientAppointment) availableTimes.push(time);
+/**
+ * Return only dates with real appointment slots from one bounded calendar range.
+ */
+export async function getAvailableAppointmentDates(
+    doctorId,
+    userId,
+    {
+        purpose = "booking",
+        startDate = getBogotaDateTime(new Date()).date,
+        dayCount = 15,
+        excludeAppointmentId,
+    } = {},
+) {
+    validateAvailabilityPurpose(purpose);
+    parseCalendarDate(startDate);
+    if (!Number.isInteger(dayCount) || dayCount < 1 || dayCount > MAX_AVAILABILITY_RANGE_DAYS) {
+        throw new AppointmentError("El período de consulta de fechas no es válido.", 400);
+    }
+    if (excludeAppointmentId !== undefined && excludeAppointmentId !== null) {
+        excludeAppointmentId = validatePositiveIntegerId(excludeAppointmentId);
     }
 
-    return availableTimes;
+    const context = await getAvailabilityContext(doctorId, userId);
+    const [schedules, exceptions, appointments, patientAppointments] = await getAvailabilityRecords(
+        {
+            doctorId: context.doctorId,
+            patientId: context.patient.id,
+            startDate,
+            dayCount,
+        },
+    );
+    const minimumStart = getMinimumAvailableStart(purpose);
+    const availableDates = [];
+
+    for (let dayOffset = 0; dayOffset < dayCount; dayOffset += 1) {
+        const date = addCalendarDays(startDate, dayOffset);
+        if (
+            !patientCanBookOnDate(
+                patientAppointments,
+                date,
+                context.specialty.id,
+                excludeAppointmentId,
+            )
+        ) {
+            continue;
+        }
+        const times = getAvailableTimesForDate({
+            date,
+            ...context,
+            schedules,
+            exceptions,
+            appointments,
+            patientAppointments,
+            minimumStart,
+            skipIneligiblePatient: true,
+        });
+        if (times.length) availableDates.push({ date, times });
+    }
+
+    return availableDates;
 }
 
 /**
