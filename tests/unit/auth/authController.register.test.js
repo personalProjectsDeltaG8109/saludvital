@@ -37,6 +37,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/emailVerificationSe
 
 jest.unstable_mockModule("../../../src/modules/auth/services/registrationService.js", () => ({
     registerPatient: jest.fn(),
+    validatePatientRegistration: jest.fn(),
     RegistrationError: class RegistrationError extends Error {
         constructor(message, statusCode = 400) {
             super(message);
@@ -44,6 +45,11 @@ jest.unstable_mockModule("../../../src/modules/auth/services/registrationService
             this.statusCode = statusCode;
         }
     },
+}));
+
+jest.unstable_mockModule("../../../src/modules/auth/services/accountInvitationService.js", () => ({
+    completeAccountInvitation: jest.fn(),
+    getAccountInvitationByToken: jest.fn(),
 }));
 
 // Prevent password recovery dependencies from initializing Sequelize in registration tests.

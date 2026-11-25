@@ -28,6 +28,7 @@ import EmailOutbox from "./EmailOutbox.js";
 import DoctorAppointmentNotificationRead from "./DoctorAppointmentNotificationRead.js";
 import PatientAppointmentHistoryRead from "./PatientAppointmentHistoryRead.js";
 import PatientConsent from "./PatientConsent.js";
+import AccountInvitation from "./AccountInvitation.js";
 
 // Associate each role with its user accounts.
 Rol.hasMany(User, {
@@ -80,6 +81,27 @@ EmailOutbox.belongsTo(User, {
     as: "user",
     onUpdate: "CASCADE",
     onDelete: "RESTRICT",
+});
+
+User.hasOne(AccountInvitation, {
+    foreignKey: "user_id",
+    as: "accountInvitation",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+AccountInvitation.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
+});
+
+AccountInvitation.belongsTo(User, {
+    foreignKey: "invited_by_user_id",
+    as: "invitedBy",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
 });
 
 Patient.belongsTo(User, {
@@ -664,4 +686,5 @@ export {
     ChatbotFlow,
     ChatbotFlowVersion,
     PatientConsent,
+    AccountInvitation,
 };

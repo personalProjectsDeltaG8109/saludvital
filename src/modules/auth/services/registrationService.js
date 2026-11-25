@@ -38,7 +38,7 @@ function hasSupportedNameCharacters(value) {
 }
 
 // Validate the registration data before writing anything to the database.
-function validateRegistration(data) {
+export function validatePatientRegistration(data) {
     const requiredFields = [
         "first_name",
         "last_name",
@@ -212,7 +212,7 @@ export async function registerPatient(data) {
         );
     }
 
-    const { location, firstName, lastName } = validateRegistration(data);
+    const { location, firstName, lastName } = validatePatientRegistration(data);
     const email = data.email.trim().toLowerCase();
     const documentType = data.document_type;
     const documentNumber = data.document_number.trim();

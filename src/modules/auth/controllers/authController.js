@@ -12,6 +12,10 @@ import { randomUUID } from "node:crypto";
 import { startSession, endSession, refreshSession } from "../services/sessionActivity.js";
 
 import { verifyEmail } from "../services/emailVerificationService.js";
+import {
+    completeAccountInvitation,
+    getAccountInvitationByToken,
+} from "../services/accountInvitationService.js";
 
 // Handle patient registration and its expected validation errors.
 import { registerPatient, RegistrationError } from "../services/registrationService.js";
@@ -157,6 +161,101 @@ export function showRegister(req, res) {
         privacyNoticeVersion: PATIENT_REGISTRATION_CONSENT.noticeVersion,
         whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
     });
+}
+
+function setInvitationPageHeaders(res) {
+    res.set({
+        "Referrer-Policy": "no-referrer",
+        "Cache-Control": "no-store",
+    });
+}
+
+function safeInvitationFormData(body = {}) {
+    const fields = [
+        "first_name",
+        "last_name",
+        "phone",
+        "date_of_birth",
+        "document_type",
+        "document_number",
+        "department",
+        "municipality",
+        "address",
+        "blood_type",
+        "allergies",
+        "medical_conditions",
+        "display_name",
+    ];
+    return Object.fromEntries(
+        fields.map((field) => [field, typeof body[field] === "string" ? body[field] : ""]),
+    );
+}
+
+/** Show the role-specific account activation form from an invitation link. */
+export async function showAccountInvitation(req, res, next) {
+    try {
+        setInvitationPageHeaders(res);
+        const token = typeof req.query.token === "string" ? req.query.token : "";
+        const invitation = await getAccountInvitationByToken(token);
+        return res.status(invitation ? 200 : 400).render("auth/accept-invitation", {
+            pageTitle: invitation
+                ? "Completa tu registro | SaludVital"
+                : "Invitación no disponible | SaludVital",
+            invitation,
+            token: invitation ? token : "",
+            formData: {},
+            error: invitation
+                ? null
+                : "Este enlace no es válido, ya se usó o venció. Pide al administrador que envíe una nueva invitación.",
+            whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+/** Validate the invitation, save the new account details, and require a fresh login. */
+export async function acceptAccountInvitation(req, res, next) {
+    setInvitationPageHeaders(res);
+    const token = typeof req.body?.token === "string" ? req.body.token : "";
+    try {
+        const result = await completeAccountInvitation(token, {
+            ...req.body,
+            existing_conditions: req.body?.medical_conditions,
+        });
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: environment.nodeEnv === "production",
+            sameSite: "lax",
+            path: "/",
+        });
+        return res.status(200).render("auth/account-invitation-result", {
+            pageTitle: "Cuenta activada | SaludVital",
+            displayName: result.displayName,
+            email: result.email,
+            roleLabel: result.role === "Administrator" ? "Administrador" : "Paciente",
+            whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
+        });
+    } catch (error) {
+        if (error instanceof RegistrationError || error.statusCode) {
+            const invitation = await getAccountInvitationByToken(token).catch(() => null);
+            return res.status(error.statusCode || 400).render("auth/accept-invitation", {
+                pageTitle: invitation
+                    ? "Completa tu registro | SaludVital"
+                    : "Invitación no disponible | SaludVital",
+                invitation,
+                token: invitation ? token : "",
+                formData: safeInvitationFormData(req.body),
+                error: invitation
+                    ? error.statusCode >= 500
+                        ? "No pudimos guardar la cuenta. Inténtalo nuevamente."
+                        : error.message
+                    : "Este enlace no es válido, ya se usó o venció. Pide al administrador que envíe una nueva invitación.",
+                whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
+            });
+        }
+        return next(error);
+    }
 }
 
 /**

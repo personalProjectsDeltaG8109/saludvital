@@ -252,6 +252,12 @@
     justify-content: flex-end;
     gap: 7px;
 }
+.admin-user-pending-note {
+    color: #667b93;
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: right;
+}
 .admin-user-edit,
 .admin-user-toggle {
     min-height: 36px;
@@ -692,6 +698,372 @@ body.has-admin-modal {
 .admin-user-modal-close:focus-visible {
     outline: 3px solid rgb(8 124 240 / 35%);
     outline-offset: 2px;
+}
+
+.admin-users-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.admin-invite-trigger {
+    display: inline-flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 18px;
+    border: 1px solid #087cf0;
+    border-radius: 12px;
+    color: #fff;
+    background: linear-gradient(135deg, #0783ef, #075db8);
+    box-shadow: 0 8px 18px rgb(8 124 240 / 18%);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        box-shadow 160ms ease;
+}
+.admin-invite-trigger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 11px 22px rgb(8 124 240 / 25%);
+}
+.admin-invite-trigger:focus-visible,
+.admin-invitation-action:focus-visible {
+    outline: 3px solid rgb(8 124 240 / 35%);
+    outline-offset: 3px;
+}
+.admin-invitations-panel {
+    margin: 0 0 18px;
+    padding: clamp(17px, 2vw, 23px);
+    border: 1px solid #e2edf8;
+    border-radius: 18px;
+    background: linear-gradient(130deg, #fff 0%, #f8fcff 100%);
+    box-shadow: 0 8px 24px rgb(28 72 124 / 5%);
+}
+.admin-invitations-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+.admin-invitations-header h2 {
+    margin: 0 0 5px;
+    color: var(--admin-text);
+    font-size: 18px;
+}
+.admin-invitations-header p {
+    margin: 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.admin-invitation-icon,
+.admin-invitation-role-icon {
+    display: grid;
+    width: 43px;
+    height: 43px;
+    flex: 0 0 43px;
+    place-items: center;
+    border-radius: 13px;
+    color: #087cf0;
+    background: #eaf4ff;
+}
+.admin-invitation-icon svg,
+.admin-invitation-avatar svg {
+    display: block;
+}
+.admin-invitations-feedback {
+    min-height: 18px;
+    margin: 12px 0 8px;
+    color: var(--admin-muted);
+    font-size: 11px;
+}
+.admin-invitations-feedback.is-error {
+    color: #b42318;
+}
+.admin-invitations-feedback.is-success {
+    color: #087d68;
+}
+.admin-invitation-list {
+    display: grid;
+    gap: 8px;
+}
+.admin-invitations-empty {
+    margin: 0;
+    padding: 15px;
+    border: 1px dashed #d7e5f4;
+    border-radius: 12px;
+    color: var(--admin-muted);
+    background: #fff;
+    font-size: 12px;
+    text-align: center;
+}
+.admin-invitation-row {
+    display: grid;
+    grid-template-columns: 42px minmax(180px, 1fr) minmax(90px, 130px) minmax(130px, 165px) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 1px solid #e6eef7;
+    border-radius: 13px;
+    background: #fff;
+}
+.admin-invitation-avatar {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    border-radius: 12px;
+    color: #078d82;
+    background: #e7faf6;
+}
+.admin-invitation-avatar.is-admin {
+    color: #087cf0;
+    background: #eaf4ff;
+}
+.admin-invitation-avatar svg {
+    width: 21px;
+    height: 21px;
+}
+.admin-invitation-identity {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+.admin-invitation-identity strong,
+.admin-invitation-identity span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.admin-invitation-identity strong {
+    color: var(--admin-text);
+    font-size: 12px;
+}
+.admin-invitation-identity span {
+    color: var(--admin-muted);
+    font-size: 11px;
+}
+.admin-invitation-role {
+    color: #375676;
+    font-size: 11px;
+    font-weight: 650;
+}
+.admin-invitation-status {
+    justify-self: start;
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: #8b5b0b;
+    background: #fff5df;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.admin-invitation-status.is-sent {
+    color: #087d68;
+    background: #e7f8f1;
+}
+.admin-invitation-status.is-failed,
+.admin-invitation-status.is-expired {
+    color: #a73838;
+    background: #fff0f0;
+}
+.admin-invitation-actions {
+    display: flex;
+    gap: 6px;
+}
+.admin-invitation-action {
+    display: grid;
+    width: 35px;
+    height: 35px;
+    place-items: center;
+    border: 1px solid #d8e7f6;
+    border-radius: 10px;
+    color: #0874d1;
+    background: #f7fbff;
+    cursor: pointer;
+}
+.admin-invitation-action svg {
+    width: 17px;
+    height: 17px;
+}
+.admin-invitation-action.is-cancel {
+    color: #b44646;
+    border-color: #f1dddd;
+    background: #fffafa;
+}
+.admin-invitation-modal {
+    width: min(100%, 680px);
+}
+.admin-invitation-intro {
+    margin: 7px 0 0;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.admin-invitation-roles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+    padding: 0;
+    border: 0;
+}
+.admin-invitation-roles legend {
+    margin-bottom: 9px;
+    color: var(--admin-text);
+    font-size: 12px;
+    font-weight: 750;
+}
+.admin-invitation-role-card {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 82px;
+    padding: 12px;
+    border: 1px solid #dce8f5;
+    border-radius: 14px;
+    background: #fff;
+    cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        background 150ms ease,
+        box-shadow 150ms ease;
+}
+.admin-invitation-role-card.is-selected {
+    border-color: #4b9ce9;
+    background: #f3f9ff;
+    box-shadow: 0 0 0 3px rgb(8 124 240 / 8%);
+}
+.admin-invitation-role-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.admin-invitation-role-card input:focus-visible + .admin-invitation-role-icon {
+    outline: 3px solid rgb(8 124 240 / 35%);
+    outline-offset: 2px;
+}
+.admin-invitation-role-card strong,
+.admin-invitation-role-card small {
+    display: block;
+}
+.admin-invitation-role-card strong {
+    margin-bottom: 4px;
+    color: var(--admin-text);
+    font-size: 12px;
+}
+.admin-invitation-role-card small {
+    color: var(--admin-muted);
+    font-size: 10px;
+    line-height: 1.45;
+}
+.admin-invitation-role-icon {
+    width: 40px;
+    height: 40px;
+}
+.admin-invitation-role-icon.is-admin {
+    color: #087cf0;
+    background: #eaf4ff;
+}
+.admin-invitation-form-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.admin-invitation-consent-note {
+    margin: 14px 0 0;
+    padding: 12px 14px;
+    border: 1px solid #d8edf0;
+    border-radius: 12px;
+    color: #416578;
+    background: #f2fbfa;
+    font-size: 11px;
+    line-height: 1.55;
+}
+.admin-invitation-modal .admin-user-modal-actions {
+    position: static;
+    margin: 18px -30px -30px;
+}
+
+@media (max-width: 850px) {
+    .admin-users-heading {
+        flex-wrap: wrap;
+    }
+    .admin-users-heading-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .admin-users-heading-actions .admin-users-total {
+        margin: 0;
+    }
+    .admin-invitation-row {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+    }
+    .admin-invitation-role {
+        grid-column: 2;
+    }
+    .admin-invitation-status {
+        grid-column: 2;
+    }
+    .admin-invitation-actions {
+        grid-column: 3;
+        grid-row: 1 / span 3;
+    }
+}
+@media (max-width: 600px) {
+    .admin-users-heading {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .admin-users-heading-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .admin-users-heading-actions .admin-users-total {
+        margin: 0;
+    }
+    .admin-invite-trigger {
+        flex: 1;
+    }
+    .admin-invitations-panel {
+        padding: 15px 12px;
+    }
+    .admin-invitation-row {
+        grid-template-columns: 36px minmax(0, 1fr) auto;
+        gap: 8px;
+        padding: 10px;
+    }
+    .admin-invitation-avatar {
+        width: 36px;
+        height: 36px;
+    }
+    .admin-invitation-identity strong {
+        font-size: 11px;
+    }
+    .admin-invitation-identity span {
+        font-size: 10px;
+    }
+    .admin-invitation-actions {
+        flex-direction: column;
+    }
+    .admin-invitation-action {
+        width: 32px;
+        height: 32px;
+    }
+    .admin-invitation-roles,
+    .admin-invitation-form-fields {
+        grid-template-columns: 1fr;
+    }
+    .admin-invitation-modal .admin-user-modal-actions {
+        margin: 16px -15px 0;
+    }
+    .admin-user-pending-note {
+        text-align: left;
+    }
 }
 
 @media (max-width: 1050px) {

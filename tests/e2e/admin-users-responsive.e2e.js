@@ -103,7 +103,10 @@ for (const [, assetPath] of renderedHtml.matchAll(/src="(\/brand\/[^\"]+)"/g)) {
 const html = renderedHtml.replace(/src="(\/brand\/[^\"]+)"/g, (_, assetPath) => {
     return `src="${brandImages.get(assetPath)}"`;
 });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,
+});
 
 async function verifyAccountEmailLength(page, profileLabel) {
     const emailInput = page.locator('[data-user-edit-fields] [name="email"]');
@@ -314,14 +317,15 @@ try {
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
-    await page.locator('[name="displayName"]').waitFor();
+    await page.locator('[data-user-modal] [name="displayName"]').waitFor();
     await verifyAccountEmailLength(page, "doctor");
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(7, details);
     }, patientDetailsFixture);
     await page.waitForTimeout(50);
     if (
-        (await page.locator('[name="displayName"]').inputValue()) !== "Dr. Carlos Méndez" ||
+        (await page.locator('[data-user-modal] [name="displayName"]').inputValue()) !==
+            "Dr. Carlos Méndez" ||
         (await page.locator("[data-user-modal-feedback]").innerText())
     ) {
         throw new Error("An older user response changed the currently selected account editor.");
@@ -344,7 +348,7 @@ try {
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
-    await page.locator('[name="displayName"]').waitFor();
+    await page.locator('[data-user-modal] [name="displayName"]').waitFor();
     await page.evaluate(() => {
         window.adminUsersTestControls.resolveDetail(
             7,

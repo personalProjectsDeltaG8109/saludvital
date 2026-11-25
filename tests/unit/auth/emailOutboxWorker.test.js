@@ -9,6 +9,7 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
 }));
 
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
+    AccountInvitation: { findOne: jest.fn() },
     EmailOutbox: {
         update: jest.fn(),
         findOne: jest.fn(),
@@ -21,6 +22,7 @@ jest.unstable_mockModule("../../../src/models/associations.js", () => ({
         update: jest.fn(),
         create: jest.fn(),
     },
+    Rol: {},
 }));
 
 jest.unstable_mockModule("../../../src/modules/auth/services/emailService.js", () => ({
@@ -29,7 +31,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/emailService.js", (
 }));
 
 const { default: database } = await import("../../../config/database.js");
-const { EmailOutbox, PasswordResetToken, User } =
+const { AccountInvitation, EmailOutbox, PasswordResetToken, User } =
     await import("../../../src/models/associations.js");
 const { sendPasswordResetEmail, sendVerificationEmail } =
     await import("../../../src/modules/auth/services/emailService.js");
@@ -47,6 +49,7 @@ describe("Email outbox worker", () => {
         EmailOutbox.update.mockResolvedValue([0]);
         EmailOutbox.findOne.mockResolvedValue(null);
         EmailOutbox.findByPk.mockResolvedValue(null);
+        AccountInvitation.findOne.mockResolvedValue(null);
         User.findByPk.mockResolvedValue(null);
         sendVerificationEmail.mockResolvedValue(undefined);
         PasswordResetToken.update.mockResolvedValue([0]);
@@ -226,6 +229,53 @@ describe("Email outbox worker", () => {
             expect.stringContaining("/verify-email?token="),
             { isEmailChange: true },
         );
+    });
+
+    test("sends an activation link for an administrator-created account invitation", async () => {
+        const user = {
+            id: 52,
+            email: "new-patient@example.com",
+            is_active: false,
+            email_verified_at: null,
+            rol: { name: "Patient" },
+        };
+        const invitation = {
+            user_id: user.id,
+            accepted_at: null,
+            cancelled_at: null,
+            user,
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const job = {
+            id: 22,
+            user_id: user.id,
+            event_type: "account_invitation",
+            attempts: 0,
+            update: jest.fn(async (values) => Object.assign(job, values)),
+        };
+        AccountInvitation.findOne.mockResolvedValue(invitation);
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+
+        await expect(processNextEmailOutboxJob()).resolves.toEqual({
+            processed: true,
+            status: "sent",
+        });
+
+        const [email, invitationUrl, options] = sendVerificationEmail.mock.calls[0];
+        const parsedUrl = new URL(invitationUrl);
+        const rawToken = parsedUrl.searchParams.get("token");
+        expect(email).toBe(user.email);
+        expect(parsedUrl.pathname).toBe("/accept-invitation");
+        expect(rawToken).toMatch(/^[a-f0-9]{64}$/);
+        expect(invitation.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                token_hash: createHash("sha256").update(rawToken).digest("hex"),
+                expires_at: expect.any(Date),
+            }),
+            { transaction },
+        );
+        expect(options).toEqual({ isAccountInvitation: true, accountType: "patient" });
     });
 
     test("does not send a verification link after the registration retention expires", async () => {

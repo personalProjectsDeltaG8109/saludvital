@@ -110,24 +110,34 @@ function toUserSummary(record) {
             : record.rol?.name === "Patient"
               ? record.patient
               : null;
+    const isPendingInvitation = Boolean(
+        !record.email_verified_at && !record.is_active && record.display_name && !assignedProfile,
+    );
     const displayName =
         (record.rol?.name === "Doctor" ? doctorName || patientName : patientName || doctorName) ||
+        record.display_name ||
         record.email;
-    const profileType = assignedProfile
-        ? record.rol.name === "Doctor"
+    const profileType = isPendingInvitation
+        ? "Invitación pendiente"
+        : assignedProfile
+          ? record.rol.name === "Doctor"
+              ? "Médico"
+              : "Paciente"
+          : record.doctor
             ? "Médico"
-            : "Paciente"
-        : record.doctor
-          ? "Médico"
-          : record.patient
-            ? "Paciente"
-            : record.rol?.name === ADMIN_ROLE_NAME
-              ? "Administrador"
-              : "Sin perfil";
-    const profileMismatch = ["Patient", "Doctor"].includes(record.rol?.name) && !assignedProfile;
+            : record.patient
+              ? "Paciente"
+              : record.rol?.name === ADMIN_ROLE_NAME
+                ? "Administrador"
+                : "Sin perfil";
+    const profileMismatch =
+        !isPendingInvitation &&
+        ["Patient", "Doctor"].includes(record.rol?.name) &&
+        !assignedProfile;
 
     return {
         id: record.id,
+        isPendingInvitation,
         displayName,
         email: record.email,
         role: record.rol,
@@ -159,6 +169,7 @@ export async function getAdminUsers(query = {}) {
         const term = `%${filters.search.replace(/[\\%_]/g, "\\$&")}%`;
         where[Op.or] = [
             { email: { [Op.like]: term } },
+            { display_name: { [Op.like]: term } },
             { "$patient.first_name$": { [Op.like]: term } },
             { "$patient.last_name$": { [Op.like]: term } },
             { "$doctor.display_name$": { [Op.like]: term } },
@@ -168,7 +179,16 @@ export async function getAdminUsers(query = {}) {
     const [result, roles, specialties] = await Promise.all([
         User.findAndCountAll({
             where,
-            attributes: ["id", "email", "role_id", "is_active", "created_at", "last_login_at"],
+            attributes: [
+                "id",
+                "email",
+                "display_name",
+                "email_verified_at",
+                "role_id",
+                "is_active",
+                "created_at",
+                "last_login_at",
+            ],
             include: userIncludes(),
             order: [
                 ["created_at", "DESC"],
@@ -219,11 +239,24 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
         if (!administratorRole) throw serviceError("No se encontró el rol de administrador.", 500);
 
         const user = await User.findByPk(userId, {
-            attributes: ["id", "email", "role_id", "is_active"],
+            attributes: [
+                "id",
+                "email",
+                "display_name",
+                "email_verified_at",
+                "role_id",
+                "is_active",
+            ],
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
         if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
+        if (!user.email_verified_at && !user.is_active && user.display_name) {
+            throw serviceError(
+                "La persona debe completar primero la activación de su invitación.",
+                409,
+            );
+        }
 
         const [currentRole, targetRole, patient, doctor] = await Promise.all([
             Rol.findByPk(user.role_id, { attributes: ["id", "name"], transaction }),
@@ -404,11 +437,24 @@ export async function updateAdminUser(actorUserId, rawUserId, payload) {
         if (!administratorRole) throw serviceError("No se encontró el rol de administrador.", 500);
 
         const user = await User.findByPk(userId, {
-            attributes: ["id", "email", "role_id", "is_active"],
+            attributes: [
+                "id",
+                "email",
+                "display_name",
+                "email_verified_at",
+                "role_id",
+                "is_active",
+            ],
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
         if (!user) throw serviceError("No encontramos esa cuenta de usuario.", 404);
+        if (!user.email_verified_at && !user.is_active && user.display_name) {
+            throw serviceError(
+                "La persona debe completar primero la activación de su invitación.",
+                409,
+            );
+        }
 
         const nextRoleId = changes.roleId ?? user.role_id;
         const nextIsActive = changes.isActive ?? user.is_active;
