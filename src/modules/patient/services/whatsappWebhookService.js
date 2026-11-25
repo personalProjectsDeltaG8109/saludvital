@@ -230,13 +230,10 @@ async function showMainMenu(conversation, contactId, greeting = "") {
         chatbot_flow_version_id: activeFlow.version.id,
         chatbot_state: { step: "menu", menuOptions },
     });
-    const numberedOptions = menuOptions
-        .map((option, index) => `${index + 1}. ${option.label}`)
-        .join("\n");
     await sendResponse(
         conversation,
         contactId,
-        `${greeting ? `${greeting}\n\n` : ""}${activeFlow.menuStep.text}\n${numberedOptions}\n\nEscribe *menu* para volver en cualquier momento.`,
+        `${greeting ? `${greeting}\n\n` : ""}${activeFlow.menuStep.text}\n\nEscribe *menu* para volver en cualquier momento.`,
         menuOptions.map((option, index) => ({ id: `menu:${index + 1}`, title: option.label })),
     );
 }
