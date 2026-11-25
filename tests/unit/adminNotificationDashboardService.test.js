@@ -48,16 +48,26 @@ describe("administrator notification dashboard service", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         Notification.findAll.mockResolvedValue([
-            { status: "Sent", provider_delivery_status: "delivered", count: "2" },
-            { status: "Sent", provider_delivery_status: "read", count: "1" },
-            { status: "Failed", provider_delivery_status: "failed", count: "1" },
-            { status: "Failed", provider_delivery_status: null, count: "1" },
-            { status: "Pending", provider_delivery_status: null, count: "2" },
-            { status: "Processing", provider_delivery_status: null, count: "1" },
-            { status: "Sent", provider_delivery_status: "sent", count: "1" },
-            { status: "Sent", provider_delivery_status: null, count: "1" },
-            { status: "Cancelled", provider_delivery_status: null, count: "4" },
-            { status: "OutcomeUnknown", provider_delivery_status: null, count: "3" },
+            {
+                status: "Sent",
+                channel: "WhatsApp",
+                provider_delivery_status: "delivered",
+                count: "2",
+            },
+            { status: "Sent", channel: "WhatsApp", provider_delivery_status: "read", count: "1" },
+            { status: "Failed", channel: "SMS", provider_delivery_status: "failed", count: "1" },
+            { status: "Failed", channel: "Email", provider_delivery_status: null, count: "1" },
+            { status: "Pending", channel: "Email", provider_delivery_status: null, count: "2" },
+            { status: "Processing", channel: "SMS", provider_delivery_status: null, count: "1" },
+            { status: "Sent", channel: "WhatsApp", provider_delivery_status: "sent", count: "1" },
+            { status: "Sent", channel: "Email", provider_delivery_status: null, count: "1" },
+            { status: "Cancelled", channel: "Email", provider_delivery_status: null, count: "4" },
+            {
+                status: "OutcomeUnknown",
+                channel: "Email",
+                provider_delivery_status: null,
+                count: "3",
+            },
         ]);
         Notification.findAndCountAll.mockResolvedValue({
             count: 1,
@@ -70,7 +80,11 @@ describe("administrator notification dashboard service", () => {
 
         expect(data.summary).toEqual({ totalSent: 6, delivered: 3, failed: 2, pending: 5 });
         expect(data.period).toMatchObject({ days: 30, timeZone: "America/Bogota" });
-        expect(data.deliverySemantics.delivered).toMatch(/Meta/);
+        expect(data.deliverySemantics.delivered).toContain("Inalambria");
+        expect(data.deliverySemantics.delivered).toContain("Meta");
+        expect(data.deliverySemantics.delivered).toContain("correo no confirma");
+        expect(Notification.findAll.mock.calls[0][0].attributes).toContain("channel");
+        expect(Notification.findAll.mock.calls[0][0].group).toContain("channel");
         expect(Notification.findAll.mock.calls[0][0].where).toEqual({
             [and]: [
                 {
@@ -82,6 +96,52 @@ describe("administrator notification dashboard service", () => {
             ],
         });
     });
+
+    test("counts only delivery states supported by each provider and channel", async () => {
+        Notification.findAll.mockResolvedValue([
+            {
+                status: "Sent",
+                channel: "WhatsApp",
+                provider_delivery_status: "delivered",
+                count: "2",
+            },
+            { status: "Sent", channel: "WhatsApp", provider_delivery_status: "read", count: "1" },
+            { status: "Sent", channel: "SMS", provider_delivery_status: "delivered", count: "4" },
+            { status: "Sent", channel: "SMS", provider_delivery_status: "failed", count: "2" },
+            {
+                status: "Failed",
+                channel: "WhatsApp",
+                provider_delivery_status: "failed",
+                count: "1",
+            },
+            { status: "Sent", channel: "Email", provider_delivery_status: "delivered", count: "7" },
+            { status: "Sent", channel: "Email", provider_delivery_status: "failed", count: "1" },
+            { status: "Sent", channel: "SMS", provider_delivery_status: "read", count: "3" },
+        ]);
+
+        const data = await getAdminNotificationDashboard();
+
+        expect(data.summary).toEqual({ totalSent: 21, delivered: 7, failed: 3, pending: 11 });
+    });
+
+    test.each([
+        ["SMS", "delivered", "Entregado por Inalambria", "Entregada", "success"],
+        ["SMS", "failed", "Fallido según Inalambria", "Fallida", "error"],
+        ["WhatsApp", "read", "Leído por Meta", "Leída", "success"],
+        ["Email", "delivered", "Sin confirmación final del proveedor", "Pendiente", "pending"],
+    ])(
+        "labels %s %s states using supported provider data",
+        async (channel, status, providerStatus, deliveryStatus, tone) => {
+            Notification.findAndCountAll.mockResolvedValue({
+                count: 1,
+                rows: [notificationRow({ channel, provider_delivery_status: status })],
+            });
+
+            const data = await getAdminNotificationDashboard();
+
+            expect(data.rows[0]).toMatchObject({ providerStatus, deliveryStatus, tone });
+        },
+    );
 
     test("masks destinations and excludes message payload, provider IDs, and error data", async () => {
         const data = await getAdminNotificationDashboard();
@@ -122,7 +182,16 @@ describe("administrator notification dashboard service", () => {
             expect.arrayContaining([
                 expect.objectContaining({ channel: "WhatsApp" }),
                 expect.objectContaining({
-                    provider_delivery_status: { [inValues]: ["delivered", "read"] },
+                    [or]: expect.arrayContaining([
+                        expect.objectContaining({
+                            channel: "WhatsApp",
+                            provider_delivery_status: { [inValues]: ["delivered", "read"] },
+                        }),
+                        expect.objectContaining({
+                            channel: "SMS",
+                            provider_delivery_status: "delivered",
+                        }),
+                    ]),
                 }),
                 expect.objectContaining({ [or]: expect.any(Array) }),
             ]),
@@ -133,7 +202,16 @@ describe("administrator notification dashboard service", () => {
             expect.arrayContaining([
                 expect.objectContaining({ channel: "WhatsApp" }),
                 expect.objectContaining({
-                    provider_delivery_status: { [inValues]: ["delivered", "read"] },
+                    [or]: expect.arrayContaining([
+                        expect.objectContaining({
+                            channel: "WhatsApp",
+                            provider_delivery_status: { [inValues]: ["delivered", "read"] },
+                        }),
+                        expect.objectContaining({
+                            channel: "SMS",
+                            provider_delivery_status: "delivered",
+                        }),
+                    ]),
                 }),
             ]),
         );

@@ -1,5 +1,10 @@
 import { col, fn, Op, where } from "sequelize";
 import { Notification, Patient } from "../../../models/associations.js";
+import {
+    getProviderStatusLabel,
+    isConfirmedProviderDelivery,
+    isConfirmedProviderFailure,
+} from "./adminNotificationProviderStatus.js";
 
 const BOGOTA_TIME_ZONE = "America/Bogota";
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -29,13 +34,6 @@ const APPLICATION_STATUS_LABELS = {
     Failed: "Fallido en el envío",
     Cancelled: "Cancelado",
     OutcomeUnknown: "Resultado incierto",
-};
-
-const PROVIDER_STATUS_LABELS = {
-    sent: "Aceptado por Meta",
-    delivered: "Entregado por Meta",
-    read: "Leído por Meta",
-    failed: "Fallido según Meta",
 };
 
 function createServiceError(message) {
@@ -229,10 +227,22 @@ function buildListWhere({ channel, status, search, range }) {
             [Op.or]: [{ provider_delivery_status: null }, { provider_delivery_status: "sent" }],
         });
     } else if (status === "delivered") {
-        conditions.push({ provider_delivery_status: { [Op.in]: ["delivered", "read"] } });
+        conditions.push({
+            [Op.or]: [
+                {
+                    channel: "WhatsApp",
+                    provider_delivery_status: { [Op.in]: ["delivered", "read"] },
+                },
+                { channel: "SMS", provider_delivery_status: "delivered" },
+            ],
+        });
     } else if (status === "failed") {
         conditions.push({
-            [Op.or]: [{ status: "Failed" }, { provider_delivery_status: "failed" }],
+            [Op.or]: [
+                { status: "Failed" },
+                { channel: "WhatsApp", provider_delivery_status: "failed" },
+                { channel: "SMS", provider_delivery_status: "failed" },
+            ],
         });
     } else if (status === "cancelled") {
         conditions.push({ status: "Cancelled" });
@@ -253,18 +263,26 @@ function summarizeMetrics(groupedRows) {
         const count = toCount(row.count);
         if (row.status === "Cancelled") continue;
 
-        const providerReported = Boolean(row.provider_delivery_status);
+        const providerReported = Boolean(
+            getProviderStatusLabel(row.channel, row.provider_delivery_status),
+        );
         const acceptedByProvider = row.status === "Sent" || providerReported;
         if (acceptedByProvider) totalSent += count;
 
-        if (["delivered", "read"].includes(row.provider_delivery_status)) {
+        const confirmedDelivered = isConfirmedProviderDelivery(
+            row.channel,
+            row.provider_delivery_status,
+        );
+        const confirmedProviderFailure = isConfirmedProviderFailure(
+            row.channel,
+            row.provider_delivery_status,
+        );
+
+        if (confirmedDelivered) {
             delivered += count;
-        } else if (row.status === "Failed" || row.provider_delivery_status === "failed") {
+        } else if (row.status === "Failed" || confirmedProviderFailure) {
             failed += count;
-        } else if (
-            ["Pending", "Processing"].includes(row.status) ||
-            (row.status === "Sent" && [null, "sent"].includes(row.provider_delivery_status))
-        ) {
+        } else if (["Pending", "Processing"].includes(row.status) || row.status === "Sent") {
             pending += count;
         }
     }
@@ -285,7 +303,8 @@ function maskRecipient(value) {
 }
 
 function providerLabel(status, channel) {
-    if (status) return PROVIDER_STATUS_LABELS[status] || "Estado del proveedor no disponible";
+    const label = getProviderStatusLabel(channel, status);
+    if (label) return label;
     if (channel === "Email" || channel === "SMS" || channel === "WhatsApp") {
         return "Sin confirmación final del proveedor";
     }
@@ -321,9 +340,12 @@ function messagePreviewFor(row) {
 function toHistoryItem(notification) {
     const row = notification.get({ plain: true });
     const patientName = [row.patient?.first_name, row.patient?.last_name].filter(Boolean).join(" ");
-    const providerFailed = row.provider_delivery_status === "failed";
+    const providerFailed = isConfirmedProviderFailure(row.channel, row.provider_delivery_status);
     const failed = row.status === "Failed" || providerFailed;
-    const confirmedDelivered = ["delivered", "read"].includes(row.provider_delivery_status);
+    const confirmedDelivered = isConfirmedProviderDelivery(
+        row.channel,
+        row.provider_delivery_status,
+    );
     const applicationTone =
         row.status === "OutcomeUnknown"
             ? "unknown"
@@ -415,12 +437,13 @@ export async function getAdminNotificationDashboard(query = {}, referenceDate = 
         Notification.findAll({
             attributes: [
                 "status",
+                "channel",
                 "provider_delivery_status",
                 [fn("COUNT", col("Notification.id")), "count"],
             ],
             include: [{ model: Patient, as: "patient", attributes: [], required: false }],
             where: buildListWhere({ ...filters, range }),
-            group: ["status", "provider_delivery_status"],
+            group: ["status", "channel", "provider_delivery_status"],
             raw: true,
         }),
         Notification.findAndCountAll(buildListQuery(filters, range)),
@@ -461,8 +484,9 @@ export async function getAdminNotificationDashboard(query = {}, referenceDate = 
         },
         deliverySemantics: {
             total: "Notificaciones aceptadas por el proveedor en el período, sin contar canceladas.",
-            delivered: "Solo estados de entrega confirmados por Meta (delivered/read).",
-            failed: "Fallo del worker o estado failed informado por Meta, contado una sola vez.",
+            delivered:
+                "WhatsApp entregado o leído confirmado por Meta y SMS entregado confirmado por Inalambria. El correo no confirma entrega final.",
+            failed: "Fallos del sistema y estados failed confirmados por Meta (WhatsApp) o Inalambria (SMS), contados una sola vez.",
             pending: "En cola, en proceso o aceptado sin confirmación final de entrega.",
         },
     };
