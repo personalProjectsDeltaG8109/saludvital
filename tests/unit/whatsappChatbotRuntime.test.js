@@ -192,6 +192,29 @@ describe("WhatsApp chatbot appointment safeguards", () => {
         );
     });
 
+    test("shows opening menu choices once and keeps the interactive selection", async () => {
+        const conversation = createConversation(null, null);
+        conversation.chatbot_state = null;
+        mockConversation.findOne.mockResolvedValue(conversation);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-opening-menu",
+                from: "573001234567",
+                type: "text",
+                text: { body: "Hola" },
+            }),
+        );
+
+        const reply = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0];
+        expect(reply.text.match(/Solicitar cita/g)).toHaveLength(1);
+        expect(reply.text).toContain("Escribe *menu* para volver en cualquier momento.");
+        expect(normalizeSpanishText(reply.text)).toContain(
+            "Tambien puedes responder con el numero de la opcion.",
+        );
+        expect(reply.options).toEqual([{ id: "menu:1", title: "Solicitar cita" }]);
+    });
+
     test("redacts numeric identity input before persisting the inbound message", async () => {
         const conversation = createConversation(
             { step: "identity_document", intent: "book" },
