@@ -86,6 +86,40 @@ function createWebhook(message) {
     };
 }
 
+function createChoiceValues(count, prefix = "Option") {
+    return Array.from({ length: count }, (_, index) => ({
+        id: index + 1,
+        name: `${prefix} ${index + 1}`,
+    }));
+}
+
+function normalizeSpanishText(value) {
+    return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+async function requestBookingSpecialtyList(count) {
+    const conversation = createConversation({
+        step: "menu",
+        menuOptions: [{ label: "Book appointment", nextStepId: "booking" }],
+    });
+    mockConversation.findOne.mockResolvedValue(conversation);
+    mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+    mockAppointmentService.getAvailableSpecialties.mockResolvedValue(
+        createChoiceValues(count, "Specialty"),
+    );
+
+    await processMetaWhatsAppWebhook(
+        createWebhook({
+            id: `inbound-specialties-${count}`,
+            from: "573001234567",
+            type: "text",
+            text: { body: "menu:1" },
+        }),
+    );
+
+    return { conversation, reply: mockSendWhatsApp.sendWhatsAppReply.mock.lastCall?.[0] };
+}
+
 describe("WhatsApp chatbot appointment safeguards", () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -253,6 +287,176 @@ describe("WhatsApp chatbot appointment safeguards", () => {
                 time: "09:30",
                 source: "WhatsApp",
             }),
+        );
+    });
+
+    test.each([0, 1, 9, 10, 11, 20, 21])(
+        "keeps a booking list within Meta's row limit when there are %i choices",
+        async (count) => {
+            const { conversation, reply } = await requestBookingSpecialtyList(count);
+            const sentRows = reply.options;
+
+            expect(sentRows.length).toBeLessThanOrEqual(10);
+            if (count === 0) {
+                expect(reply.text).toContain("No encontramos opciones");
+                return;
+            }
+
+            const hasNextPage = count > 10;
+            const expectedVisibleChoices = hasNextPage ? 9 : count;
+            expect(sentRows).toHaveLength(expectedVisibleChoices + Number(hasNextPage));
+            expect(sentRows.at(-1)?.id).toBe(hasNextPage ? "choice:next" : `choice:${count}`);
+            expect(conversation.chatbot_state.pageSize).toBe(hasNextPage ? 9 : 10);
+            expect(normalizeSpanishText(reply.text).includes("mas opciones")).toBe(hasNextPage);
+        },
+    );
+
+    test("keeps later rescheduling pages reachable and maps their numbers to the visible appointment", async () => {
+        const appointments = createChoiceValues(20, "Appointment").map((item) => ({
+            id: item.id,
+            doctorId: 9,
+            specialtyId: 2,
+        }));
+        const labels = appointments.map((item, index) => `Appointment ${index + 1}`);
+        const conversation = createConversation({
+            step: "reschedule_appointment",
+            intent: "reschedule",
+            choices: appointments,
+            labels,
+            page: 0,
+            pageSize: 9,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-next-page-interactive",
+                from: "573001234567",
+                type: "interactive",
+                interactive: { list_reply: { id: "choice:next" } },
+            }),
+        );
+
+        const secondPageReply = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0];
+        expect(conversation.chatbot_state.page).toBe(1);
+        expect(secondPageReply.options.map((option) => option.id)).toEqual([
+            "choice:10",
+            "choice:11",
+            "choice:12",
+            "choice:13",
+            "choice:14",
+            "choice:15",
+            "choice:16",
+            "choice:17",
+            "choice:18",
+            "choice:next",
+        ]);
+        expect(secondPageReply.text).toContain("10. Appointment 10");
+        expect(normalizeSpanishText(secondPageReply.text)).toContain("ver mas opciones");
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-next-page-text",
+                from: "573001234567",
+                type: "text",
+                text: { body: "mas opciones" },
+            }),
+        );
+
+        const finalPageReply = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0];
+        expect(conversation.chatbot_state.page).toBe(2);
+        expect(finalPageReply.options.map((option) => option.id)).toEqual([
+            "choice:19",
+            "choice:20",
+        ]);
+        expect(finalPageReply.text).toContain("20. Appointment 20");
+        expect(normalizeSpanishText(finalPageReply.text)).not.toContain("ver mas opciones");
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-final-page-choice",
+                from: "573001234567",
+                type: "text",
+                text: { body: "20" },
+            }),
+        );
+
+        expect(conversation.chatbot_state).toEqual({
+            step: "reschedule_date",
+            intent: "reschedule",
+            appointmentId: 20,
+            doctorId: 9,
+            specialtyId: 2,
+        });
+    });
+
+    test("allows a patient to reach a later booking specialty by its displayed name", async () => {
+        const { conversation } = await requestBookingSpecialtyList(20);
+        mockAppointmentService.getAvailableDoctors.mockResolvedValue([
+            { id: 77, display_name: "Dr Example" },
+        ]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-next-page-two",
+                from: "573001234567",
+                type: "text",
+                text: { body: "mas opciones" },
+            }),
+        );
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-next-page-three",
+                from: "573001234567",
+                type: "text",
+                text: { body: "mas opciones" },
+            }),
+        );
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-booking-final-choice",
+                from: "573001234567",
+                type: "text",
+                text: { body: "Specialty 20" },
+            }),
+        );
+
+        expect(mockAppointmentService.getAvailableDoctors).toHaveBeenCalledWith(20);
+        expect(conversation.chatbot_state).toEqual(
+            expect.objectContaining({ step: "booking_doctor", specialtyId: 20 }),
+        );
+    });
+
+    test("does not accept a number for a choice hidden on the current page", async () => {
+        const appointments = createChoiceValues(11, "Appointment").map((item) => ({
+            id: item.id,
+            doctorId: 9,
+            specialtyId: 2,
+        }));
+        const conversation = createConversation({
+            step: "reschedule_appointment",
+            intent: "reschedule",
+            choices: appointments,
+            labels: appointments.map((item, index) => `Appointment ${index + 1}`),
+            page: 0,
+            pageSize: 9,
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-hidden-choice",
+                from: "573001234567",
+                type: "text",
+                text: { body: "10" },
+            }),
+        );
+
+        expect(conversation.chatbot_state.step).toBe("reschedule_appointment");
+        expect(mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text).toContain(
+            "Selecciona una cita de la lista",
         );
     });
 

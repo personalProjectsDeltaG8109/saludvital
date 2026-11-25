@@ -99,6 +99,25 @@ describe("Meta WhatsApp Cloud API", () => {
         expect(payload.interactive.action.sections[0].rows[0].id).toBe("menu:1");
     });
 
+    test("keeps the next-page row within Meta's ten-row list limit", async () => {
+        const choices = Array.from({ length: 9 }, (_, index) => ({
+            id: `choice:${index + 1}`,
+            title: `Option ${index + 1}`,
+        }));
+        choices.push({ id: "choice:next", title: "Ver más opciones" });
+
+        await sendWhatsAppReply({
+            to: "+573001234567",
+            text: "Choose an option",
+            options: choices,
+        });
+
+        const payload = JSON.parse(global.fetch.mock.calls[0][1].body);
+        const rows = payload.interactive.action.sections[0].rows;
+        expect(rows).toHaveLength(10);
+        expect(rows.at(-1)).toEqual({ id: "choice:next", title: "Ver más opciones" });
+    });
+
     test("rejects invalid recipients and incomplete template values before sending", async () => {
         await expect(
             sendWhatsApp({ to: "not-a-number", eventType: "appointment_reminder" }),
