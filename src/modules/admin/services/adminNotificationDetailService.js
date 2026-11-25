@@ -5,6 +5,11 @@ import {
     Patient,
 } from "../../../models/associations.js";
 import { getSafeDeliveryError } from "./notificationDeliveryDisplayService.js";
+import {
+    getProviderName,
+    getProviderStatusLabel,
+    isConfirmedProviderFailure,
+} from "./adminNotificationProviderStatus.js";
 
 const MAX_NOTIFICATION_ID = 4_294_967_295;
 
@@ -29,13 +34,6 @@ const APPLICATION_STATUS_LABELS = {
     Cancelled: "Cancelada",
     OutcomeUnknown: "Resultado incierto",
     "No Show": "No asistió",
-};
-
-const PROVIDER_STATUS_LABELS = {
-    sent: "Aceptado por Meta",
-    delivered: "Entregado por Meta",
-    read: "Leído por Meta",
-    failed: "Fallido según Meta",
 };
 
 const APPOINTMENT_STATUS_LABELS = {
@@ -133,19 +131,25 @@ function buildDeliveryEvents(record) {
     }
 
     const providerStatus = record.provider_delivery_status;
-    if (providerStatus && updatedAt && ["delivered", "read", "failed"].includes(providerStatus)) {
+    const providerName = getProviderName(record.channel);
+    const providerStatusLabel = getProviderStatusLabel(record.channel, providerStatus);
+    if (
+        providerStatusLabel &&
+        updatedAt &&
+        ["delivered", "read", "failed"].includes(providerStatus)
+    ) {
         events.push({
             type: "provider",
-            label: PROVIDER_STATUS_LABELS[providerStatus] || "Estado informado por el proveedor",
+            label: providerStatusLabel,
             occurredAt: updatedAt,
-            description: "Última actualización de entrega registrada.",
+            description: `${providerName} informó la última actualización de entrega registrada.`,
         });
-    } else if (providerStatus === "sent" && updatedAt && !sentAt) {
+    } else if (providerStatus === "sent" && providerStatusLabel && updatedAt && !sentAt) {
         events.push({
             type: "accepted",
-            label: "Aceptada por Meta",
+            label: providerStatusLabel,
             occurredAt: updatedAt,
-            description: "Meta confirmó la aceptación del mensaje.",
+            description: `${providerName} confirmó la aceptación del mensaje.`,
         });
     } else if (record.status === "Failed" && updatedAt) {
         events.push({
@@ -190,7 +194,11 @@ function buildDeliveryEvents(record) {
 
 function mapNotificationDetails(notification) {
     const record = notification.get({ plain: true });
-    const failed = record.status === "Failed" || record.provider_delivery_status === "failed";
+    const providerFailed = isConfirmedProviderFailure(
+        record.channel,
+        record.provider_delivery_status,
+    );
+    const failed = record.status === "Failed" || providerFailed;
 
     return {
         id: record.id,
@@ -200,7 +208,7 @@ function mapNotificationDetails(notification) {
         maskedRecipient: maskRecipient(record.recipient_address),
         applicationStatus: APPLICATION_STATUS_LABELS[record.status] || "Estado no disponible",
         providerStatus:
-            PROVIDER_STATUS_LABELS[record.provider_delivery_status] ||
+            getProviderStatusLabel(record.channel, record.provider_delivery_status) ||
             "Sin confirmación final del proveedor",
         providerReference: maskProviderReference(record.provider_message_id),
         createdAt: toIsoTimestamp(record.created_at),
