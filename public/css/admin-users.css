@@ -12,6 +12,34 @@
     margin: 4px 0 24px;
 }
 
+.admin-users-heading-main {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-users-heading-copy {
+    min-width: 0;
+}
+
+.admin-users-heading-icon {
+    display: grid;
+    width: 62px;
+    height: 62px;
+    flex: 0 0 62px;
+    place-items: center;
+    border: 1px solid #dcecff;
+    border-radius: 18px;
+    color: #087cf0;
+    background: linear-gradient(145deg, #eaf4ff, #e6f8f7);
+}
+
+.admin-users-heading-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
 .admin-users-heading h1 {
     margin: 4px 0 6px;
     color: var(--admin-text);
@@ -421,10 +449,23 @@
     place-items: center;
     border: 1px solid #dce8f5;
     border-radius: 12px;
-    color: var(--admin-text);
-    background: #fff;
-    font-size: 25px;
+    color: #58718b;
+    background: #f7faff;
     cursor: pointer;
+    transition:
+        border-color 150ms ease,
+        color 150ms ease,
+        background 150ms ease,
+        transform 150ms ease;
+}
+.admin-user-modal-close svg {
+    display: block;
+}
+.admin-user-modal-close:hover {
+    transform: translateY(-1px);
+    border-color: #b9d8f7;
+    color: #075db8;
+    background: #eaf4ff;
 }
 .admin-user-modal-profile {
     display: flex;
@@ -1083,7 +1124,7 @@ body.has-admin-modal {
         align-items: flex-start;
         gap: 14px;
     }
-    .admin-users-heading > div {
+    .admin-users-heading-copy {
         min-width: 0;
     }
     .admin-users-heading p:not(.admin-eyebrow) {
@@ -1249,6 +1290,41 @@ body.has-admin-modal {
         max-height: 94vh;
         padding: 18px 15px 0;
         border-radius: 20px 20px 0 0;
+    }
+    .admin-user-modal-backdrop[data-invitation-modal]:not([hidden]) {
+        align-items: center;
+        justify-content: center;
+        padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+    }
+    .admin-invitation-modal {
+        width: min(100%, 520px);
+        max-height: calc(100vh - 36px);
+        max-height: calc(100dvh - 36px);
+        padding: 20px 18px 18px;
+        border-radius: 20px;
+    }
+    .admin-invitation-modal .admin-user-modal-close {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+        border-radius: 13px;
+    }
+    .admin-invitation-modal .admin-user-modal-actions {
+        margin: 16px -18px -18px;
+        padding: 12px 18px 18px;
+    }
+    .admin-users-heading-main {
+        gap: 10px;
+    }
+    .admin-users-heading-icon {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+        border-radius: 15px;
+    }
+    .admin-users-heading-icon svg {
+        width: 27px;
+        height: 27px;
     }
     .admin-user-form-section {
         grid-template-columns: 1fr;
