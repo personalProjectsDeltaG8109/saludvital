@@ -1,5 +1,7 @@
 ﻿import { beforeEach, describe, expect, jest, test } from "@jest/globals";
 
+import { Op } from "sequelize";
+
 jest.unstable_mockModule("../../../config/database.js", () => ({
     default: {
         transaction: jest.fn(),
@@ -57,6 +59,7 @@ const {
     cancelPatientAppointment,
     getAvailableAppointmentDates,
     getAvailableTimeSlots,
+    getUpcomingConfirmedAppointmentsForWhatsApp,
 } = await import("../../../src/modules/patient/services/appointmentService.js");
 
 describe("appointment reminder scheduling", () => {
@@ -372,6 +375,35 @@ describe("appointment reminder scheduling", () => {
             }),
         ).rejects.toMatchObject({ statusCode: 400 });
         expect(DoctorAvailability.findAll).not.toHaveBeenCalled();
+    });
+
+    test("queries only future confirmed WhatsApp appointments, nearest first", async () => {
+        const upcomingAppointments = [{ id: 42 }, { id: 43 }];
+        Appointment.findAll.mockResolvedValue(upcomingAppointments);
+
+        const result = await getUpcomingConfirmedAppointmentsForWhatsApp(2);
+        const query = Appointment.findAll.mock.calls[0][0];
+
+        expect(result).toBe(upcomingAppointments);
+        expect(Patient.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({ where: { user_id: 2 } }),
+        );
+        expect(query.where).toEqual({
+            patient_id: 12,
+            start_at: { [Op.gt]: new Date("2026-11-01T15:00:00.000Z") },
+        });
+        expect(query.include[0]).toEqual(
+            expect.objectContaining({
+                model: AppointmentStatus,
+                as: "status",
+                required: true,
+                where: { name: "Confirmed" },
+                attributes: ["name"],
+            }),
+        );
+        expect(query.attributes).toEqual(["id", "start_at", "end_at"]);
+        expect(query.order).toEqual([["start_at", "ASC"]]);
+        expect(query.limit).toBe(10);
     });
 
     test("rejects Pediatrics availability for a patient who will be 18 on that date", async () => {

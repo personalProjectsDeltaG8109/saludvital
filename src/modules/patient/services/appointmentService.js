@@ -1015,6 +1015,33 @@ export async function getPatientAppointmentsForWhatsApp(userId) {
     return appointments;
 }
 
+/** Return only a patient's upcoming confirmed appointments for WhatsApp consultation. */
+export async function getUpcomingConfirmedAppointmentsForWhatsApp(userId) {
+    userId = validatePositiveIntegerId(userId);
+    const patient = await getPatientByUserId(userId);
+
+    return Appointment.findAll({
+        where: {
+            patient_id: patient.id,
+            start_at: { [Op.gt]: new Date() },
+        },
+        attributes: ["id", "start_at", "end_at"],
+        include: [
+            {
+                model: AppointmentStatus,
+                as: "status",
+                required: true,
+                where: { name: CONFIRMED_STATUS },
+                attributes: ["name"],
+            },
+            { model: Doctor, as: "doctor", required: true, attributes: ["display_name"] },
+            { model: Specialities, as: "specialty", required: true, attributes: ["name"] },
+        ],
+        order: [["start_at", "ASC"]],
+        limit: 10,
+    });
+}
+
 /**
  * Create an appointment and its audit history atomically.
  */

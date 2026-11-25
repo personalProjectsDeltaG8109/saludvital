@@ -27,6 +27,7 @@ const mockAppointmentService = {
     getPatientAppointmentsForWhatsApp: jest.fn(),
     getReschedulableAppointments: jest.fn(),
     reschedulePatientAppointment: jest.fn(),
+    getUpcomingConfirmedAppointmentsForWhatsApp: jest.fn(),
 };
 const mockSendEmail = { sendWhatsAppIdentityCode: jest.fn() };
 const mockSendWhatsApp = { sendWhatsAppReply: jest.fn() };
@@ -547,6 +548,69 @@ describe("WhatsApp chatbot appointment safeguards", () => {
                 date: "2026-12-01",
                 time: "09:30",
                 source: "WhatsApp",
+            }),
+        );
+    });
+
+    test("consults only upcoming confirmed appointments for a verified patient", async () => {
+        const conversation = createConversation({
+            step: "menu",
+            menuOptions: [{ label: "Consultar citas", nextStepId: "appointments" }],
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getUpcomingConfirmedAppointmentsForWhatsApp.mockResolvedValue([
+            {
+                start_at: new Date("2026-12-01T14:30:00.000Z"),
+                status: { name: "Confirmed" },
+                specialty: { name: "Medicina General" },
+            },
+        ]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-consult-appointments",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(
+            mockAppointmentService.getUpcomingConfirmedAppointmentsForWhatsApp,
+        ).toHaveBeenCalledWith(42);
+        expect(mockAppointmentService.getPatientAppointmentsForWhatsApp).not.toHaveBeenCalled();
+        expect(mockSendWhatsApp.sendWhatsAppReply).toHaveBeenCalledWith(
+            expect.objectContaining({
+                text: expect.stringContaining("próximas citas confirmadas"),
+            }),
+        );
+        const replyText = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text;
+        expect(replyText).toContain("Estado: Confirmada");
+        expect(replyText).not.toContain("Confirmed");
+    });
+
+    test("explains when a verified patient has no upcoming confirmed appointments", async () => {
+        const conversation = createConversation({
+            step: "menu",
+            menuOptions: [{ label: "Consultar citas", nextStepId: "appointments" }],
+        });
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getUpcomingConfirmedAppointmentsForWhatsApp.mockResolvedValue([]);
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-consult-no-appointments",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        expect(mockSendWhatsApp.sendWhatsAppReply).toHaveBeenCalledWith(
+            expect.objectContaining({
+                text: expect.stringContaining("No tienes próximas citas confirmadas."),
             }),
         );
     });
