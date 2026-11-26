@@ -986,7 +986,11 @@
 }
 
 .schedule-heading {
-    justify-content: space-between;
+    justify-content: flex-start;
+}
+.schedule-configure-open {
+    flex: 0 0 auto;
+    margin-left: auto;
 }
 .schedule-configure-open,
 .schedule-config-submit {
@@ -1723,6 +1727,7 @@
     }
     .schedule-configure-open {
         width: 100%;
+        margin-left: 0;
     }
     .schedule-config-fields {
         grid-template-columns: minmax(0, 1fr);
