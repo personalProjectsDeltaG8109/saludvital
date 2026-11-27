@@ -4,6 +4,7 @@ import pug from "pug";
 import { chromium } from "playwright";
 
 const dashboardStyles = await readFile(path.resolve("public/css/admin-dashboard.css"), "utf8");
+const dashboardScript = await readFile(path.resolve("public/js/admin-dashboard.js"), "utf8");
 const userStyles = await readFile(path.resolve("public/css/admin-users.css"), "utf8");
 const userScript = await readFile(path.resolve("public/js/admin-users.js"), "utf8");
 const userFixture = {
@@ -231,6 +232,7 @@ try {
     );
     await page.addStyleTag({ content: dashboardStyles });
     await page.addStyleTag({ content: userStyles });
+    await page.addScriptTag({ content: dashboardScript });
     await page.addScriptTag({ content: userScript });
     await page.waitForTimeout(200);
     if (!(await page.locator(".admin-user-card").count())) {

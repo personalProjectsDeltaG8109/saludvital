@@ -1,6 +1,6 @@
-const page = document.querySelector("[data-admin-users]");
+const usersPage = document.querySelector("[data-admin-users]");
 
-if (page) {
+if (usersPage) {
     const app = document.querySelector(".admin-app");
     const sidebar = document.querySelector("[data-admin-sidebar]");
     const searchInput = document.querySelector("[data-user-search]");
@@ -422,7 +422,10 @@ if (page) {
             const requestVersion = ++municipalityRequestVersion;
             municipalitySelect.replaceChildren(new Option("Cargando municipios…", ""));
             try {
-                const url = new URL(page.dataset.municipalitiesEndpoint, window.location.origin);
+                const url = new URL(
+                    usersPage.dataset.municipalitiesEndpoint,
+                    window.location.origin,
+                );
                 url.searchParams.set("departmentCode", departmentCode);
                 const response = await fetch(url, { headers: { Accept: "application/json" } });
                 const values = await response.json();
@@ -581,7 +584,7 @@ if (page) {
         editFields.replaceChildren();
         setModalFeedback("");
         try {
-            const response = await fetch(`${page.dataset.detailsEndpoint}/${userId}`, {
+            const response = await fetch(`${usersPage.dataset.detailsEndpoint}/${userId}`, {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
             });
@@ -669,7 +672,7 @@ if (page) {
         setModalFeedback("Guardando cambios…", "status");
         try {
             const response = await fetch(
-                `${page.dataset.updateEndpoint}/${editingUser.id}/profile`,
+                `${usersPage.dataset.updateEndpoint}/${editingUser.id}/profile`,
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -770,7 +773,7 @@ if (page) {
 
             if (targetRole.name === "Patient" && user.role.name === "Doctor" && user.doctorId) {
                 const response = await fetch(
-                    `${page.dataset.doctorStatusEndpoint}/${user.doctorId}/status-impact`,
+                    `${usersPage.dataset.doctorStatusEndpoint}/${user.doctorId}/status-impact`,
                     { headers: { Accept: "application/json" }, cache: "no-store" },
                 );
                 const impact = await response.json();
@@ -822,11 +825,14 @@ if (page) {
         roleSaveButton.disabled = true;
         setRoleFeedback("Guardando el rol y el perfil…", "status");
         try {
-            const response = await fetch(`${page.dataset.roleEndpoint}/${changedUserId}/role`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify(payload),
-            });
+            const response = await fetch(
+                `${usersPage.dataset.roleEndpoint}/${changedUserId}/role`,
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    body: JSON.stringify(payload),
+                },
+            );
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "No pudimos guardar el cambio.");
             closeRoleModal(true);
@@ -884,7 +890,7 @@ if (page) {
         button.disabled = true;
         setFeedback("Revisando el estado de la cuenta médica…");
         try {
-            const endpoint = `${page.dataset.doctorStatusEndpoint}/${user.doctorId}`;
+            const endpoint = `${usersPage.dataset.doctorStatusEndpoint}/${user.doctorId}`;
             if (!isActive) {
                 const impactResponse = await fetch(`${endpoint}/status-impact`, {
                     headers: { Accept: "application/json" },
@@ -1157,7 +1163,7 @@ if (page) {
         if (state.status) params.set("status", state.status);
 
         try {
-            const response = await fetch(`${page.dataset.endpoint}?${params}`, {
+            const response = await fetch(`${usersPage.dataset.endpoint}?${params}`, {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
                 signal: activeRequest.signal,
@@ -1226,7 +1232,7 @@ if (page) {
 
     async function loadInvitations() {
         try {
-            const response = await fetch(page.dataset.invitationsEndpoint, {
+            const response = await fetch(usersPage.dataset.invitationsEndpoint, {
                 headers: { Accept: "application/json" },
                 cache: "no-store",
             });
@@ -1301,7 +1307,7 @@ if (page) {
         ) {
             return;
         }
-        const endpoint = `${page.dataset.invitationsEndpoint}/${invitationId}`;
+        const endpoint = `${usersPage.dataset.invitationsEndpoint}/${invitationId}`;
         try {
             const response = await fetch(action === "resend" ? `${endpoint}/resend` : endpoint, {
                 method: action === "resend" ? "POST" : "DELETE",
@@ -1399,7 +1405,7 @@ if (page) {
         const payload = Object.fromEntries(formData);
         if (payload.accountType === "doctor") payload.specialtyId = Number(payload.specialtyId);
         try {
-            const response = await fetch(page.dataset.invitationsEndpoint, {
+            const response = await fetch(usersPage.dataset.invitationsEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
                 body: JSON.stringify(payload),
@@ -1425,7 +1431,7 @@ if (page) {
             });
         setFeedback("Guardando cambios…");
         try {
-            const response = await fetch(`${page.dataset.updateEndpoint}/${user.id}`, {
+            const response = await fetch(`${usersPage.dataset.updateEndpoint}/${user.id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
                 body: JSON.stringify(changes),
