@@ -47,10 +47,10 @@ jest.unstable_mockModule(
     "../../src/modules/patient/services/resendEmailService.js",
     () => mockSendEmail,
 );
-jest.unstable_mockModule(
-    "../../src/modules/patient/services/whatsappService.js",
-    () => mockSendWhatsApp,
-);
+jest.unstable_mockModule("../../src/modules/patient/services/whatsappService.js", () => ({
+    MAX_WHATSAPP_TEXT_LENGTH: 1024,
+    ...mockSendWhatsApp,
+}));
 
 const { processMetaWhatsAppWebhook } =
     await import("../../src/modules/patient/services/whatsappWebhookService.js");
@@ -585,9 +585,59 @@ describe("WhatsApp chatbot appointment safeguards", () => {
                 text: expect.stringContaining("próximas citas confirmadas"),
             }),
         );
-        const replyText = mockSendWhatsApp.sendWhatsAppReply.mock.lastCall[0].text;
-        expect(replyText).toContain("Estado: Confirmada");
-        expect(replyText).not.toContain("Confirmed");
+        const sentTexts = mockSendWhatsApp.sendWhatsAppReply.mock.calls.map(
+            ([reply]) => reply.text,
+        );
+        const summaryText = sentTexts.find((text) =>
+            text.startsWith("Estas son tus próximas citas confirmadas:"),
+        );
+        expect(summaryText).toContain("Estado: Confirmada");
+        expect(summaryText).not.toContain("Confirmed");
+        expect(sentTexts.at(-1)).toContain("Escribe *menu* para volver en cualquier momento.");
+    });
+
+    test("splits ten long appointment names into WhatsApp-sized replies without omitting any", async () => {
+        const conversation = createConversation({
+            step: "menu",
+            menuOptions: [{ label: "Consultar citas", nextStepId: "appointments" }],
+        });
+        const appointments = Array.from({ length: 10 }, (_, index) => ({
+            start_at: new Date(`2026-12-${String(index + 1).padStart(2, "0")}T14:30:00.000Z`),
+            status: { name: "Confirmed" },
+            specialty: { name: `Especialidad ${index + 1} ${"X".repeat(80)}` },
+        }));
+        mockConversation.findOne.mockResolvedValue(conversation);
+        mockModels.Patient.findByPk.mockResolvedValue({ user: { id: 42 } });
+        mockAppointmentService.getUpcomingConfirmedAppointmentsForWhatsApp.mockResolvedValue(
+            appointments,
+        );
+
+        await processMetaWhatsAppWebhook(
+            createWebhook({
+                id: "inbound-consult-long-appointments",
+                from: "573001234567",
+                type: "text",
+                text: { body: "1" },
+            }),
+        );
+
+        const sentTexts = mockSendWhatsApp.sendWhatsAppReply.mock.calls.map(
+            ([reply]) => reply.text,
+        );
+        const summaryMessages = sentTexts.filter(
+            (text) =>
+                text.startsWith("Estas son tus próximas citas confirmadas:") ||
+                text.startsWith("Continuación de tus próximas citas confirmadas:"),
+        );
+        const summaryText = summaryMessages.join("\n");
+
+        expect(summaryMessages.length).toBeGreaterThan(1);
+        expect(sentTexts.every((text) => text.length <= 1024)).toBe(true);
+        expect(summaryMessages.every((text) => text.length <= 1024)).toBe(true);
+        for (const appointment of appointments) {
+            expect(summaryText).toContain(appointment.specialty.name);
+        }
+        expect(sentTexts.at(-1)).toContain("Escribe *menu* para volver en cualquier momento.");
     });
 
     test("explains when a verified patient has no upcoming confirmed appointments", async () => {
