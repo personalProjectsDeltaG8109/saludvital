@@ -834,32 +834,143 @@ body.admin-doctors-shell .admin-mobile-notification {
 }
 .doctor-schedule-heading p {
     margin: 0 0 16px;
-    color: #647b9d;
+    color: #526780;
     font-size: 0.9rem;
 }
-.doctor-schedule-list {
+.doctor-schedule-heading .doctor-status.is-active {
+    color: #0f6b46;
+}
+.doctor-schedule-week,
+.doctor-schedule-time-list {
     display: grid;
-    gap: 9px;
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
 }
-.doctor-schedule-list li {
+.doctor-schedule-day {
     display: grid;
-    grid-template-columns: minmax(100px, 0.7fr) minmax(100px, 0.7fr) minmax(160px, 1.2fr);
+    grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 13px 15px;
+    border: 1px solid #e3edf8;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+.doctor-schedule-day-name,
+.doctor-schedule-time {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+.doctor-schedule-day-name {
+    color: #123b73;
+}
+.doctor-schedule-day-name svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+    color: #168de2;
+}
+.doctor-schedule-time-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.doctor-schedule-time {
+    width: fit-content;
+    max-width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #cfe8df;
+    border-radius: 999px;
+    background: #eaf8f2;
+    color: #176b4a;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+.doctor-schedule-time svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+}
+.doctor-schedule-time.is-previous {
+    border-color: #e2e8f0;
+    background: #f1f4f8;
+    color: #647b9d;
+}
+.doctor-schedule-empty {
+    color: #526780;
+    font-size: 0.9rem;
+}
+.doctor-schedule-disclosure {
+    margin-top: 12px;
+    border: 1px solid #e3edf8;
+    border-radius: 12px;
+    background: #fff;
+}
+.doctor-schedule-disclosure-summary {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    color: #123b73;
+    cursor: pointer;
+    font-weight: 650;
+    list-style: none;
+}
+.doctor-schedule-disclosure-summary::-webkit-details-marker {
+    display: none;
+}
+.doctor-schedule-disclosure-summary svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+    color: #168de2;
+    transition: transform 160ms ease;
+}
+.doctor-schedule-disclosure[open] .doctor-schedule-disclosure-summary svg {
+    transform: rotate(180deg);
+}
+.doctor-schedule-period-groups {
+    display: grid;
+    gap: 12px;
+    padding: 0 14px 14px;
+}
+.doctor-schedule-period-day {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 1px solid #edf2f8;
+}
+.doctor-schedule-period-day h3 {
+    margin: 0;
+    color: #123b73;
+    font-size: 0.92rem;
+}
+.doctor-schedule-period {
+    display: grid;
+    grid-template-columns: minmax(170px, 0.5fr) minmax(0, 1fr);
     align-items: center;
     gap: 12px;
-    padding: 12px 14px;
-    border-radius: 9px;
-    background: #f6faff;
 }
-.doctor-schedule-list li.is-inactive {
-    color: #647b9d;
-    background: #f5f6f8;
+.doctor-schedule-period-meta,
+.doctor-schedule-history-note {
+    margin: 0;
+    color: #526780;
+    font-size: 0.85rem;
 }
-.doctor-schedule-list small {
-    color: #647b9d;
-    overflow-wrap: anywhere;
+.doctor-schedule-history-note {
+    padding: 0 14px 12px;
+}
+.doctor-schedule-disclosure-summary:focus-visible {
+    outline: 3px solid #13b8b0;
+    outline-offset: 2px;
 }
 .doctor-details-footer {
     display: flex;
@@ -919,13 +1030,25 @@ body.admin-doctors-shell .admin-mobile-notification {
         flex-direction: column;
         gap: 6px;
     }
-    .doctor-schedule-list li {
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 7px 12px;
+    .doctor-schedule-day,
+    .doctor-schedule-period {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 9px;
         padding: 11px;
     }
-    .doctor-schedule-list small {
-        grid-column: 1/-1;
+    .doctor-schedule-period-groups {
+        padding-right: 11px;
+        padding-left: 11px;
+    }
+    .doctor-schedule-history-note {
+        padding-right: 11px;
+        padding-left: 11px;
+    }
+    .doctor-schedule-time-list {
+        gap: 6px;
+    }
+    .doctor-schedule-time {
+        font-size: 0.82rem;
     }
     .doctor-details-footer .doctors-secondary-button {
         width: 100%;
