@@ -174,12 +174,12 @@ describe("Admin doctor profile updates", () => {
             expect.objectContaining({
                 display_name: "Dra. Actualizada",
                 specialty_id: 5,
-                professional_information: "Atención primaria",
                 profile_photo_url: "/uploads/profile-photos/new.webp",
             }),
             { transaction },
         );
         expect(doctor.update.mock.calls[0][0]).not.toHaveProperty("photo");
+        expect(doctor.update.mock.calls[0][0]).not.toHaveProperty("professional_information");
         expect(AuditLog.create).toHaveBeenCalledWith(
             expect.objectContaining({
                 action: "AdminUserProfileUpdated",

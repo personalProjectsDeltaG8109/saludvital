@@ -158,6 +158,9 @@ if (doctorsPage) {
                 const badge = document.createElement("span");
                 badge.className = `doctor-status ${doctor.isActive ? "is-active" : "is-inactive"}`;
                 badge.textContent = doctor.isActive ? "Activo" : "Inactivo";
+                const reviewBadge = document.createElement("span");
+                reviewBadge.className = `doctor-review-status is-${doctor.profileReviewStatus || "approved"}`;
+                reviewBadge.textContent = getDoctorReviewStatusLabel(doctor.profileReviewStatus);
                 const actions = document.createElement("div");
                 actions.className = "doctor-row-actions";
                 const detailsLink = document.createElement("a");
@@ -166,43 +169,48 @@ if (doctorsPage) {
                 detailsLink.setAttribute("aria-label", `Ver detalles de ${doctor.name}`);
                 detailsLink.innerHTML =
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span>Ver</span>';
-                const editLink = document.createElement("a");
-                editLink.className = "doctor-details-link doctor-edit-link";
-                editLink.href = `/admin/users?search=${encodeURIComponent(doctor.email)}&edit=${doctor.userId}`;
-                editLink.setAttribute("aria-label", `Editar información de ${doctor.name}`);
-                editLink.innerHTML =
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg><span>Editar</span>';
-                const statusAction = document.createElement("button");
-                statusAction.type = "button";
-                statusAction.className = `doctor-row-status-action doctor-status-action${doctor.isActive ? " is-deactivation" : " is-activation"}`;
-                statusAction.textContent = doctor.isActive ? "Desactivar" : "Activar";
-                statusAction.setAttribute(
-                    "aria-label",
-                    `${doctor.isActive ? "Desactivar" : "Activar"} a ${doctor.name}`,
-                );
-                statusAction.addEventListener("click", async () => {
-                    statusAction.disabled = true;
-                    feedback.textContent = "Actualizando el estado del médico…";
-                    try {
-                        const result = await changeDoctorStatus({
-                            doctorId: doctor.id,
-                            doctorName: doctor.name,
-                            isActive: !doctor.isActive,
-                            statusEndpoint: doctorsPage.dataset.statusEndpoint,
-                            impactEndpoint: doctorsPage.dataset.statusImpactEndpoint,
-                        });
-                        if (!result) return;
-                        await load();
-                        feedback.textContent = result.message;
-                        feedback.classList.add("is-success");
-                    } catch (error) {
-                        feedback.textContent = error.message;
-                        feedback.classList.add("is-error");
-                    } finally {
-                        statusAction.disabled = false;
-                    }
-                });
-                actions.append(badge, detailsLink, editLink, statusAction);
+                actions.append(badge, reviewBadge, detailsLink);
+
+                // Keep account management unavailable until the profile is approved.
+                if (doctor.profileReviewStatus === "approved") {
+                    const editLink = document.createElement("a");
+                    editLink.className = "doctor-details-link doctor-edit-link";
+                    editLink.href = `/admin/users?search=${encodeURIComponent(doctor.email)}&edit=${doctor.userId}`;
+                    editLink.setAttribute("aria-label", `Editar información de ${doctor.name}`);
+                    editLink.innerHTML =
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 5 5 5M4 20l4.5-1 11-11a2.1 2.1 0 0 0-3-3l-11 11L4 20Z"/></svg><span>Editar</span>';
+                    const statusAction = document.createElement("button");
+                    statusAction.type = "button";
+                    statusAction.className = `doctor-row-status-action doctor-status-action${doctor.isActive ? " is-deactivation" : " is-activation"}`;
+                    statusAction.textContent = doctor.isActive ? "Desactivar" : "Activar";
+                    statusAction.setAttribute(
+                        "aria-label",
+                        `${doctor.isActive ? "Desactivar" : "Activar"} a ${doctor.name}`,
+                    );
+                    statusAction.addEventListener("click", async () => {
+                        statusAction.disabled = true;
+                        feedback.textContent = "Actualizando el estado del médico…";
+                        try {
+                            const result = await changeDoctorStatus({
+                                doctorId: doctor.id,
+                                doctorName: doctor.name,
+                                isActive: !doctor.isActive,
+                                statusEndpoint: doctorsPage.dataset.statusEndpoint,
+                                impactEndpoint: doctorsPage.dataset.statusImpactEndpoint,
+                            });
+                            if (!result) return;
+                            await load();
+                            feedback.textContent = result.message;
+                            feedback.classList.add("is-success");
+                        } catch (error) {
+                            feedback.textContent = error.message;
+                            feedback.classList.add("is-error");
+                        } finally {
+                            statusAction.disabled = false;
+                        }
+                    });
+                    actions.append(editLink, statusAction);
+                }
                 article.append(avatar, info, actions);
                 list.append(article);
             }
@@ -243,6 +251,76 @@ if (doctorsPage) {
 }
 
 const doctorDetailsPage = document.querySelector("[data-doctor-details]");
+function getDoctorReviewStatusLabel(status) {
+    const labels = {
+        invited: "Invitación pendiente",
+        pending: "En revisión",
+        changes_requested: "Requiere cambios",
+        approved: "Aprobado",
+    };
+    return labels[status] || "Estado sin identificar";
+}
+
+async function submitDoctorReview(decision, note = "") {
+    const feedback = doctorDetailsPage.querySelector("[data-doctor-status-feedback]");
+    const buttons = doctorDetailsPage.querySelectorAll("[data-review-action]");
+    buttons.forEach((button) => (button.disabled = true));
+    feedback.textContent = "Guardando la revisión del perfil…";
+    feedback.classList.remove("is-error", "is-success");
+
+    try {
+        const response = await fetch(doctorDetailsPage.dataset.reviewEndpoint, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Accept: "application/json" },
+            body: JSON.stringify({ decision, ...(note ? { note } : {}) }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "No pudimos guardar la revisión.");
+        feedback.textContent = result.message;
+        feedback.classList.add("is-success");
+        window.location.reload();
+    } catch (error) {
+        feedback.textContent = error.message;
+        feedback.classList.add("is-error");
+        buttons.forEach((button) => (button.disabled = false));
+    }
+}
+
+if (doctorDetailsPage) {
+    const reviewDialog = doctorDetailsPage.querySelector("[data-review-dialog]");
+    const reviewNote = doctorDetailsPage.querySelector("[data-review-note]");
+    const dialogFeedback = doctorDetailsPage.querySelector("[data-review-dialog-feedback]");
+
+    doctorDetailsPage
+        .querySelector('[data-review-action="approve"]')
+        ?.addEventListener("click", () => {
+            if (window.confirm("¿Aprobar este perfil y activar la cuenta del médico?")) {
+                submitDoctorReview("approve");
+            }
+        });
+    doctorDetailsPage
+        .querySelector("[data-review-open-corrections]")
+        ?.addEventListener("click", () => {
+            dialogFeedback.textContent = "";
+            reviewDialog.showModal();
+            reviewNote.focus();
+        });
+    doctorDetailsPage.querySelectorAll("[data-review-close]").forEach((button) => {
+        button.addEventListener("click", () => reviewDialog.close());
+    });
+    doctorDetailsPage
+        .querySelector('[data-review-action="request_changes"]')
+        ?.addEventListener("click", () => {
+            const note = reviewNote.value.trim();
+            if (note.length < 10 || note.length > 500) {
+                dialogFeedback.textContent = "Escribe una explicación de 10 a 500 caracteres.";
+                reviewNote.focus();
+                return;
+            }
+            submitDoctorReview("request_changes", note);
+        });
+}
+
 const doctorStatusAction = doctorDetailsPage?.querySelector("[data-doctor-status-action]");
 doctorStatusAction?.addEventListener("click", async () => {
     const feedback = doctorDetailsPage.querySelector("[data-doctor-status-feedback]");

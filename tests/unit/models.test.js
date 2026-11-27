@@ -73,7 +73,7 @@ describe("Sequelize model definitions", () => {
         expect(Doctor.options.tableName).toBe("doctors");
         expect(Doctor.rawAttributes.user_id.allowNull).toBe(false);
         expect(Doctor.rawAttributes.specialty_id.allowNull).toBe(false);
-        expect(Doctor.rawAttributes.professional_information.allowNull).toBe(true);
+        expect(Doctor.rawAttributes).not.toHaveProperty("professional_information");
     });
 
     test("specialty model maps to the specialties table", () => {

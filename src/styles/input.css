@@ -2252,6 +2252,194 @@
     backdrop-filter: blur(12px);
 }
 
+/* Match doctor onboarding sections to the authenticated doctor profile panels. */
+.doctor-onboarding-page .registration-card {
+    width: min(100%, 760px);
+    padding: 30px;
+    border-color: #dcebf9;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgb(26 76 130 / 8%);
+    backdrop-filter: none;
+}
+
+.doctor-onboarding-banner {
+    border-color: #dcebf9 !important;
+    background: linear-gradient(110deg, #eef7ff, #f5fbff) !important;
+}
+
+.doctor-onboarding-banner > span {
+    color: #0868d9 !important;
+}
+
+.doctor-onboarding-title {
+    color: #102f89;
+    letter-spacing: -0.04em;
+}
+
+.doctor-onboarding-section {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #dcebf9;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.doctor-onboarding-section legend {
+    padding-inline: 7px;
+    color: #123b73;
+    font-size: 0.94rem;
+    font-weight: 700;
+}
+
+.doctor-onboarding-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.doctor-onboarding-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #244c7d;
+    font-size: 0.78rem;
+    font-weight: 650;
+}
+
+.doctor-onboarding-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 9px 12px;
+    border: 1px solid #b9d8f5;
+    border-radius: 9px;
+    color: #16427f;
+    background: #f8fbff;
+    font: inherit;
+    font-size: 0.86rem;
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease,
+        background-color 150ms ease;
+}
+
+.doctor-onboarding-control:focus-visible {
+    border-color: #168de2;
+    outline: 3px solid rgb(22 141 226 / 20%);
+    outline-offset: 1px;
+    background: #fff;
+}
+
+.doctor-onboarding-specialty {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 1px solid #cce9dd;
+    border-radius: 11px;
+    background: #f1fbf6;
+}
+
+.doctor-onboarding-specialty-icon,
+.doctor-onboarding-correction-icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border-radius: 10px;
+    color: #087c5a;
+    background: #dff6eb;
+}
+
+.doctor-onboarding-specialty-icon svg,
+.doctor-onboarding-correction-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.doctor-onboarding-field-caption {
+    display: block;
+    margin-bottom: 3px;
+    color: #526985;
+    font-size: 0.7rem;
+}
+
+.doctor-onboarding-specialty strong {
+    color: #123b73;
+    font-size: 0.86rem;
+}
+
+.doctor-onboarding-review-note,
+.doctor-onboarding-footnote {
+    margin: 0;
+    color: #526985;
+    font-size: 0.76rem;
+    line-height: 1.55;
+}
+
+.doctor-onboarding-review-note {
+    padding-inline: 2px;
+}
+
+.doctor-onboarding-correction {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px;
+    border: 1px solid #f2dda5;
+    border-radius: 12px;
+    color: #684d12;
+    background: #fff9e9;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.doctor-onboarding-correction-icon {
+    color: #936515;
+    background: #fff0c2;
+}
+
+.doctor-onboarding-submit {
+    display: flex;
+    width: 100%;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 18px;
+    border: 1px solid #0868d9;
+    border-radius: 11px;
+    color: #fff;
+    background: #0868d9;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background-color 150ms ease,
+        transform 150ms ease;
+}
+
+.doctor-onboarding-submit:hover {
+    background: #0758b7;
+    transform: translateY(-1px);
+}
+
+.doctor-onboarding-submit:focus-visible {
+    outline: 3px solid #f4a900;
+    outline-offset: 3px;
+}
+
+.doctor-onboarding-footnote {
+    margin-top: 10px;
+    text-align: center;
+}
+
 @media (min-width: 641px) and (max-width: 1199px) {
     .registration-panel {
         padding: 0 24px 40px;
@@ -2259,6 +2447,23 @@
 
     .registration-card {
         padding: 32px;
+    }
+}
+
+@media (max-width: 640px) {
+    .doctor-onboarding-page .registration-card {
+        padding: 22px 16px;
+        border-radius: 17px;
+    }
+
+    .doctor-onboarding-section {
+        gap: 12px;
+        padding: 15px 13px;
+    }
+
+    .doctor-onboarding-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 12px;
     }
 }
 

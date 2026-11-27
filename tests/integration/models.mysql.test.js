@@ -73,15 +73,9 @@ describe("MySQL model integration", () => {
         const columns = await getTableColumns("doctors");
 
         expect(columns).toEqual(
-            expect.arrayContaining([
-                "id",
-                "user_id",
-                "specialty_id",
-                "professional_information",
-                "created_at",
-                "updated_at",
-            ]),
+            expect.arrayContaining(["id", "user_id", "specialty_id", "created_at", "updated_at"]),
         );
+        expect(columns).not.toContain("professional_information");
     });
 
     test("specialties table contains its expected columns", async () => {

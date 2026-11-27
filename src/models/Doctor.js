@@ -25,8 +25,33 @@ const Doctor = database.define(
             type: DataTypes.STRING(120),
             allowNull: true,
         },
-        professional_information: {
-            type: DataTypes.TEXT,
+        first_name: {
+            type: DataTypes.STRING(80),
+            allowNull: true,
+        },
+        last_name: {
+            type: DataTypes.STRING(80),
+            allowNull: true,
+        },
+        document_type: {
+            type: DataTypes.STRING(2),
+            allowNull: true,
+        },
+        document_number: {
+            type: DataTypes.STRING(15),
+            allowNull: true,
+        },
+        professional_registration_number: {
+            type: DataTypes.STRING(40),
+            allowNull: true,
+        },
+        profile_review_status: {
+            type: DataTypes.STRING(24),
+            allowNull: false,
+            defaultValue: "approved",
+        },
+        profile_review_note: {
+            type: DataTypes.STRING(500),
             allowNull: true,
         },
         // Store an optional protected path for the doctor's profile photo.

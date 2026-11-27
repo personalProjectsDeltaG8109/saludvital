@@ -273,7 +273,13 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
             }),
         ]);
         if (!targetRole) throw serviceError("El rol seleccionado no existe.", 400);
-        if (!["Patient", "Doctor"].includes(targetRole.name)) {
+        if (targetRole.name === "Doctor") {
+            throw serviceError(
+                "Para agregar un médico, envía una invitación desde el apartado Médicos.",
+                403,
+            );
+        }
+        if (targetRole.name !== "Patient") {
             throw serviceError(
                 "Desde esta pantalla solo puedes asignar el rol de paciente o médico.",
                 403,
@@ -305,35 +311,6 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
             }
         }
 
-        let createdProfile = null;
-        if (targetRole.name === "Doctor" && !doctor) {
-            const patientName = [patient?.first_name, patient?.last_name].filter(Boolean).join(" ");
-            const normalizedDoctor = validateDoctorAdminProfile({
-                doctor: {
-                    ...payload.doctor,
-                    displayName: payload.doctor?.displayName || patientName,
-                },
-            });
-            const specialty = await Specialities.findOne({
-                where: { id: normalizedDoctor.specialty_id, is_active: true },
-                attributes: ["id"],
-                transaction,
-            });
-            if (!specialty) throw serviceError("Selecciona una especialidad activa.", 400);
-
-            await Doctor.create(
-                {
-                    user_id: user.id,
-                    specialty_id: specialty.id,
-                    display_name: normalizedDoctor.display_name,
-                    professional_information: normalizedDoctor.professional_information,
-                    profile_photo_url: normalizedDoctor.profile_photo_url,
-                },
-                { transaction },
-            );
-            createdProfile = "Doctor";
-        }
-
         if (targetRole.name === "Patient" && !patient) {
             throw serviceError(
                 "Para asignar el rol de paciente, la persona debe tener un perfil registrado y su consentimiento. Completa ese registro con el titular de la cuenta.",
@@ -353,7 +330,7 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
         }
 
         const roleChanged = currentRole.id !== targetRole.id;
-        if (!roleChanged && !createdProfile) {
+        if (!roleChanged) {
             throw serviceError("La cuenta ya tiene este rol y su perfil está completo.", 409);
         }
         if (roleChanged) await user.update({ role_id: targetRole.id }, { transaction });
@@ -369,7 +346,6 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
                 changes: {
                     previous: { roleId: currentRole.id, role: currentRole.name },
                     next: { roleId: targetRole.id, role: targetRole.name },
-                    createdProfile,
                     cancelledAppointmentCount,
                 },
                 reason: "Administrator changed the account role and kept its profile records consistent.",
@@ -383,9 +359,7 @@ export async function updateAdminUserRole(actorUserId, rawUserId, payload) {
             message:
                 currentRole.name === "Doctor" && targetRole.name === "Patient"
                     ? `El perfil de paciente quedó activo. Se conservaron los registros médicos y se cancelaron ${cancelledAppointmentCount} citas futuras del médico.`
-                    : createdProfile
-                      ? "El perfil y el rol se actualizaron correctamente."
-                      : "El rol se actualizó correctamente.",
+                    : "El rol se actualizó correctamente.",
             user: {
                 id: user.id,
                 role: targetRole,
@@ -588,7 +562,7 @@ function resolveStoredLocation(patient) {
 export async function getAdminUserDetails(rawUserId) {
     const userId = parsePositiveInteger(rawUserId, "El usuario", null);
     const user = await User.findByPk(userId, {
-        attributes: ["id", "email", "is_active", "last_login_at"],
+        attributes: ["id", "email", "phone", "profile_photo_url", "is_active", "last_login_at"],
         include: [
             { model: Rol, as: "rol", attributes: ["id", "name"] },
             {
@@ -622,7 +596,11 @@ export async function getAdminUserDetails(rawUserId) {
                     "id",
                     "specialty_id",
                     "display_name",
-                    "professional_information",
+                    "first_name",
+                    "last_name",
+                    "document_type",
+                    "document_number",
+                    "professional_registration_number",
                     "profile_photo_url",
                 ],
                 include: [{ model: Specialities, as: "specialty", attributes: ["id", "name"] }],
@@ -680,11 +658,12 @@ export async function getAdminUserDetails(rawUserId) {
         user: {
             id: user.id,
             email: user.email,
+            phone: user.phone,
             isActive: user.is_active,
             role: user.rol,
             profileType,
             profilePhotoUrl: normalizeAdminPhotoUrl(
-                doctor?.profile_photo_url || patient?.profile_photo_url,
+                doctor?.profile_photo_url || user.profile_photo_url || patient?.profile_photo_url,
             ),
             doctor,
             patient,
@@ -830,13 +809,91 @@ function validateDoctorAdminProfile(payload) {
     ) {
         throw serviceError("La foto del médico no es válida.", 400);
     }
+
+    const structuredFields = [
+        "firstName",
+        "lastName",
+        "documentType",
+        "documentNumber",
+        "professionalRegistrationNumber",
+    ];
+    const usesStructuredIdentity = structuredFields.some((field) => Object.hasOwn(profile, field));
+
+    // Older doctor profiles only stored a single display name; keep them editable without guessing identity fields.
+    if (!usesStructuredIdentity) {
+        const displayName = normalizeProfileText(
+            profile.displayName,
+            "El nombre del médico",
+            120,
+            true,
+        );
+        if (!/^\p{L}[\p{L}\p{M} .'-]{0,119}$/u.test(displayName)) {
+            throw serviceError("Revisa el nombre del médico.", 400);
+        }
+
+        const legacyProfile = {
+            display_name: displayName,
+            profile_photo_url: normalizeProfilePhotoUrl(profile.profilePhotoUrl),
+            specialty_id: specialtyId,
+            photo: profile.photo || null,
+        };
+        if (Object.hasOwn(profile, "phone")) {
+            legacyProfile.phone = normalizeProfilePhone(profile.phone, "el celular del médico");
+        }
+        return legacyProfile;
+    }
+
+    const firstName = normalizeProfileText(profile.firstName, "Los nombres", 80, true).replace(
+        /\s+/gu,
+        " ",
+    );
+    const lastName = normalizeProfileText(profile.lastName, "Los apellidos", 80, true).replace(
+        /\s+/gu,
+        " ",
+    );
+    const fullName = `${firstName} ${lastName}`;
+    if (
+        !/^\p{L}[\p{L}\p{M} .'-]{0,79}$/u.test(firstName) ||
+        !/^\p{L}[\p{L}\p{M} .'-]{0,79}$/u.test(lastName) ||
+        fullName.length > 120
+    ) {
+        throw serviceError("Revisa los nombres y apellidos del médico.", 400);
+    }
+
+    const documentType = normalizeProfileText(
+        profile.documentType,
+        "El tipo de documento",
+        2,
+        true,
+    );
+    const documentNumber = normalizeProfileText(
+        profile.documentNumber,
+        "El número de documento",
+        15,
+        true,
+    );
+    if (!["CC", "CE"].includes(documentType) || !/^\d{1,15}$/.test(documentNumber)) {
+        throw serviceError("Revisa el tipo y número de documento del médico.", 400);
+    }
+
+    const professionalRegistrationNumber = normalizeProfileText(
+        profile.professionalRegistrationNumber,
+        "La tarjeta profesional",
+        40,
+        true,
+    );
+    if (!/^[A-Za-z0-9./-]{3,40}$/.test(professionalRegistrationNumber)) {
+        throw serviceError("Ingresa una tarjeta profesional válida.", 400);
+    }
+
     return {
-        display_name: normalizeProfileText(profile.displayName, "El nombre del médico", 120, true),
-        professional_information: normalizeProfileText(
-            profile.professionalInformation,
-            "La información profesional",
-            10000,
-        ),
+        display_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
+        document_type: documentType,
+        document_number: documentNumber,
+        professional_registration_number: professionalRegistrationNumber,
+        phone: normalizeProfilePhone(profile.phone, "el celular del médico", true),
         profile_photo_url: normalizeProfilePhotoUrl(profile.profilePhotoUrl),
         specialty_id: specialtyId,
         photo: profile.photo || null,
@@ -932,6 +989,23 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 });
                 if (!doctor) throw serviceError("No encontramos el perfil del médico.", 404);
                 normalizedDoctor = validateDoctorAdminProfile(payload);
+                if (normalizedDoctor.document_type && normalizedDoctor.document_number) {
+                    const duplicateDocument = await Doctor.findOne({
+                        where: {
+                            document_type: normalizedDoctor.document_type,
+                            document_number: normalizedDoctor.document_number,
+                            id: { [Op.ne]: doctor.id },
+                        },
+                        attributes: ["id"],
+                        transaction,
+                    });
+                    if (duplicateDocument) {
+                        throw serviceError(
+                            "Ese documento ya está registrado para otro médico.",
+                            409,
+                        );
+                    }
+                }
                 const specialty = await Specialities.findOne({
                     where: {
                         id: normalizedDoctor.specialty_id,
@@ -948,7 +1022,18 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                 }
                 delete normalizedDoctor.photo;
                 updatedPhotoUrl = normalizedDoctor.profile_photo_url;
+                const phone = normalizedDoctor.phone;
+                delete normalizedDoctor.phone;
                 changes.profile = Object.keys(normalizedDoctor);
+                const accountChanges = [];
+                if (phone !== undefined && user.phone !== phone) accountChanges.push("phone");
+                if (
+                    normalizedDoctor.first_name &&
+                    user.display_name !== normalizedDoctor.display_name
+                ) {
+                    accountChanges.push("display_name");
+                }
+                if (accountChanges.length) changes.account = accountChanges;
                 if (doctor.specialty_id !== normalizedDoctor.specialty_id) {
                     changes.specialty = {
                         previousId: doctor.specialty_id,
@@ -956,6 +1041,14 @@ export async function updateAdminUserProfile(actorUserId, rawUserId, payload) {
                     };
                 }
                 await doctor.update(normalizedDoctor, { transaction });
+                if (accountChanges.length) {
+                    const accountProfile = {};
+                    if (phone !== undefined) accountProfile.phone = phone;
+                    if (normalizedDoctor.first_name) {
+                        accountProfile.display_name = normalizedDoctor.display_name;
+                    }
+                    await user.update(accountProfile, { transaction });
+                }
             } else {
                 throw serviceError(
                     "Esta cuenta no tiene un perfil de paciente o médico editable.",

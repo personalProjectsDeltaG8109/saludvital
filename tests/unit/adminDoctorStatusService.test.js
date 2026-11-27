@@ -44,7 +44,7 @@ const { getAdminDoctorStatusImpact, updateAdminDoctorStatus } =
 
 function prepareStatusChange({ isActive = true, appointments = [] } = {}) {
     const transaction = { LOCK: { UPDATE: "UPDATE" } };
-    const doctor = { id: 12, user_id: 7 };
+    const doctor = { id: 12, user_id: 7, profile_review_status: "approved" };
     const doctorUser = {
         id: 7,
         role_id: 4,

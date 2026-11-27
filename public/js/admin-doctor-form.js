@@ -1,94 +1,40 @@
-const doctorFormPage = document.querySelector("[data-doctor-form]");
+const doctorInvitationPage = document.querySelector("[data-doctor-form]");
 
-if (doctorFormPage) {
-    const form = doctorFormPage.querySelector("[data-form]");
-    const feedback = doctorFormPage.querySelector("[data-form-feedback]");
-    const successPanel = doctorFormPage.querySelector("[data-form-success]");
-    const successMessage = doctorFormPage.querySelector("[data-form-success-message]");
+if (doctorInvitationPage) {
+    const form = doctorInvitationPage.querySelector("[data-form]");
+    const feedback = doctorInvitationPage.querySelector("[data-form-feedback]");
+    const successPanel = doctorInvitationPage.querySelector("[data-form-success]");
+    const successMessage = doctorInvitationPage.querySelector("[data-form-success-message]");
     const submitButton = form.querySelector('button[type="submit"]');
-    const photoInput = doctorFormPage.querySelector("[data-photo-input]");
-    const photoPreview = doctorFormPage.querySelector("[data-photo-preview]");
-    const removePhotoButton = doctorFormPage.querySelector("[data-photo-remove]");
-    let photoDataUrl = null;
-    let photoReadPromise = Promise.resolve();
-
-    photoInput.addEventListener("change", () => {
-        const [file] = photoInput.files;
-        if (!file) return;
-        if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 2 * 1024 * 1024) {
-            removePhotoButton.click();
-            feedback.textContent = "Elige una foto JPG, PNG o WebP de máximo 2 MB.";
-            return;
-        }
-
-        photoDataUrl = null;
-        photoReadPromise = new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.addEventListener("load", () => {
-                photoDataUrl = reader.result;
-                photoPreview.replaceChildren();
-                const image = document.createElement("img");
-                image.src = photoDataUrl;
-                image.alt = "Vista previa de la foto del médico";
-                photoPreview.append(image);
-                removePhotoButton.hidden = false;
-                feedback.textContent = "";
-                resolve();
-            });
-            reader.addEventListener("error", () =>
-                reject(new Error("No se pudo leer la foto seleccionada.")),
-            );
-            reader.readAsDataURL(file);
-        });
-    });
-
-    removePhotoButton.addEventListener("click", () => {
-        photoInput.value = "";
-        photoDataUrl = null;
-        photoReadPromise = Promise.resolve();
-        photoPreview.replaceChildren();
-        const placeholder = document.createElement("span");
-        placeholder.setAttribute("aria-hidden", "true");
-        placeholder.textContent = "＋";
-        photoPreview.append(placeholder);
-        removePhotoButton.hidden = true;
-    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (!form.reportValidity()) return;
 
-        try {
-            await photoReadPromise;
-        } catch (error) {
-            feedback.textContent = error.message;
-            return;
-        }
-
         const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
-        delete payload.photo;
-        if (photoDataUrl) payload.photo = photoDataUrl;
-        payload.specialtyId = Number(payload.specialtyId);
+        const payload = {
+            accountType: "doctor",
+            email: String(formData.get("email") || "").trim(),
+            specialtyId: Number(formData.get("specialtyId")),
+        };
+
         submitButton.disabled = true;
-        feedback.textContent = "Guardando…";
+        feedback.textContent = "Enviando invitación…";
 
         try {
-            const response = await fetch(doctorFormPage.dataset.action, {
+            const response = await fetch(doctorInvitationPage.dataset.action, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
                 body: JSON.stringify(payload),
             });
-            const result = await response.json().catch(() => ({
-                message: "No se pudo completar el registro. Inténtalo de nuevo.",
-            }));
-
-            if (!response.ok) throw new Error(result.message || "No se pudo crear el médico.");
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(result.message || "No pudimos enviar la invitación.");
+            }
 
             successMessage.textContent = result.message;
-            form.reset();
-            removePhotoButton.click();
             form.hidden = true;
+            doctorInvitationPage.querySelector(".doctor-invitation-help").hidden = true;
             successPanel.hidden = false;
         } catch (error) {
             feedback.textContent = error.message;

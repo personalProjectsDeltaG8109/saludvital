@@ -1,12 +1,12 @@
 import { Router } from "express";
 import {
-    createAdminDoctor,
     getActiveDoctorSpecialties,
     getAdminDoctorDetails,
     getAdminDoctors,
     getAdminDoctorStatusImpact,
     updateAdminDoctorStatus,
 } from "../services/adminDoctorService.js";
+import { reviewAdminDoctorProfile } from "../services/adminDoctorReviewService.js";
 import { getConfiguredWhatsAppContactUrl } from "../../../shared/utils/publicWhatsAppContact.js";
 
 // Receive the shared middleware so doctor routes keep the same access checks.
@@ -75,16 +75,22 @@ export default function createAdminDoctorRoutes(requireAdministrator) {
         },
     );
 
-    doctorRoutes.post("/api/admin/doctors", ...requireAdministrator, async (req, res, next) => {
-        try {
-            return res.status(201).json(await createAdminDoctor(req.auth.userId, req.body));
-        } catch (error) {
-            if (error.statusCode) {
-                return res.status(error.statusCode).json({ message: error.message });
+    doctorRoutes.patch(
+        "/api/admin/doctors/:doctorId/review",
+        ...requireAdministrator,
+        async (req, res, next) => {
+            try {
+                return res.json(
+                    await reviewAdminDoctorProfile(req.auth.userId, req.params.doctorId, req.body),
+                );
+            } catch (error) {
+                if (error.statusCode) {
+                    return res.status(error.statusCode).json({ message: error.message });
+                }
+                return next(error);
             }
-            return next(error);
-        }
-    });
+        },
+    );
 
     doctorRoutes.get("/admin/doctors", ...requireAdministrator, (_req, res) => {
         return res.render("admin/doctors", {
@@ -95,10 +101,10 @@ export default function createAdminDoctorRoutes(requireAdministrator) {
 
     doctorRoutes.get("/admin/doctors/new", ...requireAdministrator, async (_req, res) => {
         return res.render("admin/doctor-form", {
-            pageTitle: "Crear médico | SaludVital",
+            pageTitle: "Invitar médico | SaludVital",
             adminName: "Administrador",
             specialties: await getActiveDoctorSpecialties(),
-            formAction: "/api/admin/doctors",
+            formAction: "/api/admin/account-invitations",
         });
     });
 

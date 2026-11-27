@@ -34,7 +34,12 @@ async function sendResendEmail({ to, subject, text, html }) {
 export async function sendVerificationEmail(
     email,
     verificationUrl,
-    { isEmailChange = false, isAccountInvitation = false, accountType = "patient" } = {},
+    {
+        isEmailChange = false,
+        isAccountInvitation = false,
+        accountType = "patient",
+        isDoctorCorrection = false,
+    } = {},
 ) {
     const safeVerificationUrl = verificationUrl
         .replaceAll("&", "&amp;")
@@ -45,14 +50,20 @@ export async function sendVerificationEmail(
     const invitationDescription =
         accountType === "administrator"
             ? "El equipo de SaludVital te invitó a crear una cuenta de administrador. Abre el enlace para confirmar tu correo y elegir una contraseña."
-            : "El equipo de SaludVital te invitó a crear una cuenta de paciente. Abre el enlace para completar tus datos, aceptar el aviso de privacidad y elegir una contraseña.";
+            : accountType === "doctor"
+              ? isDoctorCorrection
+                  ? "El administrador revisó tu perfil médico y solicitó unos ajustes. Abre el enlace para actualizar los datos y enviarlos nuevamente a revisión."
+                  : "El equipo de SaludVital te invitó a completar tu perfil médico. Abre el enlace para confirmar tu correo, registrar tus datos y crear una contraseña. El acceso se habilitará cuando un administrador revise el perfil."
+              : "El equipo de SaludVital te invitó a crear una cuenta de paciente. Abre el enlace para completar tus datos, aceptar el aviso de privacidad y elegir una contraseña.";
     const subject = isAccountInvitation
         ? "Tienes una invitación de SaludVital"
         : isEmailChange
           ? "Confirma tu nuevo correo de SaludVital"
           : "Confirma tu cuenta de SaludVital";
     const title = isAccountInvitation
-        ? "Activa tu cuenta"
+        ? isDoctorCorrection
+            ? "Actualiza tu perfil médico"
+            : "Activa tu cuenta"
         : isEmailChange
           ? "Confirma tu nuevo correo"
           : "¡Confirma tu cuenta!";
@@ -62,7 +73,9 @@ export async function sendVerificationEmail(
           ? "Recibimos una solicitud para cambiar el correo de tu cuenta. Confirma esta dirección para aplicar el cambio. Tu correo actual seguirá activo hasta entonces."
           : "Gracias por registrarte en SaludVital. Para activar tu cuenta y comenzar a disfrutar de nuestros servicios, haz clic en el siguiente botón:";
     const actionLabel = isAccountInvitation
-        ? "Completar registro"
+        ? isDoctorCorrection
+            ? "Actualizar perfil"
+            : "Completar registro"
         : isEmailChange
           ? "Confirmar nuevo correo"
           : "Confirmar cuenta";

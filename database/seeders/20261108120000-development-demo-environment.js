@@ -204,7 +204,6 @@ async function ensureDoctor(queryInterface, account, userId, specialtyId, timest
         specialty_id: specialtyId,
         display_name: account.displayName,
         profile_photo_url: account.photo,
-        professional_information: `DEMO: professional profile for ${account.displayName}.`,
         alternate_phone: "3000000201",
         address: "Dirección ficticia para pruebas",
         department: "Risaralda",

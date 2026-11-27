@@ -30,8 +30,12 @@ html(lang="es")
                                 path(d="m5 12 4 4L19 6")
                         h1#activation-title.mt-5.text-2xl.font-bold.tracking-tight.text-primary(
                             class="sm:text-3xl"
-                        ) Cuenta activada correctamente
-                        p.mt-3.text-sm.leading-6.text-slate-600= `${displayName}, tu cuenta de ${roleLabel.toLowerCase()} está lista.`
+                        )= pendingReview ? "Perfil enviado a revisión" : "Cuenta activada correctamente"
+                        p.mt-3.text-sm.leading-6.text-slate-600
+                            if pendingReview
+                                | #{ displayName }, recibimos tus datos. Un administrador revisará tu perfil y activará la cuenta cuando esté aprobado.
+                            else
+                                | #{ displayName }, tu cuenta de #{ roleLabel.toLowerCase() } está lista.
                         p.mt-2.break-all.text-sm.font-semibold.text-primary= email
                         a.mt-6.flex.w-full.items-center.justify-center.gap-2.rounded-full.bg-primary.px-5.py-3.font-semibold.text-white.shadow-md.transition(
                             href="/login"

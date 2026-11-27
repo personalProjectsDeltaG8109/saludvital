@@ -189,7 +189,8 @@ describe("SaludVital application", () => {
 
     test.each([
         ["GET", "/admin/doctors/new"],
-        ["POST", "/api/admin/doctors"],
+        ["POST", "/api/admin/account-invitations"],
+        ["PATCH", "/api/admin/doctors/1/review"],
         ["GET", "/admin/users"],
         ["GET", "/api/admin/users"],
         ["GET", "/api/admin/users/7"],
