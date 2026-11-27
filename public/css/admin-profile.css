@@ -691,7 +691,7 @@
     outline-offset: 3px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
     .admin-profile-content {
         padding-top: 18px;
     }
