@@ -1013,7 +1013,23 @@ a.admin-nav-link:focus-visible,
         border-radius: 9px;
         color: #fff;
         background: rgb(255 255 255 / 12%);
-        font-size: 25px;
+        padding: 0;
+        line-height: 0;
+        cursor: pointer;
+        transition: background 140ms ease;
+    }
+    .admin-sidebar-collapse svg {
+        display: block;
+        width: 18px;
+        height: 18px;
+    }
+    .admin-sidebar-collapse:hover,
+    .admin-sidebar-collapse:focus-visible {
+        background: rgb(255 255 255 / 22%);
+    }
+    .admin-sidebar-collapse:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
     }
     .admin-app.is-sidebar-open .admin-sidebar-backdrop {
         position: fixed;
