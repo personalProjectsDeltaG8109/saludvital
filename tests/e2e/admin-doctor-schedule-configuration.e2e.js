@@ -16,9 +16,9 @@ const configDaysMarkup = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", 
                 <div data-config-intervals><div data-config-interval>
                     <input type="time" data-interval-start disabled>
                     <input type="time" data-interval-end disabled>
-                    <button type="button" data-remove-interval hidden></button>
+                    <button type="button" class="schedule-config-remove" data-remove-interval aria-label="Eliminar intervalo" hidden>×</button>
                 </div></div>
-                <button type="button" data-add-interval hidden></button>
+                <button type="button" class="schedule-config-add" data-add-interval hidden>Agregar otro intervalo</button>
             </div>`,
     )
     .join("");
@@ -41,6 +41,7 @@ try {
           <dialog class="schedule-config-dialog" data-schedule-config-dialog><form data-schedule-config-form><h2 data-config-title>Configurar horario</h2>
             <button type="button" data-config-close>Cerrar</button><p data-config-error hidden></p><p data-config-success hidden></p>
             <select data-config-doctor required></select><input type="date" data-config-valid-from required><input type="date" data-config-valid-until><p data-config-weekday-hint role="status"></p>
+            <fieldset><legend>Jornada rápida</legend><button type="button" data-config-shift="morning" aria-pressed="false">Mañana</button><button type="button" data-config-shift="afternoon" aria-pressed="false">Tarde</button><button type="button" data-config-shift="fullDay" aria-pressed="false">Jornada completa</button><p data-config-shift-hint role="status"></p></fieldset>
             ${configDaysMarkup}
             <section data-config-impact hidden><h3>Revisa las citas confirmadas</h3><ul data-config-impact-list></ul></section><button type="submit" data-config-submit>Guardar horario</button>
           </form></dialog>
@@ -170,12 +171,56 @@ try {
     await page.locator("[data-config-valid-until]").fill("2026-11-11");
     assert.equal(await page.locator("[data-day-enabled]:disabled").count(), 0);
     await page.locator("[data-config-valid-until]").fill("2026-11-06");
+    const friday = page.locator('[data-config-day="5"]');
+    await page.locator('[data-config-shift="afternoon"]').click();
+    await friday.locator("[data-day-enabled]").check();
+    assert.equal(await friday.locator("[data-interval-start]").inputValue(), "13:00");
+    assert.equal(await friday.locator("[data-interval-end]").inputValue(), "17:00");
+
+    await page.locator('[data-config-shift="morning"]').click();
+    assert.equal(await friday.locator("[data-interval-start]").inputValue(), "07:00");
+    assert.equal(await friday.locator("[data-interval-end]").inputValue(), "12:00");
+    const thursday = page.locator('[data-config-day="4"]');
+    await thursday.locator("[data-day-enabled]").check();
+    assert.equal(await thursday.locator("[data-interval-start]").inputValue(), "07:00");
+    assert.equal(await thursday.locator("[data-interval-end]").inputValue(), "12:00");
+
+    await thursday.locator("[data-interval-start]").fill("08:00");
+    page.once("dialog", (dialog) => dialog.dismiss());
+    await page.locator('[data-config-shift="fullDay"]').click();
+    assert.equal(
+        await page.locator('[data-config-shift="morning"]').getAttribute("aria-pressed"),
+        "true",
+    );
+    assert.equal(await thursday.locator("[data-interval-start]").inputValue(), "08:00");
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.locator('[data-config-shift="fullDay"]').click();
+    assert.equal(
+        await page.locator('[data-config-shift="fullDay"]').getAttribute("aria-pressed"),
+        "true",
+    );
     for (const dayNumber of [4, 5]) {
         const day = page.locator(`[data-config-day="${dayNumber}"]`);
-        await day.locator("[data-day-enabled]").check();
-        await day.locator("[data-interval-start]").fill("08:00");
-        await day.locator("[data-interval-end]").fill("12:00");
+        assert.equal(await day.locator("[data-config-interval]").count(), 2);
+        assert.deepEqual(
+            await day
+                .locator("[data-interval-start]")
+                .evaluateAll((inputs) => inputs.map((input) => input.value)),
+            ["07:00", "13:00"],
+        );
+        assert.deepEqual(
+            await day
+                .locator("[data-interval-end]")
+                .evaluateAll((inputs) => inputs.map((input) => input.value)),
+            ["12:00", "17:00"],
+        );
     }
+    await thursday.locator("[data-add-interval]").click();
+    assert.equal(await thursday.locator("[data-config-interval]").count(), 3);
+    await thursday.locator("[data-remove-interval]:visible").last().click();
+    assert.equal(await thursday.locator("[data-config-interval]").count(), 2);
+
     await page.locator("[data-config-submit]").click();
     await page.locator("[data-config-impact]:visible").waitFor();
     assert.match(await page.locator("[data-config-impact-list]").textContent(), /Cita #81/);
@@ -195,9 +240,14 @@ try {
     assert.equal(attempts[0].confirmImpact, false);
     assert.equal(attempts[1].confirmImpact, true);
     assert.deepEqual(
-        attempts[1].blocks.map((block) => block.dayOfWeek),
-        [4, 5],
-        "only the selected validity-range weekdays should be submitted",
+        attempts[1].blocks,
+        [
+            { dayOfWeek: 4, startTime: "07:00", endTime: "12:00" },
+            { dayOfWeek: 4, startTime: "13:00", endTime: "17:00" },
+            { dayOfWeek: 5, startTime: "07:00", endTime: "12:00" },
+            { dayOfWeek: 5, startTime: "13:00", endTime: "17:00" },
+        ],
+        "only the selected days and their chosen intervals should be submitted",
     );
     console.log(
         "PASS: configuration requires explicit impact confirmation before cancelling affected appointments and notifying patients.",

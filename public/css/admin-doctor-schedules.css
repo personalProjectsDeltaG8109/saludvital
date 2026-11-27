@@ -1115,6 +1115,87 @@
     color: #526f91;
     font-size: 11px;
 }
+.schedule-config-shifts {
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+    margin: 0;
+    padding: 12px;
+    border: 1px solid #dce9f6;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #f7fbff, #fff);
+}
+.schedule-config-shifts legend {
+    padding: 0 6px;
+    color: #183f70;
+    font-size: 13px;
+    font-weight: 700;
+}
+.schedule-config-shifts-description,
+.schedule-config-shift-hint {
+    margin: 0;
+    color: #617c9e;
+    font-size: 11px;
+    line-height: 1.45;
+}
+.schedule-config-shift-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+}
+.schedule-config-shift {
+    display: flex;
+    min-width: 0;
+    min-height: 62px;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
+    border: 1px solid #dce8f4;
+    border-radius: 9px;
+    color: #244c79;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+}
+.schedule-config-shift:hover {
+    border-color: #8fc5f3;
+    box-shadow: 0 4px 12px rgb(18 59 115 / 8%);
+    transform: translateY(-1px);
+}
+.schedule-config-shift[aria-pressed="true"] {
+    border-color: #168de2;
+    color: #0c5db0;
+    background: #eef7ff;
+    box-shadow: 0 0 0 2px rgb(22 141 226 / 10%);
+}
+.schedule-config-shift svg {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    color: #168de2;
+}
+.schedule-config-shift-copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+.schedule-config-shift-copy strong {
+    color: #123b73;
+    font-size: 11px;
+}
+.schedule-config-shift-copy small {
+    color: #617c9e;
+    font-size: 9px;
+    line-height: 1.35;
+}
+.schedule-config-shift-hint {
+    color: #31577f;
+}
 .schedule-config-dialog :focus-visible {
     outline: 3px solid rgb(22 141 226 / 35%);
     outline-offset: 2px;
@@ -1772,6 +1853,12 @@
 }
 
 @media (max-width: 540px) {
+    .schedule-config-shift-options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .schedule-config-shift {
+        min-height: 56px;
+    }
     .schedule-stats {
         grid-template-columns: minmax(0, 1fr);
     }

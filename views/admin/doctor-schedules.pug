@@ -304,6 +304,78 @@ html(lang="es")
                         role="status",
                         aria-live="polite"
                     ) Selecciona la fecha de inicio para habilitar los dias.
+                    fieldset.schedule-config-shifts
+                        legend Jornada rápida
+                        p.schedule-config-shifts-description Elige una jornada para completar los días que selecciones.
+                        .schedule-config-shift-options
+                            button.schedule-config-shift(
+                                type="button",
+                                data-config-shift="morning",
+                                aria-pressed="false"
+                            )
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    stroke-width="1.8",
+                                    stroke-linecap="round",
+                                    stroke-linejoin="round",
+                                    aria-hidden="true",
+                                    focusable="false"
+                                )
+                                    circle(cx="12", cy="12", r="4")
+                                    path(
+                                        d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"
+                                    )
+                                span.schedule-config-shift-copy
+                                    strong Mañana
+                                    small 7:00 a. m. – 12:00 p. m.
+                            button.schedule-config-shift(
+                                type="button",
+                                data-config-shift="afternoon",
+                                aria-pressed="false"
+                            )
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    stroke-width="1.8",
+                                    stroke-linecap="round",
+                                    stroke-linejoin="round",
+                                    aria-hidden="true",
+                                    focusable="false"
+                                )
+                                    path(
+                                        d="M3 18h18M5 15a7 7 0 0 1 14 0M12 2v2m-8.36 1.64 1.42 1.42m13.88-1.42-1.42 1.42"
+                                    )
+                                span.schedule-config-shift-copy
+                                    strong Tarde
+                                    small 1:00 p. m. – 5:00 p. m.
+                            button.schedule-config-shift(
+                                type="button",
+                                data-config-shift="fullDay",
+                                aria-pressed="false"
+                            )
+                                svg(
+                                    viewBox="0 0 24 24",
+                                    fill="none",
+                                    stroke="currentColor",
+                                    stroke-width="1.8",
+                                    stroke-linecap="round",
+                                    stroke-linejoin="round",
+                                    aria-hidden="true",
+                                    focusable="false"
+                                )
+                                    rect(x="3", y="4", width="18", height="17", rx="3")
+                                    path(d="M8 2v4m8-4v4M3 9h18m-13 4h3m-3 4h3m3-4h3m-3 4h3")
+                                span.schedule-config-shift-copy
+                                    strong Jornada completa
+                                    small 7:00 a. m. – 12:00 p. m. y 1:00 – 5:00 p. m.
+                        p.schedule-config-shift-hint(
+                            data-config-shift-hint,
+                            role="status",
+                            aria-live="polite"
+                        ) Selecciona una jornada y luego marca los días que quieras.
                     fieldset.schedule-config-days
                         legend Días y horas de atención
                         each day, index in ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
