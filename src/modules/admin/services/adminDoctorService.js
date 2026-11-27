@@ -22,6 +22,7 @@ import {
     removeStoredProfilePhoto,
     storeProfilePhoto,
 } from "../../../shared/services/profilePhotoStorageService.js";
+import { getColombiaCalendarDate } from "../../../shared/utils/colombiaCalendarDate.js";
 import {
     isEmailUnavailable,
     isEmailUniqueConstraintError,
@@ -37,6 +38,132 @@ function serviceError(message, statusCode = 400) {
     const error = new Error(message);
     error.statusCode = statusCode;
     return error;
+}
+
+function formatScheduleTime(value) {
+    const match = String(value || "")
+        .slice(0, 5)
+        .match(/^(\d{2}):(\d{2})$/);
+    if (!match) return String(value || "");
+
+    const hour = Number(match[1]);
+    const period = hour < 12 ? "a. m." : "p. m.";
+    const displayHour = hour % 12 || 12;
+
+    return `${displayHour}:${match[2]} ${period}`;
+}
+
+function formatScheduleDate(value) {
+    const dateValue = String(value || "").slice(0, 10);
+    const date = new Date(`${dateValue}T12:00:00.000Z`);
+    if (!Number.isFinite(date.getTime())) return dateValue;
+
+    return new Intl.DateTimeFormat("es-CO", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+    }).format(date);
+}
+
+function createScheduleInterval(block) {
+    const startTime = String(block.startTime).slice(0, 5);
+    const endTime = String(block.endTime).slice(0, 5);
+
+    return {
+        id: block.id,
+        startTime,
+        endTime,
+        timeRange: `${formatScheduleTime(startTime)} – ${formatScheduleTime(endTime)}`,
+    };
+}
+
+function groupScheduleIntervalsByDay(blocks, includeEmptyDays = false) {
+    const intervalsByDay = new Map();
+
+    blocks.forEach((block) => {
+        if (!intervalsByDay.has(block.dayOfWeek)) {
+            intervalsByDay.set(block.dayOfWeek, []);
+        }
+        intervalsByDay.get(block.dayOfWeek).push(createScheduleInterval(block));
+    });
+
+    const dayNumbers = includeEmptyDays
+        ? WEEK_DAYS.slice(1).map((_day, index) => index + 1)
+        : [...intervalsByDay.keys()].sort((first, second) => first - second);
+
+    return dayNumbers.map((dayOfWeek) => ({
+        dayOfWeek,
+        day: WEEK_DAYS[dayOfWeek] || "Día sin identificar",
+        intervals: (intervalsByDay.get(dayOfWeek) || []).sort((first, second) =>
+            first.startTime.localeCompare(second.startTime),
+        ),
+    }));
+}
+
+function groupSchedulePeriodsByDay(blocks) {
+    const daysByNumber = new Map();
+
+    blocks.forEach((block) => {
+        if (!daysByNumber.has(block.dayOfWeek)) {
+            daysByNumber.set(block.dayOfWeek, {
+                dayOfWeek: block.dayOfWeek,
+                day: block.day,
+                periodsByKey: new Map(),
+            });
+        }
+
+        const day = daysByNumber.get(block.dayOfWeek);
+        const periodKey = [block.validFrom, block.validUntil || "", block.recordStatus].join("|");
+
+        if (!day.periodsByKey.has(periodKey)) {
+            const startDate = formatScheduleDate(block.validFrom);
+            const endDate = block.validUntil ? formatScheduleDate(block.validUntil) : null;
+            day.periodsByKey.set(periodKey, {
+                validFrom: block.validFrom,
+                validityLabel: endDate ? `Del ${startDate} al ${endDate}` : `Desde ${startDate}`,
+                status: block.recordStatus,
+                intervals: [],
+            });
+        }
+
+        day.periodsByKey.get(periodKey).intervals.push(createScheduleInterval(block));
+    });
+
+    return [...daysByNumber.values()]
+        .sort((first, second) => first.dayOfWeek - second.dayOfWeek)
+        .map((day) => ({
+            dayOfWeek: day.dayOfWeek,
+            day: day.day,
+            periods: [...day.periodsByKey.values()]
+                .sort((first, second) => second.validFrom.localeCompare(first.validFrom))
+                .map((period) => ({
+                    ...period,
+                    intervals: period.intervals.sort((first, second) =>
+                        first.startTime.localeCompare(second.startTime),
+                    ),
+                })),
+        }));
+}
+
+function divideScheduleByValidity(schedule, today) {
+    // Keep inactive and ended records in history instead of the current week.
+    return schedule.reduce(
+        (groups, block) => {
+            if (!block.isActive) {
+                groups.history.push({ ...block, recordStatus: "Inactivo" });
+            } else if (block.validUntil && block.validUntil < today) {
+                groups.history.push({ ...block, recordStatus: "Vencido" });
+            } else if (block.validFrom > today) {
+                groups.upcoming.push({ ...block, recordStatus: "Programado" });
+            } else {
+                groups.current.push(block);
+            }
+
+            return groups;
+        },
+        { current: [], upcoming: [], history: [] },
+    );
 }
 
 function parseId(value, label) {
@@ -222,6 +349,7 @@ export async function getAdminDoctorDetails(rawDoctorId) {
     });
     const schedule = availability.map((block) => ({
         id: block.id,
+        dayOfWeek: block.day_of_week,
         day: WEEK_DAYS[block.day_of_week] || "Día sin identificar",
         startTime: String(block.start_time).slice(0, 5),
         endTime: String(block.end_time).slice(0, 5),
@@ -229,6 +357,7 @@ export async function getAdminDoctorDetails(rawDoctorId) {
         validUntil: block.valid_until,
         isActive: block.is_active,
     }));
+    const scheduleGroups = divideScheduleByValidity(schedule, getColombiaCalendarDate());
 
     return {
         id: doctor.id,
@@ -243,8 +372,11 @@ export async function getAdminDoctorDetails(rawDoctorId) {
         isActive: doctor.user.is_active,
         createdAt: doctor.user.created_at || doctor.created_at,
         lastLoginAt: doctor.user.last_login_at,
-        hasSchedule: schedule.some((block) => block.isActive),
+        hasSchedule: scheduleGroups.current.length > 0 || scheduleGroups.upcoming.length > 0,
         schedule,
+        currentSchedule: groupScheduleIntervalsByDay(scheduleGroups.current, true),
+        upcomingSchedule: groupSchedulePeriodsByDay(scheduleGroups.upcoming),
+        previousSchedule: groupSchedulePeriodsByDay(scheduleGroups.history),
     };
 }
 

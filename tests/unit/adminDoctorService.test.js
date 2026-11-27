@@ -37,6 +37,9 @@ jest.unstable_mockModule("../../src/shared/services/profilePhotoStorageService.j
     storeProfilePhoto: jest.fn(),
     removeStoredProfilePhoto: jest.fn(),
 }));
+jest.unstable_mockModule("../../src/shared/utils/colombiaCalendarDate.js", () => ({
+    getColombiaCalendarDate: jest.fn(() => "2026-11-27"),
+}));
 
 const bcrypt = (await import("bcrypt")).default;
 const database = (await import("../../config/database.js")).default;
@@ -384,6 +387,131 @@ describe("Admin doctor management service", () => {
         expect(DoctorAvailability.findAll).toHaveBeenCalledWith(
             expect.objectContaining({ where: { doctor_id: 12 } }),
         );
+    });
+
+    test("groups active, upcoming, and previous availability by weekday", async () => {
+        Doctor.findByPk.mockResolvedValue({
+            id: 12,
+            user_id: 7,
+            display_name: "Dr. Example",
+            profile_photo_url: null,
+            user: {
+                id: 7,
+                email: "doctor@example.com",
+                is_active: true,
+            },
+            specialty: { id: 3, name: "Medicina General" },
+        });
+        DoctorAvailability.findAll.mockResolvedValue([
+            {
+                id: 1,
+                day_of_week: 1,
+                start_time: "13:00:00",
+                end_time: "17:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+                is_active: true,
+            },
+            {
+                id: 2,
+                day_of_week: 1,
+                start_time: "08:30:00",
+                end_time: "12:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+                is_active: true,
+            },
+            {
+                id: 3,
+                day_of_week: 2,
+                start_time: "09:00:00",
+                end_time: "12:00:00",
+                valid_from: "2026-11-30",
+                valid_until: null,
+                is_active: true,
+            },
+            {
+                id: 4,
+                day_of_week: 3,
+                start_time: "08:00:00",
+                end_time: "09:00:00",
+                valid_from: "2026-01-01",
+                valid_until: null,
+                is_active: false,
+            },
+            {
+                id: 5,
+                day_of_week: 4,
+                start_time: "08:00:00",
+                end_time: "09:00:00",
+                valid_from: "2026-01-01",
+                valid_until: "2026-11-26",
+                is_active: true,
+            },
+        ]);
+
+        const details = await getAdminDoctorDetails("12");
+
+        expect(details.currentSchedule).toHaveLength(7);
+        expect(details.currentSchedule[0]).toMatchObject({
+            dayOfWeek: 1,
+            intervals: [
+                { id: 2, timeRange: "8:30 a. m. – 12:00 p. m." },
+                { id: 1, timeRange: "1:00 p. m. – 5:00 p. m." },
+            ],
+        });
+        expect(details.currentSchedule[1]).toMatchObject({ dayOfWeek: 2, intervals: [] });
+        expect(details.upcomingSchedule).toEqual([
+            expect.objectContaining({
+                dayOfWeek: 2,
+                periods: [
+                    expect.objectContaining({
+                        validityLabel: "Desde 30 de nov de 2026",
+                        status: "Programado",
+                    }),
+                ],
+            }),
+        ]);
+        expect(details.previousSchedule).toEqual([
+            expect.objectContaining({
+                dayOfWeek: 3,
+                periods: [expect.objectContaining({ status: "Inactivo" })],
+            }),
+            expect.objectContaining({
+                dayOfWeek: 4,
+                periods: [expect.objectContaining({ status: "Vencido" })],
+            }),
+        ]);
+        expect(details.schedule).toHaveLength(5);
+    });
+
+    test("does not show only expired availability as a configured schedule", async () => {
+        Doctor.findByPk.mockResolvedValue({
+            id: 12,
+            user_id: 7,
+            display_name: "Dr. Example",
+            profile_photo_url: null,
+            user: { id: 7, email: "doctor@example.com", is_active: true },
+            specialty: null,
+        });
+        DoctorAvailability.findAll.mockResolvedValue([
+            {
+                id: 8,
+                day_of_week: 1,
+                start_time: "08:00:00",
+                end_time: "09:00:00",
+                valid_from: "2026-01-01",
+                valid_until: "2026-11-26",
+                is_active: true,
+            },
+        ]);
+
+        const details = await getAdminDoctorDetails("12");
+
+        expect(details.hasSchedule).toBe(false);
+        expect(details.currentSchedule).toHaveLength(7);
+        expect(details.currentSchedule.every((day) => day.intervals.length === 0)).toBe(true);
+        expect(details.previousSchedule[0].periods[0].status).toBe("Vencido");
     });
 
     test("returns not found for a missing or invalid doctor id", async () => {
