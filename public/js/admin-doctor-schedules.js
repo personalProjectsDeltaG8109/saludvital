@@ -35,6 +35,9 @@
     const configureOpenButton = page.querySelector("[data-configure-open]");
     const configureDialog = document.querySelector("[data-schedule-config-dialog]");
     const configureForm = document.querySelector("[data-schedule-config-form]");
+    const quickShiftButtons = configureForm
+        ? [...configureForm.querySelectorAll("[data-config-shift]")]
+        : [];
     const configureDoctorSelect = document.querySelector("[data-config-doctor]");
     const configureError = document.querySelector("[data-config-error]");
     const configureSuccess = document.querySelector("[data-config-success]");
@@ -73,6 +76,7 @@
     let selectedDoctorId = null;
     let isDoctorScheduleDismissed = false;
     let periodMode = "week";
+    let selectedQuickShift = null;
     let searchDebounceTimer = null;
     const configPageFeedback = page.querySelector("[data-config-page-feedback]");
     const feedback = page.querySelector("[data-schedule-feedback]");
@@ -87,6 +91,23 @@
     const exceptionsList = page.querySelector("[data-schedule-exceptions]");
     const exceptionsEmpty = page.querySelector("[data-schedule-exceptions-empty]");
     const weekdayShortNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+    const quickShiftPresets = {
+        morning: {
+            label: "Mañana",
+            intervals: [{ startTime: "07:00", endTime: "12:00" }],
+        },
+        afternoon: {
+            label: "Tarde",
+            intervals: [{ startTime: "13:00", endTime: "17:00" }],
+        },
+        fullDay: {
+            label: "Jornada completa",
+            intervals: [
+                { startTime: "07:00", endTime: "12:00" },
+                { startTime: "13:00", endTime: "17:00" },
+            ],
+        },
+    };
 
     function setText(selector, value) {
         const element = page.querySelector(selector);
@@ -229,6 +250,9 @@
         configureImpactList.replaceChildren();
         configureSubmitButton.dataset.confirmImpact = "false";
         configureSubmitButton.textContent = "Guardar horario";
+        selectedQuickShift = null;
+        updateQuickShiftSelection(null);
+        updateQuickShiftHint("Selecciona una jornada y luego marca los días que quieras.");
         if (configureDeleteButton) configureDeleteButton.hidden = true;
     }
 
@@ -250,6 +274,7 @@
         configureDoctorSelect.value = String(schedule?.doctorId || doctorSelect.value || "");
 
         configureForm.querySelectorAll("[data-config-day]").forEach((dayElement) => {
+            delete dayElement.dataset.quickShift;
             setEnabledDay(dayElement, false);
             dayElement.querySelector("[data-day-enabled]").checked = false;
             const intervalList = dayElement.querySelector("[data-config-intervals]");
@@ -326,6 +351,98 @@
                 input.required = enabled;
             });
         dayElement.querySelector("[data-add-interval]").hidden = !enabled;
+    }
+
+    function updateQuickShiftSelection(shiftName) {
+        quickShiftButtons.forEach((button) => {
+            button.setAttribute("aria-pressed", String(button.dataset.configShift === shiftName));
+        });
+    }
+
+    function updateQuickShiftHint(message) {
+        const hint = configureForm?.querySelector("[data-config-shift-hint]");
+        if (hint) hint.textContent = message;
+    }
+
+    function hasEnteredIntervals(dayElement) {
+        return [...dayElement.querySelectorAll("[data-config-interval]")].some((interval) => {
+            return Boolean(
+                interval.querySelector("[data-interval-start]").value ||
+                interval.querySelector("[data-interval-end]").value,
+            );
+        });
+    }
+
+    function createIntervalRow(dayElement) {
+        const intervalList = dayElement.querySelector("[data-config-intervals]");
+        const intervalTemplate = intervalList.querySelector("[data-config-interval]");
+        const newInterval = intervalTemplate.cloneNode(true);
+        newInterval.querySelectorAll("input").forEach((input) => {
+            input.value = "";
+            input.disabled = false;
+            input.required = true;
+        });
+        newInterval.querySelector("[data-remove-interval]").hidden = false;
+        intervalList.append(newInterval);
+        return newInterval;
+    }
+
+    function fillDayWithQuickShift(dayElement, shiftName) {
+        const preset = quickShiftPresets[shiftName];
+        if (!preset) return;
+
+        const intervalList = dayElement.querySelector("[data-config-intervals]");
+        const rows = [...intervalList.querySelectorAll("[data-config-interval]")];
+        rows.slice(1).forEach((row) => row.remove());
+
+        const intervals = [
+            rows[0],
+            ...preset.intervals.slice(1).map(() => createIntervalRow(dayElement)),
+        ];
+        intervals.forEach((row, index) => {
+            row.querySelector("[data-interval-start]").value = preset.intervals[index].startTime;
+            row.querySelector("[data-interval-end]").value = preset.intervals[index].endTime;
+        });
+        dayElement.dataset.quickShift = shiftName;
+        updateIntervalRemoveButtons(dayElement);
+    }
+
+    function applyQuickShiftToDays(shiftName, dayElements) {
+        const preset = quickShiftPresets[shiftName];
+        if (!preset) return false;
+
+        const daysWithManualHours = dayElements.filter((dayElement) => {
+            return hasEnteredIntervals(dayElement) && !dayElement.dataset.quickShift;
+        });
+        if (
+            daysWithManualHours.length > 0 &&
+            !window.confirm(
+                "La jornada reemplazará las horas que ya escribiste en los días seleccionados. ¿Deseas continuar?",
+            )
+        ) {
+            return false;
+        }
+
+        selectedQuickShift = shiftName;
+        updateQuickShiftSelection(shiftName);
+        dayElements.forEach((dayElement) => fillDayWithQuickShift(dayElement, shiftName));
+
+        if (dayElements.length === 0) {
+            updateQuickShiftHint(
+                `Jornada ${preset.label} seleccionada. Al marcar un día disponible, se cargarán sus horarios.`,
+            );
+            return true;
+        }
+
+        const dayNames = dayElements.map((dayElement) => {
+            return dayElement
+                .querySelector("[data-day-enabled]")
+                .nextElementSibling.textContent.trim();
+        });
+        updateQuickShiftHint(
+            `Jornada ${preset.label} aplicada a ${dayNames.join(", ")}. Puedes ajustar las horas antes de guardar.`,
+        );
+        return true;
     }
 
     function getAvailableWeekdays(validFrom, validUntil) {
@@ -1551,28 +1668,44 @@
     });
     configureForm?.querySelectorAll("[data-day-enabled]").forEach((checkbox) => {
         checkbox.addEventListener("change", () => {
-            setEnabledDay(checkbox.closest("[data-config-day]"), checkbox.checked);
+            const dayElement = checkbox.closest("[data-config-day]");
+            setEnabledDay(dayElement, checkbox.checked);
+            if (checkbox.checked && selectedQuickShift) {
+                const wasApplied = applyQuickShiftToDays(selectedQuickShift, [dayElement]);
+                if (!wasApplied) {
+                    checkbox.checked = false;
+                    setEnabledDay(dayElement, false);
+                }
+            }
         });
+    });
+    configureForm?.addEventListener("input", (event) => {
+        if (!event.target.matches("[data-interval-start], [data-interval-end]")) return;
+        delete event.target.closest("[data-config-day]").dataset.quickShift;
+    });
+    quickShiftButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const selectedDays = [
+                ...configureForm.querySelectorAll("[data-day-enabled]:checked"),
+            ].map((checkbox) => checkbox.closest("[data-config-day]"));
+            applyQuickShiftToDays(button.dataset.configShift, selectedDays);
+        });
+    });
+    configureForm?.addEventListener("click", (event) => {
+        const removeButton = event.target.closest("[data-remove-interval]");
+        if (!removeButton || removeButton.hidden) return;
+        const dayElement = removeButton.closest("[data-config-day]");
+        const interval = removeButton.closest("[data-config-interval]");
+        if (dayElement.querySelectorAll("[data-config-interval]").length < 2) return;
+        interval.remove();
+        delete dayElement.dataset.quickShift;
+        updateIntervalRemoveButtons(dayElement);
     });
     configureForm?.querySelectorAll("[data-add-interval]").forEach((button) => {
         button.addEventListener("click", () => {
             const dayElement = button.closest("[data-config-day]");
-            const intervalList = dayElement.querySelector("[data-config-intervals]");
-            const newInterval = intervalList
-                .querySelector("[data-config-interval]")
-                .cloneNode(true);
-            newInterval.querySelectorAll("input").forEach((input) => {
-                input.value = "";
-                input.disabled = false;
-                input.required = true;
-            });
-            const removeButton = newInterval.querySelector("[data-remove-interval]");
-            removeButton.hidden = false;
-            removeButton.addEventListener("click", () => {
-                newInterval.remove();
-                updateIntervalRemoveButtons(dayElement);
-            });
-            intervalList.append(newInterval);
+            const newInterval = createIntervalRow(dayElement);
+            delete dayElement.dataset.quickShift;
             updateIntervalRemoveButtons(dayElement);
             newInterval.querySelector("[data-interval-start]").focus();
         });
