@@ -63,6 +63,24 @@ describe("WhatsApp delivery status ordering", () => {
         expect(shouldApplyMetaDeliveryStatus("sent", earlier, "unknown", later)).toBe(false);
     });
 
+    test("allows provider callbacks to replace an accepted chatbot reply", () => {
+        const acceptedAt = new Date("2026-11-10T12:00:00.000Z");
+        const callbackAt = new Date("2026-11-10T12:01:00.000Z");
+
+        for (const status of ["sent", "delivered", "read", "failed"]) {
+            expect(shouldApplyMetaDeliveryStatus("accepted", acceptedAt, status, callbackAt)).toBe(
+                true,
+            );
+        }
+
+        expect(shouldApplyMetaDeliveryStatus("accepted", callbackAt, "delivered", acceptedAt)).toBe(
+            false,
+        );
+        expect(shouldApplyMetaDeliveryStatus("accepted", callbackAt, "failed", callbackAt)).toBe(
+            true,
+        );
+    });
+
     test("updates both persisted records in the same transaction as states advance", async () => {
         await processMetaDeliveryStatus(
             { id: "wamid.123", status: "sent", timestamp: "1793235025" },
@@ -121,6 +139,31 @@ describe("WhatsApp delivery status ordering", () => {
         expect(messageRecord.delivery_status).toBe("read");
         expect(notificationRecord.provider_delivery_status).toBe("read");
     });
+
+    test.each(["sent", "delivered", "read", "failed"])(
+        "updates an accepted chatbot reply when Meta reports %s",
+        async (status) => {
+            messageRecord.delivery_status = "accepted";
+            notificationRecord.provider_delivery_status = "accepted";
+
+            await processMetaDeliveryStatus(
+                {
+                    id: "wamid.123",
+                    status,
+                    timestamp: "1793235085",
+                    ...(status === "failed" ? { errors: [{ code: 131047 }] } : {}),
+                },
+                "phone-1",
+            );
+
+            expect(messageRecord.delivery_status).toBe(status);
+            expect(notificationRecord.provider_delivery_status).toBe(status);
+            expect(messageRecord.update).toHaveBeenCalledWith(
+                expect.objectContaining({ delivery_status: status }),
+                { transaction },
+            );
+        },
+    );
 
     test("does not apply the same callback twice", async () => {
         const callback = { id: "wamid.123", status: "delivered", timestamp: "1793235085" };

@@ -29,12 +29,16 @@ export function shouldApplyMetaDeliveryStatus(
 ) {
     if (!supportedStatuses.has(nextStatus)) return false;
     if (!currentStatus) return true;
-    if (!supportedStatuses.has(currentStatus)) return false;
 
     const currentTime = currentTimestamp ? new Date(currentTimestamp).getTime() : null;
     const nextTime = new Date(nextTimestamp).getTime();
     if (Number.isNaN(nextTime) || Number.isNaN(currentTime)) return false;
     if (currentTime !== null && nextTime < currentTime) return false;
+
+    // Provider acceptance is only a starting point; a real callback may replace it.
+    if (currentStatus === "accepted") return true;
+    if (!supportedStatuses.has(currentStatus)) return false;
+
     if (currentStatus === nextStatus) return currentTime === null || nextTime > currentTime;
 
     // Read and failed are terminal for one provider message ID.
