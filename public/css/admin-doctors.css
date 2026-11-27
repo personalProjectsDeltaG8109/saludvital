@@ -626,7 +626,7 @@ body.admin-doctors-shell .admin-mobile-notification {
         flex: 1;
     }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .doctors-heading {
         flex-wrap: wrap;
         gap: 12px;
@@ -659,7 +659,7 @@ body.admin-doctors-shell .admin-mobile-notification {
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-mobile-notification {
         display: grid;
         flex: 0 0 39px;
@@ -1774,5 +1774,66 @@ body.admin-doctors-shell .admin-mobile-notification {
 @media (prefers-reduced-motion: reduce) {
     .admin-doctor-create-page .doctor-form-submit > svg {
         transition: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .doctors-page {
+        min-width: 0;
+        padding: 24px clamp(14px, 3vw, 24px);
+    }
+    .doctors-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .doctor-row {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 12px;
+    }
+    .doctor-row-info {
+        grid-column: 2;
+    }
+    .doctor-row-actions {
+        grid-column: 2;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+    .doctor-row-info strong,
+    .doctor-row-info span,
+    .doctor-row-info small {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+    .doctors-pagination {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 520px) {
+    .doctors-page {
+        padding: 20px 13px 28px;
+    }
+    .doctors-panel {
+        padding: 13px;
+    }
+    .doctor-row {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 9px;
+        padding: 14px 2px;
+    }
+    .doctor-row-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        gap: 6px;
+    }
+    .doctor-row-status-action,
+    .doctor-status-action {
+        min-height: 38px;
+        padding: 7px 9px;
+        font-size: 0.8rem;
+    }
+    .doctor-status,
+    .doctor-review-status {
+        font-size: 0.75rem;
     }
 }
