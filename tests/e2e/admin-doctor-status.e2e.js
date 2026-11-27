@@ -65,6 +65,7 @@ async function preparePage(page, markup, initialActive = true) {
                             email: "ana@example.com",
                             specialty: "Medicina General",
                             isActive: window.doctorIsActive,
+                            profileReviewStatus: "approved",
                             hasSchedule: true,
                             profilePhotoUrl: null,
                         },

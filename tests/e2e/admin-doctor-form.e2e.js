@@ -3,27 +3,25 @@ import path from "node:path";
 import { chromium } from "playwright";
 
 const formScript = await readFile(path.resolve("public/js/admin-doctor-form.js"), "utf8");
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({
+    headless: true,
+    executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,
+});
 
 const formMarkup = `
     <!doctype html>
     <html lang="es">
         <body>
-            <main data-doctor-form data-action="/api/admin/doctors">
+            <main data-doctor-form data-action="/api/admin/account-invitations">
                 <form data-form novalidate>
-                    <input name="displayName" required maxlength="120">
+                    <input name="email" type="email" required maxlength="320">
                     <select name="specialtyId" required>
                         <option value="">Selecciona una especialidad</option>
                         <option value="3">Medicina General</option>
                     </select>
-                    <textarea name="professionalInformation" maxlength="5000"></textarea>
-                    <input name="email" type="email" required maxlength="320">
-                    <input name="password" type="password" required minlength="10" maxlength="50">
-                    <input data-photo-input type="file" accept="image/jpeg,image/png,image/webp">
-                    <div data-photo-preview></div>
-                    <button type="button" data-photo-remove hidden>Quitar foto</button>
+                    <p class="doctor-invitation-help">El médico completa su perfil.</p>
                     <p data-form-feedback role="status" aria-live="polite"></p>
-                    <button type="submit">Crear médico</button>
+                    <button type="submit">Enviar invitación</button>
                 </form>
                 <section data-form-success hidden>
                     <p data-form-success-message role="status" aria-live="polite"></p>
@@ -41,45 +39,36 @@ try {
     await page.route("**/admin/doctors/new", (route) =>
         route.fulfill({ contentType: "text/html", body: formMarkup }),
     );
-    await page.route("**/api/admin/doctors", async (route) => {
+    await page.route("**/api/admin/account-invitations", async (route) => {
         requests.push(route.request().postDataJSON());
         if (shouldFail) {
             shouldFail = false;
             return route.fulfill({
                 status: 422,
                 contentType: "application/json",
-                body: JSON.stringify({
-                    message: "La especialidad seleccionada no está disponible.",
-                }),
+                body: JSON.stringify({ message: "La especialidad seleccionada no existe." }),
             });
         }
 
         return route.fulfill({
             status: 201,
             contentType: "application/json",
-            body: JSON.stringify({ message: "Médico creado correctamente." }),
+            body: JSON.stringify({ message: "Invitación enviada al correo del médico." }),
         });
     });
 
     await page.goto("http://localhost/admin/doctors/new");
-    if (!(await page.locator("[data-form]").count())) {
-        throw new Error("The doctor form fixture did not load.");
-    }
     await page.addScriptTag({ content: formScript });
 
     const submitButton = page.locator('button[type="submit"]');
     await submitButton.click();
-    if (requests.length !== 0) throw new Error("An invalid empty doctor form was submitted.");
+    if (requests.length !== 0) throw new Error("An invalid empty doctor invitation was submitted.");
 
-    await page.locator('[name="displayName"]').fill("Dra. Prueba");
-    await page.locator('[name="specialtyId"]').selectOption("3");
-    await page.locator('[name="professionalInformation"]').fill("Atención general.");
     await page.locator('[name="email"]').fill("doctor@example.com");
-    await page.locator('[name="password"]').fill("MedicoSeguro123!");
-
+    await page.locator('[name="specialtyId"]').selectOption("3");
     await submitButton.click();
-    await page.getByText("La especialidad seleccionada no está disponible.").waitFor();
-    if ((await page.locator('[name="displayName"]').inputValue()) !== "Dra. Prueba") {
+    await page.getByText("La especialidad seleccionada no existe.").waitFor();
+    if ((await page.locator('[name="email"]').inputValue()) !== "doctor@example.com") {
         throw new Error("The form did not preserve values after a recoverable server error.");
     }
     if (!(await submitButton.isEnabled())) {
@@ -89,17 +78,23 @@ try {
     await submitButton.click();
     await page.locator("[data-form-success]:not([hidden])").waitFor();
 
-    const submittedDoctor = requests[0];
-    if (submittedDoctor.specialtyId !== 3) {
-        throw new Error("The selected specialty ID was not submitted as a number.");
+    const submittedInvitation = requests[0];
+    if (
+        submittedInvitation.accountType !== "doctor" ||
+        submittedInvitation.specialtyId !== 3 ||
+        submittedInvitation.email !== "doctor@example.com"
+    ) {
+        throw new Error("The doctor invitation did not include the selected specialty and email.");
     }
-    if ("photo" in submittedDoctor) {
-        throw new Error("An empty photo field was included in the create request.");
+    if ("password" in submittedInvitation || "displayName" in submittedInvitation) {
+        throw new Error(
+            "The admin invitation included fields the doctor must complete themselves.",
+        );
     }
     if (requests.length !== 2) throw new Error("The successful retry did not submit exactly once.");
 
     console.log(
-        "PASS: doctor form validates required fields, preserves recoverable errors, and submits a successful retry.",
+        "PASS: admin can invite a doctor, recover from server validation, and avoid collecting a password.",
     );
 } finally {
     await browser.close();

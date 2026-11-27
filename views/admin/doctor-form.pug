@@ -10,237 +10,64 @@ html(lang="es")
         link(rel="stylesheet", href="/css/admin-dashboard.css")
         link(rel="stylesheet", href="/css/admin-doctors.css")
     body.admin-app.admin-doctor-create-page.admin-doctors-shell
-        include partials/doctor-stat-icon.pug
         include partials/admin-shell.pug
         +adminSidebar("doctors")
         .admin-main-shell
             +adminTopbar
             main.doctor-form-page(data-doctor-form, data-action=formAction)
                 a.doctor-form-back-link(href="/admin/doctors")
-                    svg(
-                        aria-hidden="true",
-                        viewBox="0 0 24 24",
-                        fill="none",
-                        stroke="currentColor",
-                        stroke-width="1.8",
-                        stroke-linecap="round",
-                        stroke-linejoin="round"
-                    )
-                        path(d="m15 18-6-6 6-6")
-                        path(d="M9 12h12")
-                    | Volver a médicos
+                    | ← Volver a médicos
                 header.doctor-form-heading
-                    +doctorStatIcon("doctor", "heading")
                     div
                         p.admin-eyebrow Gestión médica
-                        h1 Crear médico
-                        p Registra el perfil profesional y configura su acceso a SaludVital.
-                form.doctor-form(data-form, novalidate)
-                    .doctor-form-card
-                        .doctor-form-card-heading
-                            h2 Información del médico
-                            p Completa los datos para crear su perfil y acceso.
-                        .doctor-photo-card
-                            .doctor-photo-preview(data-photo-preview)
-                                span(aria-hidden="true")
-                                    svg(
-                                        viewBox="0 0 24 24",
-                                        fill="none",
-                                        stroke="currentColor",
-                                        stroke-width="1.7",
-                                        stroke-linecap="round",
-                                        stroke-linejoin="round"
+                        h1 Invitar médico
+                        p El médico completará su perfil y creará su propia contraseña.
+                .doctor-invitation-layout
+                    form.doctor-form(data-form, novalidate)
+                        .doctor-form-card
+                            .doctor-form-card-heading
+                                h2 Datos de la invitación
+                                p Envía un enlace seguro al correo profesional del médico.
+                            section.doctor-form-section
+                                label.doctor-form-field(for="doctor-email")
+                                    span Correo electrónico
+                                    input#doctor-email(
+                                        type="email",
+                                        name="email",
+                                        required,
+                                        maxlength="320",
+                                        autocomplete="email",
+                                        placeholder="nombre@correo.com"
                                     )
-                                        circle(cx="12", cy="8", r="3.5")
-                                        path(d="M4.5 21a7.5 7.5 0 0 1 15 0")
-                            .doctor-photo-copy
-                                strong Foto del médico
-                                small Se mostrará junto a su perfil. JPG, PNG o WebP, máximo 2 MB.
-                            label.doctor-photo-button(for="doctor-photo")
-                                svg(
-                                    aria-hidden="true",
-                                    viewBox="0 0 24 24",
-                                    fill="none",
-                                    stroke="currentColor",
-                                    stroke-width="1.8",
-                                    stroke-linecap="round",
-                                    stroke-linejoin="round"
-                                )
-                                    path(d="M12 16V4m0 0L7 9m5-5 5 5")
-                                    path(d="M5 14v5h14v-5")
-                                | Agregar foto
-                            input#doctor-photo.doctor-photo-input(
-                                type="file",
-                                accept="image/jpeg,image/png,image/webp",
-                                data-photo-input
+                                label.doctor-form-field(for="doctor-specialty")
+                                    span Especialidad
+                                    select#doctor-specialty(name="specialtyId", required)
+                                        option(value="") Selecciona una especialidad
+                                        each specialty in specialties
+                                            option(value=specialty.id)= specialty.name
+                            p.doctors-feedback.doctor-form-feedback(
+                                role="status",
+                                aria-live="polite",
+                                data-form-feedback
                             )
-                            button.doctor-photo-remove(type="button", data-photo-remove, hidden) Quitar foto
-                        section.doctor-form-section
-                            h2 Información profesional
-                            label.doctor-form-field(for="doctor-display-name")
-                                span
-                                    | Nombre completo
-                                    b(aria-hidden="true") *
-                                input#doctor-display-name(
-                                    name="displayName",
-                                    required,
-                                    maxlength="120",
-                                    autocomplete="name"
-                                )
-                            label.doctor-form-field(for="doctor-specialty")
-                                span
-                                    | Especialidad
-                                    b(aria-hidden="true") *
-                                select#doctor-specialty(name="specialtyId", required)
-                                    option(value="") Selecciona una especialidad
-                                    each specialty in specialties
-                                        option(value=specialty.id)= specialty.name
-                            label.doctor-form-field.doctor-form-field-wide(
-                                for="doctor-professional-information"
-                            )
-                                span Información profesional
-                                textarea#doctor-professional-information(
-                                    name="professionalInformation",
-                                    rows="4",
-                                    maxlength="5000",
-                                    placeholder="Describe la experiencia o información profesional del médico."
-                                )
-                        section.doctor-form-section
-                            h2 Cuenta de acceso
-                            label.doctor-form-field(for="doctor-email")
-                                span
-                                    | Correo electrónico
-                                    b(aria-hidden="true") *
-                                input#doctor-email(
-                                    type="email",
-                                    name="email",
-                                    required,
-                                    maxlength="320",
-                                    autocomplete="email",
-                                    placeholder="nombre@correo.com"
-                                )
-                            label.doctor-form-field(for="doctor-password")
-                                span
-                                    | Contraseña inicial
-                                    b(aria-hidden="true") *
-                                input#doctor-password(
-                                    type="password",
-                                    name="password",
-                                    required,
-                                    minlength="10",
-                                    maxlength="50",
-                                    autocomplete="new-password",
-                                    aria-describedby="doctor-password-help",
-                                    placeholder="Escribe una contraseña"
-                                )
-                                small#doctor-password-help.doctor-form-field-hint Debe tener entre 10 y 50 caracteres, con mayúscula, minúscula, número y símbolo.
-                        p.doctors-feedback.doctor-form-feedback(
-                            role="status",
-                            aria-live="polite",
-                            data-form-feedback
-                        )
-                        p.doctor-form-note
-                            svg(
-                                aria-hidden="true",
-                                viewBox="0 0 24 24",
-                                fill="none",
-                                stroke="currentColor",
-                                stroke-width="1.8",
-                                stroke-linecap="round",
-                                stroke-linejoin="round"
-                            )
-                                circle(cx="12", cy="12", r="10")
-                                path(d="m8 12 2.5 2.5L16 9")
-                            | Los campos marcados con asterisco son obligatorios para crear el perfil.
-                        footer.doctor-form-actions
-                            a.doctors-secondary-button(href="/admin/doctors") Cancelar
-                            button.doctors-primary-button.doctor-form-submit(type="submit")
-                                svg(
-                                    aria-hidden="true",
-                                    viewBox="0 0 24 24",
-                                    fill="none",
-                                    stroke="currentColor",
-                                    stroke-width="1.8",
-                                    stroke-linecap="round",
-                                    stroke-linejoin="round"
-                                )
-                                    path(d="M12 5v14m-7-7h14")
-                                | Crear médico
-                    aside.doctor-live-preview(aria-label="Vista previa del perfil médico")
-                        span.doctor-live-preview-label
-                            svg(
-                                aria-hidden="true",
-                                viewBox="0 0 24 24",
-                                fill="none",
-                                stroke="currentColor",
-                                stroke-width="1.8",
-                                stroke-linecap="round",
-                                stroke-linejoin="round"
-                            )
-                                path(d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z")
-                                circle(cx="12", cy="12", r="3")
-                            | Vista previa
-                        h2 Así aparecerá el médico
-                        p Vista resumida del perfil en el directorio.
-                        .doctor-live-preview-profile
-                            span.doctor-live-preview-avatar DM
-                            span.doctor-live-preview-name
-                                strong Nombre del médico
-                                small Perfil profesional
-                        .doctor-live-preview-details
-                            .doctor-live-preview-detail
-                                span.doctor-live-preview-detail-icon(aria-hidden="true")
-                                    svg(
-                                        viewBox="0 0 24 24",
-                                        fill="none",
-                                        stroke="currentColor",
-                                        stroke-width="1.8",
-                                        stroke-linecap="round",
-                                        stroke-linejoin="round"
-                                    )
-                                        path(d="M11 2v2M5 2v2")
-                                        path(
-                                            d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"
-                                        )
-                                        path(d="M8 15a6 6 0 0 0 12 0v-3")
-                                        circle(cx="20", cy="10", r="2")
-                                span
-                                    strong Especialidad
-                                    small Se mostrará al elegirla
-                            .doctor-live-preview-detail
-                                span.doctor-live-preview-detail-icon(aria-hidden="true")
-                                    svg(
-                                        viewBox="0 0 24 24",
-                                        fill="none",
-                                        stroke="currentColor",
-                                        stroke-width="1.8",
-                                        stroke-linecap="round",
-                                        stroke-linejoin="round"
-                                    )
-                                        path(
-                                            d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                                        )
-                                        path(d="M14 2v6h6M8 13h8M8 17h8")
-                                span
-                                    strong Información profesional
-                                    small Se agregará con los datos del formulario
-                        p.doctor-live-preview-note
-                            svg(
-                                aria-hidden="true",
-                                viewBox="0 0 24 24",
-                                fill="none",
-                                stroke="currentColor",
-                                stroke-width="1.8",
-                                stroke-linecap="round",
-                                stroke-linejoin="round"
-                            )
-                                rect(x="3", y="3", width="18", height="18", rx="3")
-                                circle(cx="8.5", cy="8.5", r="1.5")
-                                path(d="m21 15-5-5L5 21")
-                            | La foto elegida se mostrará junto al perfil del médico.
-                section.doctor-success(hidden, data-form-success)
-                    h2 Registro completado
-                    p(role="status", aria-live="polite", data-form-success-message)
-                    a.doctors-primary-button(href="/admin/doctors") Volver al directorio
+                            p.doctor-form-note
+                                | La cuenta se activará solo después de que el médico complete sus datos y un administrador apruebe el perfil.
+                            footer.doctor-form-actions
+                                a.doctors-secondary-button(href="/admin/doctors") Cancelar
+                                button.doctors-primary-button.doctor-form-submit(type="submit")
+                                    | Enviar invitación
+                    aside.doctor-invitation-help(aria-labelledby="invitation-steps-title")
+                        span.doctor-live-preview-label Invitación segura
+                        h2#invitation-steps-title ¿Qué sigue?
+                        ol
+                            li El médico recibe el enlace en su correo.
+                            li Completa sus datos personales y profesionales.
+                            li El administrador revisa el perfil.
+                            li La cuenta se activa después de la aprobación.
+                        p La contraseña la crea únicamente el médico. El sistema no muestra ni envía contraseñas.
+                    section.doctor-success(hidden, data-form-success)
+                        h2 Invitación enviada
+                        p(role="status", aria-live="polite", data-form-success-message)
+                        a.doctors-primary-button(href="/admin/doctors") Volver al directorio
             script(src="/js/admin-dashboard.js", defer)
             script(src="/js/admin-doctor-form.js", defer)

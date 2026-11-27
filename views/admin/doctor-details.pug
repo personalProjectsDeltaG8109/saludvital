@@ -34,9 +34,21 @@ html(lang="es")
             main.doctor-details-page(
                 data-doctor-details,
                 data-status-impact-endpoint="/api/admin/doctors",
-                data-status-endpoint="/api/admin/doctors"
+                data-status-endpoint="/api/admin/doctors",
+                data-review-endpoint="/api/admin/doctors/" + doctor.id + "/review"
             )
-                a.doctors-back-link(href="/admin/doctors") ← Volver a médicos
+                a.doctors-back-link.doctor-details-back-link(href="/admin/doctors")
+                    svg(
+                        aria-hidden="true",
+                        viewBox="0 0 24 24",
+                        fill="none",
+                        stroke="currentColor",
+                        stroke-width="1.8",
+                        stroke-linecap="round",
+                        stroke-linejoin="round"
+                    )
+                        path(d="M19 12H5m7 7-7-7 7-7")
+                    span Volver a médicos
                 header.doctor-details-heading
                     div
                         p.admin-eyebrow Perfil profesional
@@ -56,28 +68,73 @@ html(lang="es")
                             data-doctor-status-label
                         )
                             | #{ doctor.isActive ? "Activo" : "Inactivo" }
-                    .doctor-details-actions
-                        a.doctors-secondary-button.doctor-details-manage(
-                            href="/admin/users?search=" + encodeURIComponent(doctor.email) + "&edit=" + doctor.userId
-                        ) Editar médico
-                        button.doctors-secondary-button.doctor-status-action(
-                            type="button",
-                            data-doctor-status-action,
-                            data-doctor-id=doctor.id,
-                            data-is-active=doctor.isActive
-                        )= doctor.isActive ? "Desactivar médico" : "Activar médico"
+                        span.doctor-review-status(
+                            class=doctor.profileReviewStatus === "approved" ? "is-approved" : doctor.profileReviewStatus === "pending" ? "is-pending" : doctor.profileReviewStatus === "changes_requested" ? "is-changes-requested" : "is-invited"
+                        )
+                            | #{ doctor.profileReviewStatus === "approved" ? "Perfil aprobado" : doctor.profileReviewStatus === "pending" ? "Perfil en revisión" : doctor.profileReviewStatus === "changes_requested" ? "Debe corregir el perfil" : "Invitación pendiente" }
+                    if doctor.profileReviewStatus === "approved"
+                        .doctor-details-actions
+                            a.doctors-secondary-button.doctor-details-manage(
+                                href="/admin/users?search=" + encodeURIComponent(doctor.email) + "&edit=" + doctor.userId
+                            ) Editar médico
+                            button.doctors-secondary-button.doctor-status-action(
+                                type="button",
+                                data-doctor-status-action,
+                                data-doctor-id=doctor.id,
+                                data-is-active=doctor.isActive
+                            )= doctor.isActive ? "Desactivar médico" : "Activar médico"
                 p.doctor-status-feedback(
                     role="status",
                     aria-live="polite",
                     data-doctor-status-feedback
                 )
+                if doctor.profileReviewStatus === "pending"
+                    section.doctor-review-card(aria-labelledby="doctor-review-heading")
+                        div
+                            p.admin-eyebrow Revisión de acceso
+                            h2#doctor-review-heading Revisar perfil del médico
+                            p Verifica los datos antes de activar la cuenta.
+                        .doctor-review-actions
+                            button.doctors-primary-button(
+                                type="button",
+                                data-review-action="approve"
+                            ) Aprobar y activar cuenta
+                            button.doctors-secondary-button(
+                                type="button",
+                                data-review-open-corrections
+                            ) Solicitar correcciones
+                if doctor.profileReviewStatus === "changes_requested" && doctor.profileReviewNote
+                    section.doctor-review-card.is-warning
+                        div
+                            p.admin-eyebrow Correcciones solicitadas
+                            h2 Nota enviada al médico
+                            p= doctor.profileReviewNote
                 .doctor-details-grid
                     section.doctor-details-card(aria-labelledby="doctor-contact-heading")
                         h2#doctor-contact-heading Datos del perfil
                         dl.doctor-details-fields
+                            if doctor.firstName || doctor.lastName
+                                div
+                                    dt Nombres y apellidos
+                                    dd= [doctor.firstName, doctor.lastName].filter(Boolean).join(" ")
+                            if doctor.documentType || doctor.documentNumber
+                                div
+                                    dt Documento
+                                    dd= `${doctor.documentType || ""} ${doctor.documentNumber || ""}`.trim()
+                            if doctor.professionalRegistrationNumber
+                                div
+                                    dt Tarjeta profesional
+                                    dd= doctor.professionalRegistrationNumber
+                            if doctor.phone
+                                div
+                                    dt Celular
+                                    dd= doctor.phone
                             div
                                 dt Correo electrónico
                                 dd= doctor.email
+                            div
+                                dt Correo confirmado
+                                dd= doctor.emailVerified ? "Sí" : "No"
                             div
                                 dt Especialidad
                                 dd= doctor.specialty ? doctor.specialty.name : "Sin especialidad"
@@ -87,12 +144,6 @@ html(lang="es")
                             div
                                 dt Último acceso
                                 dd= doctor.lastLoginAt ? new Intl.DateTimeFormat("es-CO", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Bogota" }).format(new Date(doctor.lastLoginAt)) : "Sin registro"
-                    section.doctor-details-card(aria-labelledby="doctor-professional-heading")
-                        h2#doctor-professional-heading Información profesional
-                        if doctor.professionalInformation
-                            p.doctor-professional-copy= doctor.professionalInformation
-                        else
-                            p.doctor-details-empty No se registró información profesional adicional.
                     section.doctor-details-card.doctor-schedule-card(
                         aria-labelledby="doctor-schedule-heading"
                     )
@@ -169,4 +220,37 @@ html(lang="es")
                                                     +scheduleTimeList(period.intervals, true)
                 footer.doctor-details-footer
                     a.doctors-secondary-button(href="/admin/doctors") Volver al directorio
+                if doctor.profileReviewStatus === "pending"
+                    dialog.doctor-review-dialog(
+                        data-review-dialog,
+                        aria-labelledby="doctor-corrections-title"
+                    )
+                        .doctor-review-dialog-content
+                            button.doctor-review-dialog-close(
+                                type="button",
+                                aria-label="Cerrar",
+                                data-review-close
+                            ) ×
+                            p.admin-eyebrow Revisión de perfil
+                            h2#doctor-corrections-title Solicitar correcciones
+                            p Indica con claridad qué debe actualizar el médico.
+                            label.doctor-form-field(for="doctor-review-note")
+                                span Mensaje para el médico
+                                textarea#doctor-review-note(
+                                    rows="5",
+                                    minlength="10",
+                                    maxlength="500",
+                                    required,
+                                    data-review-note
+                                )
+                            p.doctor-review-dialog-feedback(
+                                role="alert",
+                                data-review-dialog-feedback
+                            )
+                            .doctor-review-actions
+                                button.doctors-secondary-button(type="button", data-review-close) Cancelar
+                                button.doctors-primary-button(
+                                    type="button",
+                                    data-review-action="request_changes"
+                                ) Enviar correcciones
             script(src="/js/admin-doctors.js", defer)
