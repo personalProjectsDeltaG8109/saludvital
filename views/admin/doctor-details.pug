@@ -1,3 +1,20 @@
+mixin scheduleTimeList(intervals, isPrevious)
+    ul.doctor-schedule-time-list(role="list")
+        each interval in intervals
+            li(class=isPrevious ? "doctor-schedule-time is-previous" : "doctor-schedule-time")
+                svg(
+                    aria-hidden="true",
+                    viewBox="0 0 24 24",
+                    fill="none",
+                    stroke="currentColor",
+                    stroke-width="1.8",
+                    stroke-linecap="round",
+                    stroke-linejoin="round"
+                )
+                    circle(cx="12", cy="12", r="9")
+                    path(d="M12 7v5l3 2")
+                span= interval.timeRange
+
 doctype html
 html(lang="es")
     head
@@ -56,7 +73,7 @@ html(lang="es")
                 )
                 .doctor-details-grid
                     section.doctor-details-card(aria-labelledby="doctor-contact-heading")
-                        h2#doctor-contact-heading Contacto y especialidad
+                        h2#doctor-contact-heading Datos del perfil
                         dl.doctor-details-fields
                             div
                                 dt Correo electrónico
@@ -85,22 +102,71 @@ html(lang="es")
                                 p Los horarios se consultan desde la disponibilidad registrada.
                             span.doctor-status(class=doctor.hasSchedule ? "is-active" : "is-inactive")
                                 | #{ doctor.hasSchedule ? "Configurado" : "Sin horario activo" }
-                        if doctor.schedule.length
-                            ul.doctor-schedule-list
-                                each block in doctor.schedule
-                                    li(class=block.isActive ? null : "is-inactive")
-                                        strong= block.day
-                                        span #{ block.startTime } – #{ block.endTime }
-                                        small
-                                            | Vigente desde #{ block.validFrom }
-                                            if block.validUntil
-                                                |
-                                                | hasta #{ block.validUntil }
-                                            if !block.isActive
-                                                |
-                                                | · Inactivo
-                        else
-                            p.doctor-details-empty No hay bloques de disponibilidad registrados.
+                        ul.doctor-schedule-week(role="list", aria-label="Horario semanal vigente")
+                            each day in doctor.currentSchedule
+                                li.doctor-schedule-day
+                                    .doctor-schedule-day-name
+                                        svg(
+                                            aria-hidden="true",
+                                            viewBox="0 0 24 24",
+                                            fill="none",
+                                            stroke="currentColor",
+                                            stroke-width="1.8",
+                                            stroke-linecap="round",
+                                            stroke-linejoin="round"
+                                        )
+                                            rect(x="3", y="5", width="18", height="16", rx="2")
+                                            path(d="M16 3v4M8 3v4M3 10h18")
+                                        strong= day.day
+                                    if day.intervals.length
+                                        +scheduleTimeList(day.intervals, false)
+                                    else
+                                        span.doctor-schedule-empty Sin horario activo
+                        if doctor.upcomingSchedule.length
+                            details.doctor-schedule-disclosure
+                                summary.doctor-schedule-disclosure-summary
+                                    span Próximos horarios programados
+                                    svg(
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="m6 9 6 6 6-6")
+                                .doctor-schedule-period-groups
+                                    each day in doctor.upcomingSchedule
+                                        section.doctor-schedule-period-day(aria-label=day.day)
+                                            h3= day.day
+                                            each period in day.periods
+                                                .doctor-schedule-period
+                                                    p.doctor-schedule-period-meta #{ period.validityLabel } · #{ period.status }
+                                                    +scheduleTimeList(period.intervals, false)
+                        if doctor.previousSchedule.length
+                            details.doctor-schedule-disclosure
+                                summary.doctor-schedule-disclosure-summary
+                                    span Historial de horarios anteriores
+                                    svg(
+                                        aria-hidden="true",
+                                        viewBox="0 0 24 24",
+                                        fill="none",
+                                        stroke="currentColor",
+                                        stroke-width="1.8",
+                                        stroke-linecap="round",
+                                        stroke-linejoin="round"
+                                    )
+                                        path(d="m6 9 6 6 6-6")
+                                p.doctor-schedule-history-note Los horarios anteriores se conservan para consulta.
+                                .doctor-schedule-period-groups
+                                    each day in doctor.previousSchedule
+                                        section.doctor-schedule-period-day(aria-label=day.day)
+                                            h3= day.day
+                                            each period in day.periods
+                                                .doctor-schedule-period
+                                                    p.doctor-schedule-period-meta #{ period.validityLabel } · #{ period.status }
+                                                    +scheduleTimeList(period.intervals, true)
                 footer.doctor-details-footer
                     a.doctors-secondary-button(href="/admin/doctors") Volver al directorio
             script(src="/js/admin-doctors.js", defer)
