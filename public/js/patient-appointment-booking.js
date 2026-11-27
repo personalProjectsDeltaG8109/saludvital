@@ -150,7 +150,6 @@ if (form) {
                 <span class="booking-card-copy">
                     <strong>${escapeHtml(doctorName)}</strong>
                     <small>${escapeHtml(state.specialty?.name || "Profesional de SaludVital")}</small>
-                    <small class="booking-doctor-note">${escapeHtml(doctor.professional_information || "Selecciona para consultar horarios")}</small>
                 </span>
                 <span class="booking-card-indicator" aria-hidden="true">${state.doctor?.id === doctor.id ? "✓" : "›"}</span>
             </button>

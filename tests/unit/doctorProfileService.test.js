@@ -38,6 +38,11 @@ describe("doctor profile service", () => {
             attributes: [
                 "id",
                 "display_name",
+                "first_name",
+                "last_name",
+                "document_type",
+                "document_number",
+                "professional_registration_number",
                 "profile_photo_url",
                 "alternate_phone",
                 "address",
