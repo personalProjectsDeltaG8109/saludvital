@@ -1282,14 +1282,20 @@ body.has-admin-modal {
         flex-direction: column;
     }
     .admin-user-modal-backdrop:not([hidden]) {
-        align-items: flex-end;
-        padding: 0;
+        align-items: center;
+        padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
     }
     .admin-user-modal {
-        width: 100%;
-        max-height: 94vh;
+        width: min(100%, 520px);
+        max-height: 92vh;
+        max-height: 92dvh;
         padding: 18px 15px 0;
-        border-radius: 20px 20px 0 0;
+        border-radius: 20px;
+    }
+    .admin-user-modal-actions {
+        bottom: 0;
+        margin: 18px -15px 0;
+        padding: 12px 15px max(12px, env(safe-area-inset-bottom));
     }
     .admin-user-modal-backdrop[data-invitation-modal]:not([hidden]) {
         align-items: center;

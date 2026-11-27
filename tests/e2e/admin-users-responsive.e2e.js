@@ -311,6 +311,7 @@ try {
     await page.evaluate(() => {
         window.adminUsersTestControls.holdDetails = true;
     });
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('[data-user-edit-id="7"]').click();
     await page.waitForFunction(() =>
         window.adminUsersTestControls.pendingDetails.some((request) => request.userId === 7),
@@ -324,6 +325,35 @@ try {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
     await page.locator('[data-user-modal] [name="firstName"]').waitFor();
+    const doctorModalBounds = await page.locator("[data-user-dialog]").evaluate((modal) => {
+        const bounds = modal.getBoundingClientRect();
+        return {
+            leftGap: bounds.left,
+            rightGap: window.innerWidth - bounds.right,
+            topGap: bounds.top,
+            bottomGap: window.innerHeight - bounds.bottom,
+            horizontalCenterOffset: Math.abs(
+                bounds.left + bounds.width / 2 - window.innerWidth / 2,
+            ),
+            verticalCenterOffset: Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2),
+        };
+    });
+    if (
+        doctorModalBounds.leftGap < 12 ||
+        doctorModalBounds.rightGap < 12 ||
+        doctorModalBounds.horizontalCenterOffset > 1 ||
+        doctorModalBounds.verticalCenterOffset > 1
+    ) {
+        throw new Error(
+            `Doctor editor is not centered with mobile spacing: ${JSON.stringify(doctorModalBounds)}.`,
+        );
+    }
+    if (process.env.ADMIN_USERS_SCREENSHOT_DIR) {
+        await page.screenshot({
+            path: path.join(process.env.ADMIN_USERS_SCREENSHOT_DIR, "admin-doctor-edit-mobile.png"),
+        });
+    }
+    console.log("PASS: doctor editor is centered with space around it on mobile.");
     await verifyAccountEmailLength(page, "doctor");
     if (
         (await page.locator('[data-user-modal] [name="firstName"]').inputValue()) !== "Carlos" ||
