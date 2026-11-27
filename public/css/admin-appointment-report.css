@@ -252,7 +252,7 @@
     border: 0;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .appointment-report {
         width: min(1180px, calc(100% - 20px));
         margin: 10px auto;

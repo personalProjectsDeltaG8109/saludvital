@@ -1338,7 +1338,7 @@
     width: 100%;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-appointments-page .appointments-heading {
         flex-wrap: wrap;
     }

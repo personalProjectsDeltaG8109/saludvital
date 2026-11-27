@@ -589,7 +589,7 @@
     }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
     .admin-audit-results-heading {
         align-items: flex-start;
         flex-direction: column;

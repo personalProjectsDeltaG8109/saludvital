@@ -507,7 +507,7 @@
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-whatsapp-page {
         gap: 11px;
     }
@@ -1377,7 +1377,7 @@
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-whatsapp-heading-icon {
         width: 42px;
         height: 42px;
@@ -2716,7 +2716,7 @@
         grid-template-columns: minmax(0, 1fr);
     }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-whatsapp-panel:has(.admin-whatsapp-summary),
     .admin-whatsapp-panel:has(.admin-whatsapp-record-list),
     .admin-whatsapp-panel:has(.admin-whatsapp-flow-layout),
@@ -2961,7 +2961,7 @@
     color: #b86c00;
     background: #fff4dc;
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-whatsapp-channel-tab {
         gap: 4px;
     }

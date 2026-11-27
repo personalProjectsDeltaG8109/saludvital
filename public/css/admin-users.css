@@ -1183,7 +1183,7 @@ body.has-admin-modal {
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-users-content {
         padding: 20px 15px 28px;
     }

@@ -590,7 +590,7 @@
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .admin-reports {
         gap: 12px;
         padding: 13px 12px 24px;

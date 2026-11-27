@@ -1558,7 +1558,7 @@
     }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
     .doctor-schedules-page {
         padding: 18px 14px 28px;
     }
