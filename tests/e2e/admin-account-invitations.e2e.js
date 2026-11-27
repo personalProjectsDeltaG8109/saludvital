@@ -100,9 +100,7 @@ try {
         throw new Error("The invitation modal close control is missing its vector icon.");
     }
     if (
-        !(await modal.innerText()).includes(
-            "El paciente completa su información personal y de salud",
-        )
+        !(await modal.innerText()).includes("El paciente completa sus datos personales y de salud")
     ) {
         throw new Error(
             "The patient invitation does not explain that the patient completes their own consent.",

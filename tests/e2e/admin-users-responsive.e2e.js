@@ -79,11 +79,15 @@ const doctorDetailsFixture = {
         id: 8,
         email: "carlos.mendez@example.com",
         profileType: "Doctor",
-        profilePhotoUrl: null,
+        profilePhotoUrl: "/uploads/profile-photos/carlos.webp",
         doctor: {
             display_name: "Dr. Carlos Méndez",
+            first_name: "Carlos",
+            last_name: "Méndez",
+            document_type: "CC",
+            document_number: "1234567890",
+            professional_registration_number: "RM-12345",
             specialty_id: 5,
-            professional_information: "",
         },
     },
     specialties: [{ id: 5, name: "Medicina General" }],
@@ -317,15 +321,25 @@ try {
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
-    await page.locator('[data-user-modal] [name="displayName"]').waitFor();
+    await page.locator('[data-user-modal] [name="firstName"]').waitFor();
     await verifyAccountEmailLength(page, "doctor");
+    if (
+        (await page.locator('[data-user-modal] [name="firstName"]').inputValue()) !== "Carlos" ||
+        (await page.locator('[data-user-modal] [name="lastName"]').inputValue()) !== "Méndez" ||
+        (await page.locator('[data-user-modal] [name="professionalInformation"]').count()) !== 0 ||
+        (await page.locator('[data-user-modal] [name="profilePhotoUrl"]').inputValue()) !==
+            "/uploads/profile-photos/carlos.webp" ||
+        (await page.locator(".admin-user-doctor-photo-preview img").getAttribute("src")) !==
+            "/uploads/profile-photos/carlos.webp"
+    ) {
+        throw new Error("Doctor editor did not show the current profile fields and saved values.");
+    }
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(7, details);
     }, patientDetailsFixture);
     await page.waitForTimeout(50);
     if (
-        (await page.locator('[data-user-modal] [name="displayName"]').inputValue()) !==
-            "Dr. Carlos Méndez" ||
+        (await page.locator('[data-user-modal] [name="firstName"]').inputValue()) !== "Carlos" ||
         (await page.locator("[data-user-modal-feedback]").innerText())
     ) {
         throw new Error("An older user response changed the currently selected account editor.");
@@ -348,7 +362,7 @@ try {
     await page.evaluate((details) => {
         window.adminUsersTestControls.resolveDetail(8, details);
     }, doctorDetailsFixture);
-    await page.locator('[data-user-modal] [name="displayName"]').waitFor();
+    await page.locator('[data-user-modal] [name="firstName"]').waitFor();
     await page.evaluate(() => {
         window.adminUsersTestControls.resolveDetail(
             7,
@@ -486,28 +500,10 @@ try {
     await page.locator("[data-user-modal-cancel]").click();
 
     const patientRole = page.getByRole("combobox", { name: "Rol de Dra. Laura Méndez" });
-    await patientRole.selectOption("3");
-    const roleDialog = page.locator("[data-role-dialog]");
-    await roleDialog.waitFor();
-    await roleDialog.getByLabel("Nombre profesional").fill("Dra. Laura Méndez");
-    await roleDialog.getByLabel("Especialidad").selectOption("5");
-    if (process.env.ADMIN_USERS_SCREENSHOT_DIR) {
-        await page.screenshot({
-            path: path.join(process.env.ADMIN_USERS_SCREENSHOT_DIR, "admin-users-role-modal.png"),
-            fullPage: true,
-        });
+    if (await patientRole.locator('option[value="3"]').count()) {
+        throw new Error("The general role editor must not promote a patient to doctor.");
     }
-    await roleDialog.getByRole("button", { name: "Guardar rol y perfil" }).click();
-    await page.getByRole("combobox", { name: "Rol de Dra. Laura Méndez" }).waitFor();
-    const convertedProfile = await page
-        .locator(".admin-user-card")
-        .filter({ hasText: "laura.mendez@example.com" })
-        .locator(".admin-user-profile strong")
-        .innerText();
-    if (convertedProfile !== "Médico") {
-        throw new Error(`Role conversion did not refresh the profile type: ${convertedProfile}.`);
-    }
-    console.log("PASS: changing a patient to doctor creates and displays the doctor profile.");
+    console.log("PASS: doctor accounts must be created through the protected invitation flow.");
 
     await page.getByRole("button", { name: "Desactivar la cuenta de Dr. Carlos Méndez" }).click();
     const doctorStatusDialog = page.locator("dialog.admin-user-doctor-status-dialog");

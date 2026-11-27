@@ -473,12 +473,43 @@ if (page) {
                 }),
             ]),
             formSection("Datos del médico", [
-                formField("Nombre visible", "displayName", doctor.display_name, {
+                formField("Nombres", "firstName", doctor.first_name, {
                     required: true,
-                    maxLength: 120,
-                    wide: true,
+                    maxLength: 80,
                 }),
-                doctorPhotoField({ ...doctor, profile_photo_url: user.profilePhotoUrl }),
+                formField("Apellidos", "lastName", doctor.last_name, {
+                    required: true,
+                    maxLength: 80,
+                }),
+                formField("Teléfono celular", "phone", user.phone, {
+                    type: "tel",
+                    required: true,
+                    maxLength: 20,
+                    pattern: "\\+?[0-9]{7,15}",
+                }),
+                formField("Tipo de documento", "documentType", doctor.document_type, {
+                    required: true,
+                    options: [
+                        { value: "", label: "Selecciona el tipo de documento" },
+                        { value: "CC", label: "Cédula de ciudadanía (CC)" },
+                        { value: "CE", label: "Cédula de extranjería (CE)" },
+                    ],
+                }),
+                formField("Número de documento", "documentNumber", doctor.document_number, {
+                    required: true,
+                    maxLength: 15,
+                    pattern: "[0-9]{1,15}",
+                }),
+                formField(
+                    "Tarjeta profesional",
+                    "professionalRegistrationNumber",
+                    doctor.professional_registration_number,
+                    {
+                        required: true,
+                        maxLength: 40,
+                        pattern: "[A-Za-z0-9./-]{3,40}",
+                    },
+                ),
                 formField("Especialidad", "specialtyId", String(doctor.specialty_id), {
                     required: true,
                     options: specialties.map((specialty) => ({
@@ -487,16 +518,7 @@ if (page) {
                     })),
                     wide: true,
                 }),
-                formField(
-                    "Información profesional",
-                    "professionalInformation",
-                    doctor.professional_information,
-                    {
-                        type: "textarea",
-                        maxLength: 10000,
-                        wide: true,
-                    },
-                ),
+                doctorPhotoField({ ...doctor, profile_photo_url: user.profilePhotoUrl }),
             ]),
         ];
         editFields.replaceChildren(...fields);
@@ -624,11 +646,22 @@ if (page) {
             };
         } else {
             payload.doctor = {
-                displayName: value("displayName"),
                 specialtyId: value("specialtyId"),
-                professionalInformation: value("professionalInformation"),
                 profilePhotoUrl: value("profilePhotoUrl"),
             };
+            if (values.has("firstName")) {
+                payload.doctor.firstName = value("firstName");
+                payload.doctor.lastName = value("lastName");
+                payload.doctor.phone = value("phone");
+                payload.doctor.documentType = value("documentType");
+                payload.doctor.documentNumber = value("documentNumber");
+                payload.doctor.professionalRegistrationNumber = value(
+                    "professionalRegistrationNumber",
+                );
+            } else {
+                payload.doctor.displayName = value("displayName");
+                if (values.has("phone")) payload.doctor.phone = value("phone");
+            }
             if (doctorPhotoDataUrl) payload.doctor.photo = doctorPhotoDataUrl;
         }
 
@@ -988,7 +1021,11 @@ if (page) {
             roleSelect.title = "Completa la activación desde Invitaciones pendientes.";
         }
         roles
-            .filter((role) => role.name !== "Administrator" || role.id === user.role.id)
+            .filter(
+                (role) =>
+                    (role.name !== "Administrator" || role.id === user.role.id) &&
+                    (role.name !== "Doctor" || role.id === user.role.id),
+            )
             .forEach((role) => {
                 const option = document.createElement("option");
                 option.value = String(role.id);
@@ -1146,6 +1183,12 @@ if (page) {
     const invitationModalFeedback = document.querySelector("[data-invitation-modal-feedback]");
     const invitationNote = document.querySelector("[data-invitation-note]");
     const invitationSubmit = document.querySelector("[data-invitation-submit]");
+    const invitationNameField = invitationForm.querySelector("[data-invitation-name-field]");
+    const invitationName = invitationForm.querySelector("[name='displayName']");
+    const invitationSpecialtyField = invitationForm.querySelector(
+        "[data-invitation-specialty-field]",
+    );
+    const invitationSpecialty = invitationForm.querySelector("[name='specialtyId']");
     let focusedBeforeInvitation;
 
     function setInvitationFeedback(message, kind = "") {
@@ -1276,9 +1319,14 @@ if (page) {
 
     function openInvitationModal() {
         focusedBeforeInvitation = document.activeElement;
+        invitationSpecialty.replaceChildren(new Option("Selecciona una especialidad", ""));
+        state.specialties.forEach((specialty) => {
+            invitationSpecialty.add(new Option(specialty.name, specialty.id));
+        });
+        updateInvitationFields();
         invitationModal.hidden = false;
         document.body.classList.add("has-admin-modal");
-        invitationDialog.querySelector("input[name='displayName']")?.focus();
+        invitationDialog.querySelector("input[name='email']")?.focus();
     }
 
     function closeInvitationModal() {
@@ -1322,22 +1370,39 @@ if (page) {
             invitationModal.querySelectorAll("[data-account-role-card]").forEach((card) => {
                 card.classList.toggle("is-selected", card.querySelector("input").checked);
             });
-            invitationNote.textContent =
-                radio.value === "patient"
-                    ? "El paciente completa su información personal y de salud, acepta el aviso de privacidad y crea su propia contraseña."
-                    : "El administrador confirma su correo y elige su contraseña antes de poder ingresar al panel.";
+            updateInvitationFields();
         });
     });
+
+    function updateInvitationFields() {
+        const accountType = invitationForm.querySelector(
+            "input[name='accountType']:checked",
+        )?.value;
+        const isDoctor = accountType === "doctor";
+        invitationNameField.hidden = isDoctor;
+        invitationName.required = !isDoctor;
+        invitationSpecialtyField.hidden = !isDoctor;
+        invitationSpecialty.disabled = !isDoctor;
+        invitationSpecialty.required = isDoctor;
+        invitationNote.textContent =
+            accountType === "patient"
+                ? "El paciente completa sus datos personales y de salud, acepta el aviso de privacidad y crea su propia contraseña."
+                : isDoctor
+                  ? "El médico recibirá un enlace para completar sus datos y contraseña. Su cuenta quedará inactiva hasta que revises y apruebes el perfil."
+                  : "El administrador confirma su correo y elige su contraseña antes de poder ingresar al panel.";
+    }
     invitationForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         invitationSubmit.disabled = true;
         invitationModalFeedback.textContent = "Enviando invitación…";
         const formData = new FormData(invitationForm);
+        const payload = Object.fromEntries(formData);
+        if (payload.accountType === "doctor") payload.specialtyId = Number(payload.specialtyId);
         try {
             const response = await fetch(page.dataset.invitationsEndpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify(Object.fromEntries(formData)),
+                body: JSON.stringify(payload),
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || "No pudimos crear la invitación.");

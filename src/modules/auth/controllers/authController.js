@@ -185,6 +185,8 @@ function safeInvitationFormData(body = {}) {
         "allergies",
         "medical_conditions",
         "display_name",
+        "first_name",
+        "professional_registration_number",
     ];
     return Object.fromEntries(
         fields.map((field) => [field, typeof body[field] === "string" ? body[field] : ""]),
@@ -230,10 +232,18 @@ export async function acceptAccountInvitation(req, res, next) {
             path: "/",
         });
         return res.status(200).render("auth/account-invitation-result", {
-            pageTitle: "Cuenta activada | SaludVital",
+            pageTitle: result.pendingReview
+                ? "Perfil enviado a revisión | SaludVital"
+                : "Cuenta activada | SaludVital",
             displayName: result.displayName,
             email: result.email,
-            roleLabel: result.role === "Administrator" ? "Administrador" : "Paciente",
+            roleLabel:
+                result.role === "Administrator"
+                    ? "Administrador"
+                    : result.role === "Doctor"
+                      ? "Médico"
+                      : "Paciente",
+            pendingReview: Boolean(result.pendingReview),
             whatsappContactUrl: getConfiguredWhatsAppContactUrl(),
         });
     } catch (error) {

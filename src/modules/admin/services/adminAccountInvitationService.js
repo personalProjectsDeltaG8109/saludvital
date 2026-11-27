@@ -6,12 +6,15 @@ import {
     AccountInvitation,
     AuditLog,
     EmailOutbox,
+    Doctor,
     Rol,
+    Specialities,
     User,
 } from "../../../models/associations.js";
 
 const INVITABLE_ROLES = Object.freeze({
     patient: { name: "Patient", label: "Paciente" },
+    doctor: { name: "Doctor", label: "Médico" },
     administrator: { name: "Administrator", label: "Administrador" },
 });
 
@@ -36,9 +39,8 @@ function normalizeInvitePayload(payload) {
             : "";
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
     if (
-        !displayName ||
-        displayName.length > 120 ||
-        !/^\p{L}[\p{L}\p{M} .'-]*$/u.test(displayName)
+        accountType !== "doctor" &&
+        (!displayName || displayName.length > 120 || !/^\p{L}[\p{L}\p{M} .'-]*$/u.test(displayName))
     ) {
         throw invitationError("Escribe un nombre válido de hasta 120 caracteres.");
     }
@@ -46,7 +48,12 @@ function normalizeInvitePayload(payload) {
         throw invitationError("Escribe un correo electrónico válido.");
     }
 
-    return { accountType, displayName, email, role };
+    const specialtyId = accountType === "doctor" ? Number(payload.specialtyId) : null;
+    if (accountType === "doctor" && (!Number.isSafeInteger(specialtyId) || specialtyId < 1)) {
+        throw invitationError("Selecciona una especialidad médica válida.");
+    }
+
+    return { accountType, displayName, email, role, specialtyId };
 }
 
 async function writeInvitationAudit(actorUserId, action, invitation, user, transaction) {
@@ -82,7 +89,7 @@ export async function createAdminAccountInvitation(actorUserId, payload) {
     if (!Number.isSafeInteger(actorId) || actorId < 1) {
         throw invitationError("La sesión del administrador no es válida.", 401);
     }
-    const { accountType, displayName, email, role } = normalizeInvitePayload(payload);
+    const { accountType, displayName, email, role, specialtyId } = normalizeInvitePayload(payload);
 
     try {
         return await database.transaction(async (transaction) => {
@@ -106,17 +113,39 @@ export async function createAdminAccountInvitation(actorUserId, payload) {
                 throw invitationError("Ese tipo de cuenta no está disponible.", 503);
             }
 
+            let specialty = null;
+            if (accountType === "doctor") {
+                specialty = await Specialities.findOne({
+                    where: { id: specialtyId, is_active: true },
+                    attributes: ["id"],
+                    transaction,
+                    lock: transaction.LOCK.UPDATE,
+                });
+                if (!specialty)
+                    throw invitationError("La especialidad seleccionada no existe.", 400);
+            }
+
             const oneTimeSecret = randomBytes(48).toString("hex");
             const user = await User.create(
                 {
                     role_id: roleRecord.id,
                     email,
-                    display_name: displayName,
+                    display_name: displayName || null,
                     password_hash: await bcrypt.hash(oneTimeSecret, 12),
                     is_active: false,
                 },
                 { transaction },
             );
+            if (accountType === "doctor") {
+                await Doctor.create(
+                    {
+                        user_id: user.id,
+                        specialty_id: specialty.id,
+                        profile_review_status: "invited",
+                    },
+                    { transaction },
+                );
+            }
             const invitation = await AccountInvitation.create(
                 { user_id: user.id, invited_by_user_id: actorId },
                 { transaction },
@@ -156,10 +185,11 @@ export async function createAdminAccountInvitation(actorUserId, payload) {
             return {
                 invitation: {
                     id: invitation.id,
-                    displayName,
+                    displayName: displayName || email,
                     email,
                     accountType,
                     role: role.label,
+                    specialtyId: specialty?.id || null,
                     status: "pending",
                 },
                 message: "Invitación creada. El correo se enviará en breve.",
@@ -182,7 +212,15 @@ export async function getAdminAccountInvitations() {
                 model: User,
                 as: "user",
                 attributes: ["id", "email", "display_name", "role_id"],
-                include: [{ model: Rol, as: "rol", attributes: ["name"] }],
+                include: [
+                    { model: Rol, as: "rol", attributes: ["name"] },
+                    {
+                        model: Doctor,
+                        as: "doctor",
+                        attributes: ["id", "profile_review_status", "specialty_id"],
+                        include: [{ model: Specialities, as: "specialty", attributes: ["name"] }],
+                    },
+                ],
             },
         ],
         order: [["created_at", "DESC"]],
@@ -219,8 +257,19 @@ export async function getAdminAccountInvitations() {
                 displayName: invitation.user?.display_name || invitation.user?.email,
                 email: invitation.user?.email,
                 accountType:
-                    invitation.user?.rol?.name === "Administrator" ? "administrator" : "patient",
-                role: invitation.user?.rol?.name === "Administrator" ? "Administrador" : "Paciente",
+                    invitation.user?.rol?.name === "Administrator"
+                        ? "administrator"
+                        : invitation.user?.rol?.name === "Doctor"
+                          ? "doctor"
+                          : "patient",
+                role:
+                    invitation.user?.rol?.name === "Administrator"
+                        ? "Administrador"
+                        : invitation.user?.rol?.name === "Doctor"
+                          ? "Médico"
+                          : "Paciente",
+                specialty: invitation.user?.doctor?.specialty?.name || null,
+                reviewStatus: invitation.user?.doctor?.profile_review_status || null,
                 status,
                 createdAt: invitation.created_at,
                 expiresAt: invitation.expires_at,
@@ -259,7 +308,17 @@ export async function resendAdminAccountInvitation(actorUserId, rawInvitationId)
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
-        if (!user || user.email_verified_at)
+        const doctor = await Doctor.findOne({
+            where: { user_id: invitation.user_id },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        const correctionInvitation =
+            user?.email_verified_at &&
+            doctor?.profile_review_status === "changes_requested" &&
+            (await Rol.findByPk(user.role_id, { attributes: ["name"], transaction }))?.name ===
+                "Doctor";
+        if (!user || (user.email_verified_at && !correctionInvitation))
             throw invitationError("La cuenta ya fue activada.", 409);
         await EmailOutbox.update(
             { status: "failed", locked_at: null },
@@ -312,7 +371,19 @@ export async function cancelAdminAccountInvitation(actorUserId, rawInvitationId)
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
-        if (!user || user.email_verified_at)
+        const doctor = await Doctor.findOne({
+            where: { user_id: invitation.user_id },
+            transaction,
+            lock: transaction.LOCK.UPDATE,
+        });
+        const role = user
+            ? await Rol.findByPk(user.role_id, { attributes: ["name"], transaction })
+            : null;
+        const correctionInvitation =
+            user?.email_verified_at &&
+            role?.name === "Doctor" &&
+            doctor?.profile_review_status === "changes_requested";
+        if (!user || (user.email_verified_at && !correctionInvitation))
             throw invitationError("La cuenta ya fue activada.", 409);
         const processingJob = await EmailOutbox.findOne({
             where: { user_id: user.id, event_type: "account_invitation", status: "processing" },
@@ -337,6 +408,9 @@ export async function cancelAdminAccountInvitation(actorUserId, rawInvitationId)
             transaction,
         });
         await invitation.destroy({ transaction });
+        if (correctionInvitation) {
+            return { message: "La invitación de corrección fue cancelada." };
+        }
         await user.destroy({ transaction });
         return { message: "La invitación fue cancelada." };
     });

@@ -9,6 +9,7 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
     AccountInvitation: { findOne: jest.fn() },
     AuditLog: { create: jest.fn() },
+    Doctor: { findOne: jest.fn() },
     Patient: { create: jest.fn(), findOne: jest.fn() },
     PatientConsent: { create: jest.fn() },
     Rol: {},
@@ -32,7 +33,7 @@ jest.unstable_mockModule("../../../src/modules/auth/services/registrationService
 });
 
 const database = (await import("../../../config/database.js")).default;
-const { AccountInvitation, AuditLog, Patient, PatientConsent } =
+const { AccountInvitation, AuditLog, Doctor, Patient, PatientConsent } =
     await import("../../../src/models/associations.js");
 const { completeAccountInvitation, getAccountInvitationByToken } =
     await import("../../../src/modules/auth/services/accountInvitationService.js");
@@ -61,6 +62,7 @@ describe("Account invitation activation", () => {
             update: jest.fn().mockResolvedValue(undefined),
         };
         AccountInvitation.findOne.mockResolvedValue(invitation);
+        Doctor.findOne.mockResolvedValue(null);
         Patient.findOne.mockResolvedValue(null);
         Patient.create.mockResolvedValue({ id: 83 });
         PatientConsent.create.mockResolvedValue({ id: 94 });
@@ -160,5 +162,143 @@ describe("Account invitation activation", () => {
         );
         expect(Patient.create).not.toHaveBeenCalled();
         expect(PatientConsent.create).not.toHaveBeenCalled();
+    });
+
+    test("shows the invited specialty and profile fields to the doctor", async () => {
+        const doctor = {
+            id: 12,
+            specialty_id: 9,
+            first_name: null,
+            last_name: null,
+            document_type: null,
+            document_number: null,
+            professional_registration_number: null,
+            profile_review_status: "invited",
+            specialty: { name: "Medicina General" },
+        };
+        user.rol = { id: 3, name: "Doctor" };
+        user.doctor = doctor;
+
+        await expect(getAccountInvitationByToken(token)).resolves.toMatchObject({
+            accountType: "doctor",
+            specialtyId: 9,
+            specialtyName: "Medicina General",
+            profile: { phone: "" },
+        });
+    });
+
+    test("submits a doctor's profile for review without activating the account", async () => {
+        const doctor = {
+            id: 12,
+            specialty_id: 9,
+            first_name: null,
+            last_name: null,
+            document_type: null,
+            document_number: null,
+            professional_registration_number: null,
+            profile_review_status: "invited",
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        user.rol = { id: 3, name: "Doctor" };
+        user.doctor = doctor;
+
+        await expect(
+            completeAccountInvitation(token, {
+                first_name: "Camila",
+                last_name: "Torres",
+                phone: "3001234567",
+                document_type: "CC",
+                document_number: "123456789",
+                professional_registration_number: "RM-12345",
+                password: "DoctorPass123!",
+                password_confirmation: "DoctorPass123!",
+            }),
+        ).resolves.toMatchObject({
+            role: "Doctor",
+            displayName: "Camila Torres",
+            pendingReview: true,
+        });
+
+        expect(doctor.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                display_name: "Camila Torres",
+                first_name: "Camila",
+                last_name: "Torres",
+                document_type: "CC",
+                document_number: "123456789",
+                professional_registration_number: "RM-12345",
+                profile_review_status: "pending",
+            }),
+            { transaction },
+        );
+        expect(user.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                display_name: "Camila Torres",
+                phone: "3001234567",
+                is_active: false,
+                email_verified_at: expect.any(Date),
+            }),
+            { transaction },
+        );
+        expect(invitation.update).toHaveBeenCalledWith(
+            expect.objectContaining({ accepted_at: expect.any(Date), token_hash: null }),
+            { transaction },
+        );
+        expect(AuditLog.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                action: "DoctorProfileSubmittedForReview",
+                changes: { role: "Doctor", profileReviewStatus: "pending" },
+            }),
+            { transaction },
+        );
+    });
+
+    test("does not submit a doctor profile when required identity fields are invalid", async () => {
+        const doctor = {
+            id: 12,
+            specialty_id: 9,
+            profile_review_status: "invited",
+            update: jest.fn(),
+        };
+        user.rol = { id: 3, name: "Doctor" };
+        user.doctor = doctor;
+
+        await expect(
+            completeAccountInvitation(token, {
+                first_name: "Camila",
+                last_name: "Torres",
+                phone: "not-a-phone",
+                document_type: "CC",
+                document_number: "123456789",
+                professional_registration_number: "RM-12345",
+                password: "DoctorPass123!",
+                password_confirmation: "DoctorPass123!",
+            }),
+        ).rejects.toThrow("número de celular válido");
+
+        expect(database.transaction).not.toHaveBeenCalled();
+        expect(doctor.update).not.toHaveBeenCalled();
+        expect(user.update).not.toHaveBeenCalled();
+    });
+
+    test("rejects a doctor name that exceeds the account display-name limit", async () => {
+        const doctor = { id: 12, specialty_id: 9, profile_review_status: "invited" };
+        user.rol = { id: 3, name: "Doctor" };
+        user.doctor = doctor;
+
+        await expect(
+            completeAccountInvitation(token, {
+                first_name: "A".repeat(80),
+                last_name: "B".repeat(80),
+                phone: "3001234567",
+                document_type: "CC",
+                document_number: "123456789",
+                professional_registration_number: "RM-12345",
+                password: "DoctorPass123!",
+                password_confirmation: "DoctorPass123!",
+            }),
+        ).rejects.toThrow("no puede superar 120 caracteres");
+
+        expect(database.transaction).not.toHaveBeenCalled();
     });
 });

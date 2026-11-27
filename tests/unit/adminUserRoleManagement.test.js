@@ -45,7 +45,7 @@ const { Doctor, Patient, Rol, Specialities, User } =
 const { resolveLocation } = await import("../../src/shared/services/colombiaLocationService.js");
 const { cancelUpcomingConfirmedDoctorAppointments } =
     await import("../../src/modules/admin/services/adminDoctorService.js");
-const { updateAdminUser, updateAdminUserRole } =
+const { getAdminUserDetails, updateAdminUser, updateAdminUserRole } =
     await import("../../src/modules/admin/services/adminUserManagementService.js");
 
 const transaction = { LOCK: { UPDATE: "UPDATE" } };
@@ -82,7 +82,41 @@ function prepareRoleChange({ currentRole, targetRole, patient = null, doctor = n
 describe("Admin user role and profile changes", () => {
     beforeEach(() => jest.resetAllMocks());
 
-    test("creates a doctor profile with the selected specialty when a patient becomes a doctor", async () => {
+    test("uses the account photo when an older doctor profile has no separate photo", async () => {
+        const doctor = {
+            id: 12,
+            display_name: "Dr. Carlos Ramírez",
+            specialty_id: 5,
+            profile_photo_url: null,
+            get: () => ({
+                id: 12,
+                display_name: "Dr. Carlos Ramírez",
+                specialty_id: 5,
+                profile_photo_url: null,
+            }),
+        };
+        User.findByPk.mockResolvedValue({
+            id: 7,
+            email: "doctor@example.com",
+            phone: "3001234567",
+            profile_photo_url: "/uploads/profile-photos/carlos.webp",
+            is_active: true,
+            rol: { id: 4, name: "Doctor" },
+            doctor,
+            patient: null,
+        });
+        Specialities.findAll.mockResolvedValue([{ id: 5, name: "Medicina General" }]);
+
+        await expect(getAdminUserDetails("7")).resolves.toMatchObject({
+            user: {
+                profilePhotoUrl: "/uploads/profile-photos/carlos.webp",
+                doctor: { display_name: "Dr. Carlos Ramírez" },
+            },
+            specialties: [{ id: 5, name: "Medicina General" }],
+        });
+    });
+
+    test("requires an administrator to invite a doctor from the doctor directory", async () => {
         const patient = { id: 15, first_name: "Juan Esteban", last_name: "Montoya Marín" };
         const { user } = prepareRoleChange({
             currentRole: { id: 2, name: "Patient" },
@@ -92,29 +126,12 @@ describe("Admin user role and profile changes", () => {
 
         await expect(
             updateAdminUserRole(1, 7, { roleId: 3, doctor: { specialtyId: "5" } }),
-        ).resolves.toMatchObject({ user: { role: { name: "Doctor" }, profileType: "Doctor" } });
+        ).rejects.toMatchObject({ statusCode: 403 });
 
-        expect(Doctor.create).toHaveBeenCalledWith(
-            {
-                user_id: 7,
-                specialty_id: 5,
-                display_name: "Juan Esteban Montoya Marín",
-                professional_information: null,
-                profile_photo_url: null,
-            },
-            { transaction },
-        );
-        expect(user.update).toHaveBeenCalledWith({ role_id: 3 }, { transaction });
-        expect(cancelUpcomingConfirmedDoctorAppointments).not.toHaveBeenCalled();
-        expect(AuditLog.create).toHaveBeenCalledWith(
-            expect.objectContaining({
-                action: "AdminUserRoleChanged",
-                changes: expect.objectContaining({ createdProfile: "Doctor" }),
-            }),
-            { transaction },
-        );
+        expect(Doctor.create).not.toHaveBeenCalled();
+        expect(user.update).not.toHaveBeenCalled();
+        expect(AuditLog.create).not.toHaveBeenCalled();
     });
-
     test("keeps patient and doctor history and cancels future appointments when a doctor becomes a patient", async () => {
         const { user } = prepareRoleChange({
             currentRole: { id: 3, name: "Doctor" },

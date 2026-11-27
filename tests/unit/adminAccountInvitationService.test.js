@@ -9,6 +9,7 @@ jest.unstable_mockModule("../../config/database.js", () => ({
 jest.unstable_mockModule("../../src/models/associations.js", () => ({
     AccountInvitation: { create: jest.fn(), findAll: jest.fn(), findByPk: jest.fn() },
     AuditLog: { create: jest.fn() },
+    Doctor: { create: jest.fn(), findOne: jest.fn() },
     EmailOutbox: {
         create: jest.fn(),
         destroy: jest.fn(),
@@ -17,6 +18,7 @@ jest.unstable_mockModule("../../src/models/associations.js", () => ({
         update: jest.fn(),
     },
     Rol: { findOne: jest.fn() },
+    Specialities: { findOne: jest.fn() },
     User: { create: jest.fn(), destroy: jest.fn(), findByPk: jest.fn(), findOne: jest.fn() },
 }));
 

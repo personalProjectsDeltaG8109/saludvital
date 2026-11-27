@@ -6,6 +6,7 @@ import {
     AccountInvitation,
     EmailOutbox,
     PasswordResetToken,
+    Doctor,
     Rol,
     User,
 } from "../../../models/associations.js";
@@ -202,14 +203,33 @@ async function prepareAccountInvitationToken(userId) {
                 {
                     model: User,
                     as: "user",
-                    include: [{ model: Rol, as: "rol", attributes: ["name"] }],
+                    include: [
+                        { model: Rol, as: "rol", attributes: ["name"] },
+                        {
+                            model: Doctor,
+                            as: "doctor",
+                            attributes: ["profile_review_status"],
+                        },
+                    ],
                 },
             ],
             transaction,
             lock: transaction.LOCK.UPDATE,
         });
         const user = invitation?.user;
-        if (!invitation || !user || user.is_active || user.email_verified_at) {
+        const roleName = user?.rol?.name;
+        const isDoctorCorrection = Boolean(
+            roleName === "Doctor" &&
+            user?.doctor?.profile_review_status === "changes_requested" &&
+            user?.email_verified_at,
+        );
+        if (
+            !invitation ||
+            !user ||
+            user.is_active ||
+            (user.email_verified_at && !isDoctorCorrection) ||
+            !["Patient", "Administrator", "Doctor"].includes(roleName)
+        ) {
             throw new Error("The account invitation is unavailable.");
         }
 
@@ -218,7 +238,13 @@ async function prepareAccountInvitationToken(userId) {
         return {
             email: user.email,
             token,
-            accountType: user.rol?.name === "Administrator" ? "administrator" : "patient",
+            isDoctorCorrection,
+            accountType:
+                roleName === "Administrator"
+                    ? "administrator"
+                    : roleName === "Doctor"
+                      ? "doctor"
+                      : "patient",
         };
     });
 }
@@ -341,10 +367,12 @@ export async function processNextEmailOutboxJob() {
             });
         } else if (job.eventType === "account_invitation") {
             getValidatedPublicBaseUrl();
-            const { email, token, accountType } = await prepareAccountInvitationToken(job.userId);
+            const { email, token, accountType, isDoctorCorrection } =
+                await prepareAccountInvitationToken(job.userId);
             await sendVerificationEmail(email, buildAccountInvitationUrl(token), {
                 isAccountInvitation: true,
                 accountType,
+                isDoctorCorrection,
             });
         } else if (job.eventType === "password_reset") {
             // Validate configuration before creating or invalidating reset tokens.

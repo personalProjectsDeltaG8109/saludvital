@@ -10,6 +10,7 @@ jest.unstable_mockModule("../../../config/database.js", () => ({
 
 jest.unstable_mockModule("../../../src/models/associations.js", () => ({
     AccountInvitation: { findOne: jest.fn() },
+    Doctor: {},
     EmailOutbox: {
         update: jest.fn(),
         findOne: jest.fn(),
@@ -275,7 +276,54 @@ describe("Email outbox worker", () => {
             }),
             { transaction },
         );
-        expect(options).toEqual({ isAccountInvitation: true, accountType: "patient" });
+        expect(options).toEqual({
+            isAccountInvitation: true,
+            accountType: "patient",
+            isDoctorCorrection: false,
+        });
+    });
+
+    test("sends a correction link without asking a verified doctor to confirm email again", async () => {
+        const user = {
+            id: 53,
+            email: "doctor@example.com",
+            is_active: false,
+            email_verified_at: new Date(),
+            rol: { name: "Doctor" },
+            doctor: { profile_review_status: "changes_requested" },
+        };
+        const invitation = {
+            user_id: user.id,
+            accepted_at: null,
+            cancelled_at: null,
+            user,
+            update: jest.fn().mockResolvedValue(undefined),
+        };
+        const job = {
+            id: 23,
+            user_id: user.id,
+            event_type: "account_invitation",
+            attempts: 0,
+            update: jest.fn(async (values) => Object.assign(job, values)),
+        };
+        AccountInvitation.findOne.mockResolvedValue(invitation);
+        EmailOutbox.findOne.mockResolvedValue(job);
+        EmailOutbox.findByPk.mockResolvedValue(job);
+
+        await expect(processNextEmailOutboxJob()).resolves.toEqual({
+            processed: true,
+            status: "sent",
+        });
+
+        expect(sendVerificationEmail).toHaveBeenCalledWith(
+            user.email,
+            expect.stringContaining("/accept-invitation?token="),
+            {
+                isAccountInvitation: true,
+                accountType: "doctor",
+                isDoctorCorrection: true,
+            },
+        );
     });
 
     test("does not send a verification link after the registration retention expires", async () => {
