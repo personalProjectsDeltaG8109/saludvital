@@ -25,7 +25,7 @@ if (app && sidebar && menuButton && menuButton.dataset.sidebarBound !== "true") 
         if (event.key === "Escape") closeMenu(true);
     });
     window.addEventListener("resize", () => {
-        if (window.matchMedia("(min-width: 761px)").matches) closeMenu();
+        if (window.matchMedia("(min-width: 901px)").matches) closeMenu();
     });
 }
 
