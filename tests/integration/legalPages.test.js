@@ -25,14 +25,14 @@ const legalPages = [
 
 describe("public legal pages", () => {
     test.each(legalPages.flatMap((page) => page.paths.map((path) => ({ ...page, path }))))(
-        "$path renders its page in the login-style layout",
+        "$path renders its page in the shared legal layout",
         async ({ activePath, heading, pageContent, path }) => {
             const response = await request(app).get(path);
 
             expect(response.status).toBe(200);
             expect(response.text.match(/<main\b/g) ?? []).toHaveLength(1);
-            expect(response.text).toContain("legal-split");
-            expect(response.text).toContain("legal-document-panel");
+            expect(response.text).toContain("legal-shell-header");
+            expect(response.text).toContain("legal-reading-layout");
             expect(response.text).toContain(heading);
             expect(response.text).toContain(pageContent);
             expect(response.text).toContain(
