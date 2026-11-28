@@ -1,4 +1,5 @@
 const GRAPH_API_BASE_URL = "https://graph.facebook.com";
+export const MAX_WHATSAPP_TEXT_LENGTH = 1024;
 
 const TEMPLATE_CONFIGURATION = {
     appointment_confirmation: {
@@ -167,7 +168,7 @@ export async function sendWhatsAppReply({ to, text, options = [] }) {
     const recipient = normalizeRecipient(to);
     const { accessToken, phoneNumberId, apiVersion } = getMetaConfiguration();
     const messageText = typeof text === "string" ? text.trim() : "";
-    if (!messageText || messageText.length > 1024) {
+    if (!messageText || messageText.length > MAX_WHATSAPP_TEXT_LENGTH) {
         throw serviceError("La respuesta del chatbot no tiene un texto válido.");
     }
 

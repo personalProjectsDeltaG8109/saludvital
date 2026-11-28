@@ -23,7 +23,7 @@ import {
     reschedulePatientAppointment,
 } from "./appointmentService.js";
 import { sendWhatsAppIdentityCode } from "./resendEmailService.js";
-import { sendWhatsAppReply } from "./whatsappService.js";
+import { MAX_WHATSAPP_TEXT_LENGTH, sendWhatsAppReply } from "./whatsappService.js";
 import { processMetaDeliveryStatus } from "./whatsappDeliveryStatusService.js";
 import { AppointmentError } from "../errors/appointmentError.js";
 
@@ -41,6 +41,45 @@ const INTENT_BY_FLOW_STEP = {
     reschedule: "reschedule",
     cancel: "cancel",
 };
+
+function formatUpcomingAppointmentSummary(item) {
+    const date = new Intl.DateTimeFormat("es-CO", {
+        dateStyle: "medium",
+        timeZone: "America/Bogota",
+    }).format(new Date(item.start_at));
+    const time = new Intl.DateTimeFormat("es-CO", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Bogota",
+    }).format(new Date(item.start_at));
+
+    return `• ${date}, ${time} — ${item.specialty.name} — Estado: Confirmada`;
+}
+
+function splitAppointmentSummaryMessages(appointments) {
+    const firstHeading = "Estas son tus próximas citas confirmadas:";
+    const continuationHeading = "Continuación de tus próximas citas confirmadas:";
+    const messages = [];
+    let heading = firstHeading;
+    let currentMessage = heading;
+
+    for (const appointment of appointments) {
+        const line = formatUpcomingAppointmentSummary(appointment);
+        const nextMessage = `${currentMessage}\n${line}`;
+
+        if (nextMessage.length <= MAX_WHATSAPP_TEXT_LENGTH) {
+            currentMessage = nextMessage;
+            continue;
+        }
+
+        messages.push(currentMessage);
+        heading = continuationHeading;
+        currentMessage = `${heading}\n${line}`;
+    }
+
+    if (currentMessage.length > heading.length) messages.push(currentMessage);
+    return messages;
+}
 
 export function getSafeAppointmentErrorMessage(error, fallbackMessage) {
     if (error instanceof AppointmentError && error.statusCode >= 400 && error.statusCode < 500) {
@@ -511,25 +550,11 @@ async function continueIntent(conversation, contactId, intent) {
         if (!appointments.length) {
             return showMainMenu(conversation, contactId, "No tienes próximas citas confirmadas.");
         }
-        const summary = appointments
-            .map((item) => {
-                const date = new Intl.DateTimeFormat("es-CO", {
-                    dateStyle: "medium",
-                    timeZone: "America/Bogota",
-                }).format(new Date(item.start_at));
-                const time = new Intl.DateTimeFormat("es-CO", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    timeZone: "America/Bogota",
-                }).format(new Date(item.start_at));
-                return `• ${date}, ${time} — ${item.specialty.name} — Estado: Confirmada`;
-            })
-            .join("\n");
-        await showMainMenu(
-            conversation,
-            contactId,
-            `Estas son tus próximas citas confirmadas:\n${summary}`,
-        );
+        const summaryMessages = splitAppointmentSummaryMessages(appointments);
+        for (const message of summaryMessages) {
+            await sendResponse(conversation, contactId, message);
+        }
+        await showMainMenu(conversation, contactId);
         return;
     }
     if (intent === "reschedule") {
